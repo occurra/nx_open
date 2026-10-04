@@ -307,8 +307,16 @@ Result H264Parser::processData(
                             "Failed to parse RTP packet, invalid NAL unit length in STAP_A_PACKET")};
                 }
 
-                m_chunks.addChunk((int) (curPtr - rtpBufferBase), nalUnitLen, true);
-                updateNalFlags(curPtr, bufferEnd - curPtr);
+                // Some cameras send a start code inside each aggregated NAL unit, so drop it.
+                // ex: 18 00 15 00 00 00 01 67 ...
+                const int startCodeSize = nx::media::nal::isStartCode(curPtr, nalUnitLen);
+                if (nalUnitLen > startCodeSize)
+                {
+                    const quint8* nalUnit = curPtr + startCodeSize;
+                    m_chunks.addChunk(
+                        (int) (nalUnit - rtpBufferBase), nalUnitLen - startCodeSize, true);
+                    updateNalFlags(nalUnit, bufferEnd - nalUnit);
+                }
                 curPtr += nalUnitLen;
             }
             break;
