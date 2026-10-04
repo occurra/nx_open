@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <nx/codec/h264/common.h>
 #include <nx/rtp/parsers/h264_rtp_parser.h>
 
 TEST(H264RtpParser, ZeroPacketSize)
@@ -450,4 +451,52 @@ TEST(H264RtpParser, SpsPpsInsideFragmentationUnit)
     ASSERT_TRUE(frame->flags & QnAbstractMediaData::MediaFlags_AVKey);
     ASSERT_TRUE(frame->context != nullptr);
     ASSERT_TRUE(frame->context->getExtradata() != nullptr);
+}
+
+TEST(H264RtpParser, StartCodeInsideAggregationPacket)
+{
+    // Some cameras send a start code inside each NAL unit of a STAP-A packet.
+    uint8_t rtpData[] = {
+        // STAP-A: SPS (960x1280), then PPS, each with a start code.
+        0x18,
+        0x00, 0x15, 0x00, 0x00, 0x00, 0x01, 0x67, 0x64, 0x00, 0x20, 0xac, 0xb4, 0x07, 0x80, 0x50,
+        0xd3, 0x50, 0x10, 0x10, 0x10, 0x78, 0xa1, 0x55,
+        0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x68, 0xee, 0x0d, 0x8b,
+
+        // Single NAL unit packet: IDR.
+        0x65, 0xb8, 0x20, 0x2f, 0xe8, 0x27, 0xf3, 0x35, 0x9a, 0x24, 0x3a, 0xd5, 0x9f, 0xc0,
+    };
+    constexpr int kStapASize = 34;
+
+    nx::rtp::RtpHeader header;
+    memset(&header, 0, sizeof(header));
+    header.version = nx::rtp::RtpHeader::kVersion;
+    nx::rtp::H264Parser parser;
+    bool gotData;
+    auto result = parser.processData(
+        header, rtpData, /*offset*/ 0, /*bytesRead*/ kStapASize, gotData);
+    ASSERT_EQ(result.success, true);
+    ASSERT_EQ(gotData, false);
+
+    header.marker = 1;
+    result = parser.processData(
+        header, rtpData, /*offset*/ kStapASize, /*bytesRead*/ sizeof(rtpData) - kStapASize,
+        gotData);
+    ASSERT_EQ(result.success, true);
+    ASSERT_EQ(gotData, true);
+
+    auto frame = std::dynamic_pointer_cast<const QnCompressedVideoData>(parser.nextData());
+    ASSERT_TRUE(frame);
+    ASSERT_TRUE(frame->flags & QnAbstractMediaData::MediaFlags_AVKey);
+    ASSERT_EQ(frame->width, 960);
+    ASSERT_EQ(frame->height, 1280);
+
+    const auto nalUnits = nx::media::nal::findNalUnitsMp4(
+        (const uint8_t*) frame->data(), (int32_t) frame->dataSize());
+    ASSERT_EQ(nalUnits.size(), 3u);
+    ASSERT_EQ(nx::media::h264::nalType(nalUnits[0].data[0]), nx::media::h264::nuSPS);
+    ASSERT_EQ(nalUnits[0].size, 17);
+    ASSERT_EQ(nx::media::h264::nalType(nalUnits[1].data[0]), nx::media::h264::nuPPS);
+    ASSERT_EQ(nalUnits[1].size, 4);
+    ASSERT_EQ(nx::media::h264::nalType(nalUnits[2].data[0]), nx::media::h264::nuSliceIDR);
 }
