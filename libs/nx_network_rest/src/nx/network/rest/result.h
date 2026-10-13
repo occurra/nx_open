@@ -2,13 +2,11 @@
 
 #pragma once
 
-#include <QtCore/QCoreApplication>
-#include <QtCore/QJsonValue>
 #include <QtCore/QString>
 
-#include <nx/fusion/model_functions.h>
 #include <nx/network/http/http_types.h>
 #include <nx/reflect/enum_instrument.h>
+#include <nx/reflect/json.h>
 #include <nx/reflect/json/deserializer.h>
 
 namespace nx::network::rest {
@@ -59,24 +57,9 @@ NX_REFLECTION_ENUM_CLASS(ErrorId,
  *     %value "17" notAllowed
  *     %value "18" serviceUnauthorized
  *     %value "19" insufficientStorage
- *
- * %// The typical apidoc comment for the result of a function looks like (without `//`):
- * %//return
- *     %//struct Result
- *     %//param[opt] reply
- *         %//struct _RestHandlerReply_
  */
 struct NX_NETWORK_REST_API Result
 {
-    Q_DECLARE_TR_FUNCTIONS(Result)
-
-    /** Template string with two parameters corresponding to name and value. */
-    static QString invalidParameterTemplate();
-
-public:
-    static nx::network::http::StatusCode::Value toHttpStatus(ErrorId code);
-    static ErrorId errorFromHttpStatus(int status);
-
     ErrorId errorId = ErrorId::ok;
 
     /**%apidoc Error message or an empty string. */
@@ -84,52 +67,9 @@ public:
 
     Result(ErrorId error = ErrorId::ok, QString errorString = "");
 
-    static Result missingParameter(const QString& name);
-    static Result cantProcessRequest(std::optional<QString> customMessage = std::nullopt);
-    static Result forbidden(std::optional<QString> customMessage = std::nullopt);
-    static Result conflict(std::optional<QString> customMessage = std::nullopt);
-    static Result badRequest(std::optional<QString> customMessage = std::nullopt);
-    static Result notAllowed(std::optional<QString> customMessage = std::nullopt);
-    static Result notImplemented(std::optional<QString> customMessage = std::nullopt);
-    static Result notFound(std::optional<QString> customMessage = std::nullopt);
-    static Result internalServerError(std::optional<QString> customMessage = std::nullopt);
-    static Result unsupportedMediaType(std::optional<QString> customMessage = std::nullopt);
-    static Result serviceUnavailable(std::optional<QString> customMessage = std::nullopt);
-    static Result serviceUnauthorized(std::optional<QString> customMessage = std::nullopt);
-    static Result unauthorized(std::optional<QString> customMessage = std::nullopt);
-    static Result sessionExpired(std::optional<QString> customMessage = std::nullopt);
-    static Result sessionRequired(std::optional<QString> customMessage = std::nullopt);
-    static Result sessionTruncated(std::optional<QString> customMessage = std::nullopt);
-    static Result gone(std::optional<QString> customMessage = std::nullopt);
-    static Result insufficientStorage(std::optional<QString> customMessage = std::nullopt);
-
-    template<typename Value>
-    static Result invalidParameter(const QString& name, const Value& value)
-    {
-        return Result{ErrorId::invalidParameter, format(invalidParameterTemplate(), name, value)};
-    }
+    /** Maps an HTTP status onto the closest error id, falling back to badRequest. */
+    static ErrorId errorFromHttpStatus(int status);
 };
-
-inline bool operator<(const Result& rhs, const Result& lhs) noexcept
-{
-    const auto tieFields = [](const Result& r)
-    {
-        return std::tie(r.errorId, r.errorString);
-    };
-    return tieFields(rhs) < tieFields(lhs);
-}
-
-NX_NETWORK_REST_API void serialize(
-    QnJsonContext* context,
-    const Result& value,
-    QJsonValue* outTarget);
-NX_NETWORK_REST_API bool deserialize(
-    QnJsonContext* context,
-    QnConversionWrapper<QJsonValue> value,
-    Result* outTarget);
-
-#define Result_Fields (errorId)(errorString)
-QN_FUSION_DECLARE_FUNCTIONS(Result, (ubjson) (xml) (csv_record), NX_NETWORK_REST_API)
 
 NX_NETWORK_REST_API nx::reflect::DeserializationResult deserialize(
     const nx::reflect::json::DeserializationContext& context,
@@ -146,97 +86,6 @@ inline void serialize(SerializationContext* context, const Result& value)
     context->composer.writeAttributeName("error");
     context->composer.writeString(std::to_string((int) value.errorId));
     context->composer.endObject(/*members*/ 3);
-}
-
-struct NX_NETWORK_REST_API JsonResult: public Result
-{
-public:
-    JsonResult() = default;
-    JsonResult(const Result& result);
-    JsonResult(ErrorId error, QString errorString);
-
-    QJsonValue reply;
-
-    template<typename T>
-    void setReply(const T& data);
-
-    template<typename T>
-    T deserialized(bool* isOk = nullptr) const;
-
-    /** Convenience function which creates serialized JSON result. */
-    static void writeError(QByteArray* outBody, ErrorId error, const QString& errorMessage);
-};
-
-NX_NETWORK_REST_API void serialize(
-    QnJsonContext* context,
-    const JsonResult& value,
-    QJsonValue* outTarget);
-NX_NETWORK_REST_API bool deserialize(
-    QnJsonContext* context,
-    QnConversionWrapper<QJsonValue> value,
-    JsonResult* outTarget);
-
-#define JsonResult_Fields Result_Fields(reply)
-QN_FUSION_DECLARE_FUNCTIONS(JsonResult, (ubjson), NX_NETWORK_REST_API)
-
-class NX_NETWORK_REST_API UbjsonResult: public Result
-{
-public:
-    UbjsonResult() = default;
-    UbjsonResult(const Result& result);
-    UbjsonResult(ErrorId error, QString errorString);
-
-    QByteArray reply;
-
-    template<typename T>
-    void setReply(const T& replyStruct);
-
-    template<typename T>
-    T deserialized(bool* isOk = nullptr) const;
-};
-
-NX_NETWORK_REST_API void serialize(
-    QnJsonContext* context,
-    const UbjsonResult& value,
-    QJsonValue* outTarget);
-NX_NETWORK_REST_API bool deserialize(
-    QnJsonContext* context,
-    QnConversionWrapper<QJsonValue> value,
-    UbjsonResult* outTarget);
-
-#define UbjsonResult_Fields Result_Fields(reply)
-QN_FUSION_DECLARE_FUNCTIONS(UbjsonResult, (ubjson), NX_NETWORK_REST_API)
-
-//--------------------------------------------------------------------------------------------------
-
-template<typename T>
-void JsonResult::setReply(const T& data)
-{
-    QJson::serialize(data, &reply);
-}
-
-template<typename T>
-T JsonResult::deserialized(bool* isOk) const
-{
-    bool uselessBool = false;
-    if (!isOk)
-        isOk = &uselessBool;
-
-    T value;
-    *isOk = QJson::deserialize(reply, &value);
-    return value;
-}
-
-template<typename T>
-void UbjsonResult::setReply(const T& data)
-{
-    QnUbjson::serialize(data, &reply);
-}
-
-template<typename T>
-T UbjsonResult::deserialized(bool* isOk) const
-{
-    return QnUbjson::deserialized<T>(reply, T(), isOk);
 }
 
 } // namespace nx::network::rest

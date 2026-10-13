@@ -2,20 +2,9 @@
 
 #pragma once
 
-#include <variant>
-
-#include "collection_hash.h"
 #include "content.h"
-#include "result.h"
 
 namespace nx::network::rest {
-
-struct SubscriptionItem
-{
-    QString id;
-    std::string etag;
-    rapidjson::Document payload;
-};
 
 struct NX_NETWORK_REST_API Response
 {
@@ -23,62 +12,10 @@ struct NX_NETWORK_REST_API Response
     std::optional<Content> content;
     bool isUndefinedContentLength = false;
     nx::network::http::HttpHeaders httpHeaders;
-    std::optional<rapidjson::Document> contentBodyJson;
-
-    using ETags = CollectionHash;
-    using Subscription = std::variant<std::monostate, ETags, std::vector<SubscriptionItem>>;
-    Subscription subscription;
 
     Response(
         nx::network::http::StatusCode::Value statusCode = nx::network::http::StatusCode::undefined,
-        nx::network::http::HttpHeaders httpHeaders = {},
-        Subscription subscription = {});
-
-    Response(const Result& result, Qn::SerializationFormat format = Qn::SerializationFormat::json);
-
-    void insertOrReplaceCorsHeaders(
-        const nx::network::http::Request& request,
-        const QString& supportedOrigins,
-        bool supportedOriginCredentials,
-        std::string_view methods);
-
-    static Response result(const JsonResult& jsonResult);
-    static Response result(const UbjsonResult& ubjsonResult);
-
-    template<typename ResultType = JsonResult, typename DataType>
-    static Response reply(const DataType& data);
-
-    template<typename DataType>
-    static Response reply(const DataType& data, Qn::SerializationFormat format);
+        nx::network::http::HttpHeaders httpHeaders = {});
 };
-
-//--------------------------------------------------------------------------------------------------
-
-template<typename ResultType, typename DataType>
-Response Response::reply(const DataType& data)
-{
-    ResultType resultData;
-    resultData.setReply(data);
-    return result(resultData);
-}
-
-template<typename DataType>
-Response Response::reply(const DataType& data, Qn::SerializationFormat format)
-{
-    switch (format)
-    {
-        case Qn::SerializationFormat::json:
-            return reply<JsonResult>(data);
-        case Qn::SerializationFormat::ubjson:
-            return reply<UbjsonResult>(data);
-        default:
-            break;
-    }
-
-    NX_ASSERT(
-        false,
-        nx::format("Unsupported serialization format %1").arg(QnLexical::serialized(format)));
-    return {nx::network::http::StatusCode::internalServerError};
-}
 
 } // namespace nx::network::rest
