@@ -23,7 +23,6 @@ BasicFixture::BasicFixture()
     m_dbFilePath = m_tmpDir;
     m_dbFilePath += "/db.sqlite";
 
-    m_connectionOptions.driverType = RdbmsDriverType::sqlite;
     m_connectionOptions.dbName = QString::fromStdString(m_dbFilePath);
 }
 

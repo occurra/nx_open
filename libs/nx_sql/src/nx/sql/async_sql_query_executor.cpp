@@ -61,16 +61,8 @@ AsyncSqlQueryExecutor::AsyncSqlQueryExecutor(const ConnectionOptions& connection
             m_connectionOptions.maxPeriodQueryWaitsForAvailableConnection);
     }
 
-    if (m_connectionOptions.driverType == RdbmsDriverType::sqlite)
-    {
-        // SQLite does not support concurrent DB updates.
-        m_queryQueue.setConcurrentModificationQueryLimit(1);
-    }
-    else if (m_connectionOptions.concurrentModificationQueryLimit)
-    {
-        m_queryQueue.setConcurrentModificationQueryLimit(
-            *m_connectionOptions.concurrentModificationQueryLimit);
-    }
+    // SQLite does not support concurrent DB updates.
+    m_queryQueue.setConcurrentModificationQueryLimit(1);
 
     m_queryTimeoutThread = std::thread(
         [this]()

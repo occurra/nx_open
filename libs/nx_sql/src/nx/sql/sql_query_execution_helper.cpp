@@ -7,9 +7,9 @@
 #include <QtSql/QSqlError>
 #include <QtSql/QSqlQuery>
 
-#include <nx/fusion/model_functions.h>
+#include <nx/reflect/json.h>
 #include <nx/utils/log/log.h>
-#include <nx/utils/string.h>
+#include <nx/utils/std_string_utils.h>
 
 namespace nx::sql {
 
@@ -46,7 +46,10 @@ QString queryLogString(const QSqlQuery& query)
     if (values.empty())
         return query.lastQuery();
 
-    return query.lastQuery() + "\nValues: " + QJson::serialized(values);
+    QStringList parts;
+    for (const auto& v: values)
+        parts << v.toString();
+    return query.lastQuery() + "\nValues: " + parts.join(", ");
 }
 
 } // namespace

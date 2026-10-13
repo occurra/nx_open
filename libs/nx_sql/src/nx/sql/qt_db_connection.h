@@ -29,14 +29,11 @@ public:
 
     virtual std::unique_ptr<AbstractSqlQuery> createQuery() override;
 
-    virtual RdbmsDriverType driverType() const override;
-
     virtual QSqlDatabase* qtSqlConnection() override;
 
     virtual bool tableExist(std::string_view tableName) override;
 
 private:
-    RdbmsDriverType m_driverType;
     QString m_connectionName;
     QSqlDatabase m_connection;
     bool m_isOpen = false;
