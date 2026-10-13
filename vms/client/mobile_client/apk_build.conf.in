@@ -1,3 +1,0 @@
-QT_HOST_DIR="@QT_HOST_PATH@"
-JAVA_HOME="@CONAN_OPENJDK_ROOT@"
-DISTRIBUTION_NAME="@mobile_client_aab_distribution_name@"

@@ -1,6 +1,0 @@
-#include "resource.h"
-
-STRINGTABLE
-BEGIN
-    IDS_UNPACKING "Unpacking..."
-END
