@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <concepts>
 #include <optional>
 #include <regex>
 #include <string>
@@ -1672,10 +1673,16 @@ inline bool operator==(const QString& left, std::string_view right)
 //-------------------------------------------------------------------------------------------------
 // std::string_view vs const char*. Needed since previous introducing "QString == std::string_view"
 // makes "std::string_view == const char*" ambiguous.
+// The left operand is deduced rather than accepted by value, so no implicit conversion can select
+// this overload: QByteArrayView converts to std::string_view, and a plain parameter would make
+// Qt's own "QByteArrayView == const char*" comparisons ambiguous. Deduction also has to do the
+// constraining, because clang substitutes a deduced type into the declaration before it evaluates
+// any requires-clause, and rejects an operator left with none but pointer parameters.
 
-inline bool operator==(std::string_view left, const char* right)
+template<typename Char, typename Traits>
+inline bool operator==(std::basic_string_view<Char, Traits> left, const char* right)
 {
-    return left == std::string_view(right);
+    return left == std::basic_string_view<Char, Traits>(right);
 }
 
 #endif // #if defined(QT_CORE_LIB)

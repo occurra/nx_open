@@ -11,7 +11,7 @@
 #include <unordered_map>
 
 #include <nx/reflect/string_conversion.h>
-#include <nx/utils/string.h>
+#include <nx/utils/std_string_utils.h>
 #include <nx/utils/uuid.h>
 
 namespace nx::utils::stree {

@@ -40,8 +40,5 @@ private:
 template<typename Result>
 using TestSyncQueue = TestSyncQueueBase<SyncQueue<Result>>;
 
-template<typename... Results>
-using TestSyncMultiQueue = TestSyncQueueBase<SyncMultiQueue<Results...>>;
-
 } // namespace utils
 } // namespace nx

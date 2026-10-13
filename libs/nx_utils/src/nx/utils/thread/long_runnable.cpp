@@ -79,8 +79,7 @@ private:
     void waitAllLocked()
     {
         using namespace std::chrono;
-        static const milliseconds kStopTimeout(
-            (nx::build_info::isMacOsX() || nx::build_info::isIos()) ? 500 : 60 * 1000);
+        static const milliseconds kStopTimeout(nx::build_info::isMacOsX() ? 500 : 60 * 1000);
         const auto start = system_clock::now();
 
         while (!m_running.isEmpty())

@@ -61,7 +61,7 @@ void OsInfo::overrideVariant(const QString& variant, const QString& variantVersi
 
 OsInfo OsInfo::current()
 {
-    OsInfo result(nx::build_info::applicationPlatformNew());
+    OsInfo result(nx::build_info::applicationPlatform());
 
     {
         NX_READ_LOCKER lock(&mutex());

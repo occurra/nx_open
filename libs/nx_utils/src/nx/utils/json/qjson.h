@@ -8,6 +8,7 @@
 #include <QtCore/QJsonValue>
 
 #include <nx/reflect/json.h>
+#include <nx/utils/json/json.h>
 #include <nx/utils/log/assert.h>
 
 namespace nx::reflect::json_detail {
@@ -178,6 +179,95 @@ void serialize(SerializationContext* context, const QVariantMap& value)
 {
     serialize(context, QJsonObject::fromVariantMap(value));
 }
+
+namespace nx::reflect::json {
+
+namespace detail {
+
+inline void qJsonToRapidJson(
+    const QJsonValue& src,
+    rapidjson::Value& dst,
+    rapidjson::Document::AllocatorType& alloc)
+{
+    switch (src.type())
+    {
+        case QJsonValue::Null:
+            dst.SetNull();
+            break;
+        case QJsonValue::Bool:
+            dst.SetBool(src.toBool());
+            break;
+        case QJsonValue::Double:
+        {
+            // Preserve integer representation if possible.
+            double d = src.toDouble();
+            if (d == static_cast<qint64>(d) && src.toInteger() == static_cast<qint64>(d))
+                dst.SetInt64(static_cast<qint64>(d));
+            else
+                dst.SetDouble(d);
+            break;
+        }
+        case QJsonValue::String:
+        {
+            auto s = src.toString().toStdString();
+            dst.SetString(s.c_str(), (rapidjson::SizeType) s.size(), alloc);
+            break;
+        }
+        case QJsonValue::Array:
+        {
+            dst.SetArray();
+            for (const auto& item: src.toArray())
+            {
+                rapidjson::Value child;
+                qJsonToRapidJson(item, child, alloc);
+                dst.PushBack(std::move(child), alloc);
+            }
+            break;
+        }
+        case QJsonValue::Object:
+        {
+            dst.SetObject();
+            const auto obj = src.toObject();
+            for (auto it = obj.begin(); it != obj.end(); ++it)
+            {
+                auto key = it.key().toStdString();
+                rapidjson::Value k(key.c_str(), (rapidjson::SizeType) key.size(), alloc);
+                rapidjson::Value v;
+                qJsonToRapidJson(it.value(), v, alloc);
+                dst.AddMember(std::move(k), std::move(v), alloc);
+            }
+            break;
+        }
+        default:
+            dst.SetNull();
+            break;
+    }
+}
+
+} // namespace detail
+
+/** Deserialize from QJsonValue source into any nx::reflect-supported type. */
+template<typename T>
+DeserializationResult deserialize(const QJsonValue& value, T* data)
+{
+    rapidjson::Document doc;
+    detail::qJsonToRapidJson(value, doc, doc.GetAllocator());
+    return ::nx::reflect::json::deserialize(DeserializationContext{doc}, data);
+}
+
+/** Serialize any nx::reflect-supported type into a QJsonValue (no intermediate string). */
+template<typename T>
+QJsonValue toQJsonValue(const T& data)
+{
+    // T → rapidjson::Document (direct, no string).
+    auto doc = nx::json::serialized(data, /*stripDefault*/ false);
+    // rapidjson → QJsonValue using the existing deserializer.
+    QJsonValue result;
+    nx::reflect::json_detail::deserialize(DeserializationContext{doc}, &result);
+    return result;
+}
+
+} // namespace nx::reflect::json
 
 template<typename Visitor>
 constexpr auto nxReflectVisitAllEnumItems(QJsonValue::Type*, Visitor&& visitor)

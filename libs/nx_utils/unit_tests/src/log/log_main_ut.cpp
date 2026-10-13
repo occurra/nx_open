@@ -11,6 +11,7 @@
 #include <nx/utils/log/log_main.h>
 #include <nx/utils/log/log_settings.h>
 #include <nx/utils/test_support/test_options.h>
+#include <nx/utils/time.h>
 
 #undef NX_DEBUG_ENABLE_OUTPUT
 #define NX_DEBUG_ENABLE_OUTPUT false //< Set to true to enable verbose output of this test.
@@ -343,7 +344,7 @@ public:
         base_type(std::make_unique<NullDevice>())
     {
         // FIXME: #mshevchenko Should we use setLevelFilters() here instead?
-        // logger->setExceptionFilters({lit("nx::log::test::Enabled")});
+        // logger->setExceptionFilters({"nx::log::test::Enabled"});
     }
 
     template<typename Action>

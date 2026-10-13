@@ -31,9 +31,6 @@ Mutex* resourceMutex()
 
 QDir externalResourcesDirectory()
 {
-    if (nx::build_info::isAndroid())
-        return QDir("assets:/");
-
     const auto rootDir = QDir(QCoreApplication::applicationDirPath());
     // Final destination of external resources is different on macOS.
     if (nx::build_info::isMacOsX())
