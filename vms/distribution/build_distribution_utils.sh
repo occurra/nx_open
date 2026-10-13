@@ -20,11 +20,11 @@ checkArrayNotEmpty()
     eval "[[ -n \${${variable_name}:+full} ]]"
 }
 
-# [in] PLATFORM_NEW
+# [in] PLATFORM
 #
 distrib_librarySuffix()
 {
-    if [[ "${PLATFORM_NEW}" =~ ^macos_.*$ ]]; then
+    if [[ "${PLATFORM}" =~ ^macos_.*$ ]]; then
         echo "dylib"
     else
         echo "so"
@@ -139,47 +139,6 @@ distrib_onExit()
     return $RESULT
 }
 
-# Copy specified plugins from $BUILD_DIR/bin/plugins-dir-name to target-dir/plugins-dir-name>/.
-# Create target-dir if needed.
-#
-# [in] BUILD_DIR
-#
-distrib_copyMediaserverPluginsToDir() # target_dir_name plugin_lib_name...
-{
-    local -r plugins_dir_name="$1" && shift #< E.g. plugins, plugins_optional.
-
-    if (( $# == 0 )); then
-        return
-    fi
-
-    local -r target_dir="${STAGE}/${BIN_INSTALL_PATH}/${plugins_dir_name}"
-    mkdir -p "${target_dir}"
-
-    local plugin
-    local plugin_path
-    for plugin in "$@"; do
-        if [[ -f "${plugin}" ]]; then
-            # File name instead of the plugin name was passed.
-            plugin_path="${plugin}"
-        elif [[ -d "${BUILD_DIR}/bin/${plugins_dir_name}/${plugin}" ]]; then
-            # Plugin is a "directory" plugin.
-            plugin_path="${BUILD_DIR}/bin/${plugins_dir_name}/${plugin}"
-        else
-            plugin_path="${BUILD_DIR}/bin/${plugins_dir_name}/lib${plugin}.$(distrib_librarySuffix)"
-        fi
-
-        if [[ -f "${plugin_path}" ]]; then
-            echo "  Copying ${plugin_path} to ${plugins_dir_name}"
-            cp "${plugin_path}" "${target_dir}/"
-        elif [[ -d "${plugin_path}" ]]; then
-            echo "  Copying ${plugin} dedicated directory to ${plugins_dir_name}"
-            cp -r "${plugin_path}" "${target_dir}/"
-        else
-            echo "ERROR: Cannot find plugin ${plugin} with path ${plugin_path}" >&2
-        fi
-    done
-}
-
 # In the specified directory and all subdirectories recursively, strips from debug symbols all .so
 # and .so.<version> files, and files from additional_file_names (must be specified without paths).
 distrib_stripDirectory() # directory [additional_file_names...]
@@ -273,18 +232,13 @@ distrib_copySystemLibs() # dest_dir libs_to_copy...
         "$@"
 }
 
-# Copy all system libraries needed by the Server.
+# Copy common set of system libs
 #
-# [in] STAGE
 # [in] CPP_RUNTIME_LIBS
 # [in] OPEN_SOURCE_DIR
-#
-distrib_copyServerSystemLibs() # destination_path
+distrib_copyDefaultSystemLibs() # destination_path
 {
     local -r destination_path="$1" && shift
-    # Use an empty string as the default argument value to avoid "unbound variable" error if the
-    # function is called with only one argument.
-    local -a additional_runtime_libs=("${@-}")
 
     echo ""
     echo "Copying system libs"
@@ -296,46 +250,15 @@ distrib_copyServerSystemLibs() # destination_path
     install -m 755 \
         "${OPEN_SOURCE_DIR}/build_utils/linux/choose_newer_stdcpp.sh" "${bundled_stdcpp_lib_path}/"
 
-    if (( ${#additional_runtime_libs} > 0 )); then
-        echo "  Copying additional runtime libs: ${additional_runtime_libs[@]}"
-        distrib_copySystemLibs "${destination_path}" "${additional_runtime_libs[@]}"
-    fi
+    echo "  Copying other system libs"
 
-    if [[ "${ARCH}" != "arm" ]]; then
-        echo "  Copying other system libs"
-
-        local -a libs_to_copy=(
-            libpng16.so.16
-            libfontconfig.so.1
-            libfreetype.so.6
-            libxkbcommon.so.0
-        )
-        distrib_copySystemLibs "${destination_path}" "${libs_to_copy[@]}"
-    fi
-
-    echo ""
-    echo "Copying fallback system libs"
-
-    local -r fallback_lib_path="${destination_path}/fallback"
-    mkdir -p "${fallback_lib_path}"
-
-    local -a fallback_libs_to_copy=(
-        libasound.so.2
-        libudev.so.1
+    local -a libs_to_copy=(
+        libpng16.so.16
+        libfontconfig.so.1
+        libfreetype.so.6
+        libxkbcommon.so.0
     )
-
-    if [[ "${ARCH}" != "arm" ]]; then
-        fallback_libs_to_copy+=(
-            libdrm.so.2
-            libgomp.so.1
-        )
-    fi
-
-    distrib_copySystemLibs "${fallback_lib_path}" "${fallback_libs_to_copy[@]}"
-
-    echo "${fallback_libs_to_copy[@]}" > "${fallback_lib_path}/libs.txt"
-
-    install -m 755 "${SCRIPTS_DIR}/manage_fallback_libs.sh" "${fallback_lib_path}/"
+    distrib_copySystemLibs "${destination_path}" "${libs_to_copy[@]}"
 }
 
 # Copy libraries from the specified directory using copy_system_library.py.
@@ -397,75 +320,51 @@ distrib_copyLib() # file [library_subdirectory]
     fi
 }
 
-# Copy Server libs to the distribution creation folder using distrib_copyLib() to ensure the
+# Copy common libs to the distribution creation folder using distrib_copyLib() to ensure the
 # correct directory structure (libraries and symlinks to them in different directories if
 # necessary).
 #
-# ATTENTION: We explicitly add all the necessary libraries to the list, so this function is
-# version-specific and must be reviewed every time when a new library is added to the Server
-# distribution.
-#
 # [in] BUILD_DIR
+# [in] PLATFORM
 # [in] STAGE
 # [in] LIB_INSTALL_PATH
 # [in] ALT_LIB_INSTALL_PATH
-distrib_copyServerLibs() # additional_libs_to_copy...
+distrib_copyCommonLibs() # additional_libs_to_copy...
 {
-    local -a additional_server_libs=("$@")
+    local -a additional_libs=("$@")
 
     echo ""
     echo "Copying libs"
 
     local -a libs_to_copy=(
-        # vms
-        libappserver2
-        libcloud_db_client
-        libnx_vms_server
-        libnx_vms_server_branding
-        libnx_vms_server_db
-        libnx_speech_synthesizer
-        libnx_email
-        libnx_fusion
-        libnx_reflect
-        libnx_kit
+        # occurra
+        liboccurra_logging
+        liboccurra_media
+        liboccurra_rest
+        liboccurra_relay_proto
+        liboccurra_sdk
+
+        # nx
         libnx_branding
         libnx_build_info
-        libnx_monitoring
+        libnx_codec
+        libnx_kit
+        libnx_media_core
         libnx_network
         libnx_network_rest
-        libnx_telemetry
-        libnx_utils
-        libnx_vms_utils
-        libnx_zip
-        libnx_sql
-        libnx_vms_api
-        libnx_analytics_db
-        libnx_vms_common
-        libnx_codec
+        libnx_reflect
         libnx_rtp
-        libnx_media_core
-        libnx_vms_rules
-        libnx_vms_update
-        libonvif
-        libnx_onvif
-        libnx_ldap
+        libnx_sql
+        libnx_utils
+        libnx_vms_api
+        libnx_vms_common
         libnx_webrtc
-        libnx_json_rpc
-        libnx_cloud_storage_client
-        libnx_mediaserver_deployment_service_client
-        libnx_aws_client
-        libnx_merge_service_client
-        libnx_shared_context_storage
-        liboauth2_client
 
         # third-party
         libquazip
-        libudt
-        liblber-2.4
-        libldap_r-2.4
 
         # additional libraries
-        "${additional_server_libs[@]}"
+        "${additional_libs[@]}"
     )
 
     local -r optional_libs_to_copy=(
@@ -478,17 +377,18 @@ distrib_copyServerLibs() # additional_libs_to_copy...
         libcrypto
     )
 
-    # ICU.
-    libs_to_copy+=(
-        libicuuc
-        libicudata
-        libicui18n
-    )
-
     # libatomic
     libs_to_copy+=(
         libatomic
     )
+
+    # FFmpeg links VAAPI on linux_x64, so its libraries ship beside the FFmpeg ones.
+    if [[ "${PLATFORM}" == "linux_x64" ]]; then
+        libs_to_copy+=(
+            libva
+            libva-drm
+        )
+    fi
 
     mkdir -p "${STAGE}/${LIB_INSTALL_PATH}"
     # if ALT_LIB_INSTALL_PATH is not set, consider it to be an empty string.
@@ -573,20 +473,12 @@ distrib_copyQtLibs() # additional_libs_to_copy...
         Core
         Core5Compat
         Gui
-        Xml
         Concurrent
         Network
         Sql
-        WebSockets
-        Qml
-        SerialPort
 
         "${additional_qt_libs[@]}"
     )
-
-    if [[ "${ARCH}" != "arm" ]]; then
-        qt_libs_to_copy+=(DBus)
-    fi
 
     local qt_lib
     for qt_lib in "${qt_libs_to_copy[@]}"; do
@@ -609,7 +501,7 @@ distrib_copyQtPlugins() # additional_plugins_to_copy...
     local -a plugins=("$@")
 
     echo ""
-    echo "Copying Qt plugins for mediaserver"
+    echo "Copying Qt plugins for media server"
 
     local -r qt_plugins_install_dir="${STAGE}/${MODULE_INSTALL_PATH}/plugins"
     mkdir -p "${qt_plugins_install_dir}"
@@ -623,63 +515,54 @@ distrib_copyQtPlugins() # additional_plugins_to_copy...
     done
 }
 
-# Copy libGL libraries
-#
-# [in] BUILD_DIR
-distrib_copyGlLibs()
-{
-    if [[ "${ARCH}" = "arm" ]]; then
-        return
-    fi
-
-    echo ""
-    echo "Copying LibGL stub"
-
-    local -a libs_to_copy=(
-        libOpenGL.so.0
-        libEGL.so.1
-        libGLX.so.0
-        libX11.so.6
-        libva-x11.so.2
-    )
-
-    local lib
-    for lib in "${libs_to_copy[@]}"; do
-        local file="${BUILD_DIR}/lib/libgl_stub/${lib}"
-        echo "  Copying $(basename "${file}")"
-        distrib_copyLib "${file}"
-    done
-}
-
-# Copy server binaries and other files that must reside next to them to the distribution creation
-# directory.
+# Copy an executable and its siblings into the distribution bin directory.
 #
 # [in] STAGE
-# [in] INSTALL_ROOT
 # [in] BIN_INSTALL_PATH
-# [in] LIB_INSTALL_PATH
 # [in] BUILD_DIR
 # [in] CURRENT_BUILD_DIR
-# [in] ENABLE_ROOT_TOOL
-# [in] ENABLE_PLUGIN_HOST
-# [in] OPEN_SOURCE_DIR
-# [in] SERVER_SCRIPTS_DIR
-distrib_copyServerBins() # additional_bins_to_copy...
+# [in] INSTALL_SCRIPTS_DIR
+distrib_copyBins() # exe_name additional_bins_to_copy...
 {
-    local -a additional_server_binaries=("$@")
+    local -r exe_name="$1"; shift
+    local -a additional_binaries=("$@")
 
     echo ""
-    echo "Copying mediaserver binaries"
+    echo "Copying ${exe_name} binaries"
 
     local -r stage_bin="${STAGE}/${BIN_INSTALL_PATH}"
     mkdir -p "${stage_bin}"
 
-    install -m 755 "${BUILD_DIR}/bin/mediaserver" "${stage_bin}/"
-    install -m 755 "${BUILD_DIR}/bin/external.dat" "${stage_bin}/" #< TODO: Why "+x" is needed?
-    for bin in "${additional_server_binaries[@]}"; do
+    install -m 755 "${BUILD_DIR}/bin/${exe_name}" "${stage_bin}/"
+    for bin in "${additional_binaries[@]}"; do
         echo "  Installing ${bin}..."
         install -m 755 "${bin}" "${stage_bin}/"
     done
+
+    echo "Copying qt.conf"
+    install -m 644 "${CURRENT_BUILD_DIR}/qt.conf" "${stage_bin}/"
+
+    # Copy the scripts if the variable INSTALL_SCRIPTS_DIR is defined and not empty.
+    if [[ ! -z "${INSTALL_SCRIPTS_DIR-}" ]]; then
+        echo "Copying scripts"
+        install -m 755 -d "${STAGE}/${INSTALL_SCRIPTS_DIR}"
+        install -m 755 "${CURRENT_BUILD_DIR}/scripts"/* "${STAGE}/${INSTALL_SCRIPTS_DIR}/"
+    fi
+}
+
+# Copy the media server binary, plus the translations and log viewer that must reside next to it,
+# to the distribution creation directory.
+#
+# [in] STAGE
+# [in] BIN_INSTALL_PATH
+# [in] BUILD_DIR
+# [in] OPEN_SOURCE_DIR
+# [in] SERVER_TRANSLATION_FILES
+distrib_copyServerBins() # additional_bins_to_copy...
+{
+    distrib_copyBins media_server "$@"
+
+    local -r stage_bin="${STAGE}/${BIN_INSTALL_PATH}"
 
     echo "Copying translations"
     install -m 755 -d "${stage_bin}/translations"
@@ -689,80 +572,8 @@ distrib_copyServerBins() # additional_bins_to_copy...
         install -m 644 "${BUILD_DIR}/bin/translations/$FILE" "${stage_bin}/translations/"
     done
 
-    # if ENABLE_ROOT_TOOL is not set, consider it to be "false".
-    if [[ "${ENABLE_ROOT_TOOL-"false"}" == "true" ]]; then
-        echo "Copying root-tool"
-        install -m 750 "${BUILD_DIR}/bin/root-tool" "${stage_bin}/"
-
-        # Use the flavor-specific system_commands.conf if it exists; otherwise use the standard
-        # one.
-        if [[ -f "${CURRENT_BUILD_DIR}/system_commands.conf" ]]; then
-            local -r system_commands_conf="${CURRENT_BUILD_DIR}/system_commands.conf"
-        else
-            local -r system_commands_conf="${BUILD_DIR}/bin/system_commands.conf"
-        fi
-        install -m 640 "${system_commands_conf}" "${stage_bin}/"
-
-        # Fix root-tool rpath.
-        local -r lib_path="${INSTALL_ROOT-}/${LIB_INSTALL_PATH}"
-        chrpath --replace "${lib_path}:${lib_path}/stdcpp" "${stage_bin}/root-tool"
-    fi
-
-    # if ENABLE_PLUGIN_HOST is not set, consider it to be "true".
-    if [[ "${ENABLE_PLUGIN_HOST-"false"}" == "true" ]]; then
-        echo "Copying plugin-host"
-        install -m 750 "${BUILD_DIR}/bin/plugin-host" "${stage_bin}/"
-    fi
-
     echo "Copying nx_log_viewer.html"
     install -m 755 "${OPEN_SOURCE_DIR}/nx_log_viewer.html" "${stage_bin}/"
-
-    echo "Copying qt.conf"
-    install -m 644 "${CURRENT_BUILD_DIR}/qt.conf" "${stage_bin}/"
-
-    # Copy the Server scripts if the variable SERVER_SCRIPTS_DIR is defined and not empty.
-    if [[ ! -z "${SERVER_SCRIPTS_DIR-}" ]]; then
-        echo "Copying Server scripts"
-        install -m 755 -d "${STAGE}/${SERVER_SCRIPTS_DIR}"
-        install -m 755 "${CURRENT_BUILD_DIR}/scripts"/* "${STAGE}/${SERVER_SCRIPTS_DIR}/"
-    fi
-
-    echo "Copying configuration scripts"
-    install -m 755 "${SCRIPTS_DIR}/config_helper.sh" "${stage_bin}/"
-    install -m 755 "${SCRIPTS_DIR}/upgrade_config.sh" "${stage_bin}/"
-
-    echo "Copying ffmpeg-gpl"
-    install -D -m 755 "${BUILD_DIR}/bin/ffmpeg/ffmpeg-gpl" "${stage_bin}/ffmpeg/ffmpeg-gpl"
-}
-
-# [in] SERVER_PLUGINS[]
-# [in] SERVER_PLUGINS_OPTIONAL[]
-# [in] SERVER_PLUGINS_TO_MOVE_TO_OPTIONAL[]
-# [in] STAGE
-# [in] BIN_INSTALL_PATH
-distrib_copyMediaserverPlugins()
-{
-    echo ""
-    echo "Copying Server plugins"
-
-    distrib_copyMediaserverPluginsToDir "plugins" "${SERVER_PLUGINS[@]}"
-    distrib_copyMediaserverPluginsToDir "plugins_optional" "${SERVER_PLUGINS_OPTIONAL[@]}"
-
-    local -r main_plugin_dir="${STAGE}/${BIN_INSTALL_PATH}/plugins"
-    local -r optional_plugin_dir="${STAGE}/${BIN_INSTALL_PATH}/plugins_optional"
-
-    if checkArrayNotEmpty SERVER_PLUGINS_TO_MOVE_TO_OPTIONAL; then
-        local plugin
-        for plugin in "${SERVER_PLUGINS_TO_MOVE_TO_OPTIONAL[@]}"; do
-            if [[ -d "${main_plugin_dir}/${plugin}" ]]; then
-                echo "Moving ${plugin} from ${main_plugin_dir}/ to ${optional_plugin_dir}/"
-                mv "${main_plugin_dir}/${plugin}" "${optional_plugin_dir}/"
-            else
-                echo "Moving lib${plugin}.so from ${main_plugin_dir}/ to ${optional_plugin_dir}/"
-                mv "${main_plugin_dir}/lib${plugin}.so" "${optional_plugin_dir}/"
-            fi
-        done
-    fi
 }
 
 # [in] BIN_INSTALL_PATH
@@ -794,59 +605,12 @@ distrib_createArchive() # archive dir command...
     echo "  Done"
 }
 
-# [in] DISTRIBUTION_OUTPUT_DIR
-# [in] DISTRIBUTION_TAR_GZ
-# [in] GZIP_COMPRESSION_LEVEL
-# [in] STAGE
-# [in] WORK_DIR
-# [in] CURRENT_BUILD_DIR
-# [in] DISTRIBUTION_NAME
-# [in] DISTRIBUTION_ARCHIVE
-# [in] DISTRIBUTION_UPDATE_ZIP
-distrib_createDistributionPackages()
-{
-    local -a distrib_archive_type="${1:-zip}"
-
-    if [[ "${distrib_archive_type}" != "zip" && "${distrib_archive_type}" != "tar" ]]; then
-        echo "ERROR: Unsupported archive type: ${distrib_archive_type}" >&2
-        exit 1
-    fi
-
-    echo ""
-    echo "Creating distribution archive"
-
-    echo "  Creating .tar.gz distribution file"
-    local -r tar_gz_archive="${DISTRIBUTION_OUTPUT_DIR}/${DISTRIBUTION_TAR_GZ}"
-    GZIP=-${GZIP_COMPRESSION_LEVEL} distrib_createArchive "${tar_gz_archive}" "${STAGE}" tar czf
-
-    echo "  Creating .zip distribution file"
-    local -r zip_dir="${WORK_DIR}/zip"
-    mkdir -p "${zip_dir}"
-
-    mv "${tar_gz_archive}" "${zip_dir}/"
-    install -m 644 "${CURRENT_BUILD_DIR}/package.json" "${zip_dir}/"
-    install -m 755 "${CURRENT_BUILD_DIR}/install.sh" "${zip_dir}/"
-
-
-    if [[ "${distrib_archive_type}" == "tar" ]]; then
-        distrib_createArchive \
-            "${DISTRIBUTION_OUTPUT_DIR}/${DISTRIBUTION_ARCHIVE}" "${zip_dir}" tar cf
-        distrib_createArchive \
-            "${DISTRIBUTION_OUTPUT_DIR}/${DISTRIBUTION_UPDATE_ZIP}" "${zip_dir}" zip -0
-    else #< "${distrib_archive_type}" == "zip"
-        distrib_createArchive \
-            "${DISTRIBUTION_OUTPUT_DIR}/${DISTRIBUTION_ARCHIVE}" "${zip_dir}" zip -0
-        cp "${DISTRIBUTION_OUTPUT_DIR}/${DISTRIBUTION_ARCHIVE}" \
-            "${DISTRIBUTION_OUTPUT_DIR}/${DISTRIBUTION_UPDATE_ZIP}"
-    fi
-}
-
 # TODO: Check, if we really need this function - may be it would be better to use "install" instead
 # of cp everywhere so there will be no need to setting permissions in the separate function.
 #
 # [in] STAGE
 # [in] BIN_INSTALL_PATH
-# [in] SERVER_SCRIPTS_DIR
+# [in] INSTALL_SCRIPTS_DIR
 distrib_setPermissionsInStageDir()
 {
     echo ""
@@ -856,8 +620,8 @@ distrib_setPermissionsInStageDir()
     find "${STAGE}" -type f -print0 | xargs -0 chmod 644
     chmod -R 755 "${STAGE}/${BIN_INSTALL_PATH}"
 
-    if [[ "${SERVER_SCRIPTS_DIR-}" ]]; then
-        chmod 755 "${STAGE}/${SERVER_SCRIPTS_DIR}"/*
+    if [[ "${INSTALL_SCRIPTS_DIR-}" ]]; then
+        chmod 755 "${STAGE}/${INSTALL_SCRIPTS_DIR}"/*
     fi
 
     if [[ -f "${STAGE}/${LIB_INSTALL_PATH}/fallback/manage_fallback_libs.sh" ]]; then
@@ -872,7 +636,7 @@ distrib_setPermissionsInStageDir()
 # [in] STAGE
 # [in] BIN_INSTALL_PATH
 # [in] LIB_INSTALL_PATH
-distrib_stripDistributionIfNeeded()
+distrib_stripDistributionIfNeeded() # executables...
 {
     if [[ "${STRIP_BINARIES}" != "ON" ]]; then
         return
@@ -881,8 +645,12 @@ distrib_stripDistributionIfNeeded()
     echo ""
     echo "Stripping distribution"
 
-    local -a server_executables=("mediaserver" "root-tool" "testcamera")
-    distrib_stripDirectory "${STAGE}/${BIN_INSTALL_PATH}" "${server_executables[@]}"
+    local -a executables=("$@")
+    if (( ${#executables[@]} == 0 )); then
+        executables=("media_server") #< Backward-compatible default.
+    fi
+
+    distrib_stripDirectory "${STAGE}/${BIN_INSTALL_PATH}" "${executables[@]}"
 
     local -r lib_path="${ALT_LIB_INSTALL_PATH-"${LIB_INSTALL_PATH}"}"
     distrib_stripDirectory "${STAGE}/${lib_path}"

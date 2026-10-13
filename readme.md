@@ -120,7 +120,6 @@ For **cross-compiling** on Linux or macOS, set the CMake variable `<targetDevice
 argument `-DtargetDevice=<value>`, where <value> is one of the following:
 - `linux_x64`
 - `linux_arm64`
-- `linux_arm32`
 - `macos_x64`
 - `macos_arm64`
 
