@@ -1,7 +1,7 @@
 #include <windows.h>
 
 #define IDI_ICON_APPLICATION 101
-IDI_ICON_APPLICATION    ICON    DISCARDABLE     "${customization_dir}/icons/all/favicon.ico"
+IDI_ICON_APPLICATION    ICON    DISCARDABLE     "${brandingDir}/favicon.ico"
 
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     ${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${buildNumber}
@@ -15,11 +15,11 @@ BEGIN
             VALUE "FileDescription",    "${file_description}"
             VALUE "FileVersion",        "${releaseVersion.full}"
             VALUE "InternalName",       "${file_internal_name}"
-            VALUE "LegalCopyright",     "${nx_copyright}"
+            VALUE "LegalCopyright",     "${legal_copyright}"
             VALUE "LegalTrademarks1",   "All Rights Reserved"
             VALUE "LegalTrademarks2",   "All Rights Reserved"
             VALUE "OriginalFilename",   "${name}.exe"
-            VALUE "ProductName",        "${customization.vmsName}"
+            VALUE "ProductName",        "${customization.companyName}"
             VALUE "ProductVersion",     "${releaseVersion.full}"
         END
     END

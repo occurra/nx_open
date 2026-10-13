@@ -126,21 +126,10 @@ endif()
 # -------------------------------------------------------------------------------------------------
 # User-defined options.
 
-if(LINUX AND NOT ANDROID)
+if(LINUX)
     option(useLdGold "Use ld.gold to link binaries" OFF)
     option(verboseDebugInfoInRelease
         "Add more debug info when building Release version; effective only when -DuseClang=ON" OFF)
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(_qml_debug ON)
-else()
-    set(_qml_debug OFF)
-endif()
-option(qml_debug "Enable QML debugger" ${_qml_debug})
-unset(_qml_debug)
-if(qml_debug)
-    add_definitions(-DQT_QML_DEBUG)
 endif()
 
 if(compilerClang)
@@ -223,9 +212,6 @@ foreach(sanitizer ${enabledSanitizers})
 
                 nx_copy("${asan_library_path}" DESTINATION "${PROJECT_BINARY_DIR}/lib")
             endif()
-            if(ANDROID)
-                message(FATAL_ERROR "ASan is unsupported on Android, use HWAsan instead (-DenabledSanitizers=hwaddress)")
-            endif()
         endif()
 
         if(sanitizer STREQUAL "hwaddress")
@@ -274,7 +260,8 @@ if(compilerMsvc)
         /FS
 
         # Enable most warnings by default.
-        /W4
+        # Targets may set SUPPRESS_WARNINGS=ON to opt out (avoids D9025 when /W0 is needed).
+        $<$<NOT:$<BOOL:$<TARGET_PROPERTY:SUPPRESS_WARNINGS>>>:/W4>
 
         # -----------------------------------------------------------------------------------------
         # Supress the following warnigns due to a lot of false positives or big amount of refactor
@@ -532,7 +519,7 @@ if(LINUX)
     string(APPEND CMAKE_EXE_LINKER_FLAGS ${link_flags})
     string(APPEND CMAKE_SHARED_LINKER_FLAGS ${link_flags})
 
-    if(NOT ANDROID AND CMAKE_BUILD_TYPE STREQUAL "Release")
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
         if(compilerClang AND NOT verboseDebugInfoInRelease)
             set(debug_level_options "-gline-directives-only")
         else()
@@ -550,9 +537,6 @@ endif()
 
 if(LINUX)
     list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
-    if(targetDevice STREQUAL "linux_arm32")
-        list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN/../lib/ffmpeg")
-    endif()
 endif()
 
 if(MACOSX)
@@ -561,10 +545,4 @@ if(MACOSX)
     endif()
     add_compile_options(-Wno-unused-local-typedef)
     list(APPEND CMAKE_INSTALL_RPATH @executable_path/../lib)
-endif()
-
-if(IOS)
-    list(APPEND CMAKE_INSTALL_RPATH @executable_path/Frameworks)
-    # For some reason, the following warning is automatically enabled only on iOS build.
-    add_compile_options(-Wno-shorten-64-to-32)
 endif()

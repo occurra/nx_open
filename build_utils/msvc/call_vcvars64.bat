@@ -1,105 +1,80 @@
 :: Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-:: Since there are bugs in the latest MSVC compiler (and, also, ABI incompatibilities with the
-:: previous versions), we need more fine control over the toolset version used to compile the SDK
-:: samples. This script provides such control - it is a wrapper around vcvars64.bat that allows
-:: specifying the MSVC version to use. If the version is not specified, the script will try to find
-:: the latest compatible version installed on the system.
+:: Initializes the 64-bit MSVC environment for the build. This is a wrapper around vcvars64.bat
+:: that locates Visual Studio through vswhere instead of a hardcoded path, so any edition and any
+:: release is found the same way - Build Tools and Community, 2022 and 2026.
+::
+:: By default the newest installation and its default toolset are used. Set
+:: NX_FORCED_VC_TOOLSET_VERSION to pin a specific toolset instead.
+::
+:: Errors are reported by jumping to a label rather than from inside an if(...) block. Every path
+:: here contains "Program Files (x86)", and cmd expands variables when it parses a block, so a path
+:: mentioned inside one closes it early - on the branch not taken as readily as on the branch taken.
 
 @echo off
 
-set INCOMPATIBLE_VC_TOOLSET_VERSION=14.39
+set VSWHERE="%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 
-set VCVARS_BAT=
-set VC_TOOLSET_VERSION=
+:: Re-initializing an environment that is already correct would be harmless but noisy, so it is
+:: skipped - unless a specific toolset was asked for and the current one is not it.
+if "%VCToolsVersion%" == "" goto :env_not_initialized
+if "%NX_FORCED_VC_TOOLSET_VERSION%" == "" goto :already_initialized
+if "%VCToolsVersion%" == "%NX_FORCED_VC_TOOLSET_VERSION%" goto :already_initialized
+goto :env_not_initialized
 
-if not "%NX_FORCED_VC_TOOLSET_VERSION%" == "" (
-    echo Forcing MSVC version %NX_FORCED_VC_TOOLSET_VERSION%.
-    echo: %= Print an empty line. =%
-)
+:already_initialized
 
-:: Check if MSVC environment is already initialized for the suitable version.
-if "%VCToolsVersion%" == "" goto :env_not_intialized
+echo MSVC environment is already initialized for version %VCToolsVersion%.
+echo:
+goto :exit
 
-:: This check works only for exact match. If NX_FORCED_VC_TOOLSET_VERSION, for example, is 14.29
-:: and VCToolsVersion is 14.29.30133, the check will fail. This is not really a problem - we will
-:: just reinitialize the environment with the forced version. TODO: Try to figure out a better way
-:: to compare the versions.
-if not "%NX_FORCED_VC_TOOLSET_VERSION%" == "" (
-    if not "%VCToolsVersion%" == "%NX_FORCED_VC_TOOLSET_VERSION%" (
-        goto :env_intialized_with_incompatible_version
-    )
-)
+:env_not_initialized
 
-if "%VCToolsVersion%" lss "%INCOMPATIBLE_VC_TOOLSET_VERSION%" (
-    echo MSVC environment is already initialized for version %VCToolsVersion%.
-    echo: %= Print an empty line. =%
-    goto :exit
-)
+if not exist %VSWHERE% goto :no_vswhere
 
-:env_intialized_with_incompatible_version
+:: -products * is required because Build Tools is not one of the products vswhere returns by
+:: default; -requires filters out an installation carrying no C++ compiler at all.
+set VS_INSTALL_DIR=
+for /f "usebackq delims=" %%I in (`%VSWHERE% -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS_INSTALL_DIR=%%I"
 
-echo MSVC environment is initialized for version %VCToolsVersion%. This version is incompatible
-echo with the project - trying to find a suitable version
-echo: %= Print an empty line. =%
+if "%VS_INSTALL_DIR%" == "" goto :no_visual_studio
 
-:env_not_intialized
+set "VCVARS_BAT=%VS_INSTALL_DIR%\VC\Auxiliary\Build\vcvars64.bat"
+if not exist "%VCVARS_BAT%" goto :no_vcvars
 
-:: Reset errorlevel and prohibit changing env vars of the parent shell.
-setlocal EnableDelayedExpansion %= Enable delayed expansion for variables. =%
+set VCVARS_VER_ARG=
+if "%NX_FORCED_VC_TOOLSET_VERSION%" == "" goto :version_not_forced
+echo Forcing MSVC version %NX_FORCED_VC_TOOLSET_VERSION%.
+echo:
+set VCVARS_VER_ARG=-vcvars_ver=%NX_FORCED_VC_TOOLSET_VERSION%
 
-:: Find the vcvars64.bat script and the toolset directory. Check for then in the typical Build
-:: Tools installation location first, then try Visual Studio Community edition installation location.
-set _VCVARS_BAT="C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-set TOOLS_DIRECTORY="C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC"
-if exist %_VCVARS_BAT% if exist %TOOLS_DIRECTORY% goto :msvc_found
+:version_not_forced
 
-set _VCVARS_BAT="C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
-set TOOLS_DIRECTORY="C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC"
-if exist %_VCVARS_BAT% if exist %TOOLS_DIRECTORY% goto :msvc_found
+@echo on
+call "%VCVARS_BAT%" %VCVARS_VER_ARG% || @goto :exit
+@echo off
 
-echo vcvars64.bat or VC++ toolset directory is not found. Fix the installation path of Visual
-echo Studio or Build Tools hard-coded in this script as the values of _VCVARS_BAT and
-echo TOOLS_DIRECTORY.
+echo:
+echo MSVC environment is initialized for version %VCToolsVersion%.
+goto :exit
+
+:no_vswhere
+
+echo vswhere.exe was not found. No Visual Studio installation is present.
 (call) %= Set ERRORLEVEL to 1 (failure). =%
 goto :exit
 
-:msvc_found
+:no_visual_studio
 
-set _VC_TOOLSET_VERSION=%NX_FORCED_VC_TOOLSET_VERSION%
-if "%_VC_TOOLSET_VERSION%" == "" (
-    :: List all the installed toolsets.
-    for /f "delims=" %%F in ('dir /b %TOOLS_DIRECTORY%\*') do (
-        :: Check if the first incompatible version is greater than the next toolset version.
-        if "!INCOMPATIBLE_VC_TOOLSET_VERSION!" gtr "%%F" (
-            :: Check if the maximum found toolset version is less than the next toolset version.
-            if "!_VC_TOOLSET_VERSION!" lss "%%F" (
-                set "_VC_TOOLSET_VERSION=%%F"
-            )
-        )
-    )
-) else (
-    set _VC_TOOLSET_VERSION=%NX_FORCED_VC_TOOLSET_VERSION%
-)
+echo No Visual Studio installation with the C++ toolset was found.
+(call) %= Set ERRORLEVEL to 1 (failure). =%
+goto :exit
 
-if "!_VC_TOOLSET_VERSION!" == "" (
-    @echo Suitable MSVC version is not found. Please, set up the environment manually.
-    @(call) %= Set ERRORLEVEL to 1 (failure). =%
-    @goto :exit
-)
+:no_vcvars
 
-endlocal & set "VCVARS_BAT=%_VCVARS_BAT%" & set "VC_TOOLSET_VERSION=%_VC_TOOLSET_VERSION%"
-
-:call_vcvars
-
-echo Initializaing MSVC environment for version %VC_TOOLSET_VERSION%
-
-@echo on
-call %VCVARS_BAT% --vcvars_ver=%VC_TOOLSET_VERSION% || @goto :exit
-@echo off
-
-echo: %= Print an empty line. =%
-echo MSVC environment is initialized for version %VC_TOOLSET_VERSION%.
+echo vcvars64.bat was not found under "%VS_INSTALL_DIR%".
+(call) %= Set ERRORLEVEL to 1 (failure). =%
+goto :exit
 
 :exit
     @exit /b %ERRORLEVEL% %= Needed for a proper cmd.exe exit status. =%

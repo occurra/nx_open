@@ -16,40 +16,6 @@ if(NOT stripServerBinaries MATCHES "^(AUTO|ON|OFF)?$")
         "either \"AUTO\", \"ON\" or \"OFF\".")
 endif()
 
-function(nx_generate_package_json file_name)
-    cmake_parse_arguments(
-        PACK "" "COMPONENT;VARIANTS;INSTALL_SCRIPT;FREE_SPACE_REQUIRED" "" ${ARGN})
-    set(version ${releaseVersion.full})
-    set(platform ${platform_new})
-    set(cloud_host ${cloudHost})
-
-    if(NOT PACK_COMPONENT)
-        set(component server)
-    elseif(PACK_COMPONENT STREQUAL "client"
-        AND NOT "${customization.desktop.customClientVariant}" STREQUAL "")
-
-        set(component "customClient")
-    else()
-        set(component ${PACK_COMPONENT})
-    endif()
-
-    set(variants ${PACK_VARIANTS})
-
-    if(PACK_INSTALL_SCRIPT)
-        set(install_script ${PACK_INSTALL_SCRIPT})
-    elseif(component STREQUAL server)
-        message(FATAL_ERROR "Install script for server must be specified")
-    endif()
-
-    if(PACK_FREE_SPACE_REQUIRED)
-        set(freeSpaceRequired ${PACK_FREE_SPACE_REQUIRED})
-    else()
-        set(freeSpaceRequired 0)
-    endif()
-
-    nx_configure_file(${nx_vms_distribution_dir}/package.json.in ${file_name})
-endfunction()
-
 function(nx_create_distribution_package)
     set(oneValueArgs
         PACKAGE_GENERATION_SCRIPT_NAME

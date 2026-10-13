@@ -13,7 +13,6 @@ set(CMAKE_BINARY_DIR "@CMAKE_BINARY_DIR@")
 
 set(installSystemRequirements "OFF" CACHE INTERNAL "")
 
-set(conanNxRemote "@conanNxRemote@")
 set(conanFlags @flags@)
 
 if(installSystemRequirements)
@@ -30,31 +29,6 @@ else()
          "-c tools.system.package_manager:sudo=False")
     set(ENV{CONAN_SYSREQUIRES_SUDO} "False")
     set(ENV{CONAN_SYSREQUIRES_MODE} "verify")
-endif()
-
-# TODO VMS-39555: NX_CONAN_USERNAME/NX_CONAN_PASSWORD are a temporary workaround for the
-# open-source build where the conan remote (us.nxteam.dev) differs from the general Artifactory
-# (nxvms.dev). Once a dedicated conan2-open repo is set up on nxvms.dev, both remotes will be on
-# the same server and NX_ARTIFACTORY_USERNAME/PASSWORD can be used for both again.
-# NX_CONAN_USERNAME/NX_CONAN_PASSWORD take precedence over NX_ARTIFACTORY_USERNAME/PASSWORD.
-if(DEFINED ENV{NX_CONAN_USERNAME} AND DEFINED ENV{NX_CONAN_PASSWORD})
-    set(conan_username "$ENV{NX_CONAN_USERNAME}")
-    set(conan_password "$ENV{NX_CONAN_PASSWORD}")
-elseif(DEFINED ENV{NX_ARTIFACTORY_USERNAME} AND DEFINED ENV{NX_ARTIFACTORY_PASSWORD})
-    set(conan_username "$ENV{NX_ARTIFACTORY_USERNAME}")
-    set(conan_password "$ENV{NX_ARTIFACTORY_PASSWORD}")
-endif()
-
-if(DEFINED conan_username)
-    message(STATUS "Authenticating with Conan remote as ${conan_username}...")
-    execute_process(
-        COMMAND ${CONAN_EXECUTABLE} remote login nx
-            ${conan_username} -p ${conan_password}
-        RESULT_VARIABLE login_result
-    )
-    if(NOT login_result EQUAL 0)
-        message(WARNING "Conan remote login failed with code ${login_result}")
-    endif()
 endif()
 
 function(run_conan)
