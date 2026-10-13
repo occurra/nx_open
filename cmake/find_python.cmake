@@ -12,7 +12,7 @@ function(verify_python_version_is_compatible)
     )
 
     if ("${PYTHON_VERSION}" MATCHES "Python 3\.([0-9]+)")
-        if (CMAKE_MATCH_1 LESS 8)
+        if (CMAKE_MATCH_1 LESS 12 OR CMAKE_MATCH_1 GREATER 14)
             set(PYTHON_EXECUTABLE PYTHON_EXECUTABLE-NOTFOUND PARENT_SCOPE)
         endif()
     else()
@@ -71,11 +71,12 @@ function(find_compatible_python_version)
         endif()
     endforeach()
 
-    message(FATAL_ERROR "Python 3.8+ executable not found.")
+    message(FATAL_ERROR "Python 3.12/3.13/3.14 executable not found.")
 endfunction()
 
 if(NOT PYTHON_EXECUTABLE)
-    find_compatible_python_version(python3 python)
+    find_compatible_python_version(
+        python3.14 python3.13 python3.12 python3 python)
 endif()
 
 message(STATUS "Found python executable: '${PYTHON_EXECUTABLE}'.")

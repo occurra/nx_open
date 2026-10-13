@@ -12,11 +12,11 @@ BEGIN
             VALUE "FileDescription",    "${file_description}"
             VALUE "FileVersion",        "${releaseVersion.full}"
             VALUE "InternalName",       "${file_internal_name}"
-            VALUE "LegalCopyright",     "${nx_copyright}"
+            VALUE "LegalCopyright",     "${legal_copyright}"
             VALUE "LegalTrademarks1",   "All Rights Reserved"
             VALUE "LegalTrademarks2",   "All Rights Reserved"
             VALUE "OriginalFilename",   "${name}.dll"
-            VALUE "ProductName",        "${customization.vmsName}"
+            VALUE "ProductName",        "${customization.companyName}"
             VALUE "ProductVersion",     "${releaseVersion.full}"
         END
     END

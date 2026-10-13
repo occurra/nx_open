@@ -19,7 +19,6 @@ endif()
 set_target_properties(nx_kit PROPERTIES FOLDER sdk)
 if(TARGET nx_kit_ut)
     set_target_properties(nx_kit_ut PROPERTIES FOLDER sdk)
-    nx_set_test_meta_info(nx_kit_ut PROJECT NXLIB)
 endif()
 
 if(TARGET disabled_ini_config_ut)

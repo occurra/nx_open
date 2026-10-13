@@ -26,6 +26,10 @@ if("$ENV{USE_CLANG}")
     set(flags "--gcc-toolchain=$ENV{TOOLCHAIN_DIR}")
     string(APPEND flags " --prefix=$ENV{TOOLCHAIN_DIR}/${NX_SYSROOT_TARGET}/bin")
     string(APPEND flags " --sysroot=${nx_target_sysroot}")
+
+    # Workaround of the abseil linkage error for clang.
+    string(APPEND flags " -fclang-abi-compat=17")
+
     set(CMAKE_C_FLAGS ${flags})
     set(CMAKE_CXX_FLAGS ${flags})
     set(CMAKE_SHARED_LINKER_FLAGS ${flags})

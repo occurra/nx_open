@@ -14,7 +14,7 @@ endif()
 
 set(nx_enable_werror ON)
 
-include(${PROJECT_SOURCE_DIR}/cmake/windows_signing.cmake)
+include(windows_signing)
 
 # build_source_groups(<source root path> <list of source files with absolute paths> <name of root group>)
 function(build_source_groups _src_root_path _source_list _root_group_name)
@@ -156,6 +156,15 @@ function(nx_add_target name type)
             project(${name})
 
             set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${name})
+
+            # Point the Visual Studio debugger's PATH at the Conan-provided
+            # runtime DLL directories (Qt, ffmpeg, OpenSSL, ...) so Run/Debug
+            # from the IDE loads them without a manual conanrun activation.
+            # Conan 2 no longer copies those DLLs next to the binary the way the
+            # removed imports() did; TARGET_RUNTIME_DLL_DIRS resolves the dirs
+            # holding this target's shared dependencies at generate time.
+            set_target_properties(${name} PROPERTIES VS_DEBUGGER_ENVIRONMENT
+                "PATH=$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:${name}>,$<SEMICOLON>>;%PATH%")
         endif()
     elseif("${type}" STREQUAL "LIBRARY")
         if(NX_NO_API_MACROS AND WINDOWS)
@@ -171,8 +180,6 @@ function(nx_add_target name type)
             set_target_properties(${name} PROPERTIES CXX_VISIBILITY_PRESET default)
         endif()
     endif()
-
-    nx_process_target_debug_symbols(${name})
 
     if((NX_NO_WERROR AND NX_WERROR) OR
         (NX_NO_WERROR AND NOT "${NX_WERROR_IF}" STREQUAL "") OR
@@ -253,10 +260,6 @@ function(nx_add_target name type)
     if(WINDOWS)
         nx_store_known_file("${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${name}.pdb")
     endif()
-
-    # Avoids build problems with Clang 15. Should be removed when we update boost library to the
-    # newest one.
-    add_definitions(-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
 
     if(WINDOWS AND NOT NX_GDI)
         add_definitions(-DNOGDI=)
