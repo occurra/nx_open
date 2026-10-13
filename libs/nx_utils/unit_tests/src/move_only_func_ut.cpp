@@ -13,11 +13,14 @@ TEST(MoveOnlyFunc, common)
 {
     for (int i = 0; i < 100; ++i)
     {
-        nx::MoveOnlyFunc< void() > handler;
+        nx::MoveOnlyFunc<void()> handler;
         std::optional<std::promise<bool>> promise;
         {
             promise = std::promise<bool>();
-            handler = [&promise]() { promise->set_value(true); };
+            handler = [&promise]()
+            {
+                promise->set_value(true);
+            };
         }
 
         handler();

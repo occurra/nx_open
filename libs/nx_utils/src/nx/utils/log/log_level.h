@@ -31,9 +31,9 @@ Level NX_UTILS_API levelFromString(const QString& levelString);
 QString NX_UTILS_API toString(Level level);
 
 #ifdef _DEBUG
-    static constexpr Level kDefaultLevel = Level::debug;
+static constexpr Level kDefaultLevel = Level::debug;
 #else
-    static constexpr Level kDefaultLevel = Level::info;
+static constexpr Level kDefaultLevel = Level::info;
 #endif
 
 class NX_UTILS_API Tag
@@ -57,10 +57,16 @@ public:
     Tag(const char* s) = delete;
 
     template<typename T>
-    Tag(const T* pointer): m_value(nx::toString(pointer)) {}
+    Tag(const T* pointer):
+        m_value(nx::toString(pointer))
+    {
+    }
 
     template<typename T>
-    Tag join(const T* pointer) const { return Tag(m_value + "::" + nx::toString(pointer)); }
+    Tag join(const T* pointer) const
+    {
+        return Tag(m_value + "::" + nx::toString(pointer));
+    }
 
     const QString& toString() const;
     Tag operator+(const Tag& rhs) const;
@@ -76,8 +82,8 @@ class NX_UTILS_API Filter
 {
 public:
     /**
-     * Create filter using the provided string. If the starts from the `re:` substring, it is parsed
-     * as a regular expression. Otherwise, `startsWith` logic is applied.
+     * Create filter using the provided string. If the starts from the `re:` substring, it is
+     * parsed as a regular expression. Otherwise, `startsWith` logic is applied.
      */
     explicit Filter(const QString& source);
     explicit Filter(const std::string& source);
@@ -135,11 +141,11 @@ struct NX_UTILS_API LevelSettings
      */
     bool parse(const QString& s);
 
-    template<typename ... Args>
-    bool parse(const QString& arg, Args ... args)
+    template<typename... Args>
+    bool parse(const QString& arg, Args... args)
     {
         if (arg.isEmpty())
-            return parse(std::forward<Args>(args) ...);
+            return parse(std::forward<Args>(args)...);
         else
             return parse(arg);
     }

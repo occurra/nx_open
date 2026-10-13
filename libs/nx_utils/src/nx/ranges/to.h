@@ -19,8 +19,10 @@ struct ResolveType
 };
 
 template<template<typename...> typename To, typename ValueType>
-    requires (!requires { typename To<ValueType>; })
-        && requires(ValueType value) { value.first; value.second; }
+    requires(!requires { typename To<ValueType>; }) && requires(ValueType value) {
+        value.first;
+        value.second;
+    }
 struct ResolveType<To, ValueType>
 {
     using type =
@@ -41,36 +43,25 @@ constexpr auto commonViewIfPossible(Range&& range)
 }
 
 template<template<typename...> typename To, typename Range>
-concept DeducibleFromMoveIterators =
-    std::ranges::common_range<Range>
-    && requires(Range& range)
-    {
-        To(
-            std::make_move_iterator(std::ranges::begin(range)),
-            std::make_move_iterator(std::ranges::end(range)));
-    };
+concept DeducibleFromMoveIterators = std::ranges::common_range<Range> && requires(Range& range) {
+    To(std::make_move_iterator(std::ranges::begin(range)),
+       std::make_move_iterator(std::ranges::end(range)));
+};
 
 template<typename Container, typename Range>
-concept ConstructibleFromIterators =
-    std::ranges::common_range<Range>
-    && requires(Range& range)
-    {
-        Container(std::ranges::begin(range), std::ranges::end(range));
-    };
+concept ConstructibleFromIterators = std::ranges::common_range<Range>
+    && requires(Range& range) { Container(std::ranges::begin(range), std::ranges::end(range)); };
 
 template<typename Container, typename Range>
 concept ConstructibleFromMoveIterators =
-    std::ranges::common_range<Range>
-    && requires(Range& range)
-    {
+    std::ranges::common_range<Range> && requires(Range& range) {
         Container(
             std::make_move_iterator(std::ranges::begin(range)),
             std::make_move_iterator(std::ranges::end(range)));
     };
 
 template<typename Container>
-concept Reservable =
-    requires(Container& container, std::size_t size) { container.reserve(size); };
+concept Reservable = requires(Container& container, std::size_t size) { container.reserve(size); };
 
 template<template<typename...> typename To>
 struct ToTemplateClosure
@@ -86,12 +77,14 @@ struct ToTemplateClosure
         if constexpr (DeducibleFromMoveIterators<To, Range>)
         {
             // This works for `to<std::map>()` and sometimes for `to<std::vector>()`.
-            return To(std::make_move_iterator(range.begin()),
+            return To(
+                std::make_move_iterator(range.begin()),
                 std::make_move_iterator(range.end()));
         }
         else
         {
-            // Map-like containers deduce their key and value types from the range's pair-like value.
+            // Map-like containers deduce their key and value types from the range's pair-like
+            // value.
             typename ResolveType<To, std::ranges::range_value_t<Range>>::type result;
 
             if constexpr (std::ranges::sized_range<Range> && Reservable<decltype(result)>)

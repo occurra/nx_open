@@ -6,7 +6,6 @@
 
 #include <nx/reflect/instrument.h>
 #include <nx/utils/base64.h>
-
 #include <nx/utils/std_string_utils.h>
 
 #include "jwk.h"
@@ -65,11 +64,10 @@ struct TokenEncodeResult
  * @return Encoded and signed token.
  */
 template<typename Payload>
-std::expected<TokenEncodeResult<std::decay_t<Payload>>, std::string /*error*/>
-    encodeAndSign(
-        const std::string& tokenType,
-        Payload&& tokenPayload,
-        const jwk::ParsedKey& key)
+std::expected<TokenEncodeResult<std::decay_t<Payload>>, std::string /*error*/> encodeAndSign(
+    const std::string& tokenType,
+    Payload&& tokenPayload,
+    const jwk::ParsedKey& key)
 {
     Token<std::decay_t<Payload>> token;
     token.payload = std::forward<Payload>(tokenPayload);
@@ -82,12 +80,10 @@ std::expected<TokenEncodeResult<std::decay_t<Payload>>, std::string /*error*/>
     const auto serializedPayload = nx::reflect::json::serialize(token.payload);
 
     std::string encodedToken;
-    encodedToken.reserve((serializedHeader.size() / 3 + 1) * 4
-        + 1 // '.'
-        + (serializedPayload.size() / 3 + 1) * 4
-        + 1 // '.'
-        + detail::estimateSignatureLength(key.algorithm())
-        + 1 // null terminator
+    encodedToken.reserve(
+        (serializedHeader.size() / 3 + 1) * 4 + 1 // '.'
+        + (serializedPayload.size() / 3 + 1) * 4 + 1 // '.'
+        + detail::estimateSignatureLength(key.algorithm()) + 1 // null terminator
     );
 
     nx::utils::toBase64Url(serializedHeader, &encodedToken);
@@ -101,7 +97,8 @@ std::expected<TokenEncodeResult<std::decay_t<Payload>>, std::string /*error*/>
     encodedToken += signResult->signature;
 
     return TokenEncodeResult<std::decay_t<Payload>>{
-        .token = std::move(token), .encodedAndSignedToken = encodedToken};
+        .token = std::move(token),
+        .encodedAndSignedToken = encodedToken};
 }
 
 /**
@@ -112,8 +109,10 @@ std::expected<TokenEncodeResult<std::decay_t<Payload>>, std::string /*error*/>
  * @return Encoded and signed token.
  */
 template<typename Payload>
-std::expected<TokenEncodeResult<std::decay_t<Payload>>, std::string /*error*/>
-    encodeAndSign(const std::string& tokenType, Payload&& tokenPayload, const jwk::Key& key)
+std::expected<TokenEncodeResult<std::decay_t<Payload>>, std::string /*error*/> encodeAndSign(
+    const std::string& tokenType,
+    Payload&& tokenPayload,
+    const jwk::Key& key)
 {
     const auto parsedKey = jwk::parseKey(key);
     if (!parsedKey)
@@ -139,12 +138,14 @@ std::expected<Token<Payload>, std::string /*err*/> decodeToken(const std::string
     const std::string headerJson = nx::utils::fromBase64Url(parts[0]);
     std::tie(token.header, result) = nx::reflect::json::deserialize<Header>(headerJson);
     if (!result)
-        return std::unexpected<std::string>("Error parsing token header: " + result.errorDescription);
+        return std::unexpected<std::string>(
+            "Error parsing token header: " + result.errorDescription);
 
     const std::string payloadJson = nx::utils::fromBase64Url(parts[1]);
     std::tie(token.payload, result) = nx::reflect::json::deserialize<Payload>(payloadJson);
     if (!result)
-        return std::unexpected<std::string>("Error parsing token payload: " + result.errorDescription);
+        return std::unexpected<std::string>(
+            "Error parsing token payload: " + result.errorDescription);
 
     return token;
 }

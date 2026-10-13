@@ -1,8 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include "rlimit.h"
-
 #include <sys/resource.h>
+
+#include "rlimit.h"
 
 #if defined(__APPLE__)
     #include <sys/syslimits.h>
@@ -34,16 +34,16 @@ unsigned long setMaxFileDescriptors(unsigned long value)
 
     if (setrlimit(RLIMIT_NOFILE, &limit) != 0)
     {
-        #if defined(__APPLE__)
-            // In MacOS getrlimit() can return an invalid value in rlim_max. In this case OPEN_MAX
-            // macro should be used as hard limit.
-            if (limit.rlim_cur <= OPEN_MAX)
-                return 0;
+#if defined(__APPLE__)
+        // In MacOS getrlimit() can return an invalid value in rlim_max. In this case OPEN_MAX
+        // macro should be used as hard limit.
+        if (limit.rlim_cur <= OPEN_MAX)
+            return 0;
 
-            limit.rlim_cur = OPEN_MAX;
-            if (setrlimit(RLIMIT_NOFILE, &limit) != 0)
-                return 0;
-        #endif
+        limit.rlim_cur = OPEN_MAX;
+        if (setrlimit(RLIMIT_NOFILE, &limit) != 0)
+            return 0;
+#endif
     }
 
     return limit.rlim_cur;

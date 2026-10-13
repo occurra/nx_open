@@ -2,11 +2,12 @@
 
 #include "semaphore.h"
 
+#include <QtCore/QDateTime>
+#include <QtCore/QElapsedTimer>
+
+#include <nx/utils/log/assert.h>
 #include <nx/utils/thread/mutex.h>
 #include <nx/utils/thread/wait_condition.h>
-#include <nx/utils/log/assert.h>
-#include <QtCore/QElapsedTimer>
-#include <QtCore/QDateTime>
 
 namespace nx {
 
@@ -15,7 +16,10 @@ namespace detail {
 class SemaphoreImpl
 {
 public:
-    explicit SemaphoreImpl(int count): count(count) {}
+    explicit SemaphoreImpl(int count):
+        count(count)
+    {
+    }
 
     nx::Mutex mutex;
     nx::WaitCondition waitCondition;

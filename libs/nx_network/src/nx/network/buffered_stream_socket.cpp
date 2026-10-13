@@ -12,16 +12,14 @@ namespace nx::network {
 
 BufferedStreamSocket::BufferedStreamSocket(
     std::unique_ptr<AbstractStreamSocket> socket,
-    nx::Buffer preReadData)
-    :
+    nx::Buffer preReadData):
     StreamSocketDelegate(socket.get()),
     m_socket(std::move(socket)),
     m_internalRecvBuffer(std::move(preReadData))
 {
 }
 
-void BufferedStreamSocket::catchRecvEvent(
-    nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
+void BufferedStreamSocket::catchRecvEvent(nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
 {
     m_catchRecvEventHandler = std::move(handler);
 
@@ -35,9 +33,11 @@ void BufferedStreamSocket::catchRecvEvent(
         &m_internalRecvBuffer,
         [this](SystemError::ErrorCode code, size_t size) mutable
         {
-            NX_VERBOSE(this, nx::format("catchRecvEvent read size=%1: %2")
-                .arg(code == SystemError::noError ? size : 0)
-                .arg(SystemError::toString(code)));
+            NX_VERBOSE(
+                this,
+                nx::format("catchRecvEvent read size=%1: %2")
+                    .arg(code == SystemError::noError ? size : 0)
+                    .arg(SystemError::toString(code)));
 
             // Here we treat connection closure as an error:
             if (code == SystemError::noError && size == 0)
@@ -65,14 +65,12 @@ int BufferedStreamSocket::recv(void* buffer, std::size_t bufferLen, int flags)
     }
 
     // In case of unsatisfied MSG_WAITALL, read the rest from real socket
-    int recv = m_socket->recv((char*)buffer + internalSize, bufferLen - internalSize, flags);
+    int recv = m_socket->recv((char*) buffer + internalSize, bufferLen - internalSize, flags);
     NX_VERBOSE(this, nx::format("recv internalSize=%1 + realRecv=%2").arg(internalSize).arg(recv));
     return (int) ((recv < 0) ? internalSize : internalSize + recv);
 }
 
-void BufferedStreamSocket::readSomeAsync(
-    nx::Buffer* const buf,
-    IoCompletionHandler handler)
+void BufferedStreamSocket::readSomeAsync(nx::Buffer* const buf, IoCompletionHandler handler)
 {
     if (m_internalRecvBuffer.empty())
         return m_socket->readSomeAsync(buf, std::move(handler));
@@ -91,7 +89,7 @@ void BufferedStreamSocket::readSomeAsync(
         [this, recvSize, handler = std::move(handler)]()
         {
             NX_VERBOSE(this, nx::format("readSomeAsync internalSize=%1").arg(recvSize));
-            handler(SystemError::noError, (size_t)recvSize);
+            handler(SystemError::noError, (size_t) recvSize);
         });
 }
 

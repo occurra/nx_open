@@ -26,9 +26,7 @@ namespace nx::utils {
 class NX_UTILS_API ScopedTimeoutCallback
 {
 public:
-    ScopedTimeoutCallback(
-        std::function<void()> onTimeout,
-        std::chrono::milliseconds timeout);
+    ScopedTimeoutCallback(std::function<void()> onTimeout, std::chrono::milliseconds timeout);
     ~ScopedTimeoutCallback();
 
     ScopedTimeoutCallback(const ScopedTimeoutCallback&) = delete;

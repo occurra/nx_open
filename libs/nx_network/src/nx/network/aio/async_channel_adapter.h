@@ -14,9 +14,8 @@ namespace nx::network::aio {
  * @param AdapteePtr can be raw pointer or smart pointer.
  * In latter case AsyncChannelAdapter takes adaptee ownership.
  */
-template <typename AdapteePtr>
-class AsyncChannelAdapter:
-    public AbstractAsyncChannel
+template<typename AdapteePtr>
+class AsyncChannelAdapter: public AbstractAsyncChannel
 {
     using base_type = AbstractAsyncChannel;
 
@@ -33,24 +32,17 @@ public:
         m_adaptee->bindToAioThread(aioThread);
     }
 
-    virtual void readSomeAsync(
-        nx::Buffer* const buffer,
-        IoCompletionHandler handler) override
+    virtual void readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler) override
     {
         m_adaptee->readSomeAsync(buffer, std::move(handler));
     }
 
-    virtual void sendAsync(
-        const nx::Buffer* buffer,
-        IoCompletionHandler handler) override
+    virtual void sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler) override
     {
         m_adaptee->sendAsync(buffer, std::move(handler));
     }
 
-    const AdapteePtr& adaptee() const
-    {
-        return m_adaptee;
-    }
+    const AdapteePtr& adaptee() const { return m_adaptee; }
 
 protected:
     virtual void cancelIoInAioThread(nx::network::aio::EventType eventType) override
@@ -71,7 +63,7 @@ private:
     }
 };
 
-template <typename AdapteePtr>
+template<typename AdapteePtr>
 std::unique_ptr<AbstractAsyncChannel> makeAsyncChannelAdapter(AdapteePtr adaptee)
 {
     using Adapter = AsyncChannelAdapter<std::decay_t<AdapteePtr>>;

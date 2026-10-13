@@ -19,7 +19,8 @@ int encode(AVCodecContext* avctx, AVPacket* avpkt, const AVFrame* frame, int* go
         // we fully drain all the output in each encode call, so this should not
         // ever happen
         return AVERROR_BUG;
-    } else if (ret < 0)
+    }
+    else if (ret < 0)
     {
         return ret;
     }
@@ -36,4 +37,4 @@ int encode(AVCodecContext* avctx, AVPacket* avpkt, const AVFrame* frame, int* go
     return ret;
 }
 
-} // nx::media::ffmpeg::old_api
+} // namespace nx::media::ffmpeg::old_api

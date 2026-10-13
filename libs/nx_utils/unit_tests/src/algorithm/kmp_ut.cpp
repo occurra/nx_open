@@ -10,9 +10,7 @@ namespace nx::utils::algorithm::test {
 
 namespace {
 
-static std::string generateRandomString(
-    const char* alphabet,
-    std::size_t length)
+static std::string generateRandomString(const char* alphabet, std::size_t length)
 {
     const auto alphabetLength = strlen(alphabet);
     std::string result(length, 0);
@@ -89,9 +87,7 @@ TEST(Kmp, replace_stress_test)
         const auto before = generateRandomString(alphabet, (rand() % maxStrLength) + 1);
         const std::string after = generateRandomString(alphabet, (rand() % maxStrLength) + 1);
 
-        ASSERT_EQ(
-            replaceAll(text, before, after),
-            kmpReplaced(text, before, after));
+        ASSERT_EQ(replaceAll(text, before, after), kmpReplaced(text, before, after));
     }
 }
 

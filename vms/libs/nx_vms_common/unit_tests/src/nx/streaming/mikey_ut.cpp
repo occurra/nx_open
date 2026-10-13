@@ -94,15 +94,21 @@ std::optional<std::vector<PolicyParameter>> parseGeneratedPolicyParameters(
 }
 
 const PolicyParameter* findPolicyParameter(
-    const std::vector<PolicyParameter>& parameters, std::uint8_t type)
+    const std::vector<PolicyParameter>& parameters,
+    std::uint8_t type)
 {
-    const auto it = std::find_if(parameters.cbegin(),
+    const auto it = std::find_if(
+        parameters.cbegin(),
         parameters.cend(),
-        [type](const PolicyParameter& parameter) { return parameter.type == type; });
+        [type](const PolicyParameter& parameter)
+        {
+            return parameter.type == type;
+        });
     return it == parameters.cend() ? nullptr : &*it;
 }
 
-void expectAuthenticationTagParameter(std::string_view base64Payload,
+void expectAuthenticationTagParameter(
+    std::string_view base64Payload,
     std::uint8_t expectedType,
     std::uint8_t expectedValue,
     std::uint8_t unexpectedType)
@@ -118,7 +124,9 @@ void expectAuthenticationTagParameter(std::string_view base64Payload,
 }
 
 std::string replaceAuthenticationTagParameter(
-    std::string_view base64Payload, std::uint8_t type, std::uint8_t value)
+    std::string_view base64Payload,
+    std::uint8_t type,
+    std::uint8_t value)
 {
     std::string decoded = nx::utils::fromBase64(base64Payload);
     const auto parameters = parseGeneratedPolicyParameters(decoded);
@@ -134,7 +142,8 @@ std::string replaceAuthenticationTagParameter(
 }
 
 void expectPolicy(
-    const nx::rtsp::SrtpCryptoPolicy& actual, const nx::rtsp::SrtpCryptoPolicy& expected)
+    const nx::rtsp::SrtpCryptoPolicy& actual,
+    const nx::rtsp::SrtpCryptoPolicy& expected)
 {
     EXPECT_EQ(actual.encryptionAlgorithm, expected.encryptionAlgorithm);
     EXPECT_EQ(actual.encryptionKeyLength, expected.encryptionKeyLength);
@@ -171,7 +180,8 @@ std::string payloadFromKeyMgmt(const QByteArray& header)
 }
 
 std::optional<MikeyData> makeStandardMikeyForMedia(
-    const nx::rtp::Sdp::Media& media, const std::vector<std::string>& sessionAttributes = {})
+    const nx::rtp::Sdp::Media& media,
+    const std::vector<std::string>& sessionAttributes = {})
 {
     const auto payload = getMikeyPayload(media, sessionAttributes);
     if (!payload)
@@ -194,12 +204,15 @@ TEST(Mikey, parsesAes256CmServerContext)
     EXPECT_EQ(server.policy.encryptionAlgorithm, nx::rtsp::SrtpEncryptionAlgorithm::aesCm);
     EXPECT_EQ(server.policy.encryptionKeyLength, nx::rtsp::kSrtpAes256KeyLen);
     EXPECT_EQ(
-        server.policy.authenticationAlgorithm, nx::rtsp::SrtpAuthenticationAlgorithm::hmacSha1);
+        server.policy.authenticationAlgorithm,
+        nx::rtsp::SrtpAuthenticationAlgorithm::hmacSha1);
     EXPECT_EQ(server.policy.authenticationKeyLength, nx::rtsp::kSrtpHmacSha1_80TagLen);
     EXPECT_EQ(server.policy.authenticationTagLength, nx::rtsp::kSrtpHmacSha1_80TagLen);
-    EXPECT_EQ(server.keyAndSalt,
-        fromHex("c3a13b8c9cb21cee840e173d5833f70f672ddcf0756c8538df70642d80b0d375"
-                "8728eeb7f5060b9aa6f68475230b"));
+    EXPECT_EQ(
+        server.keyAndSalt,
+        fromHex(
+            "c3a13b8c9cb21cee840e173d5833f70f672ddcf0756c8538df70642d80b0d375"
+            "8728eeb7f5060b9aa6f68475230b"));
     EXPECT_TRUE(server.mki.empty());
     ASSERT_TRUE(server.ssrc);
     EXPECT_EQ(*server.ssrc, 0x761bbddbu);
@@ -223,10 +236,12 @@ TEST(Mikey, parsesAxisServerContextFromSessionLevelAttribute)
     EXPECT_EQ(server.policy.encryptionAlgorithm, nx::rtsp::SrtpEncryptionAlgorithm::aesCm);
     EXPECT_EQ(server.policy.encryptionKeyLength, nx::rtsp::kSrtpAes128KeyLen);
     EXPECT_EQ(
-        server.policy.authenticationAlgorithm, nx::rtsp::SrtpAuthenticationAlgorithm::hmacSha1);
+        server.policy.authenticationAlgorithm,
+        nx::rtsp::SrtpAuthenticationAlgorithm::hmacSha1);
     EXPECT_EQ(server.policy.authenticationKeyLength, nx::rtsp::kSrtpHmacSha1_80TagLen);
     EXPECT_EQ(server.policy.authenticationTagLength, nx::rtsp::kSrtpHmacSha1_80TagLen);
-    EXPECT_EQ(server.keyAndSalt,
+    EXPECT_EQ(
+        server.keyAndSalt,
         fromHex("3bbe35802d7fb7368e165c1ef3d8994e476e93a49f8e42fe7562490c8f1a"));
     EXPECT_TRUE(server.mki.empty());
     ASSERT_TRUE(server.ssrc);
@@ -251,14 +266,16 @@ TEST(Mikey, standardModeGeneratesClientKeyWithoutMki)
 
     const std::string generatedPayload = payloadFromKeyMgmt(mikey->keyMgmtHeader);
     ASSERT_FALSE(generatedPayload.empty());
-    expectAuthenticationTagParameter(generatedPayload,
+    expectAuthenticationTagParameter(
+        generatedPayload,
         kAuthenticationTagLengthParam,
         nx::rtsp::kSrtpHmacSha1_80TagLen,
         kAeadAuthenticationTagLengthParam);
     const auto parsedGeneratedMikey = makeStandardMikeyForMedia(makeMedia(generatedPayload));
     ASSERT_TRUE(parsedGeneratedMikey);
 
-    EXPECT_EQ(parsedGeneratedMikey->encryptionData.server.keyAndSalt,
+    EXPECT_EQ(
+        parsedGeneratedMikey->encryptionData.server.keyAndSalt,
         mikey->encryptionData.client.keyAndSalt);
     EXPECT_TRUE(parsedGeneratedMikey->encryptionData.server.mki.empty());
     ASSERT_TRUE(mikey->encryptionData.client.ssrc);
@@ -279,7 +296,8 @@ TEST(Mikey, clientManagedModeUsesClientKeyAndFourByteMkiInBothDirections)
     const std::string generatedPayload = payloadFromKeyMgmt(mikey->keyMgmtHeader);
     const auto parsedGeneratedMikey = makeStandardMikeyForMedia(makeMedia(generatedPayload));
     ASSERT_TRUE(parsedGeneratedMikey);
-    EXPECT_EQ(parsedGeneratedMikey->encryptionData.server.policy.authenticationKeyLength,
+    EXPECT_EQ(
+        parsedGeneratedMikey->encryptionData.server.policy.authenticationKeyLength,
         nx::rtsp::kSrtpHmacSha1KeyLen);
     EXPECT_EQ(parsedGeneratedMikey->encryptionData.server.mki, fromHex("00000001"));
     EXPECT_EQ(parsedGeneratedMikey->encryptionData.server.ssrc, mikey->encryptionData.client.ssrc);
@@ -291,18 +309,21 @@ TEST(Mikey, clientManagedModeSupportsAes128Gcm)
     ASSERT_TRUE(mikey);
 
     expectPolicy(mikey->encryptionData.client.policy, kAes128GcmPolicy);
-    EXPECT_EQ(mikey->encryptionData.client.keyAndSalt.size(),
+    EXPECT_EQ(
+        mikey->encryptionData.client.keyAndSalt.size(),
         nx::rtsp::kSrtpAes128KeyLen + nx::rtsp::kSrtpAeadSaltLen);
 
     const std::string generatedPayload = payloadFromKeyMgmt(mikey->keyMgmtHeader);
-    expectAuthenticationTagParameter(generatedPayload,
+    expectAuthenticationTagParameter(
+        generatedPayload,
         kAeadAuthenticationTagLengthParam,
         nx::rtsp::kSrtpAesGcmTagLen,
         kAuthenticationTagLengthParam);
     const auto parsedGeneratedMikey = makeStandardMikeyForMedia(makeMedia(generatedPayload));
     ASSERT_TRUE(parsedGeneratedMikey);
     expectPolicy(parsedGeneratedMikey->encryptionData.server.policy, kAes128GcmPolicy);
-    EXPECT_EQ(parsedGeneratedMikey->encryptionData.server.keyAndSalt,
+    EXPECT_EQ(
+        parsedGeneratedMikey->encryptionData.server.keyAndSalt,
         mikey->encryptionData.client.keyAndSalt);
 }
 
@@ -313,7 +334,9 @@ TEST(Mikey, parsesAeadAuthenticationTagLengthParameter)
 
     const std::string generatedPayload = payloadFromKeyMgmt(mikey->keyMgmtHeader);
     const std::string invalidTagPayload = replaceAuthenticationTagParameter(
-        generatedPayload, kAeadAuthenticationTagLengthParam, nx::rtsp::kSrtpAesGcmTagLen - 1);
+        generatedPayload,
+        kAeadAuthenticationTagLengthParam,
+        nx::rtsp::kSrtpAesGcmTagLen - 1);
     ASSERT_FALSE(invalidTagPayload.empty());
     EXPECT_FALSE(makeStandardMikey(invalidTagPayload, nx::Url("rtsps://camera/track")));
 }
@@ -325,12 +348,15 @@ TEST(Mikey, doesNotUseRegularAuthenticationTagLengthForAead)
 
     const std::string generatedPayload = payloadFromKeyMgmt(mikey->keyMgmtHeader);
     const std::string regularTagPayload = replaceAuthenticationTagParameter(
-        generatedPayload, kAuthenticationTagLengthParam, nx::rtsp::kSrtpHmacSha1_80TagLen);
+        generatedPayload,
+        kAuthenticationTagLengthParam,
+        nx::rtsp::kSrtpHmacSha1_80TagLen);
     ASSERT_FALSE(regularTagPayload.empty());
 
     const auto parsedMikey = makeStandardMikey(regularTagPayload, nx::Url("rtsps://camera/track"));
     ASSERT_TRUE(parsedMikey);
-    EXPECT_EQ(parsedMikey->encryptionData.server.policy.authenticationTagLength,
+    EXPECT_EQ(
+        parsedMikey->encryptionData.server.policy.authenticationTagLength,
         nx::rtsp::kSrtpAesGcmTagLen);
 }
 
@@ -341,14 +367,17 @@ TEST(Mikey, clientManagedModeUsesProvidedServerPolicy)
     ASSERT_TRUE(gcmMikey);
 
     const auto standardMikey = makeStandardMikey(
-        payloadFromKeyMgmt(gcmMikey->keyMgmtHeader), nx::Url("rtsps://camera/track"));
+        payloadFromKeyMgmt(gcmMikey->keyMgmtHeader),
+        nx::Url("rtsps://camera/track"));
     ASSERT_TRUE(standardMikey);
 
     const auto mikey = makeClientManagedMikey(
-        nx::Url("rtsps://camera/track"), standardMikey->encryptionData.server.policy);
+        nx::Url("rtsps://camera/track"),
+        standardMikey->encryptionData.server.policy);
     ASSERT_TRUE(mikey);
     expectPolicy(mikey->encryptionData.client.policy, kAes128GcmPolicy);
-    EXPECT_EQ(mikey->encryptionData.client.keyAndSalt.size(),
+    EXPECT_EQ(
+        mikey->encryptionData.client.keyAndSalt.size(),
         nx::rtsp::kSrtpAes128KeyLen + nx::rtsp::kSrtpAeadSaltLen);
 }
 

@@ -11,7 +11,8 @@ namespace nx::utils {
 
 constexpr std::array kAllowedDelimiters{'-', ':'};
 
-MacAddress::MacAddress(const Data& bytes): m_data(bytes)
+MacAddress::MacAddress(const Data& bytes):
+    m_data(bytes)
 {
 }
 
@@ -34,11 +35,16 @@ MacAddress::MacAddress(QStringView mac)
         static constexpr std::array kDelimiterIndices{2, 5, 8, 11, 14};
 
         // Check variant with delimiters. Only '-' or ':' are allowed.
-        const auto delimiterIt = std::ranges::find_if(kAllowedDelimiters,
+        const auto delimiterIt = std::ranges::find_if(
+            kAllowedDelimiters,
             [mac](char c)
             {
                 return std::ranges::all_of(
-                    kDelimiterIndices, [mac, c](int i) { return QLatin1Char(c) == mac[i]; });
+                    kDelimiterIndices,
+                    [mac, c](int i)
+                    {
+                        return QLatin1Char(c) == mac[i];
+                    });
             });
 
         if (delimiterIt == kAllowedDelimiters.end())
@@ -97,7 +103,12 @@ MacAddress MacAddress::random()
 
 bool MacAddress::isNull() const
 {
-    return std::ranges::all_of(m_data, [](auto byte) { return byte == 0; });
+    return std::ranges::all_of(
+        m_data,
+        [](auto byte)
+        {
+            return byte == 0;
+        });
 }
 
 const std::array<quint8, MacAddress::kMacAddressLength>& MacAddress::bytes() const

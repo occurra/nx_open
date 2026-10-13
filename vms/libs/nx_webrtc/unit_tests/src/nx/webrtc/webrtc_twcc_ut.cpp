@@ -46,8 +46,8 @@ TEST(Twcc, buildTwoPacketsGoldenBytes)
     builder.onPacket(/*seq*/ 101, microseconds(64'500));
 
     uint8_t dst[64] = {};
-    const int written = builder.build(
-        dst, sizeof(dst), /*senderSsrc*/ 0x01020304, /*mediaSourceSsrc*/ 0x0a0b0c0d);
+    const int written =
+        builder.build(dst, sizeof(dst), /*senderSsrc*/ 0x01020304, /*mediaSourceSsrc*/ 0x0a0b0c0d);
 
     const std::vector<uint8_t> expected = {
         0x8f, 0xcd, // V=2, P=0, FMT=15 | PT=205 (RTPFB).
@@ -71,19 +71,15 @@ TEST(Twcc, buildSinglePacketSetsPaddingBit)
     builder.onPacket(/*seq*/ 100, microseconds(64'000));
 
     uint8_t dst[64] = {};
-    const int written = builder.build(
-        dst, sizeof(dst), /*senderSsrc*/ 0x01020304, /*mediaSourceSsrc*/ 0x0a0b0c0d);
+    const int written =
+        builder.build(dst, sizeof(dst), /*senderSsrc*/ 0x01020304, /*mediaSourceSsrc*/ 0x0a0b0c0d);
 
     const std::vector<uint8_t> expected = {
         0xaf, 0xcd, // Padding bit (0x20) set because the delta section is odd.
         0x00, 0x05, // Length = 24/4 - 1.
-        0x01, 0x02, 0x03, 0x04,
-        0x0a, 0x0b, 0x0c, 0x0d,
-        0x00, 0x64, // Base sequence = 100.
+        0x01, 0x02, 0x03, 0x04, 0x0a, 0x0b, 0x0c, 0x0d, 0x00, 0x64, // Base sequence = 100.
         0x00, 0x01, // Packet status count = 1.
-        0x00, 0x00, 0x01,
-        0x00,
-        0x20, 0x01, // Chunk: symbol=small(1), run=1.
+        0x00, 0x00, 0x01, 0x00, 0x20, 0x01, // Chunk: symbol=small(1), run=1.
         0x00, // One recv delta = 0 ticks.
         0x01, // Padding: one byte, last byte holds the padding length.
     };

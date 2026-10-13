@@ -1,11 +1,10 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include "named_pipe_server.h"
-
-#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <unistd.h>
 
+#include "named_pipe_server.h"
 #include "named_pipe_socket_unix.h"
 
 namespace nx::utils {
@@ -48,8 +47,8 @@ SystemError::ErrorCode NamedPipeServer::listen(const std::string& pipeName)
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     snprintf(addr.sun_path, sizeof(addr.sun_path), "/tmp/%s", pipeName.c_str());
-    if (::bind(m_impl->hPipe, (sockaddr*)& addr, sizeof(addr)) != 0 ||
-        ::listen(m_impl->hPipe, BACKLOG_SIZE) != 0)
+    if (::bind(m_impl->hPipe, (sockaddr*) &addr, sizeof(addr)) != 0
+        || ::listen(m_impl->hPipe, BACKLOG_SIZE) != 0)
     {
         const int connectErrorCode = errno;
         ::close(m_impl->hPipe);

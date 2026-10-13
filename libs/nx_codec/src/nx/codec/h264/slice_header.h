@@ -11,7 +11,15 @@ namespace nx::media::h264 {
 class NX_CODEC_API SliceHeader: public NALUnit
 {
 public:
-    enum SliceType {P_TYPE, B_TYPE, I_TYPE, SP_TYPE, SI_TYPE, DUMMY_TYPE};
+    enum SliceType
+    {
+        P_TYPE,
+        B_TYPE,
+        I_TYPE,
+        SP_TYPE,
+        SI_TYPE,
+        DUMMY_TYPE
+    };
     int first_mb_in_slice = 0;
     int slice_type = 0;
     int orig_slice_type = 0;
@@ -26,10 +34,14 @@ public:
     int m_field_pic_flag = 0;
     int memory_management_control_operation = 0;
 
-    int deserialize(quint8* buffer, quint8* end, const SequenceParameterSet* sps, const PictureParameterSet* pps);
+    int deserialize(
+        quint8* buffer,
+        quint8* end,
+        const SequenceParameterSet* sps,
+        const PictureParameterSet* pps);
 
-    const SequenceParameterSet* getSPS() const {return sps;}
-    const PictureParameterSet* getPPS() const {return pps;}
+    const SequenceParameterSet* getSPS() const { return sps; }
+    const PictureParameterSet* getPPS() const { return pps; }
 
     int slice_qp_delta = 0;
     int disable_deblocking_filter_idc = 0;
@@ -71,9 +83,10 @@ public:
     bool m_shortDeserializeMode = true;
     int m_frameNumBitPos = 0;
 
-    void copyFrom(const SliceHeader& other) {
+    void copyFrom(const SliceHeader& other)
+    {
         delete m_nalBuffer;
-        //memcpy(this, &other, sizeof( SliceHeader));
+        // memcpy(this, &other, sizeof( SliceHeader));
         m_nalBuffer = 0;
         m_nalBufferLen = 0;
 
@@ -132,14 +145,17 @@ public:
         m_picOrderNumBits = other.m_picOrderNumBits;
         m_field_pic_flag = other.m_field_pic_flag;
         memory_management_control_operation = other.memory_management_control_operation;
-
     }
     void setFrameNum(int num);
     int deserializeSliceData();
-    int serializeSliceHeader(nx::utils::BitStreamWriter& bitWriter, const QMap<quint32, SequenceParameterSet*>& spsMap,
-                                    const QMap<quint32, PictureParameterSet*>& ppsMap, quint8* dstBuffer, int dstBufferLen);
+    int serializeSliceHeader(
+        nx::utils::BitStreamWriter& bitWriter,
+        const QMap<quint32, SequenceParameterSet*>& spsMap,
+        const QMap<quint32, PictureParameterSet*>& ppsMap,
+        quint8* dstBuffer,
+        int dstBufferLen);
 
-    int deserialize(const SequenceParameterSet* sps,const PictureParameterSet* pps);
+    int deserialize(const SequenceParameterSet* sps, const PictureParameterSet* pps);
 
 private:
     void write_pred_weight_table(nx::utils::BitStreamWriter& bitWriter);

@@ -31,9 +31,7 @@ public:
     virtual ~AbstractIceDelegate() = default;
 };
 
-class Ice:
-    public AbstractDataChannelDelegate,
-    public AbstractDtlsDelegate
+class Ice: public AbstractDataChannelDelegate, public AbstractDtlsDelegate
 {
 protected:
     enum Stage

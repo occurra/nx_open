@@ -28,7 +28,8 @@ public:
 
     HttpClient(ssl::AdapterFunc adapterFunc);
     HttpClient(
-        std::unique_ptr<nx::network::AbstractStreamSocket> socket, ssl::AdapterFunc adapterFunc);
+        std::unique_ptr<nx::network::AbstractStreamSocket> socket,
+        ssl::AdapterFunc adapterFunc);
     ~HttpClient();
 
     void pleaseStop();
@@ -46,35 +47,23 @@ public:
     /**
      * @return true if response has been received.
      */
-    bool doUpgrade(
-        const nx::Url& url,
-        const std::string& protocolToUpgradeTo);
+    bool doUpgrade(const nx::Url& url, const std::string& protocolToUpgradeTo);
 
-    bool doUpgrade(
-        const nx::Url& url,
-        Method method,
-        const std::string& protocolToUpgradeTo);
+    bool doUpgrade(const nx::Url& url, Method method, const std::string& protocolToUpgradeTo);
 
     /**
      * @return true if response has been received.
      */
-    bool doPost(
-        const nx::Url& url,
-        std::unique_ptr<AbstractMsgBodySource> body);
+    bool doPost(const nx::Url& url, std::unique_ptr<AbstractMsgBodySource> body);
 
-    bool doPost(
-        const nx::Url& url,
-        const std::string& contentType,
-        nx::Buffer messageBody);
+    bool doPost(const nx::Url& url, const std::string& contentType, nx::Buffer messageBody);
 
     bool doPost(const nx::Url& url);
 
     /**
      * @return true if response has been received.
      */
-    bool doPut(
-        const nx::Url& url,
-        std::unique_ptr<AbstractMsgBodySource> body);
+    bool doPut(const nx::Url& url, std::unique_ptr<AbstractMsgBodySource> body);
 
     bool doPut(
         const nx::Url& url,
@@ -158,7 +147,9 @@ public:
     void setProxyCredentials(const Credentials& credentials);
 
     void setProxyVia(
-        const SocketAddress& proxyEndpoint, bool isSecure, ssl::AdapterFunc adapterFunc);
+        const SocketAddress& proxyEndpoint,
+        bool isSecure,
+        ssl::AdapterFunc adapterFunc);
 
     void setDisablePrecalculatedAuthorization(bool value);
 
@@ -225,7 +216,7 @@ private:
     void configureAsyncClient();
 
     template<typename AsyncClientFunc>
-        bool doRequest(AsyncClientFunc func);
+    bool doRequest(AsyncClientFunc func);
 
     void onResponseReceived();
     void onSomeMessageBodyAvailable();

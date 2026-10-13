@@ -54,23 +54,16 @@ public:
         const QString& name,
         const T& defaultValue = {},
         const QString& description = QString(),
-        bool secure = false)
-        :
+        bool secure = false):
         BaseProperty(storage, name, description, secure),
         m_value(defaultValue),
         m_defaultValue(defaultValue)
     {
     }
 
-    T value() const
-    {
-        return m_value;
-    }
+    T value() const { return m_value; }
 
-    T operator()() const
-    {
-        return m_value;
-    }
+    T operator()() const { return m_value; }
 
     void setValue(const T& value)
     {
@@ -87,10 +80,7 @@ public:
         return *this;
     }
 
-    virtual QString serialized() const override
-    {
-        return serializeValue(m_value);
-    }
+    virtual QString serialized() const override { return serializeValue(m_value); }
 
     virtual void loadSerializedValue(const QString& value) override
     {
@@ -103,20 +93,11 @@ public:
         notify();
     }
 
-    virtual QVariant variantValue() const override
-    {
-        return QVariant::fromValue(value());
-    }
+    virtual QVariant variantValue() const override { return QVariant::fromValue(value()); }
 
-    virtual void setVariantValue(const QVariant& value) override
-    {
-        setValue(value.value<T>());
-    }
+    virtual void setVariantValue(const QVariant& value) override { setValue(value.value<T>()); }
 
-    virtual QString defaultValueDoc() const override
-    {
-        return serializeValue(m_defaultValue);
-    }
+    virtual QString defaultValueDoc() const override { return serializeValue(m_defaultValue); }
 
 protected:
     virtual T deserializeValue(const QString& value, bool* success) const
@@ -148,8 +129,7 @@ public:
         Storage* storage,
         const QString& name,
         const T& defaultValue = {},
-        const QString& description = QString())
-        :
+        const QString& description = QString()):
         base_type(storage, name, defaultValue, description, /*secure*/ true)
     {
     }

@@ -4,9 +4,9 @@
 
 #if defined(_WIN32)
 #else
+    #include <pthread.h>
     #include <signal.h>
     #include <unistd.h>
-    #include <pthread.h>
 #endif
 
 #include <nx/utils/stack_trace.h>
@@ -38,22 +38,22 @@ void setOnAssertHandler(std::function<void(const QString&)> handler)
 
 void crashProgram([[maybe_unused]] const QString& message)
 {
-    #if defined(_WIN32)
-        // Copy error text to a stack variable so it is present in the mini-dump.
-        char textOnStack[256] = {0};
-        const auto text = nx::format("%1").arg(message).toStdString();
-        snprintf(textOnStack, sizeof(textOnStack), "%s", text.c_str());
-    #endif
+#if defined(_WIN32)
+    // Copy error text to a stack variable so it is present in the mini-dump.
+    char textOnStack[256] = {0};
+    const auto text = nx::format("%1").arg(message).toStdString();
+    snprintf(textOnStack, sizeof(textOnStack), "%s", text.c_str());
+#endif
 
-    #if defined(_DEBUG)
-        #if defined(_WIN32)
-            *reinterpret_cast<volatile int*>(0) = 7;
-        #else
-            pthread_kill(pthread_self(), SIGTRAP);
-        #endif
+#if defined(_DEBUG)
+    #if defined(_WIN32)
+    *reinterpret_cast<volatile int*>(0) = 7;
     #else
-        *reinterpret_cast<volatile int*>(0) = 7;
+    pthread_kill(pthread_self(), SIGTRAP);
     #endif
+#else
+    *reinterpret_cast<volatile int*>(0) = 7;
+#endif
 }
 
 bool assertFailure(bool isCritical, const QString& message)
@@ -81,14 +81,14 @@ bool assertFailure(bool isCritical, const QString& message)
 static QtMessageHandler g_defaultQtMessageHandler = 0;
 
 static void handleQtMessage(
-    QtMsgType type, const QMessageLogContext& context, const QString& message)
+    QtMsgType type,
+    const QMessageLogContext& context,
+    const QString& message)
 {
     // Catch invalid number of arguments, invalid numeric translations, invalid old-style connects
     // and some metatype errors.
-    if (message.contains("QString:")
-        || message.contains("QObject:")
-        || message.contains("unable to save")
-        || message.contains("unknown user type")
+    if (message.contains("QString:") || message.contains("QObject:")
+        || message.contains("unable to save") || message.contains("unknown user type")
         || message.contains("QCharRef with an index pointing outside the valid range of a QString")
         || message.contains("behavior is deprecated")
         || message.contains("destroying locked mutex")
@@ -129,7 +129,6 @@ void enableQtMessageAsserts()
         NX_ASSERT(false, "Qt message asserts are already enabled");
     else
         g_defaultQtMessageHandler = qInstallMessageHandler(handleQtMessage);
-
 }
 
 void disableQtMessageAsserts()
@@ -196,7 +195,12 @@ AssertTimer::~AssertTimer()
     typedef std::pair<std::string, TimeInfo> Record;
 
     std::vector<Record> sorted(m_times.begin(), m_times.end());
-    std::ranges::sort(sorted,[](const Record& a, const Record& b) { return a.second < b.second; });
+    std::ranges::sort(
+        sorted,
+        [](const Record& a, const Record& b)
+        {
+            return a.second < b.second;
+        });
 
     size_t toPrint = kShowTheMostCount;
     for (const auto& record: sorted)
@@ -207,9 +211,8 @@ AssertTimer::~AssertTimer()
         typedef decltype(time)::period ratio;
         const auto timeS = double(time.count()) * ratio::num / ratio::den;
 
-        std::cout << "AssertTimer( " << record.first << " ) called "
-            << count << " times, total "<< timeS << " s, average "
-            << (timeS / count) << " s" << std::endl;
+        std::cout << "AssertTimer( " << record.first << " ) called " << count << " times, total "
+                  << timeS << " s, average " << (timeS / count) << " s" << std::endl;
 
         if (--toPrint == 0)
             return;
@@ -217,7 +220,7 @@ AssertTimer::~AssertTimer()
 }
 
 #ifdef NX_CHECK_MEASURE_TIME
-    AssertTimer AssertTimer::instance;
+AssertTimer AssertTimer::instance;
 #endif
 
 } // namespace nx

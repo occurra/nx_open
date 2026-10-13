@@ -12,9 +12,13 @@ OptionCont OptionCont::operator||(const OptionCont& right) noexcept
 {
     OptionCont result(*this);
 
-    result.equalOptions.insert(result.equalOptions.end(), right.equalOptions.begin(),
+    result.equalOptions.insert(
+        result.equalOptions.end(),
+        right.equalOptions.begin(),
         right.equalOptions.end());
-    result.shortOptions.insert(result.shortOptions.end(), right.shortOptions.begin(),
+    result.shortOptions.insert(
+        result.shortOptions.end(),
+        right.shortOptions.begin(),
         right.shortOptions.end());
 
     return result;
@@ -23,9 +27,13 @@ OptionCont OptionCont::operator||(const OptionCont& right) noexcept
 //-------------------------------------------------------------------------------------------------
 // Args::ParseState implementation.
 
-Args::ParseState::ParseState(int argcVal, const char* const *argvVal,
+Args::ParseState::ParseState(
+    int argcVal,
+    const char* const* argvVal,
     const char* argPosVal) noexcept:
-    m_argc(argcVal), m_argv(argvVal), m_argPos(argPosVal)
+    m_argc(argcVal),
+    m_argv(argvVal),
+    m_argPos(argPosVal)
 {
 }
 
@@ -73,17 +81,21 @@ bool Args::parseEqOp(ParseState& parseState)
             {
                 if (!it->second->requireValue())
                 {
-                    throw std::runtime_error(nx::format(
-                        "%1: Defined value for option without values").arg(
-                        kFunctionName).toStdString());
+                    throw std::runtime_error(
+                        nx::format("%1: Defined value for option without values")
+                            .arg(kFunctionName)
+                            .toStdString());
                 }
 
                 it->second->set(optName.c_str(), equalPos + 1);
             }
             else
             {
-                 throw std::runtime_error(nx::format("%1: Unknown long option '%2'").arg(
-                     kFunctionName).arg(optName).toStdString());
+                throw std::runtime_error(
+                    nx::format("%1: Unknown long option '%2'")
+                        .arg(kFunctionName)
+                        .arg(optName)
+                        .toStdString());
             }
         }
         else
@@ -94,16 +106,22 @@ bool Args::parseEqOp(ParseState& parseState)
             {
                 if (it->second->requireValue())
                 {
-                    throw std::runtime_error(nx::format("%1: Undefined value for option '%2'").arg(
-                        kFunctionName).arg(optName).toStdString());
+                    throw std::runtime_error(
+                        nx::format("%1: Undefined value for option '%2'")
+                            .arg(kFunctionName)
+                            .arg(optName)
+                            .toStdString());
                 }
 
                 it->second->set(optName.c_str(), 0);
             }
             else
             {
-                throw std::runtime_error(nx::format("%1: Unknown long option '%2'").arg(
-                    kFunctionName).arg(curOpt).toStdString());
+                throw std::runtime_error(
+                    nx::format("%1: Unknown long option '%2'")
+                        .arg(kFunctionName)
+                        .arg(curOpt)
+                        .toStdString());
             }
         }
 
@@ -132,8 +150,8 @@ bool Args::parseShortOptSeq(ParseState& parseState)
 
     if (*++curOpt == '\0')
     {
-        throw std::runtime_error(nx::format("%1: Empty option name after '-'.").arg(
-            kFunctionName).toStdString());
+        throw std::runtime_error(
+            nx::format("%1: Empty option name after '-'.").arg(kFunctionName).toStdString());
     }
 
     parseState.currentPos(curOpt);
@@ -168,7 +186,9 @@ bool Args::parseShortOpt(ParseState& parseState)
     return false;
 }
 
-void Args::parseShortOpValue(OptionSetterMap::iterator it, const char* optName,
+void Args::parseShortOpValue(
+    OptionSetterMap::iterator it,
+    const char* optName,
     ParseState& parseState)
 {
     static const char* const kFunctionName = "AppUtils::Args::parseShortOpValue()";
@@ -177,8 +197,11 @@ void Args::parseShortOpValue(OptionSetterMap::iterator it, const char* optName,
     {
         if (parseState.end())
         {
-            throw std::runtime_error(nx::format("%1: Undefined value after option '%2'").arg(
-                kFunctionName).arg(optName).toStdString());
+            throw std::runtime_error(
+                nx::format("%1: Undefined value after option '%2'")
+                    .arg(kFunctionName)
+                    .arg(optName)
+                    .toStdString());
         }
 
         if (*parseState.currentPos())
@@ -195,8 +218,10 @@ void Args::parseShortOpValue(OptionSetterMap::iterator it, const char* optName,
             }
             else
             {
-                throw std::runtime_error(nx::format("%1: Found end of command after option.").arg(
-                    kFunctionName).toStdString());
+                throw std::runtime_error(
+                    nx::format("%1: Found end of command after option.")
+                        .arg(kFunctionName)
+                        .toStdString());
             }
         }
     }
@@ -219,8 +244,7 @@ void Args::parse(int argc, const char* const argv[])
 
     while (!parseState.end())
     {
-        if (!parseEqOp(parseState) &&
-            !parseShortOptSeq(parseState))
+        if (!parseEqOp(parseState) && !parseShortOptSeq(parseState))
         {
             if (m_commandCount == -1 || commandCounter < m_commandCount)
             {
@@ -230,8 +254,11 @@ void Args::parse(int argc, const char* const argv[])
             }
             else
             {
-                throw std::runtime_error(nx::format("%1: Unknown option: '%2'").arg(
-                    kFunctionName).arg(parseState.currentPos()).toStdString());
+                throw std::runtime_error(
+                    nx::format("%1: Unknown option: '%2'")
+                        .arg(kFunctionName)
+                        .arg(parseState.currentPos())
+                        .toStdString());
             }
         }
     }
@@ -239,8 +266,7 @@ void Args::parse(int argc, const char* const argv[])
 
 void Args::usage(std::ostream& output) const
 {
-    for (Usage::const_iterator it = m_usage.begin(); it != m_usage.end();
-         ++it)
+    for (Usage::const_iterator it = m_usage.begin(); it != m_usage.end(); ++it)
     {
         output << it->second << "\n";
     }

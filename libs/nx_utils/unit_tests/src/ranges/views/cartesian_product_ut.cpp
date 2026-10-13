@@ -24,21 +24,17 @@ TEST(CartesianProduct, ProducesCompleteCombinationsInLexicographicalOrder)
     const std::vector numbers{1, 2, 3};
     const std::list<std::string> symbols{"a", "b", "c", "d"};
     const std::vector<std::tuple<char, int, std::string>> kExpected{
-        {'A', 1, "a"}, {'A', 1, "b"}, {'A', 1, "c"}, {'A', 1, "d"},
-        {'A', 2, "a"}, {'A', 2, "b"}, {'A', 2, "c"}, {'A', 2, "d"},
-        {'A', 3, "a"}, {'A', 3, "b"}, {'A', 3, "c"}, {'A', 3, "d"},
-        {'B', 1, "a"}, {'B', 1, "b"}, {'B', 1, "c"}, {'B', 1, "d"},
-        {'B', 2, "a"}, {'B', 2, "b"}, {'B', 2, "c"}, {'B', 2, "d"},
-        {'B', 3, "a"}, {'B', 3, "b"}, {'B', 3, "c"}, {'B', 3, "d"},
+        {'A', 1, "a"}, {'A', 1, "b"}, {'A', 1, "c"}, {'A', 1, "d"}, {'A', 2, "a"}, {'A', 2, "b"},
+        {'A', 2, "c"}, {'A', 2, "d"}, {'A', 3, "a"}, {'A', 3, "b"}, {'A', 3, "c"}, {'A', 3, "d"},
+        {'B', 1, "a"}, {'B', 1, "b"}, {'B', 1, "c"}, {'B', 1, "d"}, {'B', 2, "a"}, {'B', 2, "b"},
+        {'B', 2, "c"}, {'B', 2, "d"}, {'B', 3, "a"}, {'B', 3, "b"}, {'B', 3, "c"}, {'B', 3, "d"},
     };
     const auto cartesianView = cartesianProduct(letters, numbers, symbols);
 
     EXPECT_EQ(
         kExpected | nx::ranges::to<std::vector>(),
         cartesianView | nx::ranges::to<std::vector>());
-    EXPECT_EQ(
-        kExpected | nx::ranges::to<std::set>(),
-        cartesianView | nx::ranges::to<std::set>());
+    EXPECT_EQ(kExpected | nx::ranges::to<std::set>(), cartesianView | nx::ranges::to<std::set>());
 }
 
 TEST(CartesianProduct, EmptyFirstAxisProducesEmptyResult)
@@ -83,14 +79,15 @@ TEST(CartesianProduct, InfiniteFirstAxisCanBeBoundedDownstream)
     EXPECT_EQ(
         kExpected | nx::ranges::to<std::vector>(),
         cartesianView | nx::ranges::to<std::vector>());
-    EXPECT_EQ(
-        kExpected | nx::ranges::to<std::set>(),
-        cartesianView | nx::ranges::to<std::set>());
+    EXPECT_EQ(kExpected | nx::ranges::to<std::set>(), cartesianView | nx::ranges::to<std::set>());
 }
 
 struct NonDefaultConstructible
 {
-    NonDefaultConstructible(int value): value(value) {}
+    NonDefaultConstructible(int value):
+        value(value)
+    {
+    }
     NonDefaultConstructible(const NonDefaultConstructible&) = default;
     NonDefaultConstructible& operator=(const NonDefaultConstructible&) = delete;
 
@@ -115,8 +112,8 @@ TEST(CartesianProduct, IsLazyViewOfReferences)
 
     static_assert(std::ranges::view<decltype(product)>);
     static_assert(std::same_as<
-        std::ranges::range_reference_t<decltype(product)>,
-        std::tuple<int&, const bool&>>);
+                  std::ranges::range_reference_t<decltype(product)>,
+                  std::tuple<int&, const bool&>>);
 
     values[0] = 3;
     auto&& [value, flag] = *product.begin();
@@ -128,9 +125,7 @@ TEST(CartesianProduct, IsLazyViewOfReferences)
 
 TEST(CartesianProduct, SupportsEmptyProduct)
 {
-    EXPECT_EQ(
-        (std::vector<std::tuple<>>{{}}),
-        cartesianProduct() | nx::ranges::to<std::vector>());
+    EXPECT_EQ((std::vector<std::tuple<>>{{}}), cartesianProduct() | nx::ranges::to<std::vector>());
 }
 
 } // namespace

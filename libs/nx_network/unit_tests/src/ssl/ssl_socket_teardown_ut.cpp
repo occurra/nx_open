@@ -8,12 +8,11 @@
 #include <string>
 #include <vector>
 
-#include <nx/utils/json/flags.h>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <nx/reflect/enum_instrument.h>
+#include <nx/utils/json/flags.h>
 #include <nx/utils/test_support/utils.h>
 #include <nx/utils/thread/cf/cfuture.h>
 
@@ -48,7 +47,8 @@ cf::future<std::unique_ptr<AbstractStreamSocket>> acceptNextConnection(
     cf::future accepted = promise.get_future();
     socket->acceptAsync(
         [promise = std::move(promise)](
-            SystemError::ErrorCode code, std::unique_ptr<AbstractStreamSocket> connection) mutable
+            SystemError::ErrorCode code,
+            std::unique_ptr<AbstractStreamSocket> connection) mutable
         {
             EXPECT_EQ(SystemError::noError, code) << SystemError::toString(code);
             promise.set_value(std::move(connection));
@@ -80,9 +80,11 @@ cf::future<nx::Buffer> readAsync(SslOverTcpStreamSocket* socket)
     buffer->reserve(4096);
     auto* const target = buffer.get();
 
-    socket->readSomeAsync(target,
-        [buffer = std::move(buffer), promise = std::move(promise)](
-            SystemError::ErrorCode code, std::size_t /*bytesRead*/) mutable
+    socket->readSomeAsync(
+        target,
+        [buffer = std::move(buffer),
+         promise =
+             std::move(promise)](SystemError::ErrorCode code, std::size_t /*bytesRead*/) mutable
         {
             // A failed read still settles the future, which is all the caller samples, so the
             // expectation is what keeps a broken connection from looking like a completed read.
@@ -107,7 +109,8 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(TeardownFlags)
 
 /** Destroys the socket, from its own AIO thread when the options ask for it. */
 std::expected<void, std::string> destroySocket(
-    std::unique_ptr<SslOverTcpStreamSocket> socket, TeardownFlags options)
+    std::unique_ptr<SslOverTcpStreamSocket> socket,
+    TeardownFlags options)
 {
     if (!(options & Teardown::inAioThread))
     {
@@ -206,7 +209,8 @@ TEST_P(SslSocketTeardown, pending_read_does_not_outlive_the_ssl_pipeline)
 
             // Fewer than every attempt means some of them missed the window and prove nothing.
             EXPECT_EQ(
-                (options & Teardown::withPendingRead) ? kAttempts : 0, readsPendingAtTeardown);
+                (options & Teardown::withPendingRead) ? kAttempts : 0,
+                readsPendingAtTeardown);
 
             // A gtest failure recorded here reaches the test only through the exit code.
             // _Exit leaves SocketGlobals deinit unrun on purpose, so teardown-time checks cannot
@@ -224,7 +228,8 @@ const std::vector<TeardownFlags> kScenarios = {
     Teardown::withPendingRead | Teardown::inAioThread,
 };
 
-INSTANTIATE_TEST_SUITE_P(Ssl,
+INSTANTIATE_TEST_SUITE_P(
+    Ssl,
     SslSocketTeardown,
     ::testing::ValuesIn(kScenarios),
     /*nameGenerator*/

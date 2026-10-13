@@ -13,7 +13,8 @@
 #include <nx/media/video_data_packet.h>
 #include <nx/utils/log/log.h>
 
-QnConstAbstractDataPacketPtr H2645Mp4ToAnnexB::processData(const QnConstAbstractDataPacketPtr& data)
+QnConstAbstractDataPacketPtr H2645Mp4ToAnnexB::processData(
+    const QnConstAbstractDataPacketPtr& data)
 {
     const QnConstCompressedVideoDataPtr videoData =
         std::dynamic_pointer_cast<const QnCompressedVideoData>(data);
@@ -68,13 +69,14 @@ QnCompressedVideoDataPtr H2645Mp4ToAnnexB::processVideoData(
             header = nx::media::nal::readH265SeqHeaderFromExtraData(extraData, extraDataSize);
         if (header.empty())
         {
-            NX_DEBUG(this,
+            NX_DEBUG(
+                this,
                 "Invalid video stream, failed to convert to AnnexB format, invalid extra data");
             return nullptr;
         }
 
-        auto context = std::make_shared<CodecParameters>(
-            videoData->context->getAvCodecParameters());
+        auto context =
+            std::make_shared<CodecParameters>(videoData->context->getAvCodecParameters());
         context->setExtradata(header.data(), header.size());
 
         m_newContext = context;
@@ -84,9 +86,7 @@ QnCompressedVideoDataPtr H2645Mp4ToAnnexB::processVideoData(
     QnCompressedVideoDataPtr resultBase;
     if (forceSharedMemory)
     {
-        resultBase = createSharedMemoryCompressedVideoData(
-            resultDataSize,
-            sharedMemoryAllocator);
+        resultBase = createSharedMemoryCompressedVideoData(resultDataSize, sharedMemoryAllocator);
         if (!resultBase)
         {
             NX_WARNING(

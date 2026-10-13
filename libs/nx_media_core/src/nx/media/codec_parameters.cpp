@@ -30,7 +30,7 @@ bool deserializeCodecParameters(CodecParameters& codecParameters, const char* da
 
     auto codecParams = codecParameters.getAvCodecParameters();
     T deserializedData;
-    if (!deserializedData.deserialize(QByteArray((const char*)data, size)))
+    if (!deserializedData.deserialize(QByteArray((const char*) data, size)))
         return false;
 
     codecParams->codec_type = deserializedData.codecType;
@@ -49,11 +49,12 @@ bool deserializeCodecParameters(CodecParameters& codecParameters, const char* da
     codecParams->block_align = deserializedData.blockAlign;
     codecParams->codec_id = deserializedData.codecId;
     codecParameters.setExtradata(
-        (uint8_t*)deserializedData.extradata.data(), deserializedData.extradata.size());
+        (uint8_t*) deserializedData.extradata.data(),
+        deserializedData.extradata.size());
     return true;
 }
 
-}
+} // namespace
 
 CodecParameters::~CodecParameters()
 {
@@ -116,7 +117,8 @@ bool CodecParameters::deserialize(const char* data, int size, int version)
 
     if (m_version == 0)
     {
-        // TODO #lbusygin: get rid of this version when the mobile client stops supporting servers < 5.0
+        // TODO #lbusygin: get rid of this version when the mobile client stops supporting servers
+        // < 5.0
         if (!::deserializeCodecParameters<QnMediaContextSerializableData_4_2>(*this, data, size))
         {
             NX_WARNING(this, "Failed to deserialize codec parameters data(version 4.2)");
@@ -144,7 +146,9 @@ bool CodecParameters::deserialize(const char* data, int size, int version)
     }
     else
     {
-        NX_WARNING(this, "Failed to deserialize codec parameters data, version not supported: %1",
+        NX_WARNING(
+            this,
+            "Failed to deserialize codec parameters data, version not supported: %1",
             m_version);
         return false;
     }
@@ -159,17 +163,12 @@ void CodecParameters::toAvCodecContext(AVCodecContext* context) const
 
 bool CodecParameters::isEqual(const CodecParameters& other) const
 {
-    if (getCodecId() != other.getCodecId()
-        || getCodecType() != other.getCodecType()
-        || getWidth() != other.getWidth()
-        || getHeight() != other.getHeight()
-        || getChannels() != other.getChannels()
-        || getChannelLayout() != other.getChannelLayout()
-        || getSampleRate() != other.getSampleRate()
-        || getSampleFmt() != other.getSampleFmt()
+    if (getCodecId() != other.getCodecId() || getCodecType() != other.getCodecType()
+        || getWidth() != other.getWidth() || getHeight() != other.getHeight()
+        || getChannels() != other.getChannels() || getChannelLayout() != other.getChannelLayout()
+        || getSampleRate() != other.getSampleRate() || getSampleFmt() != other.getSampleFmt()
         || getBitsPerCodedSample() != other.getBitsPerCodedSample()
-        || getBitRate() != other.getBitRate()
-        || getBlockAlign() != other.getBlockAlign()
+        || getBitRate() != other.getBitRate() || getBlockAlign() != other.getBlockAlign()
         || getExtradataSize() != other.getExtradataSize()
         || memcmp(getExtradata(), other.getExtradata(), getExtradataSize()) != 0)
     {
@@ -180,15 +179,26 @@ bool CodecParameters::isEqual(const CodecParameters& other) const
 
 QString CodecParameters::toString() const
 {
-    return
-        NX_FMT("CodecId: %1, CodecType: %2, CodecTag: %3",
-            m_codecParams->codec_id, m_codecParams->codec_type, m_codecParams->codec_tag) + " " +
-        NX_FMT("Width: %1, Height: %2, Channels: %3, ChannelLayout: %4, "
-            "SampleRate: %5, SampleFmt: %6, BitsPerCodedSample: %7, BitRate: %8, BlockAlign: %9, "
-            "ExtradataSize: %10",
-            getWidth(), getHeight(), getChannels(), getChannelLayout(), getSampleRate(),
-            getSampleFmt(), getBitsPerCodedSample(), getBitRate(), getBlockAlign(),
-            getExtradataSize());
+    return NX_FMT(
+               "CodecId: %1, CodecType: %2, CodecTag: %3",
+               m_codecParams->codec_id,
+               m_codecParams->codec_type,
+               m_codecParams->codec_tag)
+        + " "
+        + NX_FMT(
+               "Width: %1, Height: %2, Channels: %3, ChannelLayout: %4, "
+               "SampleRate: %5, SampleFmt: %6, BitsPerCodedSample: %7, BitRate: %8, BlockAlign: %9, "
+               "ExtradataSize: %10",
+               getWidth(),
+               getHeight(),
+               getChannels(),
+               getChannelLayout(),
+               getSampleRate(),
+               getSampleFmt(),
+               getBitsPerCodedSample(),
+               getBitRate(),
+               getBlockAlign(),
+               getExtradataSize());
 }
 
 QString CodecParameters::codecName() const
@@ -271,7 +281,7 @@ int CodecParameters::getSampleRate() const
 
 AVSampleFormat CodecParameters::getSampleFmt() const
 {
-    return (AVSampleFormat)m_codecParams->format;
+    return (AVSampleFormat) m_codecParams->format;
 }
 
 int CodecParameters::getBitsPerCodedSample() const

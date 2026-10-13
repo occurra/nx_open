@@ -18,13 +18,10 @@ public:
     typedef const QByteArray::value_type* const_pointer;
     typedef const QByteArray::value_type& const_reference;
 
-    static const size_t npos = (size_t)-1;
+    static const size_t npos = (size_t) -1;
 
     QnByteArrayConstRef();
-    QnByteArrayConstRef(
-        const QByteArray& src,
-        size_type offset = 0,
-        size_type count = npos);
+    QnByteArrayConstRef(const QByteArray& src, size_type offset = 0, size_type count = npos);
 
     const value_type* data() const;
     const value_type* constData() const;
@@ -42,22 +39,24 @@ public:
     value_type front() const;
     value_type back() const;
     QList<QnByteArrayConstRef> split(char sep) const;
-    /** Removes from front and back of the string any character of null-terminated string charsToTrim. */
+    /** Removes from front and back of the string any character of null-terminated string
+     * charsToTrim. */
     QnByteArrayConstRef trimmed(const value_type* charsToTrim = " \t") const;
     /**
-    * Removes count elements in the front.
-    * @param count If npos then all elements are removed.
-    */
+     * Removes count elements in the front.
+     * @param count If npos then all elements are removed.
+     */
     void pop_front(size_type count = 1);
     void clear();
 
-    bool isEqualCaseInsensitive(const char* str, size_t strLength = (size_t)-1) const;
+    bool isEqualCaseInsensitive(const char* str, size_t strLength = (size_t) -1) const;
 
     const value_type& operator[](size_type index) const;
     /** Constructs \0-terminated QByteArray by calling QByteArray::mid. */
     operator QByteArray() const;
 
-    /** Constructs QByteArray using QByteArray::fromRawData(), so returned buffer is usually NOT NULL-terminated! */
+    /** Constructs QByteArray using QByteArray::fromRawData(), so returned buffer is usually NOT
+     * NULL-terminated! */
     QByteArray toByteArrayWithRawData() const;
 
 private:
@@ -72,6 +71,5 @@ bool NX_UTILS_API operator==(const QnByteArrayConstRef& left, const QByteArray& 
 /**
  * @param left 0-terminated string.
  */
-bool NX_UTILS_API operator==(
-    const QnByteArrayConstRef::const_pointer& left,
-    const QnByteArrayConstRef& right);
+bool NX_UTILS_API
+    operator==(const QnByteArrayConstRef::const_pointer& left, const QnByteArrayConstRef& right);

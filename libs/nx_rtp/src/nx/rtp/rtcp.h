@@ -49,17 +49,15 @@ struct NX_RTP_API RtcpSenderReport
     std::optional<std::string> cname;
 };
 
-NX_RTP_API int buildReceiverReport(
-    uint8_t* dstBuffer,
-    int bufferLen,
-    uint32_t ssrc);
+NX_RTP_API int buildReceiverReport(uint8_t* dstBuffer, int bufferLen, uint32_t ssrc);
 
 NX_RTP_API int buildClientRtcpReport(
     uint8_t* dstBuffer,
     int bufferLen,
     const std::optional<std::string>& cname = {});
 
-NX_RTP_API int buildClientRtcpReport(uint8_t* dstBuffer,
+NX_RTP_API int buildClientRtcpReport(
+    uint8_t* dstBuffer,
     int bufferLen,
     uint32_t ssrc,
     const std::optional<std::string>& cname = {});
@@ -74,6 +72,7 @@ public:
     void onPacket(uint32_t size);
     void setSsrc(uint32_t ssrc);
     void setCName(const std::string& cname);
+
 private:
     RtcpSenderReport m_report;
     std::chrono::microseconds m_lastReportTimestamp = std::chrono::microseconds::zero();

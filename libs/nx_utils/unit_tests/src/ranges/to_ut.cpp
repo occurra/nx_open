@@ -44,9 +44,7 @@ TEST(ToFallback, DeducesAssociativeContainer)
 {
     const std::array<std::pair<int, std::string>, 2> values{{{1, "one"}, {2, "two"}}};
 
-    EXPECT_EQ(
-        (std::map<int, std::string>{{1, "one"}, {2, "two"}}),
-        values | to<std::map>());
+    EXPECT_EQ((std::map<int, std::string>{{1, "one"}, {2, "two"}}), values | to<std::map>());
 }
 
 TEST(ToFallback, MaterializesCommonableSentinelRange)
@@ -68,7 +66,10 @@ TEST(ToFallback, MaterializesSinglePassPairLikeRange)
         (std::vector<Entry>{{1, 10}, {2, 20}}),
         std::ranges::istream_view<int>(input)
             | std::views::transform(
-                [](int value) -> Entry { return {.first = value, .second = 10 * value}; })
+                [](int value) -> Entry
+                {
+                    return {.first = value, .second = 10 * value};
+                })
             | to<std::vector>());
 }
 
@@ -80,7 +81,10 @@ TEST(ToFallback, MaterializesSinglePassRangeIntoAssociativeContainer)
         (std::map<int, int>{{1, 10}, {2, 20}}),
         std::ranges::istream_view<int>(input)
             | std::views::transform(
-                [](int value) { return std::pair{value, 10 * value}; })
+                [](int value)
+                {
+                    return std::pair{value, 10 * value};
+                })
             | to<std::map>());
 }
 
@@ -93,9 +97,7 @@ TEST(ToFallback, MaterializesSinglePassRangeIntoConcreteContainer)
 {
     std::istringstream input("1 2");
 
-    EXPECT_EQ(
-        (std::vector{1, 2}),
-        std::ranges::istream_view<int>(input) | to<std::vector<int>>());
+    EXPECT_EQ((std::vector{1, 2}), std::ranges::istream_view<int>(input) | to<std::vector<int>>());
 }
 
 } // namespace

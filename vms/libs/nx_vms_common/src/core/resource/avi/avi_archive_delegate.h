@@ -30,9 +30,9 @@ class QnCustomResourceVideoLayout;
  */
 class NX_VMS_COMMON_API QnAviArchiveDelegate: public QnAbstractArchiveDelegate
 {
-
     using base_type = QnAbstractArchiveDelegate;
     friend class QnAviAudioLayout;
+
 public:
     QnAviArchiveDelegate();
     virtual ~QnAviArchiveDelegate() override;
@@ -66,10 +66,10 @@ public:
     virtual qint64 seek(qint64 time, bool findIFrame) override;
 
     /**
-    * In case of ffmpeg seek failure this function will try to reopen the file. If the reopening
-    * has been successful the original timeToSeek will be returned but the file will be read from
-    * the beginning.
-    */
+     * In case of ffmpeg seek failure this function will try to reopen the file. If the reopening
+     * has been successful the original timeToSeek will be returned but the file will be read from
+     * the beginning.
+     */
     qint64 seekWithFallback(qint64 time, bool findIFrame);
 
     void setForcedVideoChannelsCount(int videoChannels);
@@ -80,16 +80,16 @@ public:
     virtual bool setAudioChannel(unsigned num) override;
 
     // for optimization
-    //void doNotFindStreamInfo();
+    // void doNotFindStreamInfo();
     void setFastStreamFind(bool value);
     bool isStreamsFound() const;
     void setUseAbsolutePos(bool value);
-    void setStorage(const QnStorageResourcePtr &storage);
+    void setStorage(const QnStorageResourcePtr& storage);
     virtual QnAbstractMotionArchiveConnectionPtr getMotionConnection(int channel) override;
 
     virtual bool providesMotionPackets() const override;
 
-    const char* getTagValue( const char* tagName );
+    const char* getTagValue(const char* tagName);
 
     virtual std::optional<QnAviArchiveMetadata> metadata() const override;
 

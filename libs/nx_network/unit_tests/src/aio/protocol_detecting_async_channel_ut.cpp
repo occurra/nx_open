@@ -17,8 +17,7 @@
 
 namespace nx::network::aio::test {
 
-class ProtocolDetectingAsyncChannel:
-    public ::testing::Test
+class ProtocolDetectingAsyncChannel: public ::testing::Test
 {
 public:
     ProtocolDetectingAsyncChannel()
@@ -48,8 +47,11 @@ protected:
         using namespace std::placeholders;
 
         m_protocolDetectingChannel->registerDefaultProtocol(
-            std::bind(&ProtocolDetectingAsyncChannel::createDelegate, this,
-                m_defaultDelegateId, _1));
+            std::bind(
+                &ProtocolDetectingAsyncChannel::createDelegate,
+                this,
+                m_defaultDelegateId,
+                _1));
     }
 
     void registerMultipleProtocols()
@@ -58,12 +60,11 @@ protected:
 
         constexpr int protocolCount = 3;
         for (int protoId = m_defaultDelegateId + 1;
-            protoId < m_defaultDelegateId + 1 + protocolCount;
-            ++protoId)
+             protoId < m_defaultDelegateId + 1 + protocolCount;
+             ++protoId)
         {
-            m_registeredProtocols.push_back(std::make_tuple(
-                protoId,
-                nx::format("p%1").args(protoId).toStdString()));
+            m_registeredProtocols.push_back(
+                std::make_tuple(protoId, nx::format("p%1").args(protoId).toStdString()));
 
             m_protocolDetectingChannel->registerProtocol(
                 std::make_unique<FixedProtocolPrefixRule>(
@@ -102,8 +103,7 @@ protected:
 
     void whenReceiveSomeProtocolHeader()
     {
-        const auto selectedProtocol =
-            nx::utils::random::choice(m_registeredProtocols);
+        const auto selectedProtocol = nx::utils::random::choice(m_registeredProtocols);
         const auto selectedProtocolHeader = std::get<1>(selectedProtocol);
         m_selectedProtocolId = std::get<0>(selectedProtocol);
         m_rawDataSource.write(selectedProtocolHeader.data(), selectedProtocolHeader.size());
@@ -117,8 +117,7 @@ protected:
         m_readBuffer.reserve(256);
         m_protocolDetectingChannel->readSomeAsync(
             &m_readBuffer,
-            [this](
-                SystemError::ErrorCode systemErrorCode, size_t /*bytesRead*/)
+            [this](SystemError::ErrorCode systemErrorCode, size_t /*bytesRead*/)
             {
                 if (systemErrorCode == SystemError::noError)
                 {
@@ -130,20 +129,11 @@ protected:
             });
     }
 
-    void thenRecvSucceeded()
-    {
-        ASSERT_EQ(SystemError::noError, m_recvResultQueue.pop());
-    }
+    void thenRecvSucceeded() { ASSERT_EQ(SystemError::noError, m_recvResultQueue.pop()); }
 
-    void thenRecvFailed()
-    {
-        ASSERT_NE(SystemError::noError, m_recvResultQueue.pop());
-    }
+    void thenRecvFailed() { ASSERT_NE(SystemError::noError, m_recvResultQueue.pop()); }
 
-    void thenEofIsReported()
-    {
-        ASSERT_EQ(SystemError::connectionReset, m_recvResultQueue.pop());
-    }
+    void thenEofIsReported() { ASSERT_EQ(SystemError::connectionReset, m_recvResultQueue.pop()); }
 
     void thenDefaultDelegateIsSelected()
     {
@@ -155,15 +145,9 @@ protected:
         ASSERT_EQ(m_selectedProtocolId, m_delegateCreatedEventQueue.pop());
     }
 
-    void thenSelectedProtocolHandlerReceivesAllSourceData()
-    {
-        ASSERT_EQ(m_dataRead, m_dataSent);
-    }
+    void thenSelectedProtocolHandlerReceivesAllSourceData() { ASSERT_EQ(m_dataRead, m_dataSent); }
 
-    void thenIoErrorIsReported()
-    {
-        ASSERT_NE(SystemError::noError, m_sendResult.pop());
-    }
+    void thenIoErrorIsReported() { ASSERT_NE(SystemError::noError, m_sendResult.pop()); }
 
 private:
     int m_defaultDelegateId = 0;

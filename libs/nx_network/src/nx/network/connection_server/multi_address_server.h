@@ -18,8 +18,7 @@ namespace nx::network::server {
  * Listens multiple addresses by creating multiple servers (SocketServerType).
  */
 template<class SocketServerType>
-class MultiAddressServer:
-    public AbstractStatisticsProvider
+class MultiAddressServer: public AbstractStatisticsProvider
 {
 public:
     /**
@@ -27,8 +26,11 @@ public:
      */
     template<typename... Args>
     MultiAddressServer(Args&&... args):
-        m_socketServerFactory([... args = std::forward<Args>(args)]() mutable
-            { return std::make_unique<SocketServerType>(std::forward<Args>(args)...); })
+        m_socketServerFactory(
+            [... args = std::forward<Args>(args)]() mutable
+            {
+                return std::make_unique<SocketServerType>(std::forward<Args>(args)...);
+            })
     {
     }
 
@@ -49,20 +51,21 @@ public:
     template<template<typename, typename> class Dictionary, typename AllocatorType>
     bool bind(const Dictionary<SocketAddress, AllocatorType>& addrToListenList)
     {
-        return bind(addrToListenList, [](auto&&...) { return true; });
+        return bind(
+            addrToListenList,
+            [](auto&&...)
+            {
+                return true;
+            });
     }
 
     /**
-     * Similar to the previous bind overload, but invokes configureListenerFunc on every created listener
-     * before invoking listener->bind.
+     * Similar to the previous bind overload, but invokes configureListenerFunc on every created
+     * listener before invoking listener->bind.
      * @param Configures listener. If false is returned, then this method fails.
      */
-    template<
-        template<typename, typename> class Dictionary,
-        typename AllocatorType,
-        typename Func
-    >
-    requires std::is_invocable_v<Func, SocketServerType*>
+    template<template<typename, typename> class Dictionary, typename AllocatorType, typename Func>
+        requires std::is_invocable_v<Func, SocketServerType*>
     bool bind(
         const Dictionary<SocketAddress, AllocatorType>& addrToListenList,
         Func configureListenerFunc)
@@ -83,8 +86,11 @@ public:
             if (!socketServer->bind(addr))
             {
                 const auto osErrorCode = SystemError::getLastOSErrorCode();
-                NX_WARNING(this, "Failed to bind to address %1. %2",
-                    addr, SystemError::toString(osErrorCode));
+                NX_WARNING(
+                    this,
+                    "Failed to bind to address %1. %2",
+                    addr,
+                    SystemError::toString(osErrorCode));
                 return false;
             }
 
@@ -98,23 +104,23 @@ public:
         return !m_listeners.empty();
     }
 
-    const std::vector<SocketAddress>& endpoints() const
-    {
-        return m_endpoints;
-    }
+    const std::vector<SocketAddress>& endpoints() const { return m_endpoints; }
 
     /**
      * @return true if all bound addresses are successfully listened.
      */
     bool listen(int backlogSize = AbstractStreamServerSocket::kDefaultBacklogSize)
     {
-        for (auto it = m_listeners.cbegin(); it != m_listeners.cend(); )
+        for (auto it = m_listeners.cbegin(); it != m_listeners.cend();)
         {
             if (!(*it)->listen(backlogSize))
             {
                 const auto& errorText = SystemError::getLastOSErrorText();
-                NX_ERROR(this, "Failed to listen address %1. %2",
-                    (*it)->address().toString(), errorText);
+                NX_ERROR(
+                    this,
+                    "Failed to listen address %1. %2",
+                    (*it)->address().toString(),
+                    errorText);
                 return false;
             }
             else
@@ -150,7 +156,7 @@ public:
 
     template<typename SocketServerRelatedType, typename... FuncArgs, typename... RealArgs>
     void forEachListener(
-        void(SocketServerRelatedType::*function)(FuncArgs...),
+        void (SocketServerRelatedType::*function)(FuncArgs...),
         RealArgs&&... args)
     {
         for (auto& listener: m_listeners)
@@ -183,16 +189,13 @@ public:
 
 protected:
     // can be overridden by child class implementations to perform private configuration.
-    virtual bool configureListenerInternal(SocketServerType* /*listener*/){ return true; }
+    virtual bool configureListenerInternal(SocketServerType* /*listener*/) { return true; }
 
-    std::list<std::unique_ptr<SocketServerType>>& listeners()
-    {
-        return m_listeners;
-    }
+    std::list<std::unique_ptr<SocketServerType>>& listeners() { return m_listeners; }
 
 private:
     std::function<std::unique_ptr<SocketServerType>()> m_socketServerFactory;
-    std::list<std::unique_ptr<SocketServerType> > m_listeners;
+    std::list<std::unique_ptr<SocketServerType>> m_listeners;
     std::vector<SocketAddress> m_endpoints;
     std::vector<std::unique_ptr<MultiAddressServer>> m_appendedOthers;
 

@@ -3,18 +3,18 @@
 #include "webrtc_streamer.h"
 
 #include <core/resource/camera_resource.h>
+#include <nx/metric/metrics_storage.h>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-
-#include <nx/metric/metrics_storage.h>
 
 #include "webrtc_session.h"
 #include "webrtc_session_pool.h"
 
 namespace nx::webrtc {
 
-Streamer::Streamer(Session* session): m_session(session)
+Streamer::Streamer(Session* session):
+    m_session(session)
 {
 }
 
@@ -112,8 +112,7 @@ static nx::vms::api::StreamIndex parseStreamIndex(const rapidjson::Value& obj)
         return nx::vms::api::StreamIndex::primary;
 
     const auto& v = it->value;
-    if ((v.IsString() && std::string{ v.GetString() } == "1")
-        || (v.IsInt() && v.GetInt() == 1)
+    if ((v.IsString() && std::string{v.GetString()} == "1") || (v.IsInt() && v.GetInt() == 1)
         || (v.IsInt64() && v.GetInt64() == 1))
     {
         return nx::vms::api::StreamIndex::secondary;
@@ -129,7 +128,8 @@ void Streamer::onDataChannelString(const std::string& data, int /*streamId*/)
     if (!d.IsObject())
         return;
 
-    nx::Uuid deviceId = parseDeviceId(d); // TODO https://networkoptix.atlassian.net/browse/VMS-61664
+    nx::Uuid deviceId =
+        parseDeviceId(d); // TODO https://networkoptix.atlassian.net/browse/VMS-61664
     if (auto it = d.FindMember("add"); it != d.MemberEnd())
     {
         const auto& addObj = it->value;
@@ -154,12 +154,8 @@ void Streamer::onDataChannelString(const std::string& data, int /*streamId*/)
         const nx::vms::api::StreamIndex newStream = parseStreamIndex(addObj);
         try
         {
-            m_session->createProvider(
-                deviceId,
-                positionMs,
-                newStream,
-                std::nullopt /*speedOpt*/);
-            m_session->consumer()->startProvidersIfNeeded(); //TODO It looks suspicious.
+            m_session->createProvider(deviceId, positionMs, newStream, std::nullopt /*speedOpt*/);
+            m_session->consumer()->startProvidersIfNeeded(); // TODO It looks suspicious.
         }
         catch (const std::exception& e)
         {
@@ -185,7 +181,7 @@ void Streamer::onDataChannelString(const std::string& data, int /*streamId*/)
         int64_t timestamp = 0;
         const auto& seekValue = d["seek"];
         auto timestampOpt = parseSeekMs(seekValue);
-        if (!timestampOpt)  //< TODO: Send error code when parsing failed.
+        if (!timestampOpt) //< TODO: Send error code when parsing failed.
             NX_DEBUG(this, "Failed to parse seek timestamp, type: %1", seekValue.GetType());
         else
             timestamp = *timestampOpt;
@@ -271,7 +267,8 @@ Ice* Streamer::ice()
 
 void Streamer::sendTimestamp(int64_t timestampUs, uint32_t rtpTimestamp)
 {
-    // TODO: this function doesn't support multi camera streaming properly. It is needed to refactor it.
+    // TODO: this function doesn't support multi camera streaming properly. It is needed to
+    // refactor it.
     rapidjson::Document message(rapidjson::kObjectType);
     message.AddMember("timestampMs", (int64_t) timestampUs / 1000, message.GetAllocator());
     message.AddMember("rtpTimestamp", rtpTimestamp, message.GetAllocator());
@@ -290,9 +287,7 @@ void Streamer::handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus resu
         return;
 
     rapidjson::Document message(rapidjson::kObjectType);
-    auto positionMs = provider->isLiveMode()
-        ? -1.0
-        : provider->getPosition() / 1000;
+    auto positionMs = provider->isLiveMode() ? -1.0 : provider->getPosition() / 1000;
 
     if (result == Consumer::StreamStatus::reconnect) //< If reconnect send timestamp to reconnect.
         positionMs = m_session->muxer()->getLastTimestampMs();
@@ -301,10 +296,7 @@ void Streamer::handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus resu
         "deviceId",
         provider->resource()->getId().toSimpleStdString(),
         message.GetAllocator());
-    message.AddMember(
-        "timestampMs",
-        positionMs,
-        message.GetAllocator());
+    message.AddMember("timestampMs", positionMs, message.GetAllocator());
     message.AddMember("status", result, message.GetAllocator());
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);

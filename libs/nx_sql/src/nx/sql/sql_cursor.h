@@ -20,8 +20,7 @@ public:
 };
 
 template<typename Record>
-class Cursor:
-    public BaseCursor
+class Cursor: public BaseCursor
 {
 public:
     Cursor(AbstractAsyncSqlQueryExecutor* asyncSqlQueryExecutor, nx::Uuid id):
@@ -30,10 +29,7 @@ public:
     {
     }
 
-    virtual ~Cursor()
-    {
-        m_asyncSqlQueryExecutor->removeCursor(m_id);
-    }
+    virtual ~Cursor() { m_asyncSqlQueryExecutor->removeCursor(m_id); }
 
     std::optional<Record> next()
     {

@@ -48,7 +48,10 @@ public:
      */
     bool popData(uint64_t sampleCount, uint8_t** buffers);
 
-    [[nodiscard]] uint32_t sampleCount() const { return static_cast<uint32_t>(m_dataSize / m_sampleSize); }
+    [[nodiscard]] uint32_t sampleCount() const
+    {
+        return static_cast<uint32_t>(m_dataSize / m_sampleSize);
+    }
     [[nodiscard]] uint32_t planeCount() const { return m_planeCount; }
     [[nodiscard]] uint32_t sampleSize() const { return m_sampleSize; }
 

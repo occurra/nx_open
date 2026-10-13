@@ -18,7 +18,7 @@ public:
 
     virtual QSize updatedResolution(const QSize& srcSize) override;
 
-    void setOutputImageSize( const QSize& size );
+    void setOutputImageSize(const QSize& size);
 
 private:
     QSize m_size;

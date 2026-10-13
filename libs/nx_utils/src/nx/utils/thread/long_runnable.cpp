@@ -13,13 +13,12 @@ static QnLongRunnablePool* s_poolInstance = nullptr;
 class QnLongRunnablePoolPrivate
 {
 public:
-
     void stopAll()
     {
         NX_MUTEX_LOCKER locker(&m_mutex);
         if (!m_created.isEmpty())
             NX_DEBUG(this, "Stopping all long runnables: %1", nx::containerString(m_created));
-        for (QnLongRunnable *runnable : m_created)
+        for (QnLongRunnable* runnable: m_created)
             runnable->pleaseStop();
         waitAllLocked();
     }
@@ -30,7 +29,7 @@ public:
         waitAllLocked();
     }
 
-    void createdNotify(QnLongRunnable *runnable)
+    void createdNotify(QnLongRunnable* runnable)
     {
         NX_MUTEX_LOCKER locker(&m_mutex);
 
@@ -39,7 +38,7 @@ public:
         m_created.insert(runnable);
     }
 
-    void startedNotify(QnLongRunnable *runnable)
+    void startedNotify(QnLongRunnable* runnable)
     {
         NX_MUTEX_LOCKER locker(&m_mutex);
 
@@ -48,7 +47,7 @@ public:
         m_running.insert(runnable);
     }
 
-    void finishedNotify(QnLongRunnable *runnable)
+    void finishedNotify(QnLongRunnable* runnable)
     {
         NX_MUTEX_LOCKER locker(&m_mutex);
 
@@ -59,7 +58,7 @@ public:
             m_waitCondition.wakeAll();
     }
 
-    void destroyedNotify(QnLongRunnable *runnable)
+    void destroyedNotify(QnLongRunnable* runnable)
     {
         NX_MUTEX_LOCKER locker(&m_mutex);
 
@@ -101,7 +100,8 @@ private:
             {
                 for (const auto runnable: m_running)
                 {
-                    NX_WARNING(this,
+                    NX_WARNING(
+                        this,
                         "A long runnable %1 hasn't stopped in %2 seconds",
                         runnable,
                         m_stopTimeout);
@@ -136,7 +136,9 @@ QnLongRunnable::QnLongRunnable(const char* threadName)
     }
     else
     {
-        NX_WARNING(this, "QnLongRunnablePool instance does not exist, "
+        NX_WARNING(
+            this,
+            "QnLongRunnablePool instance does not exist, "
             "lifetime of this runnable will not be tracked.");
     }
 }
@@ -166,7 +168,7 @@ void QnLongRunnable::at_finished()
 //-------------------------------------------------------------------------------------------------
 // QnLongRunnablePool.
 
-QnLongRunnablePool::QnLongRunnablePool(QObject *parent):
+QnLongRunnablePool::QnLongRunnablePool(QObject* parent):
     QObject(parent),
     d(new QnLongRunnablePoolPrivate())
 {

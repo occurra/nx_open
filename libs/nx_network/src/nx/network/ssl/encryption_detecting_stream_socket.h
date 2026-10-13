@@ -34,8 +34,7 @@ public:
      * Reads connection until protocol is detected.
      * If SSL is used, then performs SSL handshake.
      */
-    virtual void handshakeAsync(
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler) override;
+    virtual void handshakeAsync(nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler) override;
 
     virtual std::string serverName() const override;
 
@@ -47,8 +46,7 @@ private:
     std::unique_ptr<AbstractStreamSocket> createSslSocket(
         std::unique_ptr<AbstractStreamSocket> /*rawDataSource*/);
 
-    void proceedWithSslHandshakeIfNeeded(
-        SystemError::ErrorCode systemErrorCode);
+    void proceedWithSslHandshakeIfNeeded(SystemError::ErrorCode systemErrorCode);
 };
 
 } // namespace nx::network::ssl

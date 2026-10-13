@@ -34,8 +34,7 @@ bool serializeToHeaders(nx::network::http::HttpHeaders* /*where*/, const T& /*wh
 }
 
 template<typename Input, typename Descendant>
-class BaseApiRequestHandler:
-    public RequestHandlerWithContext
+class BaseApiRequestHandler: public RequestHandlerWithContext
 {
     using base_type = RequestHandlerWithContext;
     using FormatBinder = NxReflectWrapper;
@@ -57,9 +56,7 @@ protected:
      */
     template<typename... Output>
     // requires sizeof...(Output) <= 1
-    void requestCompleted(
-        ApiRequestResult result,
-        Output... output);
+    void requestCompleted(ApiRequestResult result, Output... output);
 
     void requestCompleted(
         nx::network::http::StatusCode::Value statusCode,
@@ -96,14 +93,14 @@ protected:
 private:
     using RequestHandlerWithContext::processRequest;
 
-    template <typename Output>
+    template<typename Output>
     bool serializeOutputToResponse(
         const ApiRequestResult& result,
         const Output& output,
         HttpHeaders* responseHeaders,
         std::unique_ptr<nx::network::http::AbstractMsgBodySource>* outputMsgBody);
 
-    template <typename Output>
+    template<typename Output>
     bool serializeOutputAsMessageBody(
         const Output& output,
         std::unique_ptr<nx::network::http::AbstractMsgBodySource>* outputMsgBody);
@@ -190,20 +187,22 @@ void BaseApiRequestHandler<Input, Descendant>::requestCompleted(
 
     if constexpr (sizeof...(output) > 0)
         if (result.getErrorClass() == ApiRequestErrorClass::noError)
-    {
         {
-            if (!serializeOutputToResponse(
-                    result,
-                    std::get<0>(std::forward_as_tuple(output...)),
-                    &responseHeaders,
-                    &outputMsgBody))
             {
-                result.setErrorClass(ApiRequestErrorClass::internalError);
-                result.setResultCode(nx::reflect::toString(ApiRequestErrorDetail::responseSerializationError));
-                result.setErrorDetail(static_cast<int>(ApiRequestErrorDetail::responseSerializationError));
+                if (!serializeOutputToResponse(
+                        result,
+                        std::get<0>(std::forward_as_tuple(output...)),
+                        &responseHeaders,
+                        &outputMsgBody))
+                {
+                    result.setErrorClass(ApiRequestErrorClass::internalError);
+                    result.setResultCode(
+                        nx::reflect::toString(ApiRequestErrorDetail::responseSerializationError));
+                    result.setErrorDetail(
+                        static_cast<int>(ApiRequestErrorDetail::responseSerializationError));
+                }
             }
         }
-    }
 
     bool reportResultInBody = result.getErrorClass() != ApiRequestErrorClass::noError;
 
@@ -212,19 +211,24 @@ void BaseApiRequestHandler<Input, Descendant>::requestCompleted(
     if constexpr (sizeof...(output) == 0)
         reportResultInBody = true; //< Reporting even success result as body.
 
-    if (reportResultInBody &&
-        nx::network::http::Method::isMessageBodyAllowedInResponse(
-            m_requestMethod, result.httpStatusCode()))
+    if (reportResultInBody
+        && nx::network::http::Method::isMessageBodyAllowedInResponse(
+            m_requestMethod,
+            result.httpStatusCode()))
     {
         nx::Buffer serializedResult;
-        NX_ASSERT(serializeToAnyFusionFormat(result, Qn::SerializationFormat::json, &serializedResult));
+        NX_ASSERT(
+            serializeToAnyFusionFormat(result, Qn::SerializationFormat::json, &serializedResult));
 
         outputMsgBody = std::make_unique<nx::network::http::BufferSource>(
             "application/json",
             serializedResult);
     }
 
-    requestCompleted(result.httpStatusCode(), std::move(responseHeaders), std::move(outputMsgBody));
+    requestCompleted(
+        result.httpStatusCode(),
+        std::move(responseHeaders),
+        std::move(outputMsgBody));
 }
 
 template<typename Input, typename Descendant>
@@ -334,8 +338,10 @@ bool BaseApiRequestHandler<Input, Descendant>::getOutputFormat(
     if (!formatStr.isEmpty())
     {
         bool parsed = false;
-        const auto format =
-            nx::reflect::fromString(formatStr.toStdString(), Qn::SerializationFormat::json, &parsed);
+        const auto format = nx::reflect::fromString(
+            formatStr.toStdString(),
+            Qn::SerializationFormat::json,
+            &parsed);
         if (!parsed || !isFormatSupported(format))
         {
             *errorDescription = ApiRequestResult(
@@ -379,7 +385,8 @@ bool BaseApiRequestHandler<Input, Descendant>::serializeOutputToResponse(
     std::unique_ptr<nx::network::http::AbstractMsgBodySource>* outputMsgBody)
 {
     if (nx::network::http::Method::isMessageBodyAllowedInResponse(
-            m_requestMethod, result.httpStatusCode()))
+            m_requestMethod,
+            result.httpStatusCode()))
     {
         return serializeOutputAsMessageBody(output, outputMsgBody);
     }
@@ -406,21 +413,21 @@ bool BaseApiRequestHandler<Input, Descendant>::serializeOutputAsMessageBody(
 }
 
 template<typename Input, typename Descendant>
-bool BaseApiRequestHandler<Input, Descendant>::
-    requestMethodCorrespondsToTheHanderSpecialization() const
+bool BaseApiRequestHandler<Input, Descendant>::requestMethodCorrespondsToTheHanderSpecialization()
+    const
 {
     // Forbidding ignoring request body.
     // So, Input=void cannot be used with a method that may contain a request body.
     // TODO: #akolesnikov Currently, these classes do not distinguish request body and query.
     // So, making the check softer than it should be to take this into account.
-    //constexpr bool isRequestMsgBodyExpected = !std::is_same_v<Input, void>;
-    //if (!isRequestMsgBodyExpected && Method::isMessageBodyAllowed(this->m_requestMethod))
+    // constexpr bool isRequestMsgBodyExpected = !std::is_same_v<Input, void>;
+    // if (!isRequestMsgBodyExpected && Method::isMessageBodyAllowed(this->m_requestMethod))
     //    return false;
 
     // For the response introducing a soft check: we may send an empty response body.
     // So, Output=void is allowed to be used with a method that may produce a response body.
-    //constexpr bool isResponseMsgBodySuggested = !std::is_same_v<Output, void>;
-    //if (isResponseMsgBodySuggested &&
+    // constexpr bool isResponseMsgBodySuggested = !std::is_same_v<Output, void>;
+    // if (isResponseMsgBodySuggested &&
     //    !Method::isMessageBodyAllowedInResponse(this->m_requestMethod, StatusCode::ok))
     //{
     //    return false;
@@ -451,8 +458,10 @@ bool BaseApiRequestHandler<Input, Descendant>::parseInput(
             ApiRequestErrorClass::badRequest,
             nx::reflect::toString(ApiRequestErrorDetail::deserializationError),
             ApiRequestErrorDetail::deserializationError,
-            nx::format("Error deserializing input of type %1",
-                Qn::serializationFormatToHttpContentType(this->inputFormat())).toStdString());
+            nx::format(
+                "Error deserializing input of type %1",
+                Qn::serializationFormatToHttpContentType(this->inputFormat()))
+                .toStdString());
         return false;
     }
 

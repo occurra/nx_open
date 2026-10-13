@@ -2,33 +2,39 @@
 
 #include "resource_media_layout.h"
 
-QnCustomResourceVideoLayout::QnCustomResourceVideoLayout(const QSize &size) :
+QnCustomResourceVideoLayout::QnCustomResourceVideoLayout(const QSize& size):
     m_size(size)
 {
     m_channels.resize(m_size.width() * m_size.height());
 }
 
-QnCustomResourceVideoLayoutPtr QnCustomResourceVideoLayout::fromString(const QString &value)
+QnCustomResourceVideoLayoutPtr QnCustomResourceVideoLayout::fromString(const QString& value)
 {
     QStringList params = value.split(QLatin1Char(';'));
     int width = 1;
     int height = 1;
     QStringList sensors;
-    for (int i = 0; i < params.size(); ++i) {
+    for (int i = 0; i < params.size(); ++i)
+    {
         QStringList values = params[i].split(QLatin1Char('='));
         if (values.size() < 2)
             continue;
 
-        if (values[0] == QLatin1String("width")) {
+        if (values[0] == QLatin1String("width"))
+        {
             width = values[1].toInt();
-        } else if (values[0] == QLatin1String("height")) {
+        }
+        else if (values[0] == QLatin1String("height"))
+        {
             height = values[1].toInt();
-        } else if (values[0] == QLatin1String("sensors")) {
+        }
+        else if (values[0] == QLatin1String("sensors"))
+        {
             sensors = values[1].split(QLatin1Char(','));
         }
     }
 
-    QnCustomResourceVideoLayoutPtr result( new QnCustomResourceVideoLayout(QSize(width, height)) );
+    QnCustomResourceVideoLayoutPtr result(new QnCustomResourceVideoLayout(QSize(width, height)));
     for (int i = 0; i < sensors.size(); ++i)
         result->setChannel(i, sensors[i].toInt());
     return result;
@@ -68,7 +74,7 @@ QSize QnCustomResourceVideoLayout::size() const
     return m_size;
 }
 
-void QnCustomResourceVideoLayout::setSize(const QSize &size)
+void QnCustomResourceVideoLayout::setSize(const QSize& size)
 {
     m_size = size;
     m_channels.resize(m_size.width() * m_size.height());

@@ -44,7 +44,9 @@ TEST(MjpegRtpParser, BuildsFrameForSinglePacket)
     // type-specific(1), fragment offset(3), type(1), q(1), width(1), height(1).
     uint8_t payload[] = {
         0x00, // type-specific.
-        0x00, 0x00, 0x00, // fragment offset.
+        0x00,
+        0x00,
+        0x00, // fragment offset.
         0x00, // type.
         0x32, // q.
         0x01, // width in 8-pixel blocks -> 8px.
@@ -81,7 +83,9 @@ TEST(MjpegRtpParser, UsesConfiguredResolutionToRestoreWrappedDimensions)
     bool gotData = false;
     uint8_t payload[] = {
         0x00, // type-specific.
-        0x00, 0x00, 0x00, // fragment offset.
+        0x00,
+        0x00,
+        0x00, // fragment offset.
         0x00, // type.
         0x32, // q.
         0xE0, // width in 8-pixel blocks after 2048 wrap.

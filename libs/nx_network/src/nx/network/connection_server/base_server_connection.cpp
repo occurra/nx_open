@@ -4,9 +4,7 @@
 
 namespace nx::network::server {
 
-BaseServerConnection::BaseServerConnection(
-    std::unique_ptr<AbstractStreamSocket> streamSocket)
-    :
+BaseServerConnection::BaseServerConnection(std::unique_ptr<AbstractStreamSocket> streamSocket):
     m_streamSocket(std::move(streamSocket))
 {
     bindToAioThread(m_streamSocket->getAioThread());
@@ -33,19 +31,28 @@ void BaseServerConnection::startReadingConnection(
             {
                 const auto errorCode = SystemError::getLastOSErrorCode();
 
-                NX_VERBOSE(this, "Connection %1-%2 configuration error. %3",
-                    m_streamSocket->getLocalAddress(), m_streamSocket->getForeignAddress(),
+                NX_VERBOSE(
+                    this,
+                    "Connection %1-%2 configuration error. %3",
+                    m_streamSocket->getLocalAddress(),
+                    m_streamSocket->getForeignAddress(),
                     SystemError::toString(errorCode));
 
                 return m_streamSocket->post(
-                    [this, errorCode]() { onBytesRead(errorCode, (size_t) -1); });
+                    [this, errorCode]()
+                    {
+                        onBytesRead(errorCode, (size_t) -1);
+                    });
             }
 
             m_readingConnection = true;
 
             m_streamSocket->readSomeAsync(
                 &m_readBuffer,
-                [this](auto&&... args) { onBytesRead(std::move(args)...); });
+                [this](auto&&... args)
+                {
+                    onBytesRead(std::move(args)...);
+                });
         });
 }
 
@@ -75,11 +82,18 @@ void BaseServerConnection::sendBufAsync(const nx::Buffer* buf)
             {
                 m_streamSocket->sendAsync(
                     buf,
-                    [this](auto&&... args) { onBytesSent(std::move(args)...); });
+                    [this](auto&&... args)
+                    {
+                        onBytesSent(std::move(args)...);
+                    });
             }
             else
             {
-                post([this]() { onBytesSent(SystemError::notConnected, (std::size_t) -1); });
+                post(
+                    [this]()
+                    {
+                        onBytesSent(SystemError::notConnected, (std::size_t) -1);
+                    });
             }
             m_bytesToSend = buf->size();
         });
@@ -87,7 +101,11 @@ void BaseServerConnection::sendBufAsync(const nx::Buffer* buf)
 
 void BaseServerConnection::cancelRead()
 {
-    executeInAioThreadSync([this]() { stopReadingConnection(); });
+    executeInAioThreadSync(
+        [this]()
+        {
+            stopReadingConnection();
+        });
 }
 
 void BaseServerConnection::cancelWrite()
@@ -186,7 +204,7 @@ void BaseServerConnection::onBytesRead(SystemError::ErrorCode errorCode, size_t 
     m_totalBytesReceived += bytesRead;
 
     NX_ASSERT(
-        (size_t)m_readBuffer.size() >= bytesRead,
+        (size_t) m_readBuffer.size() >= bytesRead,
         nx::format("%1 vs %2").args(m_readBuffer.size(), bytesRead));
 
     {
@@ -201,10 +219,13 @@ void BaseServerConnection::onBytesRead(SystemError::ErrorCode errorCode, size_t 
     if (!m_streamSocket)
         return;
 
-    if (bytesRead == 0)    //< Connection closed by remote peer.
+    if (bytesRead == 0) //< Connection closed by remote peer.
     {
-        NX_VERBOSE(this, "Connection %1-%2 is closed by remote peer",
-            m_streamSocket->getLocalAddress(), m_streamSocket->getForeignAddress());
+        NX_VERBOSE(
+            this,
+            "Connection %1-%2 is closed by remote peer",
+            m_streamSocket->getLocalAddress(),
+            m_streamSocket->getForeignAddress());
         return handleSocketError(SystemError::connectionReset);
     }
 
@@ -213,7 +234,10 @@ void BaseServerConnection::onBytesRead(SystemError::ErrorCode errorCode, size_t 
 
     m_streamSocket->readSomeAsync(
         &m_readBuffer,
-        [this](auto&&... args) { onBytesRead(std::move(args)...); });
+        [this](auto&&... args)
+        {
+            onBytesRead(std::move(args)...);
+        });
 }
 
 void BaseServerConnection::onBytesSent(
@@ -246,8 +270,11 @@ void BaseServerConnection::resetInactivityTimer()
         *m_inactivityTimeout,
         [this]()
         {
-            NX_VERBOSE(this, "Closing connection from %1 to %2 by inactivity timeout",
-                m_streamSocket->getForeignAddress(), m_streamSocket->getLocalAddress());
+            NX_VERBOSE(
+                this,
+                "Closing connection from %1 to %2 by inactivity timeout",
+                m_streamSocket->getForeignAddress(),
+                m_streamSocket->getLocalAddress());
             handleSocketError(SystemError::timedOut);
         });
 }
@@ -261,8 +288,7 @@ void BaseServerConnection::removeInactivityTimer()
 
 BaseServerConnectionWrapper::BaseServerConnectionWrapper(
     std::unique_ptr<AbstractStreamSocket> streamSocket,
-    BaseServerConnectionHandler* handler)
-    :
+    BaseServerConnectionHandler* handler):
     BaseServerConnection(std::move(streamSocket)),
     m_handler(handler)
 {

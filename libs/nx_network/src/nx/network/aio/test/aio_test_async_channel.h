@@ -15,8 +15,7 @@
 
 namespace nx::network::aio::test {
 
-class NX_NETWORK_API AsyncChannel:
-    public AbstractAsyncChannel
+class NX_NETWORK_API AsyncChannel: public AbstractAsyncChannel
 {
     using base_type = BasicPollable;
 
@@ -38,13 +37,9 @@ public:
 
     virtual void bindToAioThread(AbstractAioThread* aioThread) override;
 
-    virtual void readSomeAsync(
-        nx::Buffer* const buffer,
-        IoCompletionHandler handler) override;
+    virtual void readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler) override;
 
-    virtual void sendAsync(
-        const nx::Buffer* buffer,
-        IoCompletionHandler handler) override;
+    virtual void sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler) override;
 
     void pauseReadingData();
     void resumeReadingData();

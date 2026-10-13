@@ -47,30 +47,26 @@ class StreamServerConnectionHolder:
     public AbstractStatisticsProvider
 {
 private:
-    template <typename T, typename = void>
-    struct HasConnectionStatistics: std::false_type {};
+    template<typename T, typename = void>
+    struct HasConnectionStatistics: std::false_type
+    {
+    };
 
     template<typename T>
     struct HasConnectionStatistics<
         T,
-        std::enable_if_t<
-            std::is_same_v<
-                detail::ConnectionStatistics,
-                decltype(std::declval<T>().connectionStatistics)
-            >
-        >
-    >: std::true_type {};
+        std::enable_if_t<std::is_same_v<
+            detail::ConnectionStatistics,
+            decltype(std::declval<T>().connectionStatistics)>>>: std::true_type
+    {
+    };
 
 public:
-    virtual ~StreamServerConnectionHolder()
-    {
-        closeAllConnections();
-    }
+    virtual ~StreamServerConnectionHolder() { closeAllConnections(); }
 
     virtual Statistics statistics() const override
     {
-        return m_statisticsCalculator.statistics(
-            static_cast<int>(this->connectionCount()));
+        return m_statisticsCalculator.statistics(static_cast<int>(this->connectionCount()));
     }
 
     virtual void closeConnection(
@@ -88,7 +84,7 @@ public:
         ++m_connectionsBeingClosedCount;
         lk.unlock();
 
-        //we are in connection's aio thread, so we can just free connection
+        // we are in connection's aio thread, so we can just free connection
         connectionCtx.second.reset();
 
         lk.relock();
@@ -109,7 +105,10 @@ public:
         if constexpr (HasConnectionStatistics<ConnectionType>::value)
         {
             connection->connectionStatistics.setMessageReceivedHandler(
-                [this](){ m_statisticsCalculator.messageReceived(); });
+                [this]()
+                {
+                    m_statisticsCalculator.messageReceived();
+                });
         }
 
         auto connectionPtr = connection.get();
@@ -119,7 +118,9 @@ public:
             connection
                 ->registerCloseHandler(
                     [this, connectionPtr](auto closeReason, auto /*connectionDestroyed*/)
-                    { closeConnection(closeReason, connectionPtr); })
+                    {
+                        closeConnection(closeReason, connectionPtr);
+                    })
                 .release();
         }
 
@@ -174,7 +175,7 @@ private:
     mutable nx::Mutex m_mutex;
     nx::WaitCondition m_cond;
     int m_connectionsBeingClosedCount = 0;
-    //TODO #akolesnikov this map types seems strange. Replace with std::set?
+    // TODO #akolesnikov this map types seems strange. Replace with std::set?
     std::map<ConnectionType*, std::shared_ptr<ConnectionType>> m_connections;
     detail::StatisticsCalculator m_statisticsCalculator;
 };
@@ -194,9 +195,7 @@ struct MessageSender
         connection->post(
             [message = m_message, connection]() mutable
             {
-                connection->sendMessage(
-                    std::move(message),
-                    [](SystemError::ErrorCode) {});
+                connection->sendMessage(std::move(message), [](SystemError::ErrorCode) {});
             });
     }
 
@@ -224,9 +223,7 @@ class StreamSocketServer:
 public:
     StreamSocketServer(std::unique_ptr<AbstractStreamServerSocket> serverSocket):
         m_serverSocket(serverSocket.get()),
-        m_acceptor(
-            std::make_unique<StreamServerSocketToAcceptorWrapper>(
-                std::move(serverSocket)))
+        m_acceptor(std::make_unique<StreamServerSocketToAcceptorWrapper>(std::move(serverSocket)))
     {
         bindToAioThread(m_acceptor->getAioThread());
     }
@@ -281,10 +278,8 @@ public:
     {
         NX_CRITICAL(m_serverSocket);
 
-        bool result =
-            m_serverSocket->setRecvTimeout(0) &&
-            m_serverSocket->setReuseAddrFlag(true) &&
-            m_serverSocket->bind(socketAddress);
+        bool result = m_serverSocket->setRecvTimeout(0) && m_serverSocket->setReuseAddrFlag(true)
+            && m_serverSocket->bind(socketAddress);
         if (result)
             m_localAddress = m_serverSocket->getLocalAddress();
         return result;
@@ -294,8 +289,7 @@ public:
     {
         NX_CRITICAL(m_serverSocket);
 
-        if (!m_serverSocket->setNonBlockingMode(true) ||
-            !m_serverSocket->listen(backlogSize))
+        if (!m_serverSocket->setNonBlockingMode(true) || !m_serverSocket->listen(backlogSize))
         {
             return false;
         }
@@ -304,10 +298,7 @@ public:
         return true;
     }
 
-    SocketAddress address() const
-    {
-        return m_localAddress;
-    }
+    SocketAddress address() const { return m_localAddress; }
 
     void start()
     {
@@ -358,25 +349,24 @@ private:
     {
         // TODO: #akolesnikov handle errorCode: try to call acceptAsync after some delay?
         m_acceptor->acceptAsync(
-            [this](
-                SystemError::ErrorCode code,
-                std::unique_ptr<AbstractStreamSocket> socket)
+            [this](SystemError::ErrorCode code, std::unique_ptr<AbstractStreamSocket> socket)
             {
                 newConnectionAccepted(code, std::move(socket));
             });
 
         if (code != SystemError::noError)
         {
-            NX_WARNING(this, nx::format("Accept has failed: %1")
-                .arg(SystemError::toString(code)));
+            NX_WARNING(this, nx::format("Accept has failed: %1").arg(SystemError::toString(code)));
             return;
         }
 
         if (!socket->setNonBlockingMode(true))
         {
             const auto errorCode = SystemError::getLastOSErrorCode();
-            NX_WARNING(this, nx::format("Failed to switch socket to a non blocking mode: %1")
-                .arg(SystemError::toString(errorCode)));
+            NX_WARNING(
+                this,
+                nx::format("Failed to switch socket to a non blocking mode: %1")
+                    .arg(SystemError::toString(errorCode)));
             return;
         }
 

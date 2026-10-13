@@ -28,10 +28,9 @@ struct SocketGlobalsImpl;
 
 /**
  * Contains objects that are required to use the network subsystem.
- * This object MUST be created before the first socket usage and destroyed after the last socket usage.
- * It can be created/destroyed with
- * <pre><code>
- * nx::network::SocketGlobalsHolder socketGlobals;
+ * This object MUST be created before the first socket usage and destroyed after the last socket
+ * usage. It can be created/destroyed with <pre><code> nx::network::SocketGlobalsHolder
+ * socketGlobals;
  * ...
  * </code></pre>
  * or
@@ -55,12 +54,11 @@ public:
      * Must be called before any socket use.
      * @param arguments Command-line arguments
      * The following command-line arguments are supported:
-     * - aio-thread-pool-size Number of AIO threads to create. By default, 0 (the number of threads is auto-detected)
+     * - aio-thread-pool-size Number of AIO threads to create. By default, 0 (the number of threads
+     * is auto-detected)
      * - cloud-host Cloud domain name to use
      */
-    static void init(
-        const ArgumentParser& arguments,
-        int initializationFlags = 0);
+    static void init(const ArgumentParser& arguments, int initializationFlags = 0);
 
     /**
      * Must be called before any socket use.
@@ -111,10 +109,7 @@ public:
     class InitGuard
     {
     public:
-        InitGuard(int initializationFlags = 0)
-        {
-            init(initializationFlags);
-        }
+        InitGuard(int initializationFlags = 0) { init(initializationFlags); }
 
         InitGuard(const ArgumentParser& arguments, int initializationFlags = 0)
         {
@@ -156,7 +151,8 @@ private:
 //-------------------------------------------------------------------------------------------------
 
 /**
- * Invokes SocketGlobals::init() when constructed and SocketGlobals::deinit() just before destruction.
+ * Invokes SocketGlobals::init() when constructed and SocketGlobals::deinit() just before
+ * destruction.
  */
 class NX_NETWORK_API SocketGlobalsHolder
 {

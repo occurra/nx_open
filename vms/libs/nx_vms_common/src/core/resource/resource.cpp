@@ -90,30 +90,38 @@ void QnResource::updateInternal(const QnResourcePtr& source, NotifierList& notif
     if (m_url != source->m_url)
     {
         m_url = source->m_url;
-        notifiers << [r = toSharedPointer(this)] { emit r->urlChanged(r); };
+        notifiers << [r = toSharedPointer(this)]
+        {
+            emit r->urlChanged(r);
+        };
     }
 
     if (m_flags != source->m_flags)
     {
         m_flags = source->m_flags;
-        notifiers << [r = toSharedPointer(this)] { emit r->flagsChanged(r); };
+        notifiers << [r = toSharedPointer(this)]
+        {
+            emit r->flagsChanged(r);
+        };
     }
 
     if (m_name != source->m_name)
     {
         m_name = source->m_name;
-        notifiers << [r = toSharedPointer(this)] { emit r->nameChanged(r); };
+        notifiers << [r = toSharedPointer(this)]
+        {
+            emit r->nameChanged(r);
+        };
     }
 
     if (m_parentId != source->m_parentId)
     {
         const auto previousParentId = m_parentId;
         m_parentId = source->m_parentId;
-        notifiers <<
-            [r = toSharedPointer(this), previousParentId]
-            {
-                emit r->parentIdChanged(r, previousParentId);
-            };
+        notifiers << [r = toSharedPointer(this), previousParentId]
+        {
+            emit r->parentIdChanged(r, previousParentId);
+        };
     }
 
     if (useLocalProperties())
@@ -269,15 +277,21 @@ void QnResource::setStatus(ResourceStatus newStatus, Qn::StatusChangeReason reas
 {
     if (newStatus == ResourceStatus::undefined)
     {
-        NX_VERBOSE(this, "Won't change status of resource %1 (%2) because it is 'undefined'",
-            getId(), nx::utils::url::hidePassword(getUrl()));
+        NX_VERBOSE(
+            this,
+            "Won't change status of resource %1 (%2) because it is 'undefined'",
+            getId(),
+            nx::utils::url::hidePassword(getUrl()));
         return;
     }
 
     if (hasFlags(Qn::removed))
     {
-        NX_VERBOSE(this, "Won't change status of resource %1 (%2) because it has a 'removed' flag",
-            getId(), nx::utils::url::hidePassword(getUrl()));
+        NX_VERBOSE(
+            this,
+            "Won't change status of resource %1 (%2) because it has a 'removed' flag",
+            getId(),
+            nx::utils::url::hidePassword(getUrl()));
         return;
     }
 
@@ -289,13 +303,18 @@ void QnResource::setStatus(ResourceStatus newStatus, Qn::StatusChangeReason reas
     ResourceStatus oldStatus = context->resourceStatusDictionary()->value(id);
     if (oldStatus == newStatus)
     {
-        NX_VERBOSE(this, "Won't change status of resource %1 (%2) because status (%3) hasn't changed",
-            getId(), nx::utils::url::hidePassword(getUrl()), newStatus);
+        NX_VERBOSE(
+            this,
+            "Won't change status of resource %1 (%2) because status (%3) hasn't changed",
+            getId(),
+            nx::utils::url::hidePassword(getUrl()),
+            newStatus);
         return;
     }
 
     ++m_statusChangeCounter;
-    NX_DEBUG(this,
+    NX_DEBUG(
+        this,
         "Status changed %1 -> %2, reason=%3, name=[%4], url=[%5]",
         oldStatus,
         newStatus,
@@ -361,11 +380,8 @@ bool QnResource::setProperty(const QString& key, const QString& value, bool mark
     NX_ASSERT(!getId().isNull());
     if (auto* const context = systemContext(); NX_ASSERT(context))
     {
-        const auto prevValue = context->resourcePropertyDictionary()->setValue(
-            getId(),
-            key,
-            value,
-            markDirty);
+        const auto prevValue =
+            context->resourcePropertyDictionary()->setValue(getId(), key, value, markDirty);
 
         if (prevValue.has_value())
             emitPropertyChanged(key, prevValue.value(), value);
@@ -392,11 +408,8 @@ bool QnResource::updateProperty(
 
     if (auto* context = systemContext(); context && context->resourcePropertyDictionary())
     {
-        const auto [prevValue, newValue] = context->resourcePropertyDictionary()->updateValue(
-            getId(),
-            key,
-            updater,
-            markDirty);
+        const auto [prevValue, newValue] =
+            context->resourcePropertyDictionary()->updateValue(getId(), key, updater, markDirty);
 
         const bool valueChanged = prevValue != newValue;
         if (valueChanged)
@@ -409,13 +422,16 @@ bool QnResource::updateProperty(
 }
 
 void QnResource::emitPropertyChanged(
-    const QString& key, const QString& prevValue, const QString& newValue)
+    const QString& key,
+    const QString& prevValue,
+    const QString& newValue)
 {
     if (key == nx::vms::api::device_properties::kVideoLayout)
         emit videoLayoutChanged(::toSharedPointer(this));
 
     ++m_propertyChangeCounter;
-    NX_VERBOSE(this,
+    NX_VERBOSE(
+        this,
         "Changed property '%1' = '%2'",
         key,
         hidePasswordIfCredentialsPropety(key, newValue));

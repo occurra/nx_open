@@ -112,7 +112,9 @@ bool isSavpMedia(const nx::rtp::Sdp::Media& media)
 std::optional<std::string> parseMikeyAttribute(std::string_view attribute)
 {
     if (!nx::utils::startsWith(
-            attribute, kKeyManagementAttributePrefix, nx::utils::CaseSensitivity::off))
+            attribute,
+            kKeyManagementAttributePrefix,
+            nx::utils::CaseSensitivity::off))
     {
         return std::nullopt;
     }
@@ -141,14 +143,17 @@ std::optional<std::string> findMikeyPayload(const std::vector<std::string>& attr
 }
 
 std::optional<std::string> findMikeyPayload(
-    const nx::rtp::Sdp::Media& media, const std::vector<std::string>& sessionSdpAttributes)
+    const nx::rtp::Sdp::Media& media,
+    const std::vector<std::string>& sessionSdpAttributes)
 {
     bool hasMediaKeyManagement = false;
     for (const auto& attribute: media.sdpAttributes)
     {
         const std::string value = attribute.toStdString();
         if (!nx::utils::startsWith(
-                value, kKeyManagementAttributePrefix, nx::utils::CaseSensitivity::off))
+                value,
+                kKeyManagementAttributePrefix,
+                nx::utils::CaseSensitivity::off))
         {
             continue;
         }
@@ -203,7 +208,8 @@ std::optional<SecurityPolicy> parseSecurityPolicy(nx::utils::BitStreamReader* re
         return result;
     reader->readData(parametersData.data(), parametersLength);
     nx::utils::BitStreamReader parameters(
-        parametersData.data(), parametersData.data() + parametersData.size());
+        parametersData.data(),
+        parametersData.data() + parametersData.size());
 
     while (parameters.bitsLeft() > 0)
     {
@@ -271,7 +277,8 @@ std::optional<Kemac> parseKemac(nx::utils::BitStreamReader* reader)
     std::vector<std::uint8_t> encryptedDataBytes(encryptedDataLength);
     reader->readData(encryptedDataBytes.data(), encryptedDataLength);
     nx::utils::BitStreamReader encryptedData(
-        encryptedDataBytes.data(), encryptedDataBytes.data() + encryptedDataBytes.size());
+        encryptedDataBytes.data(),
+        encryptedDataBytes.data() + encryptedDataBytes.size());
 
     const std::uint8_t keyDataNextPayload = encryptedData.getBits(8);
     const std::uint8_t typeAndValidity = encryptedData.getBits(8);
@@ -340,7 +347,7 @@ std::optional<nx::rtsp::SrtpCryptoContext> parseMikeyPayload(std::string_view ba
         std::vector<std::uint8_t> keyAndSalt;
         std::vector<std::uint8_t> mki;
         for (int payloadCount = 0; nextPayload != kPayloadLast && payloadCount < 16;
-            ++payloadCount)
+             ++payloadCount)
         {
             switch (nextPayload)
             {
@@ -435,7 +442,8 @@ std::optional<nx::rtsp::SrtpCryptoContext> parseMikeyPayload(std::string_view ba
     }
 }
 
-std::string makeMikeyPayload(const std::vector<std::uint8_t>& key,
+std::string makeMikeyPayload(
+    const std::vector<std::uint8_t>& key,
     const std::vector<std::uint8_t>& mki,
     std::uint32_t ssrc,
     const nx::rtsp::SrtpCryptoPolicy& cryptoPolicy)
@@ -443,8 +451,8 @@ std::string makeMikeyPayload(const std::vector<std::uint8_t>& key,
     constexpr int kRandSize = 16;
     const std::vector<std::uint8_t> rand = randomBytes(kRandSize);
 
-    const std::uint64_t timestamp =
-        nx::rtp::unixTimestampToNtpTimestamp(std::chrono::duration_cast<std::chrono::microseconds>(
+    const std::uint64_t timestamp = nx::rtp::unixTimestampToNtpTimestamp(
+        std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()));
 
     constexpr std::uint8_t kPolicyParamLength = 1;
@@ -461,7 +469,8 @@ std::string makeMikeyPayload(const std::vector<std::uint8_t>& key,
         : kAuthenticationTagLength;
 
     // Each SRTP security policy parameter is encoded as {type, length, value}.
-    const std::vector<std::uint8_t> policyParams = {kEncryptionAlgorithm,
+    const std::vector<std::uint8_t> policyParams = {
+        kEncryptionAlgorithm,
         kPolicyParamLength,
         static_cast<std::uint8_t>(cryptoPolicy.encryptionAlgorithm),
         kEncryptionKeyLength,
@@ -552,7 +561,8 @@ std::string makeMikeyPayload(const std::vector<std::uint8_t>& key,
         std::string_view(reinterpret_cast<const char*>(result.data()), result.size()));
 }
 
-std::optional<MikeyData> makeMikeyData(const nx::Url& setupUrl,
+std::optional<MikeyData> makeMikeyData(
+    const nx::Url& setupUrl,
     const nx::rtsp::SrtpCryptoPolicy& cryptoPolicy,
     const std::vector<std::uint8_t>& mki)
 {
@@ -567,11 +577,11 @@ std::optional<MikeyData> makeMikeyData(const nx::Url& setupUrl,
     const auto clientSsrc = nx::utils::random::number<std::uint32_t>();
     result.encryptionData.client.ssrc = clientSsrc;
 
-    const std::string clientMikeyPayload =
-        makeMikeyPayload(result.encryptionData.client.keyAndSalt,
-            result.encryptionData.client.mki,
-            clientSsrc,
-            cryptoPolicy);
+    const std::string clientMikeyPayload = makeMikeyPayload(
+        result.encryptionData.client.keyAndSalt,
+        result.encryptionData.client.mki,
+        clientSsrc,
+        cryptoPolicy);
 
     result.keyMgmtHeader = "prot=mikey;uri=\"" + setupUrl.toString().toUtf8() + "\";data=\""
         + clientMikeyPayload + "\"";
@@ -581,7 +591,8 @@ std::optional<MikeyData> makeMikeyData(const nx::Url& setupUrl,
 } // namespace
 
 std::optional<std::string> getMikeyPayload(
-    const nx::rtp::Sdp::Media& media, const std::vector<std::string>& sessionSdpAttributes)
+    const nx::rtp::Sdp::Media& media,
+    const std::vector<std::string>& sessionSdpAttributes)
 {
     if (!isSavpMedia(media))
         return std::nullopt;
@@ -590,7 +601,8 @@ std::optional<std::string> getMikeyPayload(
 }
 
 std::optional<MikeyData> makeStandardMikey(
-    const std::string& mikeyPayload, const nx::Url& setupUrl)
+    const std::string& mikeyPayload,
+    const nx::Url& setupUrl)
 {
     const auto serverContext = parseMikeyPayload(mikeyPayload);
     if (!serverContext)
@@ -604,7 +616,8 @@ std::optional<MikeyData> makeStandardMikey(
 }
 
 std::optional<MikeyData> makeClientManagedMikey(
-    const nx::Url& setupUrl, nx::rtsp::SrtpCryptoPolicy cryptoPolicy)
+    const nx::Url& setupUrl,
+    nx::rtsp::SrtpCryptoPolicy cryptoPolicy)
 {
     auto result = makeMikeyData(setupUrl, cryptoPolicy, {0, 0, 0, 1});
     if (!result)

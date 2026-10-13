@@ -1,27 +1,31 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
 #include "password_analyzer.h"
-#include "password_analyzer_p.h"
 
+#include <array>
 #include <numeric>
 #include <string>
-#include <array>
+
+#include "password_analyzer_p.h"
 
 #ifdef _DEBUG
-//#define ALLOW_ANY_PASSWORD
+// #define ALLOW_ANY_PASSWORD
 #endif
 
 namespace {
 
 int differentSign(int left, int right)
 {
-    static const auto sign =
-        [](int value){ return (value > 0) - (value < 0); };
+    static const auto sign = [](int value)
+    {
+        return (value > 0) - (value < 0);
+    };
 
     return sign(left) != sign(right);
 }
 
-bool hasRepeatingSymbols(const QString& password,
+bool hasRepeatingSymbols(
+    const QString& password,
     int maxCount = nx::utils::PasswordLimitations::kRepeatingCharactersLimit)
 {
     const auto count = password.size();
@@ -46,7 +50,8 @@ bool hasRepeatingSymbols(const QString& password,
     return false;
 }
 
-bool hasConsecutiveSequence(const QString& password,
+bool hasConsecutiveSequence(
+    const QString& password,
     int maxCount = nx::utils::PasswordLimitations::kConsecutiveCharactersLimit)
 {
     const auto count = password.size();
@@ -148,9 +153,9 @@ PasswordStrength passwordStrength(const QString& password)
 
         if (category == CharCategoryLookup::Space)
         {
-            category = (kAllowSpace && ch != password.cbegin() && ch != password.cend() - 1) ?
-                CharCategoryLookup::Symbol:
-                CharCategoryLookup::Invalid;
+            category = (kAllowSpace && ch != password.cbegin() && ch != password.cend() - 1)
+                ? CharCategoryLookup::Symbol
+                : CharCategoryLookup::Invalid;
         }
 
         if (category == CharCategoryLookup::Invalid)
@@ -189,8 +194,7 @@ PasswordStrength cameraPasswordStrength(const QString& password)
         static const CharCategoryLookup categoryLookup(PasswordLimitations::kCameraAllowedSymbols);
         auto category = categoryLookup[ch->unicode()];
 
-        if (category == CharCategoryLookup::Space
-            && ch != password.cbegin()
+        if (category == CharCategoryLookup::Space && ch != password.cbegin()
             && ch != password.cend() - 1)
         {
             category = CharCategoryLookup::Symbol;

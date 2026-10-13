@@ -28,4 +28,4 @@ public:
     static std::unique_ptr<AbstractTextRenderer> create();
 };
 
-} // nx::utils
+} // namespace nx::utils

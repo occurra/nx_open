@@ -41,15 +41,7 @@ struct SessionDescription
 struct Fingerprint
 {
     std::vector<uint8_t> hash; //< In binary format.
-    NX_REFLECTION_ENUM_IN_CLASS(Type,
-        sha1,
-        sha224,
-        sha256,
-        sha384,
-        sha512,
-        md5,
-        md2,
-        none)
+    NX_REFLECTION_ENUM_IN_CLASS(Type, sha1, sha224, sha256, sha384, sha512, md5, md2, none)
     Type type = Type::none;
     static Fingerprint parse(std::string_view sv);
 };
@@ -76,7 +68,7 @@ struct IceCandidate
     static constexpr int kIceMinIndex = 0;
 
     // Debug purpose.
-    enum Filter: int
+    enum Filter : int
     {
         None = 0,
         UdpHost = 1,

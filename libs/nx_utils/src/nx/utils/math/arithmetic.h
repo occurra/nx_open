@@ -17,7 +17,7 @@ enum class Sign
     positive = 1,
 };
 
-template <typename NumberType>
+template<typename NumberType>
 inline Sign sign(NumberType number)
 {
     if (number < 0)

@@ -38,8 +38,7 @@ public:
     void submit(MoveOnlyFunc<void()>&& handler) override;
 
 signals:
-    void execute(
-        nx::utils::async_handler_executor_detail::ExecuteArg);
+    void execute(nx::utils::async_handler_executor_detail::ExecuteArg);
 };
 
 } // namespace async_handler_executor_detail

@@ -19,8 +19,7 @@ namespace nx::network::test {
 
 constexpr char kUnknownHostName[] = "unknown.host";
 
-class UdpSocket:
-    public ::testing::Test
+class UdpSocket: public ::testing::Test
 {
 public:
     UdpSocket():
@@ -32,8 +31,7 @@ public:
         m_ipVersion(ipVersion),
         m_testMessage(nx::Uuid::createUuid().toSimpleString().toUtf8())
     {
-        SocketGlobals::addressResolver().dnsResolver().blockHost(
-            kUnknownHostName);
+        SocketGlobals::addressResolver().dnsResolver().blockHost(kUnknownHostName);
     }
 
     ~UdpSocket()
@@ -50,8 +48,7 @@ public:
         if (m_receiver)
             m_receiver->pleaseStopSync();
 
-        SocketGlobals::addressResolver().dnsResolver().unblockHost(
-            kUnknownHostName);
+        SocketGlobals::addressResolver().dnsResolver().unblockHost(kUnknownHostName);
     }
 
 protected:
@@ -62,15 +59,11 @@ protected:
         std::promise<void> readPromise;
     };
 
-    void udpSocketTransferTest(
-        const HostAddress& hostNameMappedToLocalHost)
+    void udpSocketTransferTest(const HostAddress& hostNameMappedToLocalHost)
     {
-        startSending(
-            SocketAddress(hostNameMappedToLocalHost, m_receiver->getLocalAddress().port));
+        startSending(SocketAddress(hostNameMappedToLocalHost, m_receiver->getLocalAddress().port));
 
-        assertMessageIsReceivedFrom(
-            m_ipVersion,
-            m_sender->getLocalAddress());
+        assertMessageIsReceivedFrom(m_ipVersion, m_sender->getLocalAddress());
 
         assertSendResultIsCorrect(m_receiver->getLocalAddress());
     }
@@ -86,8 +79,7 @@ protected:
 
     void whenSendDataToUnknownHost()
     {
-        ASSERT_TRUE(m_sender->setNonBlockingMode(true))
-            << SystemError::getLastOSErrorText();
+        ASSERT_TRUE(m_sender->setNonBlockingMode(true)) << SystemError::getLastOSErrorText();
 
         m_sender->sendToAsync(
             &m_testMessage,
@@ -98,8 +90,10 @@ protected:
                 size_t bytesSent)
             {
                 m_sendResultQueue.push(
-                    {result, std::move(resolvedTargetAddress), bytesSent,
-                        nx::network::SocketGlobals::aioService().getCurrentAioThread()});
+                    {result,
+                     std::move(resolvedTargetAddress),
+                     bytesSent,
+                     nx::network::SocketGlobals::aioService().getCurrentAioThread()});
             });
     }
 
@@ -176,13 +170,16 @@ private:
             {
                 if (code == SystemError::noError)
                 {
-                    m_sendResultQueue.push(SendResult{
-                        code, resolvedTargetEndpoint, size,
-                        nx::network::SocketGlobals::aioService().getCurrentAioThread()});
+                    m_sendResultQueue.push(
+                        SendResult{
+                            code,
+                            resolvedTargetEndpoint,
+                            size,
+                            nx::network::SocketGlobals::aioService().getCurrentAioThread()});
                 }
                 else
                 {
-                    std::cerr<<SystemError::toString(code)<<"\n";
+                    std::cerr << SystemError::toString(code) << "\n";
                 }
 
                 m_sendRetryTimer->scheduleNextTry(
@@ -193,9 +190,7 @@ private:
             });
     }
 
-    void assertMessageIsReceivedFrom(
-        int ipVersion,
-        const SocketAddress& senderEndpoint)
+    void assertMessageIsReceivedFrom(int ipVersion, const SocketAddress& senderEndpoint)
     {
         Buffer buffer;
         buffer.resize(1024);
@@ -227,16 +222,14 @@ private:
     void assertSendResultIsCorrect(const SocketAddress& receiverEndpoint)
     {
         const auto sendResult = m_sendResultQueue.pop();
-        ASSERT_EQ(SystemError::noError, sendResult.code)
-            << SystemError::toString(sendResult.code);
+        ASSERT_EQ(SystemError::noError, sendResult.code) << SystemError::toString(sendResult.code);
         ASSERT_TRUE(sendResult.resolvedTargetEndpoint.address.isIpAddress());
         ASSERT_EQ(receiverEndpoint.toString(), sendResult.resolvedTargetEndpoint.toString());
-        ASSERT_EQ((size_t)m_testMessage.size(), sendResult.size);
+        ASSERT_EQ((size_t) m_testMessage.size(), sendResult.size);
     }
 };
 
-class UdpSocketIpV6:
-    public UdpSocket
+class UdpSocketIpV6: public UdpSocket
 {
 public:
     UdpSocketIpV6():
@@ -245,16 +238,29 @@ public:
     }
 };
 
-TEST_F(UdpSocket, TransferIpV4) { udpSocketTransferTest("127.0.0.1"); }
-TEST_F(UdpSocket, TransferDnsIpV4) { udpSocketTransferTest("localhost"); }
-TEST_F(UdpSocketIpV6, Transfer) { udpSocketTransferTest("[::1]"); }
-TEST_F(UdpSocketIpV6, TransferDns) { udpSocketTransferTest("localhost"); }
+TEST_F(UdpSocket, TransferIpV4)
+{
+    udpSocketTransferTest("127.0.0.1");
+}
+TEST_F(UdpSocket, TransferDnsIpV4)
+{
+    udpSocketTransferTest("localhost");
+}
+TEST_F(UdpSocketIpV6, Transfer)
+{
+    udpSocketTransferTest("[::1]");
+}
+TEST_F(UdpSocketIpV6, TransferDns)
+{
+    udpSocketTransferTest("localhost");
+}
 
 TEST_F(UdpSocketIpV6, TransferNat64)
 {
     HostAddress ip("12.34.56.78");
     SocketGlobals::addressResolver().dnsResolver().addEtcHost(
-        ip.toString(), {HostAddress::localhost});
+        ip.toString(),
+        {HostAddress::localhost});
 
     udpSocketTransferTest(ip);
     SocketGlobals::addressResolver().dnsResolver().removeEtcHost(ip.toString());
@@ -302,8 +308,9 @@ TEST_F(UdpSocket, DISABLED_multipleSocketsOnTheSamePort)
         using namespace std::placeholders;
         sockets[i].socket->recvFromAsync(
             &sockets[i].readBuffer,
-            [this, socketCtx = &sockets[i]](
-                SystemError::ErrorCode result, SocketAddress from, size_t bytesRead)
+            [this,
+             socketCtx =
+                 &sockets[i]](SystemError::ErrorCode result, SocketAddress from, size_t bytesRead)
             {
                 onBytesRead(socketCtx, result, from, bytesRead);
             });
@@ -311,11 +318,10 @@ TEST_F(UdpSocket, DISABLED_multipleSocketsOnTheSamePort)
 
     constexpr const char* testMessage = "bla-bla-bla";
     UDPSocket sendingSocket;
-    ASSERT_TRUE(
-        sendingSocket.sendTo(
-            testMessage,
-            strlen(testMessage),
-            sockets[0].socket->getLocalAddress()));
+    ASSERT_TRUE(sendingSocket.sendTo(
+        testMessage,
+        strlen(testMessage),
+        sockets[0].socket->getLocalAddress()));
 
     for (auto& ctx: sockets)
     {
@@ -357,14 +363,21 @@ TEST_F(UdpSocket, DISABLED_Performance)
             const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime);
 
-            NX_INFO(this, nx::format("Receive ended (%1): %2")
-                .args(recv, SystemError::getLastOSErrorText()));
+            NX_INFO(
+                this,
+                nx::format("Receive ended (%1): %2")
+                    .args(recv, SystemError::getLastOSErrorText()));
 
             const auto bytesPerS = double(transferSize) * 1000 / durationMs.count();
-            NX_INFO(this, nx::format("Received size=%1b, count=%2, average=%3, duration=%4, speed=%5bps")
-                .args(nx::utils::bytesToString(transferSize), transferCount,
-                    nx::utils::bytesToString(transferSize / transferCount),
-                    durationMs, nx::utils::bytesToString((uint64_t) bytesPerS)));
+            NX_INFO(
+                this,
+                nx::format("Received size=%1b, count=%2, average=%3, duration=%4, speed=%5bps")
+                    .args(
+                        nx::utils::bytesToString(transferSize),
+                        transferCount,
+                        nx::utils::bytesToString(transferSize / transferCount),
+                        durationMs,
+                        nx::utils::bytesToString((uint64_t) bytesPerS)));
         });
 
     std::thread clientThread(

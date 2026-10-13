@@ -24,8 +24,7 @@ template<typename TimerId, typename... TimerFuncArgs>
 class ElapsedTimerPool
 {
 public:
-    using TimerFunction = nx::MoveOnlyFunc<
-        void(TimerId /*timerId*/, TimerFuncArgs...)>;
+    using TimerFunction = nx::MoveOnlyFunc<void(TimerId /*timerId*/, TimerFuncArgs...)>;
 
     ElapsedTimerPool(TimerFunction timerFunction):
         m_timerFunction(std::move(timerFunction))
@@ -35,9 +34,7 @@ public:
     /**
      * If timerId already exists, it is replaced.
      */
-    void addTimer(
-        const TimerId& timerId,
-        std::chrono::milliseconds delay)
+    void addTimer(const TimerId& timerId, std::chrono::milliseconds delay)
     {
         const auto deadline = nx::utils::monotonicTime() + delay;
         auto deadlineIter = m_deadlineToTimerId.emplace(deadline, timerId);
@@ -67,8 +64,7 @@ public:
     void processTimers(TimerFuncArgs... args)
     {
         const auto currentTime = nx::utils::monotonicTime();
-        while (!m_deadlineToTimerId.empty() &&
-            m_deadlineToTimerId.begin()->first <= currentTime)
+        while (!m_deadlineToTimerId.empty() && m_deadlineToTimerId.begin()->first <= currentTime)
         {
             auto timerId = std::move(m_deadlineToTimerId.begin()->second);
             removeTimer(timerId);
@@ -145,10 +141,8 @@ public:
     }
 
 private:
-    using DeadlineToTimerId =
-        std::multimap<std::chrono::steady_clock::time_point, TimerId>;
-    using TimerIdToDeadline =
-        std::map<TimerId, typename DeadlineToTimerId::iterator>;
+    using DeadlineToTimerId = std::multimap<std::chrono::steady_clock::time_point, TimerId>;
+    using TimerIdToDeadline = std::map<TimerId, typename DeadlineToTimerId::iterator>;
 
     TimerFunction m_timerFunction;
     DeadlineToTimerId m_deadlineToTimerId;

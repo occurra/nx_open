@@ -72,12 +72,13 @@ class AIOService;
  *
  * Successor to this class MUST support safe object deletion while in object's aio thread
  * (usually, it is achieved automatically).
- * QnStoppableAsync::pleaseStop and BasicPollable::stopWhileInAioThread are not called in this case.
+ * QnStoppableAsync::pleaseStop and BasicPollable::stopWhileInAioThread are not called in this
+ * case.
  *
- * TODO #akolesnikov Name conflicts with Pollable. Consider renaming Pollable, AbstractPollable, BasicPollable.
+ * TODO #akolesnikov Name conflicts with Pollable. Consider renaming Pollable, AbstractPollable,
+ * BasicPollable.
  */
-class NX_NETWORK_API BasicPollable:
-    public AbstractPollable
+class NX_NETWORK_API BasicPollable: public AbstractPollable
 {
 public:
     /**
@@ -88,9 +89,7 @@ public:
     /**
      * @param aioThread See description in the previous constructor.
      */
-    BasicPollable(
-        aio::AIOService* aioService,
-        aio::AbstractAioThread* aioThread);
+    BasicPollable(aio::AIOService* aioService, aio::AbstractAioThread* aioThread);
     virtual ~BasicPollable() override;
 
     /**

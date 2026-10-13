@@ -42,7 +42,8 @@ NX_CODEC_API std::expected<SeiUserData, std::string> extractUserData(
 // Skips the NAL unit header and extracts the user_data_unregistered payloads from the rest of the
 // NAL unit; the common implementation of the codec-specific parseSeiUserData functions.
 inline std::expected<SeiUserData, std::string> parseSeiNalUnit(
-    std::span<const uint8_t> naluEbsp, size_t nalHeaderLength)
+    std::span<const uint8_t> naluEbsp,
+    size_t nalHeaderLength)
 {
     if (naluEbsp.size() <= nalHeaderLength)
         return std::unexpected("SEI NAL unit too short");

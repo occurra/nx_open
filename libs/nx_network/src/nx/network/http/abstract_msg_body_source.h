@@ -22,12 +22,10 @@ namespace nx::network::http {
  * specified number of bytes will be read by a sequence of AbstractMsgBodySource::readAsync calls.
  * Otherwise, data is read until empty buffer is received or error occurs.
  */
-class NX_NETWORK_API AbstractMsgBodySource:
-    public nx::network::aio::BasicPollable
+class NX_NETWORK_API AbstractMsgBodySource: public nx::network::aio::BasicPollable
 {
 public:
-    using CompletionHandler =
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode, nx::Buffer)>;
+    using CompletionHandler = nx::MoveOnlyFunc<void(SystemError::ErrorCode, nx::Buffer)>;
 
     virtual ~AbstractMsgBodySource() = default;
 
@@ -56,8 +54,7 @@ public:
  * Interface for classes that provide HTTP message body and support non-blocking read.
  * E.g., class that reads from in-memory buffer should implement this class.
  */
-class NX_NETWORK_API AbstractMsgBodySourceWithCache:
-    public AbstractMsgBodySource
+class NX_NETWORK_API AbstractMsgBodySourceWithCache: public AbstractMsgBodySource
 {
 public:
     /**
@@ -72,9 +69,7 @@ public:
      * Implements the same behavior as AbstractAsyncChannel::readSomeAsync.
      * NOTE: It is a wrapper over AbstractMsgBodySource::readAsync.
      */
-    void readSomeAsync(
-        nx::Buffer* const buffer,
-        IoCompletionHandler handler);
+    void readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler);
 
     /**
      * Cancels the pending readAsync. Follows the behavior of AbstractAsyncChannel::cancelIOSync.

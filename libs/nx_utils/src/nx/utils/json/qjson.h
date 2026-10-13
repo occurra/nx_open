@@ -22,7 +22,9 @@ DeserializationResult deserialize(
     if (!val.IsObject())
     {
         return DeserializationResult(
-            false, "Can't parse a QJson object", getStringRepresentation(val));
+            false,
+            "Can't parse a QJson object",
+            getStringRepresentation(val));
     }
 
     auto qStrVal = QString::fromStdString(getStringRepresentation(val));
@@ -31,7 +33,9 @@ DeserializationResult deserialize(
     if (qjsonDoc.isNull())
     {
         return DeserializationResult(
-            false, error.errorString().toStdString(), getStringRepresentation(val));
+            false,
+            error.errorString().toStdString(),
+            getStringRepresentation(val));
     }
 
     *data = qjsonDoc.object();
@@ -52,7 +56,9 @@ DeserializationResult deserialize(
         auto qjsonDoc = QJsonDocument::fromJson(qStrVal.toUtf8(), &error);
         if (qjsonDoc.isNull())
             return DeserializationResult(
-                false, error.errorString().toStdString(), getStringRepresentation(val));
+                false,
+                error.errorString().toStdString(),
+                getStringRepresentation(val));
         if (val.IsObject())
             *data = qjsonDoc.object();
         if (val.IsArray())
@@ -102,7 +108,7 @@ template<typename SerializationContext>
 void serialize(SerializationContext* context, const QJsonValueConstRef& data);
 
 template<typename SerializationContext>
-requires std::is_member_object_pointer_v<decltype(&SerializationContext::composer)>
+    requires std::is_member_object_pointer_v<decltype(&SerializationContext::composer)>
 void serialize(SerializationContext* context, const QJsonValue& data)
 {
     if (data.isArray())

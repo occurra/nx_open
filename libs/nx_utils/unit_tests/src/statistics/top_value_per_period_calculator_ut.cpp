@@ -15,8 +15,7 @@ namespace test {
 
 static constexpr std::chrono::milliseconds kCalculationPeriod = std::chrono::hours(1);
 
-class TopValuePerPeriodCalculator:
-    public ::testing::Test
+class TopValuePerPeriodCalculator: public ::testing::Test
 {
 public:
     TopValuePerPeriodCalculator():
@@ -44,22 +43,14 @@ protected:
         m_values.clear();
     }
 
-    void wait(std::chrono::milliseconds delay)
-    {
-        m_timeShift.applyRelativeShift(delay);
-    }
+    void wait(std::chrono::milliseconds delay) { m_timeShift.applyRelativeShift(delay); }
 
     void assertMaxIsReported()
     {
-        ASSERT_EQ(
-            *std::max_element(m_values.begin(), m_values.end()),
-            m_calculator.top());
+        ASSERT_EQ(*std::max_element(m_values.begin(), m_values.end()), m_calculator.top());
     }
 
-    void assertTopValueIs(int expected)
-    {
-        ASSERT_EQ(expected, m_calculator.top());
-    }
+    void assertTopValueIs(int expected) { ASSERT_EQ(expected, m_calculator.top()); }
 
 private:
     statistics::TopValuePerPeriodCalculator<int, std::greater<int>> m_calculator;

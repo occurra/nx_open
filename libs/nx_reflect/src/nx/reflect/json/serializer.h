@@ -4,12 +4,11 @@
 
 #include <string>
 
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
-
 #include <nx/reflect/basic_serializer.h>
 #include <nx/reflect/flags.h>
 #include <nx/reflect/type_utils.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #include "json_tags.h"
 
@@ -17,8 +16,7 @@ namespace nx::reflect::json {
 
 namespace detail {
 
-class NX_REFLECT_API JsonComposer:
-    public AbstractComposer<std::string>
+class NX_REFLECT_API JsonComposer: public AbstractComposer<std::string>
 {
 public:
     JsonComposer();
@@ -45,7 +43,8 @@ private:
         rapidjson::UTF8<>,
         rapidjson::UTF8<>,
         rapidjson::CrtAllocator,
-        rapidjson::kWriteNanAndInfNullFlag> m_writer;
+        rapidjson::kWriteNanAndInfNullFlag>
+        m_writer;
 };
 
 struct SerializationContext
@@ -58,7 +57,8 @@ struct SerializationContext
     template<typename T>
     unsigned int beforeSerialize(const T&)
     {
-        return composer.setSerializeFlags(composer.serializeFlags()
+        return composer.setSerializeFlags(
+            composer.serializeFlags()
             | (jsonSerializeChronoDurationAsNumber((const T*) nullptr) << 0u)
             | (jsonSerializeInt64AsString((const T*) nullptr) << 1u));
     }
@@ -83,9 +83,9 @@ void serialize(SerializationContext* ctx, const Data& data)
 /**
  * Serializes object of supported type Data to JSON.
  * @param data Can be any instrumented type or a container with instrumented types.
- * Member-fields that are not of instrumented types and not of built-in (int, double, std::string) types
- * must be ConvertibleToString for the serialization to work.
- * ConvertibleToString type supports at least one of the following methods:
+ * Member-fields that are not of instrumented types and not of built-in (int, double, std::string)
+ * types must be ConvertibleToString for the serialization to work. ConvertibleToString type
+ * supports at least one of the following methods:
  * - T::operator std::string() const
  * - std::string T::toStdString() const
  * - ConvertibleToString T::toString() const // returns a different type from T.

@@ -245,7 +245,7 @@ constexpr auto catRight(Value&& value)
  */
 template<std::ranges::range R, typename Value>
     requires(std::ranges::viewable_range<R> || std::movable<std::remove_cvref_t<R>>)
-        && std::copy_constructible<std::remove_cvref_t<Value>>
+    && std::copy_constructible<std::remove_cvref_t<Value>>
 constexpr auto catLeft(R&& r, Value&& value)
 {
     return nx::views::catLeft(std::forward<Value>(value))(std::forward<R>(r));
@@ -272,7 +272,7 @@ constexpr auto catLeft(R&& r, Value&& value)
  */
 template<std::ranges::range R, typename Value>
     requires(std::ranges::viewable_range<R> || std::movable<std::remove_cvref_t<R>>)
-        && std::copy_constructible<std::remove_cvref_t<Value>>
+    && std::copy_constructible<std::remove_cvref_t<Value>>
 constexpr auto catRight(R&& r, Value&& value)
 {
     return nx::views::catRight(std::forward<Value>(value))(std::forward<R>(r));

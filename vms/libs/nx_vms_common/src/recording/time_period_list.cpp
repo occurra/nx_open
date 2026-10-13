@@ -4,8 +4,6 @@
 #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "time_period_list.h"
-
 #include <nx/fusion/model_functions.h>
 #include <nx/fusion/serialization/compressed_time_functions.h>
 #include <nx/utils/datetime.h>
@@ -13,16 +11,16 @@
 #include <nx/vms/common/recording/time_periods_utils.h>
 #include <utils/common/util.h>
 
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(MultiServerPeriodData,
-    (json)(ubjson)(xml)(csv_record)(compressed_time), (guid)(periods))
+#include "time_period_list.h"
 
-namespace {
+QN_FUSION_ADAPT_STRUCT_FUNCTIONS(
+    MultiServerPeriodData,
+    (json) (ubjson) (xml) (csv_record) (compressed_time),
+    (guid) (periods))
 
-static const qint64 InvalidValue = std::numeric_limits<qint64>::max();
+namespace { static const qint64 InvalidValue = std::numeric_limits<qint64>::max(); } // namespace
 
-} // namespace
-
-QnTimePeriodList::QnTimePeriodList(const QnTimePeriod &singlePeriod):
+QnTimePeriodList::QnTimePeriodList(const QnTimePeriod& singlePeriod):
     QnTimePeriodList()
 {
     push_back(singlePeriod);
@@ -36,10 +34,11 @@ QnTimePeriodList::QnTimePeriodList():
 QnTimePeriodList::QnTimePeriodList(size_type count):
     base_type(count)
 {
-
 }
 
-QnTimePeriodList::const_iterator QnTimePeriodList::findNearestPeriod(qint64 timeMs, bool searchForward) const
+QnTimePeriodList::const_iterator QnTimePeriodList::findNearestPeriod(
+    qint64 timeMs,
+    bool searchForward) const
 {
     if (isEmpty())
         return end();
@@ -98,9 +97,15 @@ bool QnTimePeriodList::containTime(qint64 timeMs) const
         return false;
 }
 
-bool QnTimePeriodList::containPeriod(const QnTimePeriod &period) const
+bool QnTimePeriodList::containPeriod(const QnTimePeriod& period) const
 {
-    auto found = std::find_if(cbegin(), cend(), [period](const QnTimePeriod &p) { return p.contains(period); });
+    auto found = std::find_if(
+        cbegin(),
+        cend(),
+        [period](const QnTimePeriod& p)
+        {
+            return p.contains(period);
+        });
     return found != cend();
 }
 
@@ -158,7 +163,7 @@ QnTimePeriodList QnTimePeriodList::intersected(const QnTimePeriodList& other) co
     return result;
 }
 
-QnTimePeriodList QnTimePeriodList::intersectedPeriods(const QnTimePeriod &period) const
+QnTimePeriodList QnTimePeriodList::intersectedPeriods(const QnTimePeriod& period) const
 {
     QnTimePeriodList result;
     if (isEmpty())
@@ -185,12 +190,13 @@ qint64 QnTimePeriodList::duration() const
         return QnTimePeriod::kInfiniteDuration;
 
     qint64 result = 0;
-    for (const QnTimePeriod &period : *this)
+    for (const QnTimePeriod& period: *this)
         result += period.durationMs;
     return result;
 }
 
-QnTimePeriod QnTimePeriodList::boundingPeriod(qint64 truncateInfinite /* = QnTimePeriod::kInfiniteDuration*/) const
+QnTimePeriod QnTimePeriodList::boundingPeriod(
+    qint64 truncateInfinite /* = QnTimePeriod::kInfiniteDuration*/) const
 {
     if (isEmpty())
         return QnTimePeriod();
@@ -214,13 +220,13 @@ QnTimePeriod QnTimePeriodList::boundingPeriod(qint64 truncateInfinite /* = QnTim
     return result;
 }
 
-void saveField(QByteArray &stream, qint64 field, quint8 header, int dataLen)
+void saveField(QByteArray& stream, qint64 field, quint8 header, int dataLen)
 {
     field = htonll(field << (64 - dataLen * 8));
-    quint8* data = (quint8*)&field;
+    quint8* data = (quint8*) &field;
     data[0] &= 0x3f;
     data[0] |= (header << 6);
-    stream.append(((const char*)data), dataLen);
+    stream.append(((const char*) data), dataLen);
 }
 // field header:
 // 00 - 14 bit to data
@@ -228,7 +234,7 @@ void saveField(QByteArray &stream, qint64 field, quint8 header, int dataLen)
 // 10 - 30 bit to data
 // 11 - 38 bit to data
 // 11 and 0xffffffffff data - full 48 bit data
-void serializeField(QByteArray &stream, qint64 field)
+void serializeField(QByteArray& stream, qint64 field)
 {
     if (field < 0x4000ll)
         saveField(stream, field, 0, 2);
@@ -242,11 +248,11 @@ void serializeField(QByteArray &stream, qint64 field)
     {
         saveField(stream, 0xffffffffffll, 3, 5);
         qint64 data = htonll(field << 16);
-        stream.append(((const char*)&data), 6);
+        stream.append(((const char*) &data), 6);
     }
 }
 
-bool QnTimePeriodList::encode(QByteArray &stream)
+bool QnTimePeriodList::encode(QByteArray& stream)
 {
     if (isEmpty())
         return true;
@@ -254,10 +260,10 @@ bool QnTimePeriodList::encode(QByteArray &stream)
     qint64 timePos = first().startTimeMs;
 
     qint64 val = htonll(timePos << 16);
-    stream.append(((const char*)&val), 6);
+    stream.append(((const char*) &val), 6);
 
     bool first = true;
-    for (const QnTimePeriod &period : *this)
+    for (const QnTimePeriod& period: *this)
     {
         qint64 timeDelta = period.startTimeMs - timePos;
         if (timeDelta < 0)
@@ -272,7 +278,7 @@ bool QnTimePeriodList::encode(QByteArray &stream)
     return true;
 };
 
-qint64 decodeValue(const quint8 *&curPtr, const quint8 *end)
+qint64 decodeValue(const quint8*& curPtr, const quint8* end)
 {
     if (curPtr >= end)
         return InvalidValue;
@@ -293,7 +299,7 @@ qint64 decodeValue(const quint8 *&curPtr, const quint8 *end)
     return value;
 };
 
-bool QnTimePeriodList::decode(const quint8 *data, int dataSize)
+bool QnTimePeriodList::decode(const quint8* data, int dataSize)
 {
     clear();
 
@@ -329,9 +335,9 @@ bool QnTimePeriodList::decode(const quint8 *data, int dataSize)
     return true;
 }
 
-bool QnTimePeriodList::decode(QByteArray &stream)
+bool QnTimePeriodList::decode(QByteArray& stream)
 {
-    return decode((const quint8 *)stream.constData(), stream.size());
+    return decode((const quint8*) stream.constData(), stream.size());
 }
 
 QnTimePeriodList QnTimePeriodList::aggregateTimePeriodsUnconstrained(
@@ -347,7 +353,7 @@ QnTimePeriodList QnTimePeriodList::aggregateTimePeriodsUnconstrained(
 
     for (const QnTimePeriod& p: periods)
     {
-        QnTimePeriod &last = result.last();
+        QnTimePeriod& last = result.last();
         if (last.isInfinite())
             break;
 
@@ -359,7 +365,8 @@ QnTimePeriodList QnTimePeriodList::aggregateTimePeriodsUnconstrained(
             }
             else
             {
-                last.durationMs = qMax(last.durationMs, p.startTimeMs + p.durationMs - last.startTimeMs);
+                last.durationMs =
+                    qMax(last.durationMs, p.startTimeMs + p.durationMs - last.startTimeMs);
             }
         }
         else
@@ -390,7 +397,8 @@ QnTimePeriodList QnTimePeriodList::aggregateTimePeriods(
 }
 
 QnTimePeriodList QnTimePeriodList::intersection(
-    const QnTimePeriodList& first, const QnTimePeriodList& second)
+    const QnTimePeriodList& first,
+    const QnTimePeriodList& second)
 {
     QnTimePeriodList result;
     auto firstIt = first.begin();
@@ -421,7 +429,7 @@ QnTimePeriodList QnTimePeriodList::intersection(
     return result;
 }
 
-void QnTimePeriodList::includeTimePeriod(const QnTimePeriod &period)
+void QnTimePeriodList::includeTimePeriod(const QnTimePeriod& period)
 {
     if (period.isEmpty())
         return;
@@ -464,7 +472,7 @@ void QnTimePeriodList::includeTimePeriod(const QnTimePeriod &period)
     startIt->durationMs = periodEndMs - startIt->startTimeMs;
 }
 
-void QnTimePeriodList::excludeTimePeriod(const QnTimePeriod &period)
+void QnTimePeriodList::excludeTimePeriod(const QnTimePeriod& period)
 {
     if (empty() || period.isEmpty())
         return;
@@ -549,13 +557,11 @@ void QnTimePeriodList::excludeTimePeriods(const QnTimePeriodList& periodList)
 
             if (current.contains(*subtrahendItr))
             {
-                result.push_back(QnTimePeriod::fromInterval(
-                    current.startTimeMs,
-                    subtrahendItr->startTimeMs));
+                result.push_back(
+                    QnTimePeriod::fromInterval(current.startTimeMs, subtrahendItr->startTimeMs));
 
-                current = QnTimePeriod::fromInterval(
-                    subtrahendItr->endTimeMs(),
-                    current.endTimeMs());
+                current =
+                    QnTimePeriod::fromInterval(subtrahendItr->endTimeMs(), current.endTimeMs());
 
                 ++subtrahendItr;
 
@@ -576,7 +582,10 @@ void QnTimePeriodList::excludeTimePeriods(const QnTimePeriodList& periodList)
     *this = result;
 }
 
-void QnTimePeriodList::overwriteTail(QnTimePeriodList& periods, const QnTimePeriodList& tail, qint64 dividerPoint)
+void QnTimePeriodList::overwriteTail(
+    QnTimePeriodList& periods,
+    const QnTimePeriodList& tail,
+    qint64 dividerPoint)
 {
     qint64 erasePoint = dividerPoint;
     if (!tail.isEmpty())
@@ -594,9 +603,8 @@ void QnTimePeriodList::overwriteTail(QnTimePeriodList& periods, const QnTimePeri
 
         NX_ASSERT(eraseIter != periods.begin(), "Invalid semantics");
 
-        if (eraseIter != periods.begin() &&
-            (eraseIter == periods.end() || eraseIter->startTimeMs > erasePoint)
-            )
+        if (eraseIter != periods.begin()
+            && (eraseIter == periods.end() || eraseIter->startTimeMs > erasePoint))
         {
             eraseIter--; /* We are sure, list is not empty. */
             if (eraseIter->isInfinite() || eraseIter->endTimeMs() > erasePoint)
@@ -611,7 +619,7 @@ void QnTimePeriodList::overwriteTail(QnTimePeriodList& periods, const QnTimePeri
             periods.erase(eraseIter, periods.end());
     }
 
-    //NX_ASSERT(!periods.isEmpty(), "Empty list should be worked out earlier");
+    // NX_ASSERT(!periods.isEmpty(), "Empty list should be worked out earlier");
     if (periods.isEmpty())
     {
         periods = tail;
@@ -641,7 +649,9 @@ void QnTimePeriodList::overwriteTail(QnTimePeriodList& periods, const QnTimePeri
     }
 }
 
-void QnTimePeriodList::unionTimePeriods(QnTimePeriodList& basePeriods, const QnTimePeriodList &appendingPeriods)
+void QnTimePeriodList::unionTimePeriods(
+    QnTimePeriodList& basePeriods,
+    const QnTimePeriodList& appendingPeriods)
 {
     if (appendingPeriods.isEmpty())
         return;
@@ -654,13 +664,14 @@ void QnTimePeriodList::unionTimePeriods(QnTimePeriodList& basePeriods, const QnT
     basePeriods.reserve(basePeriods.size() + appendingPeriods.size());
 
     iterator iter = basePeriods.begin();
-    for (const QnTimePeriod& period : appendingPeriods)
+    for (const QnTimePeriod& period: appendingPeriods)
     {
         iter = std::upper_bound(iter, basePeriods.end(), period.startTimeMs);
         if (iter != basePeriods.begin())
             --iter;
 
-        /* Note that there is no need to check for itr != end() here as the container is not empty. */
+        /* Note that there is no need to check for itr != end() here as the container is not empty.
+         */
         if (iter->endTimeMs() < period.startTimeMs)
         {
             /* Space is empty, just inserting period or prepending to next. */
@@ -707,15 +718,14 @@ QnTimePeriodList QnTimePeriodList::mergeTimePeriods(
     return nx::vms::common::TimePeriods<QnTimePeriod, QnTimePeriodList>::merge(
         periodLists,
         limit,
-        sortOrder
-    );
+        sortOrder);
 }
 
 QnTimePeriodList QnTimePeriodList::simplified() const
 {
     QnTimePeriodList newList;
 
-    for (const QnTimePeriod &period : *this)
+    for (const QnTimePeriod& period: *this)
         newList.includeTimePeriod(period);
 
     return newList;

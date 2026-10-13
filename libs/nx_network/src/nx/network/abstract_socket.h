@@ -28,8 +28,7 @@ static constexpr std::chrono::milliseconds kDefaultConnectTimeout = std::chrono:
 
 } // namespace deprecated
 
-static constexpr std::chrono::milliseconds kNoTimeout =
-    std::chrono::milliseconds::zero();
+static constexpr std::chrono::milliseconds kNoTimeout = std::chrono::milliseconds::zero();
 
 /**
  * Using IANA assigned numbers for protocol when possible.
@@ -45,7 +44,7 @@ static constexpr int udt = 256;
  */
 static constexpr int unassigned = 257;
 
-} // namespace ProtocolType
+} // namespace Protocol
 
 /**
  * Base interface for sockets. Provides methods to set various socket configuration parameters.
@@ -57,8 +56,7 @@ static constexpr int unassigned = 257;
  *
  * NOTE: On any method failure use SystemError::getLastOSErrorCode() to get error code.
  */
-class NX_NETWORK_API AbstractSocket:
-    public QnStoppableAsync
+class NX_NETWORK_API AbstractSocket: public QnStoppableAsync
 {
 public:
 #ifdef _WIN32
@@ -181,7 +179,10 @@ public:
      * By default, there is no timeout.
      */
     virtual bool setRecvTimeout(unsigned int millis) = 0;
-    bool setRecvTimeout(std::chrono::milliseconds m) { return setRecvTimeout((unsigned int) m.count()); }
+    bool setRecvTimeout(std::chrono::milliseconds m)
+    {
+        return setRecvTimeout((unsigned int) m.count());
+    }
 
     /**
      * Get socket's receive timeout (in millis).
@@ -197,7 +198,10 @@ public:
      * By default, there is no timeout.
      */
     virtual bool setSendTimeout(unsigned int ms) = 0;
-    bool setSendTimeout(std::chrono::milliseconds m) { return setSendTimeout((unsigned int) m.count()); }
+    bool setSendTimeout(std::chrono::milliseconds m)
+    {
+        return setSendTimeout((unsigned int) m.count());
+    }
 
     /**
      * Get socket's send timeout (in millis).
@@ -277,14 +281,13 @@ public:
     virtual bool isInSelfAioThread() const;
 };
 
-using IoCompletionHandler = nx::MoveOnlyFunc<
-    void(SystemError::ErrorCode /*errorCode*/, std::size_t /*bytesTransferred*/)>;
+using IoCompletionHandler =
+    nx::MoveOnlyFunc<void(SystemError::ErrorCode /*errorCode*/, std::size_t /*bytesTransferred*/)>;
 
 /**
  * Interface of a socket that supports receiving / sending data.
  */
-class NX_NETWORK_API AbstractCommunicatingSocket:
-    public AbstractSocket
+class NX_NETWORK_API AbstractCommunicatingSocket: public AbstractSocket
 {
 public:
     /**
@@ -311,7 +314,8 @@ public:
     /**
      * Connect to a given address asynchronously.
      * NOTE: the socket send timeout is used
-     * NOTE: the asynchronous connect is cancelled with `AbstractCommunicatingSocket::cancelWrite()`
+     * NOTE: the asynchronous connect is cancelled with
+     * `AbstractCommunicatingSocket::cancelWrite()`
      */
     virtual void connectAsync(
         const SocketAddress& address,
@@ -373,7 +377,8 @@ public:
      * NOTE: Works similar to POSIX MSG_WAITALL flag but async.
      */
     void readAsyncAtLeast(
-        nx::Buffer* const buffer, std::size_t minimalSize,
+        nx::Buffer* const buffer,
+        std::size_t minimalSize,
         IoCompletionHandler handler);
 
     /**
@@ -385,9 +390,7 @@ public:
      * @endcode
      * bytesWritten differ from src size only if errorCode is not SystemError::noError.
      */
-    virtual void sendAsync(
-        const nx::Buffer* buffer,
-        IoCompletionHandler handler) = 0;
+    virtual void sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler) = 0;
 
     /**
      * Register timer on this socket.
@@ -397,9 +400,7 @@ public:
         std::chrono::milliseconds timeout,
         nx::MoveOnlyFunc<void()> handler) = 0;
 
-    void registerTimer(
-        unsigned int timeoutMs,
-        nx::MoveOnlyFunc<void()> handler);
+    void registerTimer(unsigned int timeoutMs, nx::MoveOnlyFunc<void()> handler);
 
     /**
      * Cancel async socket operation. cancellationDoneHandler is invoked when cancelled.
@@ -418,9 +419,9 @@ public:
      *
      * NOTE: If invoked within socket's AIO thread, cancels immediately, without blocking.
      *
-     * NOTE: If invoked within some other AIO thread, may lead to an assertion raised or a deadlock.
-     * So, to cancel async operation while in an AIO thread different this socket's (getAioThread()),
-     * use AbstractCommunicatingSocket::cancelIOAsync.
+     * NOTE: If invoked within some other AIO thread, may lead to an assertion raised or a
+     * deadlock. So, to cancel async operation while in an AIO thread different this socket's
+     * (getAioThread()), use AbstractCommunicatingSocket::cancelIOAsync.
      */
     virtual void cancelIOSync(nx::network::aio::EventType eventType) final;
 
@@ -443,7 +444,8 @@ protected:
 
 private:
     void readAsyncAtLeastImpl(
-        nx::Buffer* const buffer, std::size_t minimalSize,
+        nx::Buffer* const buffer,
+        std::size_t minimalSize,
         IoCompletionHandler handler,
         std::size_t initBufSize);
 };
@@ -457,8 +459,7 @@ struct NX_NETWORK_API StreamSocketInfo
 /**
  * Interface for connection-oriented sockets.
  */
-class NX_NETWORK_API AbstractStreamSocket:
-    public AbstractCommunicatingSocket
+class NX_NETWORK_API AbstractStreamSocket: public AbstractCommunicatingSocket
 {
 public:
     virtual ~AbstractStreamSocket() override;
@@ -523,8 +524,7 @@ private:
  * In most cases, AbstractStreamSocket interface is enough.
  * This one is needed for SMTP/TLS, for example.
  */
-class NX_NETWORK_API AbstractEncryptedStreamSocket:
-    public AbstractStreamSocket
+class NX_NETWORK_API AbstractEncryptedStreamSocket: public AbstractStreamSocket
 {
 public:
     /**
@@ -535,8 +535,7 @@ public:
     /**
      * Similar to AbstractCommunicatingSocket::connectAsync uses socket's send timeout.
      */
-    virtual void handshakeAsync(
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler) = 0;
+    virtual void handshakeAsync(nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler) = 0;
 
     /**
      * @return "servername" TLS extension from ClientHello. Valid only for accepted socket.
@@ -545,15 +544,13 @@ public:
 };
 
 using AcceptCompletionHandler =
-    nx::MoveOnlyFunc<void(
-        SystemError::ErrorCode, std::unique_ptr<AbstractStreamSocket>)>;
+    nx::MoveOnlyFunc<void(SystemError::ErrorCode, std::unique_ptr<AbstractStreamSocket>)>;
 
 /**
  * Interface for a server socket that accepts stream connections.
  * NOTE: This socket has default recv timeout of 250ms for backward compatibility.
  */
-class NX_NETWORK_API AbstractStreamServerSocket:
-    public AbstractSocket
+class NX_NETWORK_API AbstractStreamServerSocket: public AbstractSocket
 {
 public:
     static constexpr int kDefaultBacklogSize = 128;
@@ -570,8 +567,8 @@ public:
 
     /**
      * Accepts new connection.
-     * @return NULL in case of error (use SystemError::getLastOSErrorCode() to get error description).
-     * NOTE: Uses read timeout.
+     * @return NULL in case of error (use SystemError::getLastOSErrorCode() to get error
+     * description). NOTE: Uses read timeout.
      */
     virtual std::unique_ptr<AbstractStreamSocket> accept() = 0;
 
@@ -607,13 +604,12 @@ static constexpr char BROADCAST_ADDRESS[] = "255.255.255.255";
  * Interface for connectionless socket. In this case AbstractCommunicatingSocket::connect() just
  * remembers the remote address to use with AbstractCommunicatingSocket::send().
  */
-class NX_NETWORK_API AbstractDatagramSocket:
-    public AbstractCommunicatingSocket
+class NX_NETWORK_API AbstractDatagramSocket: public AbstractCommunicatingSocket
 {
 public:
     static constexpr int UDP_HEADER_SIZE = 8;
     static constexpr int MAX_IP_HEADER_SIZE = 60;
-    static constexpr int MAX_DATAGRAM_SIZE = 64*1024 - 1 - UDP_HEADER_SIZE - MAX_IP_HEADER_SIZE;
+    static constexpr int MAX_DATAGRAM_SIZE = 64 * 1024 - 1 - UDP_HEADER_SIZE - MAX_IP_HEADER_SIZE;
 
     /**
      * Set destination address for use by AbstractCommunicatingSocket::send() method.
@@ -651,9 +647,7 @@ public:
         std::size_t bufferLen,
         const SocketAddress& foreignAddress) = 0;
 
-    bool sendTo(
-        const nx::Buffer& buf,
-        const SocketAddress& foreignAddress);
+    bool sendTo(const nx::Buffer& buf, const SocketAddress& foreignAddress);
 
     /**
      * @param completionHandler (errorCode, resolved target address, bytesSent).
@@ -661,7 +655,8 @@ public:
     virtual void sendToAsync(
         const nx::Buffer* buf,
         const SocketAddress& targetAddress,
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode, SocketAddress, size_t)> completionHandler) = 0;
+        nx::MoveOnlyFunc<void(SystemError::ErrorCode, SocketAddress, size_t)>
+            completionHandler) = 0;
 
     /**
      * Read up to bufferLen bytes data from this socket.
@@ -682,7 +677,8 @@ public:
      */
     virtual void recvFromAsync(
         nx::Buffer* const buf,
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode, SocketAddress, size_t)> completionHandler) = 0;
+        nx::MoveOnlyFunc<void(SystemError::ErrorCode, SocketAddress, size_t)>
+            completionHandler) = 0;
 
     /**
      * @return Address of previous datagram read with

@@ -19,9 +19,8 @@ class CertificateView;
 using CertificateChain = std::vector<Certificate>;
 using CertificateChainView = std::vector<CertificateView>;
 using VerifyCertificateFunc = std::function<bool(CertificateChainView)>;
-using VerifyCertificateAsyncFunc = std::function<void(
-    CertificateChainView,
-    nx::MoveOnlyFunc<void(bool)>)>;
+using VerifyCertificateAsyncFunc =
+    std::function<void(CertificateChainView, nx::MoveOnlyFunc<void(bool)>)>;
 
 NX_NETWORK_API bool verifyBySystemCertificates(
     const CertificateChainView& chain,
@@ -33,9 +32,8 @@ NX_NETWORK_API bool verifyBySystemCertificates(
     const std::string& hostName,
     std::string* outErrorMessage = nullptr);
 
-NX_NETWORK_API CertificateChain completeCertificateChain(
-    const CertificateChain& chain,
-    bool* ok = nullptr);
+NX_NETWORK_API CertificateChain
+    completeCertificateChain(const CertificateChain& chain, bool* ok = nullptr);
 
 NX_NETWORK_API AdapterFunc makeAdapterFunc(
     VerifyCertificateFunc verifyCertificateFunc,

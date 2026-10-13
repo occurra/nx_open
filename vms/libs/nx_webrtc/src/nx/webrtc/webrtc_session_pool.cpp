@@ -2,9 +2,6 @@
 
 #include "webrtc_session_pool.h"
 
-#include "webrtc_ice_tcp.h"
-#include "webrtc_session.h"
-
 #include <core/resource/media_server_resource.h>
 #include <core/resource_management/resource_pool.h>
 #include <nx/network/cloud/cloud_connect_controller.h>
@@ -12,14 +9,16 @@
 #include <nx/vms/common/system_context.h>
 #include <nx/vms/common/system_settings.h>
 
+#include "webrtc_ice_tcp.h"
+#include "webrtc_session.h"
+
 namespace nx::webrtc {
 
 SessionPool::SessionPool(
     nx::vms::common::SystemContext* context,
     nx::utils::TimerManager* timerManager,
     QnFfmpegVideoTranscoder::TranscodePolicy transcodePolicy,
-    const std::vector<nx::network::SocketAddress>& defaultStunServers)
-    :
+    const std::vector<nx::network::SocketAddress>& defaultStunServers):
     nx::vms::common::SystemContextAware(context),
     m_timerManager(timerManager),
     m_turnInfoFetcher(context->globalSettings()),
@@ -29,13 +28,13 @@ SessionPool::SessionPool(
     static const std::chrono::milliseconds kMinTimeout(100);
     using namespace std::chrono;
     m_keepAliveTimeout = globalSettings()->mediaSendTimeout();
-    const milliseconds timeout = std::max(
-        kMinTimeout,
-        milliseconds(m_keepAliveTimeout.count() / 4));
+    const milliseconds timeout =
+        std::max(kMinTimeout, milliseconds(m_keepAliveTimeout.count() / 4));
     using namespace std::placeholders;
     m_timerId = m_timerManager->addNonStopTimer(
         std::bind(&SessionPool::onTimer, this, _1),
-        timeout, timeout);
+        timeout,
+        timeout);
 }
 
 SessionPool::~SessionPool()
@@ -72,7 +71,7 @@ std::vector<nx::network::SocketAddress> SessionPool::getStunServers()
 
 TurnInfoFetcher& SessionPool::turnInfoFetcher()
 {
-  return m_turnInfoFetcher;
+    return m_turnInfoFetcher;
 }
 
 std::string SessionPool::emitUfrag()
@@ -83,8 +82,7 @@ std::string SessionPool::emitUfrag()
     do
     {
         localUfrag = Session::generateLocalUfrag();
-    }
-    while (m_sessionById.count(localUfrag) > 0);
+    } while (m_sessionById.count(localUfrag) > 0);
 
     m_sessionById[localUfrag] = nullptr;
     return localUfrag;
@@ -108,14 +106,16 @@ std::shared_ptr<Session> SessionPool::createInternal(
     const std::string& localUfrag,
     const SessionConfig& config)
 {
-
     auto server = systemContext()->resourcePool()->getResourceById<QnMediaServerResource>(
         systemContext()->peerId());
 
     if (!server)
     {
-        NX_WARNING(this, "Server not found for session %1, peerID: %2",
-            localUfrag, systemContext()->peerId());
+        NX_WARNING(
+            this,
+            "Server not found for session %1, peerID: %2",
+            localUfrag,
+            systemContext()->peerId());
         return nullptr;
     }
 
@@ -123,8 +123,9 @@ std::shared_ptr<Session> SessionPool::createInternal(
     {
         NX_MUTEX_LOCKER lk(&m_mutex);
         const auto sessionIter = m_sessionById.find(localUfrag);
-        if (!NX_ASSERT(sessionIter != m_sessionById.end() && !sessionIter->second,
-            "Session ufrag should be taken before by takeUfrag() of emitUfrag()"))
+        if (!NX_ASSERT(
+                sessionIter != m_sessionById.end() && !sessionIter->second,
+                "Session ufrag should be taken before by takeUfrag() of emitUfrag()"))
         {
             return nullptr;
         }
@@ -157,8 +158,7 @@ std::shared_ptr<Session> SessionPool::create(
     if (!takeUfrag(localUfrag))
         return nullptr;
 
-    return createInternal(
-        std::move(providerFactory), purpose, address, localUfrag, config);
+    return createInternal(std::move(providerFactory), purpose, address, localUfrag, config);
 }
 
 std::shared_ptr<Session> SessionPool::create(
@@ -168,8 +168,7 @@ std::shared_ptr<Session> SessionPool::create(
     const SessionConfig& config)
 {
     const auto localUfrag = emitUfrag();
-    return createInternal(
-        std::move(providerFactory), purpose, address, localUfrag, config);
+    return createInternal(std::move(providerFactory), purpose, address, localUfrag, config);
 }
 
 std::weak_ptr<Session> SessionPool::getSession(const std::string& id)

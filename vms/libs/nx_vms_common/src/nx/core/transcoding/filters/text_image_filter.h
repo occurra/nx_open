@@ -14,7 +14,7 @@ class TextImageFilter: public QnAbstractImageFilter
 public:
     using VideoLayoutPtr = std::shared_ptr<const QnResourceVideoLayout>;
     using TextGetter =
-        std::function<QString (const CLVideoDecoderOutputPtr& frame, int cutSymbolsCount)>;
+        std::function<QString(const CLVideoDecoderOutputPtr& frame, int cutSymbolsCount)>;
 
     using Factor = QPointF;
 

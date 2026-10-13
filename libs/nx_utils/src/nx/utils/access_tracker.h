@@ -38,7 +38,7 @@ public:
         return m_val;
     }
 
-    T& operator*()&
+    T& operator*() &
     {
         m_accessed = true;
         return m_val;
@@ -64,14 +64,11 @@ public:
     {
         std::destroy_at(&m_val);
         // TODO: Invoke std::construct_at in c++20.
-        new(&m_val) T(std::forward<Args>(args)...);
+        new (&m_val) T(std::forward<Args>(args)...);
         m_accessed = false;
     }
 
-    bool wasAccessed() const
-    {
-        return m_accessed;
-    }
+    bool wasAccessed() const { return m_accessed; }
 
 protected:
     T m_val;
@@ -93,8 +90,7 @@ protected:
  * </code></pre>
  */
 template<typename T>
-class AccessTracker:
-    public detail::AccessTrackerBase<T>
+class AccessTracker: public detail::AccessTrackerBase<T>
 {
     using base_type = detail::AccessTrackerBase<T>;
 
@@ -129,8 +125,7 @@ public:
 };
 
 template<typename T>
-class AccessTracker<T*>:
-    public detail::AccessTrackerBase<T*>
+class AccessTracker<T*>: public detail::AccessTrackerBase<T*>
 {
     using base_type = detail::AccessTrackerBase<T*>;
 

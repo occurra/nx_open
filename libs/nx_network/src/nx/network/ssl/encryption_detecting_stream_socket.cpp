@@ -6,15 +6,14 @@
 
 #include <nx/utils/log/log.h>
 
-#include "ssl_stream_socket.h"
 #include "../aio/async_channel_adapter.h"
+#include "ssl_stream_socket.h"
 
 namespace nx::network::ssl {
 
 EncryptionDetectingStreamSocket::EncryptionDetectingStreamSocket(
     Context* context,
-    std::unique_ptr<AbstractStreamSocket> source)
-    :
+    std::unique_ptr<AbstractStreamSocket> source):
     base_type(std::move(source)),
     m_context(context)
 {
@@ -40,8 +39,8 @@ void EncryptionDetectingStreamSocket::handshakeAsync(
     using namespace std::placeholders;
 
     m_handshakeCompletionUserHandler = std::move(handler);
-    detectProtocol(std::bind(
-        &EncryptionDetectingStreamSocket::proceedWithSslHandshakeIfNeeded, this, _1));
+    detectProtocol(
+        std::bind(&EncryptionDetectingStreamSocket::proceedWithSslHandshakeIfNeeded, this, _1));
 }
 
 std::string EncryptionDetectingStreamSocket::serverName() const
@@ -58,9 +57,7 @@ std::unique_ptr<AbstractStreamSocket> EncryptionDetectingStreamSocket::createSsl
     NX_VERBOSE(this, "Detected SSL connection. Initializing SSL socket");
 
     m_sslUsed = true;
-    return std::make_unique<ssl::ServerSideStreamSocket>(
-        m_context,
-        std::move(rawDataSource));
+    return std::make_unique<ssl::ServerSideStreamSocket>(m_context, std::move(rawDataSource));
 }
 
 void EncryptionDetectingStreamSocket::proceedWithSslHandshakeIfNeeded(
@@ -78,8 +75,8 @@ void EncryptionDetectingStreamSocket::proceedWithSslHandshakeIfNeeded(
         return;
     }
 
-    static_cast<ssl::StreamSocket&>(actualDataChannel()).handshakeAsync(
-        std::exchange(m_handshakeCompletionUserHandler, nullptr));
+    static_cast<ssl::StreamSocket&>(actualDataChannel())
+        .handshakeAsync(std::exchange(m_handshakeCompletionUserHandler, nullptr));
 }
 
 } // namespace nx::network::ssl

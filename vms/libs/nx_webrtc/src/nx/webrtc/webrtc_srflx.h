@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "webrtc_ice.h"
-
 #include <nx/utils/elapsed_timer.h>
+
+#include "webrtc_ice.h"
 
 namespace nx::webrtc {
 
@@ -27,10 +27,13 @@ namespace nx::webrtc {
 class NX_WEBRTC_API Srflx
 {
 public:
-    using Handler = std::function<void(const nx::network::SocketAddress& mappedAddress,
+    using Handler = std::function<void(
+        const nx::network::SocketAddress& mappedAddress,
         std::unique_ptr<nx::network::AbstractDatagramSocket>&& socket)>;
+
 public:
-    Srflx(const std::string& sessionId,
+    Srflx(
+        const std::string& sessionId,
         const std::vector<nx::network::SocketAddress>& stunServers,
         const Handler& handler);
     ~Srflx();

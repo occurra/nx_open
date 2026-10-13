@@ -38,7 +38,11 @@ void append(Bytes* destination, const Bytes& source)
  *     last element has no length field.
  */
 Bytes makePacket(
-    bool z, bool y, int obuElementCount, bool n, const std::vector<Bytes>& obuElements)
+    bool z,
+    bool y,
+    int obuElementCount,
+    bool n,
+    const std::vector<Bytes>& obuElements)
 {
     uint8_t aggregationHeader = (uint8_t) (obuElementCount << 4);
     if (z)
@@ -103,15 +107,18 @@ Bytes frameData(const QnAbstractMediaDataPtr& data)
 bool process(nx::rtp::Av1Parser& parser, Bytes packet, const nx::rtp::RtpHeader& header)
 {
     bool gotData = false;
-    const auto result = parser.processData(
-        header, packet.data(), /*bufferOffset*/ 0, (int) packet.size(), gotData);
+    const auto result =
+        parser
+            .processData(header, packet.data(), /*bufferOffset*/ 0, (int) packet.size(), gotData);
     EXPECT_TRUE(result.success) << result.message.toStdString();
     return gotData;
 }
 
 /** Emits a complete single packet key frame temporal unit. */
 QnAbstractMediaDataPtr feedKeyFrame(
-    nx::rtp::Av1Parser& parser, uint32_t timestamp, uint16_t sequence)
+    nx::rtp::Av1Parser& parser,
+    uint32_t timestamp,
+    uint16_t sequence)
 {
     const auto packet = makePacket(false, false, 2, true, {sequenceHeaderObu(), keyFrameObu()});
     if (!process(parser, packet, makeHeader(timestamp, /*marker*/ true, sequence)))
@@ -128,7 +135,11 @@ TEST(Av1RtpParser, RejectsEmptyPayload)
     uint8_t payload = 0;
 
     const auto result = parser.processData(
-        makeHeader(/*timestamp*/ 1), &payload, /*bufferOffset*/ 0, /*bytesRead*/ 0, gotData);
+        makeHeader(/*timestamp*/ 1),
+        &payload,
+        /*bufferOffset*/ 0,
+        /*bytesRead*/ 0,
+        gotData);
 
     ASSERT_FALSE(result.success);
     ASSERT_FALSE(gotData);
@@ -141,7 +152,11 @@ TEST(Av1RtpParser, RejectsPayloadWithoutObuElements)
     uint8_t payload = 0x10; //< Aggregation header only.
 
     const auto result = parser.processData(
-        makeHeader(/*timestamp*/ 1), &payload, /*bufferOffset*/ 0, /*bytesRead*/ 1, gotData);
+        makeHeader(/*timestamp*/ 1),
+        &payload,
+        /*bufferOffset*/ 0,
+        /*bytesRead*/ 1,
+        gotData);
 
     ASSERT_FALSE(result.success);
     ASSERT_FALSE(gotData);
@@ -303,7 +318,9 @@ TEST(Av1RtpParser, ReassemblesFragmentedObu)
     ASSERT_FALSE(
         process(parser, makePacket(true, false, 1, false, {part3}), makeHeader(1, false, 3)));
     ASSERT_TRUE(process(
-        parser, makePacket(false, false, 1, false, {keyFrameObu()}), makeHeader(1, true, 4)));
+        parser,
+        makePacket(false, false, 1, false, {keyFrameObu()}),
+        makeHeader(1, true, 4)));
 
     const auto data = parser.nextData();
     ASSERT_TRUE(data);
@@ -327,7 +344,11 @@ TEST(Av1RtpParser, RejectsPendingFragmentAtMarkerBit)
     auto packet = makePacket(false, true, 1, true, {part});
     bool gotData = false;
     const auto result = parser.processData(
-        makeHeader(1, /*marker*/ true, 1), packet.data(), 0, (int) packet.size(), gotData);
+        makeHeader(1, /*marker*/ true, 1),
+        packet.data(),
+        0,
+        (int) packet.size(),
+        gotData);
     ASSERT_FALSE(result.success);
     ASSERT_FALSE(gotData);
 }
@@ -361,12 +382,15 @@ TEST(Av1RtpParser, DoesNotReportAnErrorForAnOrphanedFragmentTail)
 TEST(Av1RtpParser, DoesNotEmitFrameUntilMarkerBit)
 {
     nx::rtp::Av1Parser parser;
-    ASSERT_FALSE(process(parser,
+    ASSERT_FALSE(process(
+        parser,
         makePacket(false, false, 1, true, {sequenceHeaderObu()}),
         makeHeader(1, false, 1)));
     ASSERT_FALSE(parser.nextData());
     ASSERT_TRUE(process(
-        parser, makePacket(false, false, 1, false, {keyFrameObu()}), makeHeader(1, true, 2)));
+        parser,
+        makePacket(false, false, 1, false, {keyFrameObu()}),
+        makeHeader(1, true, 2)));
     ASSERT_TRUE(parser.nextData());
 }
 
@@ -374,12 +398,15 @@ TEST(Av1RtpParser, FlushesOnRtpTimestampChange)
 {
     nx::rtp::Av1Parser parser;
     // No marker bit at all: the temporal unit must be flushed when the timestamp changes.
-    ASSERT_FALSE(process(parser,
+    ASSERT_FALSE(process(
+        parser,
         makePacket(false, false, 2, true, {sequenceHeaderObu(), keyFrameObu()}),
         makeHeader(10, false, 1)));
 
     ASSERT_TRUE(process(
-        parser, makePacket(false, false, 1, false, {interFrameObu()}), makeHeader(20, false, 2)));
+        parser,
+        makePacket(false, false, 1, false, {interFrameObu()}),
+        makeHeader(20, false, 2)));
 
     const auto data = parser.nextData();
     ASSERT_TRUE(data);
@@ -407,13 +434,14 @@ TEST(Av1RtpParser, DropsPaddingAndTileListObus)
     nx::rtp::Av1Parser parser;
     ASSERT_TRUE(feedKeyFrame(parser, /*timestamp*/ 1, /*sequence*/ 1));
 
-    const auto packet = makePacket(false,
+    const auto packet = makePacket(
+        false,
         false,
         3,
         false,
         {makeObu(ObuType::padding, {0x01, 0x02}),
-            makeObu(ObuType::tileList, {0x03, 0x04}),
-            interFrameObu()});
+         makeObu(ObuType::tileList, {0x03, 0x04}),
+         interFrameObu()});
     ASSERT_TRUE(process(parser, packet, makeHeader(2, /*marker*/ true, 2)));
 
     const auto data = parser.nextData();
@@ -433,7 +461,11 @@ TEST(Av1RtpParser, KeepsMetadataObu)
 
     const Bytes metadataPayload = {0x01, 0x02, 0x03};
     const auto packet = makePacket(
-        false, false, 2, false, {makeObu(ObuType::metadata, metadataPayload), interFrameObu()});
+        false,
+        false,
+        2,
+        false,
+        {makeObu(ObuType::metadata, metadataPayload), interFrameObu()});
     ASSERT_TRUE(process(parser, packet, makeHeader(2, /*marker*/ true, 2)));
 
     const auto data = parser.nextData();
@@ -455,7 +487,9 @@ TEST(Av1RtpParser, DoesNotSetKeyFlagForInterFrame)
     ASSERT_TRUE(feedKeyFrame(parser, /*timestamp*/ 1, /*sequence*/ 1));
 
     ASSERT_TRUE(process(
-        parser, makePacket(false, false, 1, false, {interFrameObu()}), makeHeader(2, true, 2)));
+        parser,
+        makePacket(false, false, 1, false, {interFrameObu()}),
+        makeHeader(2, true, 2)));
     const auto data = parser.nextData();
     ASSERT_TRUE(data);
     ASSERT_FALSE(data->flags & QnAbstractMediaData::MediaFlags_AVKey);
@@ -467,7 +501,8 @@ TEST(Av1RtpParser, DoesNotSetKeyFlagForRepeatedSequenceHeaderWithInterFrame)
     ASSERT_TRUE(feedKeyFrame(parser, /*timestamp*/ 1, /*sequence*/ 1));
 
     // Cameras often repeat the sequence header in every temporal unit.
-    ASSERT_TRUE(process(parser,
+    ASSERT_TRUE(process(
+        parser,
         makePacket(false, false, 2, false, {sequenceHeaderObu(), interFrameObu()}),
         makeHeader(2, true, 2)));
     const auto data = parser.nextData();
@@ -479,7 +514,9 @@ TEST(Av1RtpParser, DropsTemporalUnitsBeforeFirstSequenceHeader)
 {
     nx::rtp::Av1Parser parser;
     ASSERT_FALSE(process(
-        parser, makePacket(false, false, 1, false, {interFrameObu()}), makeHeader(1, true, 1)));
+        parser,
+        makePacket(false, false, 1, false, {interFrameObu()}),
+        makeHeader(1, true, 1)));
     ASSERT_FALSE(parser.nextData());
 
     // The stream starts at the first sequence header.
@@ -491,12 +528,15 @@ TEST(Av1RtpParser, DropsTemporalUnitOnPacketLoss)
     nx::rtp::Av1Parser parser;
     ASSERT_TRUE(feedKeyFrame(parser, /*timestamp*/ 1, /*sequence*/ 1));
 
-    ASSERT_FALSE(process(parser,
+    ASSERT_FALSE(process(
+        parser,
         makePacket(false, false, 1, false, {sequenceHeaderObu()}),
         makeHeader(2, false, 2)));
     // Sequence number 3 is lost.
     ASSERT_FALSE(process(
-        parser, makePacket(false, false, 1, false, {keyFrameObu()}), makeHeader(2, true, 4)));
+        parser,
+        makePacket(false, false, 1, false, {keyFrameObu()}),
+        makeHeader(2, true, 4)));
     ASSERT_FALSE(parser.nextData());
 
     // The next temporal unit is parsed normally.
@@ -508,7 +548,8 @@ TEST(Av1RtpParser, RecoversWhenTheMarkerPacketIsLost)
     nx::rtp::Av1Parser parser;
     ASSERT_TRUE(feedKeyFrame(parser, /*timestamp*/ 1, /*sequence*/ 1));
 
-    ASSERT_FALSE(process(parser,
+    ASSERT_FALSE(process(
+        parser,
         makePacket(false, false, 1, false, {sequenceHeaderObu()}),
         makeHeader(2, false, 2)));
     // The rest of this temporal unit, including the packet with the marker bit, is lost.
@@ -524,7 +565,9 @@ TEST(Av1RtpParser, IgnoresDuplicatePacket)
     // of every OBU it carries into the temporal unit.
     ASSERT_FALSE(process(parser, packet, makeHeader(1, false, 1)));
     ASSERT_TRUE(process(
-        parser, makePacket(false, false, 1, false, {keyFrameObu()}), makeHeader(1, true, 2)));
+        parser,
+        makePacket(false, false, 1, false, {keyFrameObu()}),
+        makeHeader(1, true, 2)));
 
     const auto data = parser.nextData();
     ASSERT_TRUE(data);
@@ -548,7 +591,8 @@ TEST(Av1RtpParser, DropsTemporalUnitWhenItsFirstPacketIsLost)
     // header, and here both packet boundaries are OBU boundaries, so the aggregation header gives
     // no clue: Z is not set and there is no pending fragment. The packets that did arrive must not
     // be emitted as if they were a complete frame.
-    ASSERT_FALSE(process(parser,
+    ASSERT_FALSE(process(
+        parser,
         makePacket(false, false, 1, false, {makeObu(ObuType::tileGroup, {0x01, 0x02})}),
         makeHeader(2, /*marker*/ true, /*sequence*/ 3)));
     ASSERT_FALSE(parser.nextData());
@@ -563,14 +607,16 @@ TEST(Av1RtpParser, DoesNotEmitTemporalUnitWithoutAFrameHeader)
     ASSERT_TRUE(feedKeyFrame(parser, /*timestamp*/ 1, /*sequence*/ 1));
 
     // Metadata, a sequence header and tile groups are not decodable without a frame header.
-    ASSERT_FALSE(process(parser,
-        makePacket(false,
+    ASSERT_FALSE(process(
+        parser,
+        makePacket(
+            false,
             false,
             3,
             false,
             {makeObu(ObuType::metadata, {0x01}),
-                sequenceHeaderObu(),
-                makeObu(ObuType::tileGroup, {0x02})}),
+             sequenceHeaderObu(),
+             makeObu(ObuType::tileGroup, {0x02})}),
         makeHeader(2, /*marker*/ true, /*sequence*/ 2)));
     ASSERT_FALSE(parser.nextData());
 }
@@ -581,13 +627,15 @@ TEST(Av1RtpParser, EmitsTemporalUnitWithASeparateFrameHeader)
     ASSERT_TRUE(feedKeyFrame(parser, /*timestamp*/ 1, /*sequence*/ 1));
 
     // A frame may be sent as OBU_FRAME_HEADER followed by OBU_TILE_GROUP instead of one OBU_FRAME.
-    ASSERT_TRUE(process(parser,
-        makePacket(false,
+    ASSERT_TRUE(process(
+        parser,
+        makePacket(
+            false,
             false,
             2,
             false,
             {makeObu(ObuType::frameHeader, kInterFramePayload),
-                makeObu(ObuType::tileGroup, {0x01, 0x02})}),
+             makeObu(ObuType::tileGroup, {0x01, 0x02})}),
         makeHeader(2, /*marker*/ true, /*sequence*/ 2)));
     ASSERT_TRUE(parser.nextData());
 }
@@ -637,7 +685,9 @@ TEST(Av1RtpParser, ClearWaitsForTheNextSequenceHeader)
     // There are no out of band parameter sets for AV1, so nothing can be emitted until the next
     // sequence header arrives.
     ASSERT_FALSE(process(
-        parser, makePacket(false, false, 1, false, {interFrameObu()}), makeHeader(2, true, 2)));
+        parser,
+        makePacket(false, false, 1, false, {interFrameObu()}),
+        makeHeader(2, true, 2)));
     ASSERT_FALSE(parser.nextData());
 
     ASSERT_TRUE(feedKeyFrame(parser, /*timestamp*/ 3, /*sequence*/ 3));

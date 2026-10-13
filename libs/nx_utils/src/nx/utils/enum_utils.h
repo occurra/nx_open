@@ -38,7 +38,10 @@ template<typename EnumType>
 inline QString enumToFullString(EnumType value)
 {
     const auto metaEnum = QMetaEnum::fromType<EnumType>();
-    return nx::format("%1::%2::%3", metaEnum.scope(), metaEnum.enumName(),
+    return nx::format(
+        "%1::%2::%3",
+        metaEnum.scope(),
+        metaEnum.enumName(),
         metaEnum.valueToKey(int(value)));
 }
 

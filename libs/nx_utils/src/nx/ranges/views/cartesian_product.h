@@ -29,24 +29,26 @@ struct CartesianProductView: std::ranges::view_interface<CartesianProductView<Ra
         constexpr reference operator*() const
         {
             return std::apply(
-                [](const auto&... current) -> reference { return {*current...}; },
+                [](const auto&... current) -> reference
+                {
+                    return {*current...};
+                },
                 current);
         }
 
         constexpr Iterator& operator++()
         {
-            const auto advanceAxis =
-                [this]<std::size_t Index>()
-                {
-                    auto& iterator = std::get<Index>(current);
-                    auto& range = std::get<Index>(parent->ranges);
+            const auto advanceAxis = [this]<std::size_t Index>()
+            {
+                auto& iterator = std::get<Index>(current);
+                auto& range = std::get<Index>(parent->ranges);
 
-                    ++iterator;
-                    const bool exhausted = std::ranges::end(range) == iterator;
-                    if (exhausted && 0 != Index)
-                        iterator = std::ranges::begin(range);
-                    return exhausted;
-                };
+                ++iterator;
+                const bool exhausted = std::ranges::end(range) == iterator;
+                if (exhausted && 0 != Index)
+                    iterator = std::ranges::begin(range);
+                return exhausted;
+            };
 
             std::invoke(
                 [&advanceAxis]<std::size_t... Index>(std::index_sequence<Index...>)
@@ -65,12 +67,13 @@ struct CartesianProductView: std::ranges::view_interface<CartesianProductView<Ra
             return std::invoke(
                 [this]<std::size_t... Index>(std::index_sequence<Index...>)
                 {
-                    return ((std::get<Index>(current)
-                        == std::ranges::end(std::get<Index>(parent->ranges))) || ...);
+                    return (
+                        (std::get<Index>(current)
+                         == std::ranges::end(std::get<Index>(parent->ranges)))
+                        || ...);
                 },
                 std::index_sequence_for<Ranges...>{});
         }
-
     };
 
     constexpr auto begin()
@@ -78,7 +81,10 @@ struct CartesianProductView: std::ranges::view_interface<CartesianProductView<Ra
         return Iterator<CartesianProductView, Ranges...>{
             .parent = this,
             .current = std::apply(
-                [](auto&... range) { return std::tuple(std::ranges::begin(range)...); },
+                [](auto&... range)
+                {
+                    return std::tuple(std::ranges::begin(range)...);
+                },
                 ranges),
         };
     }
@@ -89,7 +95,10 @@ struct CartesianProductView: std::ranges::view_interface<CartesianProductView<Ra
         return Iterator<const CartesianProductView, const Ranges...>{
             .parent = this,
             .current = std::apply(
-                [](const auto&... range) { return std::tuple(std::ranges::begin(range)...); },
+                [](const auto&... range)
+                {
+                    return std::tuple(std::ranges::begin(range)...);
+                },
                 ranges),
         };
     }
@@ -100,14 +109,22 @@ struct CartesianProductView: std::ranges::view_interface<CartesianProductView<Ra
     constexpr auto size()
         requires(std::ranges::sized_range<Ranges> && ...)
     {
-        return std::apply([](auto&... range) { return (std::ranges::size(range) * ...); }, ranges);
+        return std::apply(
+            [](auto&... range)
+            {
+                return (std::ranges::size(range) * ...);
+            },
+            ranges);
     }
 
     constexpr auto size() const
         requires(std::ranges::sized_range<const Ranges> && ...)
     {
         return std::apply(
-            [](const auto&... range) { return (std::ranges::size(range) * ...); },
+            [](const auto&... range)
+            {
+                return (std::ranges::size(range) * ...);
+            },
             ranges);
     }
 

@@ -15,9 +15,7 @@ QTimeZone timeZone(const QString& timeZoneId, QTimeZone defaultValue)
         return defaultValue;
 
     QTimeZone result(rawTimeZoneId);
-    return result.isValid()
-        ? result
-        : defaultValue;
+    return result.isValid() ? result : defaultValue;
 }
 
 QTimeZone timeZone(const QString& timeZoneId, std::chrono::milliseconds offsetFromUtc)

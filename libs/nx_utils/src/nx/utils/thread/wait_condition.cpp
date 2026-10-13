@@ -3,7 +3,8 @@
 #include "wait_condition.h"
 
 WaitConditionTimer::WaitConditionTimer(
-    nx::WaitCondition* waitCondition, std::chrono::milliseconds timeout):
+    nx::WaitCondition* waitCondition,
+    std::chrono::milliseconds timeout):
     m_waitCondition(waitCondition),
     m_timeout(timeout),
     // Measured on the real clock: a test shifting nx::utils::monotonicTime() back while a wait is

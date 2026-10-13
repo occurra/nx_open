@@ -12,14 +12,21 @@ namespace nx::utils::flags_detail {
 
 void assertInvalidFlagValue(const std::type_info& type, int value, int unrecognizedFlags)
 {
-    NX_ASSERT(false, "toString(%3): Invalid flag value: 0x%1, unrecognized flags: 0x%2",
-        QString::number(value, 16), QString::number(unrecognizedFlags, 16), type);
+    NX_ASSERT(
+        false,
+        "toString(%3): Invalid flag value: 0x%1, unrecognized flags: 0x%2",
+        QString::number(value, 16),
+        QString::number(unrecognizedFlags, 16),
+        type);
 }
 
 void logInvalidFlagValue(const std::type_info& type, int value, int unrecognizedFlags)
 {
-    NX_DEBUG(type, "toString(): Invalid flag value: 0x%1, unrecognized flags: 0x%2",
-        QString::number(value, 16), QString::number(unrecognizedFlags, 16));
+    NX_DEBUG(
+        type,
+        "toString(): Invalid flag value: 0x%1, unrecognized flags: 0x%2",
+        QString::number(value, 16),
+        QString::number(unrecognizedFlags, 16));
 }
 
 void logInvalidFlagRepresentation(const std::type_info& type, std::string_view flag)

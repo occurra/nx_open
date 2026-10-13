@@ -74,9 +74,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class NX_UTILS_API CounterWithSignal:
-    public QObject,
-    public Counter
+class NX_UTILS_API CounterWithSignal: public QObject, public Counter
 {
     Q_OBJECT
 

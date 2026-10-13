@@ -10,8 +10,7 @@
 
 namespace nx::utils::charconv::test {
 
-class CharconvFromChars:
-    public ::testing::Test
+class CharconvFromChars: public ::testing::Test
 {
 protected:
     template<typename T, typename... Args>
@@ -42,8 +41,8 @@ TEST_F(CharconvFromChars, integers)
     assertConverted("-1234567890123456", -1234567890123456ll, 10);
 }
 
-// TODO: #akolesnikov It appears that gcc implementation has a bug and does not pass the following test.
-// TEST_F(CharconvFromChars, skips_preceding_spaces)
+// TODO: #akolesnikov It appears that gcc implementation has a bug and does not pass the following
+// test. TEST_F(CharconvFromChars, skips_preceding_spaces)
 // {
 //     assertConverted("   1234567890123456", 1234567890123456ull, 10);
 // }
@@ -69,8 +68,7 @@ TEST_F(CharconvFromChars, float_number)
 
 //-------------------------------------------------------------------------------------------------
 
-class CharconvToChars:
-    public ::testing::Test
+class CharconvToChars: public ::testing::Test
 {
 protected:
     template<typename T, typename... Args>

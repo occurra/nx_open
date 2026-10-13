@@ -24,7 +24,8 @@ AvPacket::AvPacket(uint8_t* data, int size)
 AvPacket::AvPacket(const QnAbstractMediaData* data)
 {
     // TODO: Do not alloc packet for flushing after checking is it still needed passing last pts
-    // to decoder when flush (see code 'packet->pts = packet->dts = d->lastPts;' in decoder classes).
+    // to decoder when flush (see code 'packet->pts = packet->dts = d->lastPts;' in decoder
+    // classes).
     m_packet = av_packet_alloc();
 
     if (!data)

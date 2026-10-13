@@ -6,8 +6,8 @@
 #include <nx/utils/nx_utils_ini.h>
 
 #include "mutex_delegates_debug.h"
-#include "mutex_delegates_std.h"
 #include "mutex_delegates_qt.h"
+#include "mutex_delegates_std.h"
 
 namespace nx {
 
@@ -21,11 +21,16 @@ QString MutexImplementations::toString(Value value)
 {
     switch (value)
     {
-        case MutexImplementations::undefined: return kUndefinedName;
-        case MutexImplementations::qt: return kQtName;
-        case MutexImplementations::std: return kStdName;
-        case MutexImplementations::debug: return kDebugName;
-        case MutexImplementations::analyze: return kAnalyzeName;
+        case MutexImplementations::undefined:
+            return kUndefinedName;
+        case MutexImplementations::qt:
+            return kQtName;
+        case MutexImplementations::std:
+            return kStdName;
+        case MutexImplementations::debug:
+            return kDebugName;
+        case MutexImplementations::analyze:
+            return kAnalyzeName;
     }
 
     NX_ASSERT(false);
@@ -51,17 +56,16 @@ MutexImplementations::Value MutexImplementations::parse(const QString& value)
 
 MutexImplementations::Value mutexImplementation()
 {
-    static const auto value =
-        []()
-        {
-            const auto impl = utils::ini().mutexImplementation;
-            const auto parsed = MutexImplementations::parse(impl);
-            if (parsed != MutexImplementations::undefined)
-                return parsed;
+    static const auto value = []()
+    {
+        const auto impl = utils::ini().mutexImplementation;
+        const auto parsed = MutexImplementations::parse(impl);
+        if (parsed != MutexImplementations::undefined)
+            return parsed;
 
-            NX_ASSERT(false, "Unknown mutex implementation in ini: %1", impl);
-            return MutexImplementations::parse(utils::Ini::kDefaultMutexImplementation);
-        }();
+        NX_ASSERT(false, "Unknown mutex implementation in ini: %1", impl);
+        return MutexImplementations::parse(utils::Ini::kDefaultMutexImplementation);
+    }();
 
     return value;
 }
@@ -94,7 +98,8 @@ std::unique_ptr<ReadWriteLockDelegate> makeReadWriteLockDelegate(ReadWriteLock::
     if (impl & MutexImplementations::debug)
     {
         return std::make_unique<ReadWriteLockDebugDelegate>(
-            mode, impl == MutexImplementations::analyze);
+            mode,
+            impl == MutexImplementations::analyze);
     }
 
     NX_ASSERT(false, "Unknown mutex implementation: %1", impl);

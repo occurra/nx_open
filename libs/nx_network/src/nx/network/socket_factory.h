@@ -28,16 +28,17 @@ class SocketFactoryImpl;
 /**
  * Contains factory methods for creating sockets.
  * All factory methods return objects created with operator new.
- * TODO: #akolesnikov Refactor to a single static instance instead of every field being static as of now.
+ * TODO: #akolesnikov Refactor to a single static instance instead of every field being static as
+ * of now.
  */
 class NX_NETWORK_API SocketFactory
 {
 public:
     enum class SocketType
     {
-        cloud,  //< Production mode.
-        tcp,    //< \class TcpSocket and \class TcpServerSocket.
-        udt,    //< \class UdtSocket and \class UdtServerSocket.
+        cloud, //< Production mode.
+        tcp, //< \class TcpSocket and \class TcpServerSocket.
+        udt, //< \class UdtSocket and \class UdtServerSocket.
     };
 
     using CreateStreamSocketFuncType = std::function<std::unique_ptr<AbstractStreamSocket>(
@@ -46,12 +47,11 @@ public:
         nx::network::NatTraversalSupport /*natTraversalRequired*/,
         std::optional<int> /*ipVersion*/)>;
 
-    using CreateStreamServerSocketFuncType = std::function<std::unique_ptr<AbstractStreamServerSocket>(
-        bool /*sslRequired*/,
-        std::optional<int> /*ipVersion*/)>;
+    using CreateStreamServerSocketFuncType = std::function<std::unique_ptr<
+        AbstractStreamServerSocket>(bool /*sslRequired*/, std::optional<int> /*ipVersion*/)>;
 
-    using DatagramSocketFactoryFunc = nx::MoveOnlyFunc<
-        std::unique_ptr<AbstractDatagramSocket>(int /*e.g., AF_INET*/)>;
+    using DatagramSocketFactoryFunc =
+        nx::MoveOnlyFunc<std::unique_ptr<AbstractDatagramSocket>(int /*e.g., AF_INET*/)>;
 
     static std::unique_ptr<AbstractDatagramSocket> createDatagramSocket();
 
@@ -71,7 +71,7 @@ public:
         NatTraversalSupport natTraversalRequired = NatTraversalSupport::enabled,
         std::optional<int> ipVersion = std::nullopt);
 
-    static std::unique_ptr< AbstractStreamServerSocket > createStreamServerSocket(
+    static std::unique_ptr<AbstractStreamServerSocket> createStreamServerSocket(
         bool sslRequired = false,
         std::optional<int> ipVersion = std::nullopt);
 
@@ -95,10 +95,10 @@ public:
      * Set new factory.
      * @return old factory.
      */
-    static CreateStreamSocketFuncType
-        setCreateStreamSocketFunc(CreateStreamSocketFuncType newFactoryFunc);
-    static CreateStreamServerSocketFuncType
-        setCreateStreamServerSocketFunc(CreateStreamServerSocketFuncType newFactoryFunc);
+    static CreateStreamSocketFuncType setCreateStreamSocketFunc(
+        CreateStreamSocketFuncType newFactoryFunc);
+    static CreateStreamServerSocketFuncType setCreateStreamServerSocketFunc(
+        CreateStreamServerSocketFuncType newFactoryFunc);
 
     static void setIpVersion(const std::string& ipVersion);
 

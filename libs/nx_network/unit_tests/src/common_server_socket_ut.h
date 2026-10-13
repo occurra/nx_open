@@ -10,8 +10,7 @@
 namespace nx::network::test {
 
 template<typename ServerSocketType>
-class ServerSocketTest:
-    public ::testing::Test
+class ServerSocketTest: public ::testing::Test
 {
 public:
     ServerSocketTest():
@@ -20,10 +19,7 @@ public:
         init();
     }
 
-    ~ServerSocketTest()
-    {
-        m_serverSocket.pleaseStopSync();
-    }
+    ~ServerSocketTest() { m_serverSocket.pleaseStopSync(); }
 
 protected:
     void whenMovedServerSocketToNonBlockingMode()
@@ -44,10 +40,7 @@ protected:
         m_acceptResult = acceptDone.get_future().get();
     }
 
-    void thenErrorShouldBeReported()
-    {
-        ASSERT_EQ(SystemError::notSupported, m_acceptResult);
-    }
+    void thenErrorShouldBeReported() { ASSERT_EQ(SystemError::notSupported, m_acceptResult); }
 
 private:
     ServerSocketType m_serverSocket;

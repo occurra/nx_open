@@ -1,13 +1,13 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <array>
 #include <optional>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <utility>
+
+#include <gtest/gtest.h>
 
 #include <QtCore/QString>
 
@@ -20,14 +20,16 @@ namespace {
 class Request
 {
 public:
-
-    Request(std::optional<std::chrono::milliseconds> delay = std::nullopt) : m_delay(delay) {}
+    Request(std::optional<std::chrono::milliseconds> delay = std::nullopt):
+        m_delay(delay)
+    {
+    }
     Request(const Request&) = delete;
     Request(Request&&) = default;
 
     std::optional<std::pair<int, int>> operator()(int param)
     {
-        if(m_delay)
+        if (m_delay)
             std::this_thread::sleep_for(*m_delay);
 
         auto callCounts = m_callCounts.lock();
@@ -39,7 +41,7 @@ private:
     const std::optional<std::chrono::milliseconds> m_delay;
 };
 
-const std::chrono::milliseconds kProtectiveShift{ 1 };
+const std::chrono::milliseconds kProtectiveShift{1};
 const nx::CachedResponseTimeouts kDefaultTimeouts;
 
 using Clock = std::chrono::steady_clock;
@@ -57,10 +59,22 @@ struct TrackedValue
     int value = 0;
 
     TrackedValue() = default;
-    explicit TrackedValue(int v) : value(v) {}
-    TrackedValue(const TrackedValue& o) noexcept : value(o.value) { ++s_copies; }
+    explicit TrackedValue(int v):
+        value(v)
+    {
+    }
+    TrackedValue(const TrackedValue& o) noexcept:
+        value(o.value)
+    {
+        ++s_copies;
+    }
     TrackedValue(TrackedValue&& o) = default;
-    TrackedValue& operator=(const TrackedValue& o) noexcept { value = o.value; ++s_copies; return *this; }
+    TrackedValue& operator=(const TrackedValue& o) noexcept
+    {
+        value = o.value;
+        ++s_copies;
+        return *this;
+    }
     TrackedValue& operator=(TrackedValue&& o) = default;
 };
 int TrackedValue::s_copies = 0;
@@ -81,20 +95,31 @@ namespace nx::test {
 
 TEST(CachedResponse, SimpleGet)
 {
-    CachedResponse<std::optional<int>()> goodResponse([n = 0]() mutable { return ++n; });
+    CachedResponse<std::optional<int>()> goodResponse(
+        [n = 0]() mutable
+        {
+            return ++n;
+        });
 
     ASSERT_TRUE(goodResponse());
     ASSERT_EQ(*goodResponse(), 1);
 
     CachedResponse<std::optional<int>()> badResponse(
-        []() -> std::optional<int> { return std::nullopt; });
+        []() -> std::optional<int>
+        {
+            return std::nullopt;
+        });
 
     ASSERT_FALSE(badResponse());
 }
 
 TEST(CachedResponse, Invalidate)
 {
-    CachedResponse<std::optional<int>()> response([n = 0]() mutable { return ++n; });
+    CachedResponse<std::optional<int>()> response(
+        [n = 0]() mutable
+        {
+            return ++n;
+        });
 
     ASSERT_TRUE(response());
     ASSERT_EQ(*response(), 1);
@@ -109,7 +134,11 @@ TEST(CachedResponse, UpdateAfterExpired)
 {
     nx::utils::test::ScopedTimeShift timeShift(nx::utils::test::ClockType::steady);
 
-    CachedResponse<std::optional<int>()> response([n = 0]() mutable { return ++n; });
+    CachedResponse<std::optional<int>()> response(
+        [n = 0]() mutable
+        {
+            return ++n;
+        });
 
     ASSERT_TRUE(response());
     ASSERT_EQ(*response(), 1);
@@ -173,19 +202,23 @@ TEST(CachedResponse, Concurrency)
 
 TEST(CachedResponse, Timeouts)
 {
-    ASSERT_GE(
-        kDefaultTimeouts.updateTimeout,
-        kDefaultTimeouts.failedUpdateTimeout);
+    ASSERT_GE(kDefaultTimeouts.updateTimeout, kDefaultTimeouts.failedUpdateTimeout);
 
     nx::utils::test::ScopedTimeShift timeShift(nx::utils::test::ClockType::steady);
     CachedResponseTimeouts notDefaultTimeouts{.updateTimeout = std::chrono::seconds{1}};
 
     Request request;
     CachedResponse<std::optional<std::pair<int, int>>()> response(
-        [&request]() { return request(0); },
+        [&request]()
+        {
+            return request(0);
+        },
         notDefaultTimeouts);
 
-    auto getExpectedResult = [](int v1, int v2) { return std::pair(v1, v2); };
+    auto getExpectedResult = [](int v1, int v2)
+    {
+        return std::pair(v1, v2);
+    };
 
     for (int i = 0; i < 3; i++)
     {
@@ -198,7 +231,11 @@ TEST(CachedResponse, Timeouts)
 
 TEST(CachedResponse, CallWithArguments)
 {
-    CachedResponse<std::optional<int>(int, int)> response([](int a, int b) { return a + b; });
+    CachedResponse<std::optional<int>(int, int)> response(
+        [](int a, int b)
+        {
+            return a + b;
+        });
 
     const auto result = response(2, 3);
     ASSERT_TRUE(result);
@@ -207,7 +244,11 @@ TEST(CachedResponse, CallWithArguments)
 
 TEST(CachedResponse, ArgumentsDoNotAffectCachedValueBeforeExpiration)
 {
-    CachedResponse<std::optional<int>(int)> response([](int x) {  return x * 10; });
+    CachedResponse<std::optional<int>(int)> response(
+        [](int x)
+        {
+            return x * 10;
+        });
 
     const auto first = response(2);
     ASSERT_TRUE(first);
@@ -222,7 +263,11 @@ TEST(CachedResponse, ArgumentsAffectValueAfterExpirationOrInvalidate)
 {
     nx::utils::test::ScopedTimeShift timeShift(nx::utils::test::ClockType::steady);
 
-    CachedResponse<std::optional<int>(int)> response([](int x) {  return x * 10; });
+    CachedResponse<std::optional<int>(int)> response(
+        [](int x)
+        {
+            return x * 10;
+        });
 
     const auto first = response(2);
     ASSERT_TRUE(first);
@@ -256,7 +301,7 @@ TEST(CachedResponse, SupportsMoveOnlyArgument)
 
 TEST(CachedResponse, SupportsStringArgument)
 {
-    CachedResponse< std::optional<size_t>(std::string)> response(
+    CachedResponse<std::optional<size_t>(std::string)> response(
         [](const std::string& s)
         {
             return s.size();
@@ -274,13 +319,16 @@ TEST(CachedResponse, SupportsClassStaticMethods)
     private:
         static std::optional<int> loadResult()
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
             return 0;
         }
 
     public:
         CachedResponse<std::optional<int>()> result;
-        ClassWithLongOperations() : result{ &ClassWithLongOperations::loadResult } {}
+        ClassWithLongOperations():
+            result{&ClassWithLongOperations::loadResult}
+        {
+        }
     };
 
     ClassWithLongOperations response;
@@ -293,17 +341,18 @@ TEST(CachedResponse, SupportsClassStaticMethods)
 TEST(ParameterizedCachedResponse, SimpleGet)
 {
     auto getter = [](int i) -> std::optional<int>
-        {
-            if (i == 0)
-                return std::nullopt;
-            return i;
-        };
+    {
+        if (i == 0)
+            return std::nullopt;
+        return i;
+    };
 
-    auto keyGenerator = [](int i) { return i; };
+    auto keyGenerator = [](int i)
+    {
+        return i;
+    };
 
-    ParameterizedCachedResponse<int, std::optional<int>(int)> goodResponse(
-        getter,
-        keyGenerator);
+    ParameterizedCachedResponse<int, std::optional<int>(int)> goodResponse(getter, keyGenerator);
 
     ASSERT_FALSE(goodResponse(0));
 
@@ -313,8 +362,14 @@ TEST(ParameterizedCachedResponse, SimpleGet)
 
 TEST(ParameterizedCachedResponse, RvalueArgumentsNotConsumedByKeyGenerator)
 {
-    auto getter = [](const std::string& s) -> std::optional<size_t> { return s.size(); };
-    auto keyGenerator = [](const std::string& s) { return s; };
+    auto getter = [](const std::string& s) -> std::optional<size_t>
+    {
+        return s.size();
+    };
+    auto keyGenerator = [](const std::string& s)
+    {
+        return s;
+    };
 
     ParameterizedCachedResponse<std::string, std::optional<size_t>(std::string)> response(
         getter,
@@ -328,19 +383,18 @@ TEST(ParameterizedCachedResponse, RvalueArgumentsNotConsumedByKeyGenerator)
 TEST(ParameterizedCachedResponse, MoreComplexCases)
 {
     auto getter = [](QString s1, const std::string& s2, int i) -> std::optional<QString>
-        {
-            return s1 + QString::fromStdString(s2) + QString::number(i);
-        };
+    {
+        return s1 + QString::fromStdString(s2) + QString::number(i);
+    };
 
     auto keyGenerator = [](QString s1, std::string s2, int i)
-        {
-            return std::make_tuple(std::move(s1), std::move(s2), i);
-        };
+    {
+        return std::make_tuple(std::move(s1), std::move(s2), i);
+    };
 
     using KeyType = std::tuple<QString, std::string, int>;
-    ParameterizedCachedResponse<KeyType, std::optional<QString>(QString, std::string, int)> response(
-        getter,
-        keyGenerator);
+    ParameterizedCachedResponse<KeyType, std::optional<QString>(QString, std::string, int)>
+        response(getter, keyGenerator);
 
     std::string s = "string";
     ASSERT_TRUE(response("QString", s, 1));
@@ -350,7 +404,10 @@ TEST(ParameterizedCachedResponse, MoreComplexCases)
 TEST(ParameterizedCachedResponse, GetterStateIsSharedAcrossKeys)
 {
     int totalCalls = 0;
-    auto keyGenerator = [](int param) { return param; };
+    auto keyGenerator = [](int param)
+    {
+        return param;
+    };
 
     ParameterizedCachedResponse<int, std::optional<int>(int)> response(
         [&totalCalls](int param) -> std::optional<int>
@@ -372,13 +429,19 @@ TEST(ParameterizedCachedResponse, GetterStateIsSharedAcrossKeys)
 
 TEST(ParameterizedCachedResponse, Invalidate)
 {
-    auto keyGenerator = [](int param) { return param; };
+    auto keyGenerator = [](int param)
+    {
+        return param;
+    };
 
     ParameterizedCachedResponse<int, std::optional<std::pair<int, int>>(int)> response(
         Request{},
         keyGenerator);
 
-    auto getExpectedResult = [](int v1, int v2) { return std::pair<int, int>(v1, v2); };
+    auto getExpectedResult = [](int v1, int v2)
+    {
+        return std::pair<int, int>(v1, v2);
+    };
 
     ASSERT_TRUE(response(0));
     ASSERT_EQ(*response(0), getExpectedResult(0, 1));
@@ -401,16 +464,22 @@ TEST(ParameterizedCachedResponse, Invalidate)
 TEST(ParameterizedCachedResponse, Timeouts)
 {
     nx::utils::test::ScopedTimeShift timeShift(nx::utils::test::ClockType::steady);
-    CachedResponseTimeouts notDefaultTimeouts{ .updateTimeout = std::chrono::seconds{1} };
+    CachedResponseTimeouts notDefaultTimeouts{.updateTimeout = std::chrono::seconds{1}};
 
-    auto keyGenerator = [](int param) { return param; };
+    auto keyGenerator = [](int param)
+    {
+        return param;
+    };
 
     ParameterizedCachedResponse<int, std::optional<std::pair<int, int>>(int)> response(
         Request{},
         keyGenerator,
         notDefaultTimeouts);
 
-    auto getExpectedResult = [](int v1, int v2) { return std::pair<int, int>(v1, v2); };
+    auto getExpectedResult = [](int v1, int v2)
+    {
+        return std::pair<int, int>(v1, v2);
+    };
 
     for (int i = 0; i < 3; i++)
     {
@@ -430,23 +499,29 @@ TEST(ParameterizedCachedResponse, Concurrency)
     const auto delay = std::chrono::milliseconds(500);
     const int parametersCount = 4;
 
-    auto keyGenerator = [](int param) { return param; };
+    auto keyGenerator = [](int param)
+    {
+        return param;
+    };
 
     ParameterizedCachedResponse<int, std::optional<std::pair<int, int>>(int)> response(
-        Request{ delay },
+        Request{delay},
         keyGenerator);
 
     const auto start = Clock::now();
 
     std::array<std::thread, 32> threads;
-    for (int i = 0; i < (int)threads.size(); ++i)
+    for (int i = 0; i < (int) threads.size(); ++i)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
         threads[i] = std::thread(
             [i, &response]()
             {
                 // Expect that Request::operator() was called only once for each param
-                auto getExpectedResult = [](int v) { return std::pair<int, int>(v, 1); };
+                auto getExpectedResult = [](int v)
+                {
+                    return std::pair<int, int>(v, 1);
+                };
 
                 const int param = i % parametersCount;
                 const auto result = response(param);
@@ -460,7 +535,8 @@ TEST(ParameterizedCachedResponse, Concurrency)
 
     const auto duration = elapsedSince(start);
 
-    // Verify that long-running computation functions with different parameters can execute in parallel.
+    // Verify that long-running computation functions with different parameters can execute in
+    // parallel.
     const std::chrono::milliseconds maxDuration{
         static_cast<std::chrono::milliseconds::rep>(2.5 * delay.count())};
     ASSERT_TRUE(duration < maxDuration)
@@ -479,9 +555,16 @@ TEST(ParameterizedCachedResponse, InvalidateAllDoesNotWaitForOngoingUpdate)
                 std::this_thread::sleep_for(delay);
             return param;
         },
-        [](int param) { return param; });
+        [](int param)
+        {
+            return param;
+        });
 
-    std::thread slowUpdate([&response]() { EXPECT_TRUE(response(0)); });
+    std::thread slowUpdate(
+        [&response]()
+        {
+            EXPECT_TRUE(response(0));
+        });
     std::this_thread::sleep_for(protectiveDelay);
 
     std::chrono::milliseconds invalidationDuration{};
@@ -518,20 +601,37 @@ TEST(CachedResponse, CheckCopyCount)
     {
         TrackedValue::reset();
         CachedResponse<std::optional<int>(TrackedValue)> cache(
-            [](TrackedValue s) -> std::optional<int> { return s.value; });
+            [](TrackedValue s) -> std::optional<int>
+            {
+                return s.value;
+            });
         const auto response = cache(session);
         ASSERT_TRUE(response);
         EXPECT_EQ(TrackedValue::s_copies, 1);
     }
     {
         CachedResponse<std::optional<int>(TrackedValue*)> cache(
-            [](TrackedValue* s) -> std::optional<int> { return s->value; });
-        checkNoCopies([&]{ return cache(&session); });
+            [](TrackedValue* s) -> std::optional<int>
+            {
+                return s->value;
+            });
+        checkNoCopies(
+            [&]
+            {
+                return cache(&session);
+            });
     }
     {
         CachedResponse<std::optional<int>(const TrackedValue&)> cache(
-            [](const TrackedValue& s) -> std::optional<int> { return s.value; });
-        checkNoCopies([&]{ return cache(session); });
+            [](const TrackedValue& s) -> std::optional<int>
+            {
+                return s.value;
+            });
+        checkNoCopies(
+            [&]
+            {
+                return cache(session);
+            });
     }
 }
 
@@ -541,23 +641,49 @@ TEST(ParameterizedCachedResponse, CheckCopyCount)
     {
         TrackedValue::reset();
         ParameterizedCachedResponse<int, std::optional<int>(TrackedValue)> cache(
-            [](TrackedValue s) -> std::optional<int> { return s.value; },
-            [](TrackedValue s) { return s.value; });
+            [](TrackedValue s) -> std::optional<int>
+            {
+                return s.value;
+            },
+            [](TrackedValue s)
+            {
+                return s.value;
+            });
         const auto response = cache(session);
         ASSERT_TRUE(response);
         EXPECT_EQ(TrackedValue::s_copies, 2); // keyGenerator + getter
     }
     {
         ParameterizedCachedResponse<int, std::optional<int>(TrackedValue*)> cache(
-            [](TrackedValue* s) -> std::optional<int> { return s->value; },
-            [](TrackedValue* s) { return s->value; });
-        checkNoCopies([&]{ return cache(&session); });
+            [](TrackedValue* s) -> std::optional<int>
+            {
+                return s->value;
+            },
+            [](TrackedValue* s)
+            {
+                return s->value;
+            });
+        checkNoCopies(
+            [&]
+            {
+                return cache(&session);
+            });
     }
     {
         ParameterizedCachedResponse<int, std::optional<int>(const TrackedValue&)> cache(
-            [](const TrackedValue& s) -> std::optional<int> { return s.value; },
-            [](const TrackedValue& s) { return s.value; });
-        checkNoCopies([&]{ return cache(session); });
+            [](const TrackedValue& s) -> std::optional<int>
+            {
+                return s.value;
+            },
+            [](const TrackedValue& s)
+            {
+                return s.value;
+            });
+        checkNoCopies(
+            [&]
+            {
+                return cache(session);
+            });
     }
 }
 

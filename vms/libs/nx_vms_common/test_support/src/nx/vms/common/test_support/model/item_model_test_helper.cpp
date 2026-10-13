@@ -9,18 +9,17 @@ namespace nx::vms::common::test {
 QModelIndexList ItemModelTestHelper::getAllIndexes() const
 {
     std::function<QModelIndexList(const QModelIndex&)> getChildren;
-    getChildren =
-        [this, &getChildren](const QModelIndex& parent)
+    getChildren = [this, &getChildren](const QModelIndex& parent)
+    {
+        QModelIndexList result;
+        for (int row = 0; row < model()->rowCount(parent); ++row)
         {
-            QModelIndexList result;
-            for (int row = 0; row < model()->rowCount(parent); ++row)
-            {
-                const auto childIndex = model()->index(row, 0, parent);
-                result.append(childIndex);
-                result.append(getChildren(childIndex));
-            }
-            return result;
-        };
+            const auto childIndex = model()->index(row, 0, parent);
+            result.append(childIndex);
+            result.append(getChildren(childIndex));
+        }
+        return result;
+    };
     return getChildren(QModelIndex());
 }
 
@@ -72,8 +71,13 @@ std::vector<QString> ItemModelTestHelper::transformToDisplayStrings(
     const QModelIndexList& indexes) const
 {
     std::vector<QString> result;
-    std::ranges::transform(indexes, std::back_inserter(result),
-        [](const QModelIndex& index) { return index.data(Qt::DisplayRole).toString(); });
+    std::ranges::transform(
+        indexes,
+        std::back_inserter(result),
+        [](const QModelIndex& index)
+        {
+            return index.data(Qt::DisplayRole).toString();
+        });
     return result;
 }
 

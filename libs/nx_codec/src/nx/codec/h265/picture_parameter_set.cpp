@@ -6,7 +6,8 @@ namespace nx::media::h265 {
 
 bool PictureParameterSet::read(const uint8_t* data, int size)
 {
-    try {
+    try
+    {
         nx::utils::BitStreamReader reader(data, size);
         pps_pic_parameter_set_id = reader.getGolomb();
         pps_seq_parameter_set_id = reader.getGolomb();
@@ -40,13 +41,12 @@ bool PictureParameterSet::read(const uint8_t* data, int size)
             if (!uniform_spacing_flag)
             {
                 column_width_minus1.resize(num_tile_columns_minus1);
-                for(uint32_t i = 0; i < num_tile_columns_minus1; ++i)
+                for (uint32_t i = 0; i < num_tile_columns_minus1; ++i)
                     column_width_minus1[i] = reader.getGolomb();
 
                 row_height_minus1.resize(num_tile_rows_minus1);
-                for(uint32_t i = 0; i < num_tile_rows_minus1; ++i)
+                for (uint32_t i = 0; i < num_tile_rows_minus1; ++i)
                     row_height_minus1[i] = reader.getGolomb();
-
             }
             loop_filter_across_tiles_enabled_flag = reader.getBits(1);
         }

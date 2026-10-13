@@ -1,10 +1,10 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include "log_writers.h"
+#include <QtCore/QCoreApplication>
 
 #include <android/log.h>
 
-#include <QtCore/QCoreApplication>
+#include "log_writers.h"
 
 namespace nx::log {
 

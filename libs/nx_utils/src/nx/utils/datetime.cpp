@@ -22,9 +22,9 @@ using namespace std::chrono;
 
 namespace {
 
-static constexpr const char* kWeekDays[] = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
-static constexpr const char* kMonths[] = {
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+static constexpr const char* kWeekDays[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+static constexpr const char* kMonths[] =
+    {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
 // Cross-platform timegm replacement
 std::time_t timegmCrossPlatform(struct tm* tm)
@@ -61,8 +61,8 @@ QDateTime parseRfc1123Date(std::string_view str)
 QDateTime parseRfc850Date(std::string_view str)
 {
     static constexpr char kRfc850Template[] = "dddd, dd-MMM-yy hh:mm:ss";
-    return QLocale(QLocale::C).toDateTime(
-        QByteArray::fromRawData(str.data(), str.size()), kRfc850Template);
+    return QLocale(QLocale::C)
+        .toDateTime(QByteArray::fromRawData(str.data(), str.size()), kRfc850Template);
 }
 
 // Sun Nov  6 08:49:37 1994  (ANSI C's asctime() format)
@@ -70,15 +70,16 @@ QDateTime parseAnsiCDate(std::string_view str)
 {
     // QDateTime::fromString() requires exact format match, so two templates are required:
     // Non padded if the day of the month is >= 10, and padded if day of the month is < 10
-    static constexpr char kAnsiCTemplate[]       = "ddd MMM d hh:mm:ss yyyy";
+    static constexpr char kAnsiCTemplate[] = "ddd MMM d hh:mm:ss yyyy";
     static constexpr char kAnsiCTemplatePadded[] = "ddd MMM  d hh:mm:ss yyyy";
 
     if (str.size() < 9)
         return QDateTime();
 
-    return QLocale(QLocale::C).toDateTime(
-        QByteArray::fromRawData(str.data(), str.size()),
-        str[8] == ' ' ? kAnsiCTemplatePadded : kAnsiCTemplate);
+    return QLocale(QLocale::C)
+        .toDateTime(
+            QByteArray::fromRawData(str.data(), str.size()),
+            str[8] == ' ' ? kAnsiCTemplatePadded : kAnsiCTemplate);
 }
 
 // Lock-free parsing helper functions
@@ -93,7 +94,8 @@ std::int64_t parseRfc1123DateLockFree(std::string_view str)
     char monthStr[4] = {};
 
     // Parse: "Sun, 06 Nov 1994 08:49:37"
-    if (sscanf(str.data(),
+    if (sscanf(
+            str.data(),
             "%*3s, %2d %3s %4d %2d:%2d:%2d",
             &tm.tm_mday,
             monthStr,
@@ -105,8 +107,8 @@ std::int64_t parseRfc1123DateLockFree(std::string_view str)
         return -1;
 
     // Convert month name to number
-    static constexpr const char* kMonths[] = {
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    static constexpr const char* kMonths[] =
+        {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
     tm.tm_mon = -1;
     for (int i = 0; i < 12; ++i)
@@ -142,7 +144,8 @@ std::int64_t parseRfc850DateLockFree(std::string_view str)
     int year;
 
     // Parse: "Sunday, 06-Nov-94 08:49:37"
-    if (sscanf(str.data(),
+    if (sscanf(
+            str.data(),
             "%*[^,], %2d-%3s-%2d %2d:%2d:%2d",
             &tm.tm_mday,
             monthStr,
@@ -154,8 +157,8 @@ std::int64_t parseRfc850DateLockFree(std::string_view str)
         return -1;
 
     // Convert month name to number
-    static constexpr const char* kMonths[] = {
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    static constexpr const char* kMonths[] =
+        {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
     tm.tm_mon = -1;
     for (int i = 0; i < 12; ++i)
@@ -194,7 +197,8 @@ std::int64_t parseAnsiCDateLockFree(std::string_view str)
     char monthStr[4] = {};
 
     // Try parsing with space-padded day first
-    if (sscanf(str.data(),
+    if (sscanf(
+            str.data(),
             "%*3s %3s %2d %2d:%2d:%2d %4d",
             monthStr,
             &tm.tm_mday,
@@ -205,7 +209,8 @@ std::int64_t parseAnsiCDateLockFree(std::string_view str)
         != 6)
     {
         // Try parsing with single-digit day
-        if (sscanf(str.data(),
+        if (sscanf(
+                str.data(),
                 "%*3s %3s %d %2d:%2d:%2d %4d",
                 monthStr,
                 &tm.tm_mday,
@@ -218,8 +223,8 @@ std::int64_t parseAnsiCDateLockFree(std::string_view str)
     }
 
     // Convert month name to number
-    static constexpr const char* kMonths[] = {
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    static constexpr const char* kMonths[] =
+        {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
     tm.tm_mon = -1;
     for (int i = 0; i < 12; ++i)
@@ -258,7 +263,7 @@ QString timestampToISO8601(std::chrono::microseconds timestamp)
     if (timestamp == std::chrono::microseconds::zero())
         return {};
     return QDateTime::fromMSecsSinceEpoch(
-        std::chrono::duration_cast<milliseconds>(timestamp).count())
+               std::chrono::duration_cast<milliseconds>(timestamp).count())
         .toString(Qt::DateFormat::ISODate);
 }
 
@@ -269,8 +274,7 @@ QString timestampToRfc2822(milliseconds timestamp)
 
 QString timestampToRfc2822(std::chrono::system_clock::time_point timestamp)
 {
-    return timestampToRfc2822(
-        duration_cast<milliseconds>(timestamp.time_since_epoch()));
+    return timestampToRfc2822(duration_cast<milliseconds>(timestamp.time_since_epoch()));
 }
 
 QString timestampToDebugString(qint64 timestampMs, const QString& format)
@@ -301,7 +305,8 @@ QString timestampToDebugString(milliseconds timestamp, const QString& format)
 
 std::string formatDateTime(const QDateTime& value)
 {
-    // Starts with Monday to correspond to QDate::dayOfWeek() return value: 1 for Monday, 7 for Sunday
+    // Starts with Monday to correspond to QDate::dayOfWeek() return value: 1 for Monday, 7 for
+    // Sunday
 
     if (value.isNull() || !value.isValid())
         return std::string();
@@ -311,7 +316,10 @@ std::string formatDateTime(const QDateTime& value)
     const QTime& time = utc.time();
 
     char strDateBuf[256];
-    snprintf(strDateBuf, sizeof(strDateBuf), "%s, %02d %s %d %02d:%02d:%02d GMT",
+    snprintf(
+        strDateBuf,
+        sizeof(strDateBuf),
+        "%s, %02d %s %d %02d:%02d:%02d GMT",
         kWeekDays[date.dayOfWeek() - 1],
         date.day(),
         kMonths[date.month() - 1],
@@ -408,18 +416,18 @@ std::chrono::system_clock::time_point parseDateTime(std::string_view datetime)
 
     auto msecsSinceEpoch = dt.toMSecsSinceEpoch();
 
-    return std::chrono::system_clock::time_point() +
-        std::chrono::milliseconds(static_cast<std::size_t>(msecsSinceEpoch));
+    return std::chrono::system_clock::time_point()
+        + std::chrono::milliseconds(static_cast<std::size_t>(msecsSinceEpoch));
 }
 
 std::string formatDateTime(std::chrono::steady_clock::time_point tp)
 {
-    static const std::pair<std::chrono::system_clock::time_point,
-        std::chrono::steady_clock::time_point> baseTimePoints{
-        std::chrono::system_clock::now(),
-        std::chrono::steady_clock::now()};
-    return formatDateTime(baseTimePoints.first +
-        std::chrono::duration_cast<system_clock::duration>(tp - baseTimePoints.second));
+    static const std::
+        pair<std::chrono::system_clock::time_point, std::chrono::steady_clock::time_point>
+            baseTimePoints{std::chrono::system_clock::now(), std::chrono::steady_clock::now()};
+    return formatDateTime(
+        baseTimePoints.first
+        + std::chrono::duration_cast<system_clock::duration>(tp - baseTimePoints.second));
 }
 
 microseconds parseDateTimeUsec(const QString& dateTimeStr)
@@ -427,8 +435,7 @@ microseconds parseDateTimeUsec(const QString& dateTimeStr)
     if (dateTimeStr.toLower().trimmed() == "now")
         return microseconds{DATETIME_NOW};
 
-    if (!dateTimeStr.startsWith('-')
-        && (dateTimeStr.contains('T') || dateTimeStr.contains('-')))
+    if (!dateTimeStr.startsWith('-') && (dateTimeStr.contains('T') || dateTimeStr.contains('-')))
     {
         const auto dt = QDateTime::fromString(trimAndUnquote(dateTimeStr), Qt::ISODateWithMs);
         if (dt.isValid())

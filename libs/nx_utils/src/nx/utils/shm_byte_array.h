@@ -56,8 +56,7 @@ private:
         std::size_t size,
         std::uintptr_t handle,
         std::string segmentName,
-        std::shared_ptr<void> lifetimeGuard)
-        :
+        std::shared_ptr<void> lifetimeGuard):
         m_data(static_cast<char*>(data)),
         m_size(size),
         m_handle(handle),

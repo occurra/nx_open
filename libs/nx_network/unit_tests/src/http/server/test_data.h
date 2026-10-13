@@ -11,10 +11,7 @@ struct Serializable
 {
     int dummyInt = 0;
 
-    bool operator==(const Serializable& right) const
-    {
-        return dummyInt == right.dummyInt;
-    }
+    bool operator==(const Serializable& right) const { return dummyInt == right.dummyInt; }
 };
 
 bool serializeToHeaders(nx::network::http::HttpHeaders* where, const Serializable& what);

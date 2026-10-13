@@ -41,8 +41,7 @@ public:
  * Request handler that passes request to another handler after processing.
  * It may choose to generate reply itself and avoid passing request further.
  */
-class NX_NETWORK_API IntermediaryHandler:
-    public AbstractRequestHandler
+class NX_NETWORK_API IntermediaryHandler: public AbstractRequestHandler
 {
 public:
     IntermediaryHandler(AbstractRequestHandler* nextHandler):
@@ -67,8 +66,7 @@ private:
  * Base class for all HTTP request processors.
  * NOTE: Class methods are not thread-safe.
  */
-class NX_NETWORK_API RequestHandlerWithContext:
-    public AbstractRequestHandler
+class NX_NETWORK_API RequestHandlerWithContext: public AbstractRequestHandler
 {
 public:
     /**
@@ -77,9 +75,8 @@ public:
      *     One cannot rely on its availability after return of this method.
      * @param completionHandler Functor to be invoked to send response.
      */
-    virtual void serve(
-        RequestContext requestContext,
-        RequestProcessedHandler completionHandler) override;
+    virtual void serve(RequestContext requestContext, RequestProcessedHandler completionHandler)
+        override;
 
     /**
      * By default, it is MessageBodyDeliveryType::buffer.
@@ -119,8 +116,7 @@ private:
      * @return true if message body has been read to the end.
      * false if another read has been scheduled.
      */
-    bool processMessageBodyBuffer(
-        SystemError::ErrorCode resultCode, nx::Buffer buffer);
+    bool processMessageBodyBuffer(SystemError::ErrorCode resultCode, nx::Buffer buffer);
 
     void propagateRequest();
     void sendResponse(RequestResult requestResult);

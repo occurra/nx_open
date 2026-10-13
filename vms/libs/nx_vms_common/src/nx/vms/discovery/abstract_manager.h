@@ -31,7 +31,10 @@ class NX_VMS_COMMON_API AbstractManager: public QObject
     Q_OBJECT
 
 public:
-    explicit AbstractManager(QObject* parent = nullptr): QObject(parent) {}
+    explicit AbstractManager(QObject* parent = nullptr):
+        QObject(parent)
+    {
+    }
     virtual ~AbstractManager() override = default;
 
     virtual std::list<ModuleEndpoint> getAll() const = 0;

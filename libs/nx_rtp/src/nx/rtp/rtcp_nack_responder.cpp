@@ -6,8 +6,7 @@
 
 namespace nx::rtp {
 
-RtcpNackResponder::RtcpNackResponder(size_t queueLimit)
-    :
+RtcpNackResponder::RtcpNackResponder(size_t queueLimit):
     m_queueLimit(std::min(queueLimit, (size_t) std::numeric_limits<uint16_t>::max()))
 {
 }
@@ -26,8 +25,11 @@ void RtcpNackResponder::pushPacket(const nx::utils::ByteArray& packet, uint16_t 
 
     if (((uint16_t) (m_startSeq + (uint16_t) m_packets.size())) != seq)
     {
-        NX_DEBUG(this, "Pushed unexpected sequence number: %1, expected %2. Cleanup queue.",
-            (int) seq, (uint16_t) (m_startSeq + (uint16_t) m_packets.size()));
+        NX_DEBUG(
+            this,
+            "Pushed unexpected sequence number: %1, expected %2. Cleanup queue.",
+            (int) seq,
+            (uint16_t) (m_startSeq + (uint16_t) m_packets.size()));
         m_packets.clear();
         m_startSeq = seq;
     }
@@ -66,8 +68,13 @@ bool RtcpNackResponder::getNextPacket(nx::utils::ByteArray& outputPacket)
             outputPacket = m_packets[offset];
             return true;
         }
-        NX_VERBOSE(this, "Failed to re-send out of queue packet with seq: %1 (start seq: %2, size: %3, offset: %4)",
-            (int) report, m_startSeq, m_packets.size(), offset);
+        NX_VERBOSE(
+            this,
+            "Failed to re-send out of queue packet with seq: %1 (start seq: %2, size: %3, offset: %4)",
+            (int) report,
+            m_startSeq,
+            m_packets.size(),
+            offset);
     }
     return false;
 }

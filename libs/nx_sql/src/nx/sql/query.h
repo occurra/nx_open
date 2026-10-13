@@ -47,8 +47,10 @@ public:
     virtual QVariant value(int index) const = 0;
     virtual QVariant value(const QString& name) const = 0;
 
-    template<typename T> T value(int index) const;
-    template<typename T> T value(const char* name) const;
+    template<typename T>
+    T value(int index) const;
+    template<typename T>
+    T value(const char* name) const;
 
     virtual QSqlRecord record() = 0;
     virtual QVariant lastInsertId() const = 0;
@@ -60,22 +62,26 @@ public:
     virtual const QSqlQuery& impl() const = 0;
 };
 
-template<typename T> T AbstractSqlQuery::value(int index) const
+template<typename T>
+T AbstractSqlQuery::value(int index) const
 {
     return value(index).value<T>();
 }
 
-template<> inline std::string AbstractSqlQuery::value<std::string>(int index) const
+template<>
+inline std::string AbstractSqlQuery::value<std::string>(int index) const
 {
     return value(index).toString().toStdString();
 }
 
-template<typename T> T AbstractSqlQuery::value(const char* name) const
+template<typename T>
+T AbstractSqlQuery::value(const char* name) const
 {
     return value(name).value<T>();
 }
 
-template<> inline std::string AbstractSqlQuery::value<std::string>(const char* name) const
+template<>
+inline std::string AbstractSqlQuery::value<std::string>(const char* name) const
 {
     return value(name).toString().toStdString();
 }
@@ -88,8 +94,7 @@ inline void AbstractSqlQuery::prepareWithValues(std::string_view query, Params&&
 }
 //-------------------------------------------------------------------------------------------------
 
-class NX_SQL_API SqlQuery:
-    public AbstractSqlQuery
+class NX_SQL_API SqlQuery: public AbstractSqlQuery
 {
 public:
     SqlQuery(QSqlDatabase connection);

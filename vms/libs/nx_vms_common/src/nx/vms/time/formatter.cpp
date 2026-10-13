@@ -34,8 +34,10 @@ nx::vms::time::Format detectFullMonthDateFormat(const QString& shortDateFormat)
             yearPos = i;
     }
 
-    if (!NX_ASSERT(dayPos >= 0 && monthPos >= 0 && yearPos >= 0,
-        "Unexpected short date format: %1", shortDateFormat))
+    if (!NX_ASSERT(
+            dayPos >= 0 && monthPos >= 0 && yearPos >= 0,
+            "Unexpected short date format: %1",
+            shortDateFormat))
     {
         return Format::dd_MMMM_yyyy;
     }
@@ -131,9 +133,8 @@ FormatsHash DateTimeFormats::getFormats(const QLocale& locale, bool is24HoursTim
     removeTimezone(result[Format::dd_MM_yyyy_hh_mm_ss]);
     removeTimezone(result[Format::dddd_d_MMMM_yyyy_hh_mm_ss]);
 
-    result[Format::filename_date] = is24HoursTimeFormat
-        ? "yyyy_MM_dd_hh_mm_ss"
-        : "yyyy_MM_dd_hAP_mm_ss";
+    result[Format::filename_date] =
+        is24HoursTimeFormat ? "yyyy_MM_dd_hh_mm_ss" : "yyyy_MM_dd_hAP_mm_ss";
 
     return result;
 }
@@ -141,8 +142,7 @@ FormatsHash DateTimeFormats::getFormats(const QLocale& locale, bool is24HoursTim
 const FormatsHash& DateTimeFormats::defaultFormats()
 {
     using namespace nx::vms::time;
-    static const FormatsHash result =
-    {
+    static const FormatsHash result = {
         {Format::h, "hh"},
         {Format::m, "mm"},
         {Format::s, "ss"},
@@ -194,8 +194,10 @@ QLocale systemLocale()
 
 bool is24HoursTimeFormat()
 {
-    auto isSystem24HoursFormat =
-        []() { return !systemLocale().timeFormat().contains("AP", Qt::CaseInsensitive); };
+    auto isSystem24HoursFormat = []()
+    {
+        return !systemLocale().timeFormat().contains("AP", Qt::CaseInsensitive);
+    };
 
     return sForced24HoursFormat ? *sForced24HoursFormat : isSystem24HoursFormat();
 }
@@ -286,7 +288,8 @@ Formatter::Formatter(const QLocale& locale, bool is24HoursFormat):
 }
 
 Formatter::~Formatter()
-{}
+{
+}
 
 QLocale Formatter::locale() const
 {
@@ -365,13 +368,10 @@ QString toDurationString(std::chrono::milliseconds value, Duration format)
             break;
     }
 
-    const auto hours = withHours
-        ? std::chrono::duration_cast<std::chrono::hours>(value)
-        : std::chrono::hours(0);
-    const auto minutes =
-        std::chrono::duration_cast<std::chrono::minutes>(value - hours);
-    const auto seconds =
-        std::chrono::duration_cast<std::chrono::seconds>(value - hours - minutes);
+    const auto hours =
+        withHours ? std::chrono::duration_cast<std::chrono::hours>(value) : std::chrono::hours(0);
+    const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(value - hours);
+    const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(value - hours - minutes);
     const auto milliseconds =
         std::chrono::duration_cast<std::chrono::milliseconds>(value - hours - minutes - seconds);
 
@@ -395,13 +395,12 @@ QString toDurationString(std::chrono::milliseconds value, Duration format)
 
 qint64 systemDisplayOffset()
 {
-    static const qint64 result =
-        []()
-        {
-            const auto current = QDateTime::currentDateTime();
-            const auto utc = QDateTime(current.date(), current.time(), QTimeZone::UTC);
-            return current.secsTo(utc) * 1000;
-        }();
+    static const qint64 result = []()
+    {
+        const auto current = QDateTime::currentDateTime();
+        const auto utc = QDateTime(current.date(), current.time(), QTimeZone::UTC);
+        return current.secsTo(utc) * 1000;
+    }();
 
     return result;
 }

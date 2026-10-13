@@ -19,10 +19,10 @@ Thread::Thread()
     connect(this, &QThread::started, this, &Thread::at_started, Qt::DirectConnection);
     connect(this, &QThread::finished, this, &Thread::at_finished, Qt::DirectConnection);
 
-    #if !defined(Q_OS_ANDROID) //< Not supported on Android.
-        if (s_threadStackSize > 0)
-            setStackSize(s_threadStackSize);
-    #endif
+#if !defined(Q_OS_ANDROID) //< Not supported on Android.
+    if (s_threadStackSize > 0)
+        setStackSize(s_threadStackSize);
+#endif
 }
 
 Thread::~Thread()
@@ -108,9 +108,8 @@ void Thread::stop()
     {
         NX_ASSERT(
             typeid(*this) == *m_type,
-            nx::format("stop() must be called from derived class destructor. This: %1, m_type: %2").args(
-                typeid(*this), *m_type)
-        );
+            nx::format("stop() must be called from derived class destructor. This: %1, m_type: %2")
+                .args(typeid(*this), *m_type));
         m_type = nullptr; //< So that we don't check it again.
     }
 #endif

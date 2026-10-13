@@ -51,7 +51,10 @@ void JsonComposer::writeString(std::string_view val)
 
 void JsonComposer::writeRawString(std::string_view val)
 {
-    m_writer.RawValue(val.data(), (rapidjson::SizeType) val.size(), (rapidjson::Type::kStringType));
+    m_writer.RawValue(
+        val.data(),
+        (rapidjson::SizeType) val.size(),
+        (rapidjson::Type::kStringType));
 }
 
 void JsonComposer::writeNull()

@@ -2,13 +2,13 @@
 
 #include "scrypt.h"
 
-#include "log/log.h"
-#include "string.h"
-
 #include <openssl/evp.h>
 #include <openssl/kdf.h>
 
 #include <nx/utils/std/cppnx.h>
+
+#include "log/log.h"
+#include "string.h"
 
 namespace nx::scrypt {
 
@@ -19,9 +19,7 @@ bool Options::operator==(const Options& rhs) const
 
 static auto makeContext(const Options& options)
 {
-    auto context = nx::wrapUnique(
-        EVP_PKEY_CTX_new_id(EVP_PKEY_SCRYPT, NULL),
-        &EVP_PKEY_CTX_free);
+    auto context = nx::wrapUnique(EVP_PKEY_CTX_new_id(EVP_PKEY_SCRYPT, NULL), &EVP_PKEY_CTX_free);
 
     if (EVP_PKEY_derive_init(context.get()) <= 0)
         throw Exception("Unable to init SCrypt context");
@@ -53,7 +51,7 @@ bool Options::isValid() const
         makeContext(*this);
         return true;
     }
-    catch(const Exception& e)
+    catch (const Exception& e)
     {
         NX_VERBOSE(NX_SCOPE_TAG, "Wrong options: %1", e);
         return false;
@@ -103,11 +101,11 @@ std::optional<std::string> encode(
     {
         return encodeOrThrow(password, salt, options);
     }
-    catch(const Exception& e)
+    catch (const Exception& e)
     {
         NX_DEBUG(NX_SCOPE_TAG, "Unable to encrypt key: %1", e);
         return std::nullopt;
     }
 }
 
-} // nx::scrypt
+} // namespace nx::scrypt

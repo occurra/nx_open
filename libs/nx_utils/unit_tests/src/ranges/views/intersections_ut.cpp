@@ -20,7 +20,8 @@ struct NotConvertible
 {
 };
 
-struct CopyOnly {
+struct CopyOnly
+{
     CopyOnly() = default;
     CopyOnly(CopyOnly const&) = default;
     CopyOnly(CopyOnly&&) = delete;
@@ -28,7 +29,8 @@ struct CopyOnly {
     CopyOnly& operator=(CopyOnly&&) = delete;
 };
 
-struct MoveOnly {
+struct MoveOnly
+{
     MoveOnly() = default;
     MoveOnly(MoveOnly const&) = delete;
     MoveOnly(MoveOnly&&) = default;
@@ -77,9 +79,7 @@ TEST(ranges, append)
     // temporaries: chaining
     {
         const std::vector out =
-            nx::make_vector(1)
-            | nx::actions::append(4)
-            | nx::actions::append(815);
+            nx::make_vector(1) | nx::actions::append(4) | nx::actions::append(815);
 
         ASSERT_EQ(out, (std::vector{1, 4, 815}));
     }
@@ -117,8 +117,7 @@ TEST(ranges, append)
     // append a range element to a container-of-ranges
     {
         const std::vector out = std::vector<std::vector<int>>{}
-            | nx::actions::append(std::vector{1, 2})
-            | nx::actions::append(std::vector{3});
+            | nx::actions::append(std::vector{1, 2}) | nx::actions::append(std::vector{3});
 
         ASSERT_EQ(out.size(), 2u);
         ASSERT_EQ(out[0], (std::vector{1, 2}));
@@ -127,9 +126,11 @@ TEST(ranges, append)
 
     // move-only elements via rvalue closure
     {
-        const auto make = [] { return std::vector<std::unique_ptr<int>>{}; };
-        const std::vector out = make()
-            | nx::actions::append(std::make_unique<int>(1))
+        const auto make = []
+        {
+            return std::vector<std::unique_ptr<int>>{};
+        };
+        const std::vector out = make() | nx::actions::append(std::make_unique<int>(1))
             | nx::actions::append(std::make_unique<int>(2));
 
         ASSERT_EQ(out.size(), 2u);
@@ -139,7 +140,6 @@ TEST(ranges, append)
         ASSERT_EQ(*out[1], 2);
     }
 }
-
 
 struct Period
 {
@@ -184,10 +184,8 @@ struct IntersectionsCase
 // GTest printer
 [[maybe_unused]] void PrintTo(const IntersectionsCase& c, std::ostream* os)
 {
-    *os << "IntersectionsCase{left.size=" << c.left.size()
-        << ", right.size=" << c.right.size()
-        << ", expected.size=" << c.expected.size()
-        << ", upToN=" << c.upToN << "}";
+    *os << "IntersectionsCase{left.size=" << c.left.size() << ", right.size=" << c.right.size()
+        << ", expected.size=" << c.expected.size() << ", upToN=" << c.upToN << "}";
 }
 
 struct SelfIntersectionsCase
@@ -201,26 +199,24 @@ struct SelfIntersectionsCase
 [[maybe_unused]] void PrintTo(const SelfIntersectionsCase& c, std::ostream* os)
 {
     *os << "SelfIntersectionsCase{input.size=" << c.input.size()
-        << ", expected.size=" << c.expected.size()
-        << ", upToN=" << c.upToN << "}";
+        << ", expected.size=" << c.expected.size() << ", upToN=" << c.upToN << "}";
 }
 
-class IntersectionsSameContainer: public ::testing::TestWithParam<IntersectionsCase> {};
+class IntersectionsSameContainer: public ::testing::TestWithParam<IntersectionsCase>
+{
+};
 
 TEST_P(IntersectionsSameContainer, simple)
 {
     const auto& [left, right, expected, upToN] = GetParam();
 
     EXPECT_EQ(
-        (left
-         | nx::views::intersections(right)
-         | std::views::take(upToN)
+        (left | nx::views::intersections(right) | std::views::take(upToN)
          | nx::ranges::to<std::vector>()),
         expected);
 
     EXPECT_EQ(
-        (nx::views::intersections(left, right)
-         | std::views::take(upToN)
+        (nx::views::intersections(left, right) | std::views::take(upToN)
          | nx::ranges::to<std::vector>()),
         expected);
 }
@@ -352,83 +348,82 @@ INSTANTIATE_TEST_SUITE_P(
     IntersectionsSameContainer,
     ::testing::ValuesIn(kIntersectionsSameContainerCases));
 
-class SelfIntersections: public ::testing::TestWithParam<SelfIntersectionsCase> {};
+class SelfIntersections: public ::testing::TestWithParam<SelfIntersectionsCase>
+{
+};
 
 TEST_P(SelfIntersections, simple)
 {
     const auto& [input, expected, upToN] = GetParam();
 
     EXPECT_EQ(
-        (input
-         | nx::views::selfIntersections
-         | std::views::take(upToN)
+        (input | nx::views::selfIntersections | std::views::take(upToN)
          | nx::ranges::to<std::vector>()),
         expected);
 }
 
 const std::vector<SelfIntersectionsCase> kSelfIntersectionsCases{
     {
-        .input = {
-        },
-        .expected = {
-        },
+        .input = {},
+        .expected = {},
         .upToN = 10,
     },
     {
-        .input = {
-            Period{0ms, 10ms},
-        },
-        .expected = {
-        },
-        .upToN = 10,
-    },
-    {
-        .input = {
-            Period{0ms, 10ms},
-            Period{20ms, 5ms},
-        },
-        .expected = {
-        },
-        .upToN = 10,
-    },
-    {
-        .input = {
-            Period{0ms, 10ms},
-            Period{5ms, 10ms},
-        },
-        .expected = {
-            Intersection{
-                .first = Period{0ms, 10ms},
-                .second = Period{5ms, 10ms},
+        .input =
+            {
+                Period{0ms, 10ms},
             },
-        },
+        .expected = {},
         .upToN = 10,
     },
     {
-        .input = {
-            Period{0ms, 10ms},
-            Period{5ms, 10ms},
-            Period{12ms, 10ms},
-            Period{18ms, 10ms},
-        },
-        .expected = {
-            Intersection{
-                .first = Period{0ms, 10ms},
-                .second = Period{5ms, 10ms},
+        .input =
+            {
+                Period{0ms, 10ms},
+                Period{20ms, 5ms},
             },
-            Intersection{
-                .first = Period{5ms, 10ms},
-                .second = Period{12ms, 10ms},
+        .expected = {},
+        .upToN = 10,
+    },
+    {
+        .input =
+            {
+                Period{0ms, 10ms},
+                Period{5ms, 10ms},
             },
-        },
+        .expected =
+            {
+                Intersection{
+                    .first = Period{0ms, 10ms},
+                    .second = Period{5ms, 10ms},
+                },
+            },
+        .upToN = 10,
+    },
+    {
+        .input =
+            {
+                Period{0ms, 10ms},
+                Period{5ms, 10ms},
+                Period{12ms, 10ms},
+                Period{18ms, 10ms},
+            },
+        .expected =
+            {
+                Intersection{
+                    .first = Period{0ms, 10ms},
+                    .second = Period{5ms, 10ms},
+                },
+                Intersection{
+                    .first = Period{5ms, 10ms},
+                    .second = Period{12ms, 10ms},
+                },
+            },
         .upToN = 2,
     },
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    ranges,
-    SelfIntersections,
-    ::testing::ValuesIn(kSelfIntersectionsCases));
+INSTANTIATE_TEST_SUITE_P(ranges, SelfIntersections, ::testing::ValuesIn(kSelfIntersectionsCases));
 
 struct PeriodWithOffset
 {
@@ -490,12 +485,13 @@ struct IntersectionsTransformedCase
 [[maybe_unused]] void PrintTo(const IntersectionsTransformedCase& c, std::ostream* os)
 {
     *os << "IntersectionsTransformedCase{left.size=" << c.left.size()
-        << ", right.size=" << c.right.size()
-        << ", expected.size=" << c.expected.size()
+        << ", right.size=" << c.right.size() << ", expected.size=" << c.expected.size()
         << ", upToN=" << c.upToN << "}";
 }
 
-class IntersectionsTransformedViews: public ::testing::TestWithParam<IntersectionsTransformedCase> {};
+class IntersectionsTransformedViews: public ::testing::TestWithParam<IntersectionsTransformedCase>
+{
+};
 
 TEST_P(IntersectionsTransformedViews, simple)
 {
@@ -529,8 +525,7 @@ TEST_P(IntersectionsTransformedViews, simple)
                          .durationMs = p.durationMs,
                      };
                  }))
-         | std::views::take(upToN)
-         | nx::ranges::to<std::vector>()),
+         | std::views::take(upToN) | nx::ranges::to<std::vector>()),
         expected);
 
     EXPECT_EQ(

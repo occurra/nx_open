@@ -10,10 +10,10 @@ namespace nx::sql {
 
 class StatisticsCollector;
 
-class NX_SQL_API QtDbConnection:
-    public AbstractDbConnection
+class NX_SQL_API QtDbConnection: public AbstractDbConnection
 {
     using base_type = AbstractDbConnection;
+
 public:
     QtDbConnection(const ConnectionOptions& connectionOptions);
     ~QtDbConnection();

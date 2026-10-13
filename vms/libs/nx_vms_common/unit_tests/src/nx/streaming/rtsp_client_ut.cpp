@@ -81,49 +81,67 @@ TEST(Rtsp, ParseTextMessage)
 {
     {
         std::string_view data("RTSP/1.0 200 OK\r\nSession: 13816;timeout=50\r\n\r\n");
-        ASSERT_EQ(data.size(), nextRtspMessage((uint8_t*)data.data(), data.size(), /*maxChannelNumber*/ 256));
+        ASSERT_EQ(
+            data.size(),
+            nextRtspMessage((uint8_t*) data.data(), data.size(), /*maxChannelNumber*/ 256));
     }
     {
         // No channel number in buffer -> no message.
         std::string_view data("RTSP/1.0 200 OK$");
-        ASSERT_EQ(0, nextRtspMessage((uint8_t*)data.data(), data.size(), /*maxChannelNumber*/ 256));
+        ASSERT_EQ(
+            0,
+            nextRtspMessage((uint8_t*) data.data(), data.size(), /*maxChannelNumber*/ 256));
     }
     {
         // Channel number too big -> no message.
         std::string_view data("RTSP/1.0 200 OK$q");
-        ASSERT_EQ(0, nextRtspMessage((uint8_t*)data.data(), data.size(), /*maxChannelNumber*/ 0));
+        ASSERT_EQ(0, nextRtspMessage((uint8_t*) data.data(), data.size(), /*maxChannelNumber*/ 0));
     }
     {
         // Normal message.
         std::string_view data("RTSP/1.0 200 OK$0");
-        ASSERT_EQ(data.size() - 2, nextRtspMessage((uint8_t*)data.data(), data.size(), /*maxChannelNumber*/ 256));
+        ASSERT_EQ(
+            data.size() - 2,
+            nextRtspMessage((uint8_t*) data.data(), data.size(), /*maxChannelNumber*/ 256));
     }
     {
         // Normal message before $.
         std::string_view data("RTSP/1.0 200 OK\r\n\r\nq$0");
-        ASSERT_EQ(data.size() - 3, nextRtspMessage((uint8_t*)data.data(), data.size(), /*maxChannelNumber*/ 256));
+        ASSERT_EQ(
+            data.size() - 3,
+            nextRtspMessage((uint8_t*) data.data(), data.size(), /*maxChannelNumber*/ 256));
     }
     {
         // Normal message.
         std::string_view data("K$0");
-        ASSERT_EQ(1, nextRtspMessage((uint8_t*)data.data(), data.size(), /*maxChannelNumber*/ 256));
+        ASSERT_EQ(
+            1,
+            nextRtspMessage((uint8_t*) data.data(), data.size(), /*maxChannelNumber*/ 256));
     }
     {
         // No double delimiter -> no message.
         std::string_view data("RTSP/1.0 200 OK\r\n");
-        ASSERT_EQ(0, nextRtspMessage((uint8_t*)data.data(), data.size(), /*maxChannelNumber*/ 256));
+        ASSERT_EQ(
+            0,
+            nextRtspMessage((uint8_t*) data.data(), data.size(), /*maxChannelNumber*/ 256));
     }
     {
         std::string_view data("");
-        ASSERT_EQ(0, nextRtspMessage((uint8_t*)data.data(), data.size(), /*maxChannelNumber*/ 256));
+        ASSERT_EQ(
+            0,
+            nextRtspMessage((uint8_t*) data.data(), data.size(), /*maxChannelNumber*/ 256));
     }
     {
         std::string_view data("$");
-        ASSERT_EQ(0, nextRtspMessage((uint8_t*)data.data(), data.size(), /*maxChannelNumber*/ 256));
+        ASSERT_EQ(
+            0,
+            nextRtspMessage((uint8_t*) data.data(), data.size(), /*maxChannelNumber*/ 256));
     }
     {
         std::string_view data("\r");
-        ASSERT_EQ(0, nextRtspMessage((uint8_t*)data.data(), data.size(), /*maxChannelNumber*/ 256));
+        ASSERT_EQ(
+            0,
+            nextRtspMessage((uint8_t*) data.data(), data.size(), /*maxChannelNumber*/ 256));
     }
 }
 
@@ -136,7 +154,9 @@ class TracedName
 public:
     // Use TRACED_NAME macro.
     TracedName(std::string name, std::string filename, int line):
-        m_name(std::move(name)), m_filename(std::move(filename)), m_lineNumber(line)
+        m_name(std::move(name)),
+        m_filename(std::move(filename)),
+        m_lineNumber(line)
     {
     }
 
@@ -230,13 +250,11 @@ struct RtspScenario
     std::vector<RtspOutput> expected;
 };
 
-class RtspBadMessages:
-    public ::testing::TestWithParam<RtspScenario>
+class RtspBadMessages: public ::testing::TestWithParam<RtspScenario>
 {
 };
 
-class AppendableBufferSocket:
-    public nx::network::DummySocket
+class AppendableBufferSocket: public nx::network::DummySocket
 {
 public:
     AppendableBufferSocket(std::shared_ptr<RtspStreamData> streamData):
@@ -256,10 +274,7 @@ public:
         return true;
     }
 
-    bool isClosed() const override
-    {
-        return !m_isOpened;
-    }
+    bool isClosed() const override { return !m_isOpened; }
 
     bool connect(
         const nx::network::SocketAddress& remoteSocketAddress,
@@ -275,9 +290,8 @@ public:
 
     int recv(void* buffer, std::size_t bufferLength, int /*flags*/ = 0) override
     {
-        const std::size_t bytesToCopy = std::min(
-            bufferLength,
-            m_streamData->bytes.size() - m_streamData->readPosition);
+        const std::size_t bytesToCopy =
+            std::min(bufferLength, m_streamData->bytes.size() - m_streamData->readPosition);
         std::memcpy(buffer, m_streamData->bytes.data() + m_streamData->readPosition, bytesToCopy);
         m_streamData->readPosition += bytesToCopy;
         return static_cast<int>(bytesToCopy);
@@ -288,10 +302,7 @@ public:
         return m_isOpened ? static_cast<int>(bufferLength) : -1;
     }
 
-    bool isConnected() const override
-    {
-        return m_isOpened;
-    }
+    bool isConnected() const override { return m_isOpened; }
 
 private:
     std::shared_ptr<RtspStreamData> m_streamData;
@@ -318,7 +329,10 @@ std::vector<RtspOutput> drainAvailableOutputs(QnRtspClient* client)
             {
                 std::ranges::for_each(
                     demuxedData,
-                    [](nx::utils::ByteArray* data) { delete data; });
+                    [](nx::utils::ByteArray* data)
+                    {
+                        delete data;
+                    });
             });
 
         int channelNumber = -1;
@@ -333,19 +347,19 @@ std::vector<RtspOutput> drainAvailableOutputs(QnRtspClient* client)
         if (readResult == 0)
             break;
 
-        if (channelNumber >= 0
-            && std::cmp_less(channelNumber, demuxedData.size())
+        if (channelNumber >= 0 && std::cmp_less(channelNumber, demuxedData.size())
             && demuxedData[channelNumber])
         {
             const auto& data = *demuxedData[channelNumber];
-            outputs.emplace_back(RtspFrame{
-                .channelId = static_cast<std::uint8_t>(channelNumber),
-                .payload = data.size() >= sizeof(FrameHeader)
-                    ? std::string(
-                        data.data() + sizeof(FrameHeader),
-                        data.size() - sizeof(FrameHeader))
-                    : std::string(),
-            });
+            outputs.emplace_back(
+                RtspFrame{
+                    .channelId = static_cast<std::uint8_t>(channelNumber),
+                    .payload = data.size() >= sizeof(FrameHeader)
+                        ? std::string(
+                              data.data() + sizeof(FrameHeader),
+                              data.size() - sizeof(FrameHeader))
+                        : std::string(),
+                });
         }
     }
 
@@ -381,15 +395,19 @@ TEST_P(RtspBadMessages, RecoversFromBadMessages)
     //   (client state, input chunk) -> (client state, zero or more observable outputs).
     // AppendableBufferSocket is the wrapper that lets the test feed chunks incrementally while
     // QnRtspClient keeps owning and reading from its socket normally.
-    const auto actual = nx::ranges::fold_left(scenario.input,
-        RtspClientState{.client = &rtspClient, .streamData = std::move(streamData)},
-        [](RtspClientState state, const RtspStreamMessage& message)
-        {
-            state.streamData->bytes += message.bytes;
-            std::ranges::move(drainAvailableOutputs(state.client),
-                std::back_inserter(state.outputs));
-            return state;
-        }).outputs;
+    const auto actual =
+        nx::ranges::fold_left(
+            scenario.input,
+            RtspClientState{.client = &rtspClient, .streamData = std::move(streamData)},
+            [](RtspClientState state, const RtspStreamMessage& message)
+            {
+                state.streamData->bytes += message.bytes;
+                std::ranges::move(
+                    drainAvailableOutputs(state.client),
+                    std::back_inserter(state.outputs));
+                return state;
+            })
+            .outputs;
 
     EXPECT_EQ(scenario.expected, actual);
 }
@@ -397,10 +415,11 @@ TEST_P(RtspBadMessages, RecoversFromBadMessages)
 const std::vector<RtspScenario> kRtspScenarios{
     {
         .name = TRACED_NAME("ValidFrames"),
-        .input = {
-            validFrame(""),
-            validFrame("ab"),
-        },
+        .input =
+            {
+                validFrame(""),
+                validFrame("ab"),
+            },
         .expected =
             {
                 RtspFrame{.payload = ""},
@@ -409,9 +428,10 @@ const std::vector<RtspScenario> kRtspScenarios{
     },
     {
         .name = TRACED_NAME("DifferentChannelFrame"),
-        .input = {
-            validFrame("metadata", /*channelId*/ 2),
-        },
+        .input =
+            {
+                validFrame("metadata", /*channelId*/ 2),
+            },
         .expected =
             {
                 RtspFrame{.channelId = 2, .payload = "metadata"},
@@ -419,12 +439,13 @@ const std::vector<RtspScenario> kRtspScenarios{
     },
     {
         .name = TRACED_NAME("TextMessagesBetweenFrames"),
-        .input = {
-            {.bytes = "RTSP/1.0 200 OK\r\nCSeq: 1\r\n\r\n"},
-            validFrame(""),
-            {.bytes = "RTSP/1.0 200 OK\r\nCSeq: 2\r\n\r\n"},
-            validFrame("ab"),
-        },
+        .input =
+            {
+                {.bytes = "RTSP/1.0 200 OK\r\nCSeq: 1\r\n\r\n"},
+                validFrame(""),
+                {.bytes = "RTSP/1.0 200 OK\r\nCSeq: 2\r\n\r\n"},
+                validFrame("ab"),
+            },
         .expected =
             {
                 RtspFrame{.payload = ""},
@@ -483,6 +504,10 @@ INSTANTIATE_TEST_SUITE_P(
     Rtsp,
     RtspBadMessages,
     ::testing::ValuesIn(kRtspScenarios),
-    /*name_generator*/ [](const auto& info) { return std::string(info.param.name()); });
+    /*name_generator*/
+    [](const auto& info)
+    {
+        return std::string(info.param.name());
+    });
 
 } // namespace

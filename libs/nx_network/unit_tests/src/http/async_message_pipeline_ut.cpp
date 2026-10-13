@@ -10,8 +10,7 @@
 
 namespace nx::network::http::test {
 
-class TestBodySource:
-    public BufferSource
+class TestBodySource: public BufferSource
 {
     using base_type = BufferSource;
 
@@ -29,20 +28,11 @@ public:
         base_type::readAsync(std::move(completionHandler));
     }
 
-    void setPauseOnRead(bool val)
-    {
-        m_pauseOnRead = val;
-    }
+    void setPauseOnRead(bool val) { m_pauseOnRead = val; }
 
-    void waitTillPaused()
-    {
-        m_paused.pop();
-    }
+    void waitTillPaused() { m_paused.pop(); }
 
-    void resume()
-    {
-        m_resume.push();
-    }
+    void resume() { m_resume.push(); }
 
 private:
     bool m_pauseOnRead = false;
@@ -52,17 +42,14 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class SocketMock:
-    public TCPSocket
+class SocketMock: public TCPSocket
 {
     using base_type = TCPSocket;
 
 public:
     using base_type::base_type;
 
-    virtual void sendAsync(
-        const nx::Buffer* buf,
-        IoCompletionHandler handler) override
+    virtual void sendAsync(const nx::Buffer* buf, IoCompletionHandler handler) override
     {
         if (m_fail)
         {
@@ -76,10 +63,7 @@ public:
         base_type::sendAsync(buf, std::move(handler));
     }
 
-    void setFailState()
-    {
-        m_fail = true;
-    }
+    void setFailState() { m_fail = true; }
 
 private:
     bool m_fail = false;
@@ -89,8 +73,7 @@ private:
 
 static constexpr char kSaveRequestPath[] = "/save-request";
 
-class HttpAsyncMessagePipeline:
-    public ::testing::Test
+class HttpAsyncMessagePipeline: public ::testing::Test
 {
 public:
     ~HttpAsyncMessagePipeline()
@@ -104,7 +87,10 @@ protected:
     {
         m_httpServer.registerRequestProcessorFunc(
             kSaveRequestPath,
-            [this](auto&&... args) { saveRequest(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                saveRequest(std::forward<decltype(args)>(args)...);
+            });
 
         ASSERT_TRUE(m_httpServer.bindAndListen());
 
@@ -115,35 +101,17 @@ protected:
         m_msgPipeline = std::make_unique<AsyncMessagePipeline>(std::move(connection));
     }
 
-    void whenSendMessageWithBody()
-    {
-        sendMessage(16 * 1024);
-    }
+    void whenSendMessageWithBody() { sendMessage(16 * 1024); }
 
-    void whenSendMessageWithEmptyBody()
-    {
-        sendMessage(0);
-    }
+    void whenSendMessageWithEmptyBody() { sendMessage(0); }
 
-    void whenMessageBodySourcePaused()
-    {
-        m_body->waitTillPaused();
-    }
+    void whenMessageBodySourcePaused() { m_body->waitTillPaused(); }
 
-    void thenSendSucceeded()
-    {
-        ASSERT_EQ(SystemError::noError, m_sendResults.pop());
-    }
+    void thenSendSucceeded() { ASSERT_EQ(SystemError::noError, m_sendResults.pop()); }
 
-    void thenSendFailed()
-    {
-        ASSERT_NE(SystemError::noError, m_sendResults.pop());
-    }
+    void thenSendFailed() { ASSERT_NE(SystemError::noError, m_sendResults.pop()); }
 
-    void andFullMessageIsDelivered()
-    {
-        ASSERT_EQ(m_lastRequestSent, m_requestsReceived.pop());
-    }
+    void andFullMessageIsDelivered() { ASSERT_EQ(m_lastRequestSent, m_requestsReceived.pop()); }
 
     void setPauseMessageBodySourceRead(bool pause)
     {
@@ -172,9 +140,7 @@ private:
     nx::utils::SyncQueue<SystemError::ErrorCode> m_sendResults;
     bool m_pauseMessageBodySourceRead = false;
 
-    void saveRequest(
-        RequestContext requestContext,
-        RequestProcessedHandler handler)
+    void saveRequest(RequestContext requestContext, RequestProcessedHandler handler)
     {
         m_requestsReceived.push(std::move(requestContext.request));
         handler(StatusCode::ok);
@@ -201,7 +167,10 @@ private:
         m_msgPipeline->sendMessage(
             std::move(message),
             std::move(body),
-            [this](auto resultCode) { m_sendResults.push(resultCode); });
+            [this](auto resultCode)
+            {
+                m_sendResults.push(resultCode);
+            });
     }
 
     Request prepareRequest(std::size_t bodySize)

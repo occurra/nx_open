@@ -20,8 +20,15 @@ public:
     using pointer = void;
     using reference = void;
 
-    FunctionIterator(const Function& function): m_function(&function) {}
-    FunctionIterator& operator=(Item item) { (*m_function)(item); return *this; }
+    FunctionIterator(const Function& function):
+        m_function(&function)
+    {
+    }
+    FunctionIterator& operator=(Item item)
+    {
+        (*m_function)(item);
+        return *this;
+    }
     FunctionIterator& operator++() { return *this; }
     FunctionIterator& operator*() { return *this; }
 

@@ -19,7 +19,8 @@ namespace nx::media::audio {
 struct NX_MEDIA_CORE_API Format
 {
 public:
-    enum class SampleType {
+    enum class SampleType
+    {
         unknown,
         signedInt,
         unsignedInt,

@@ -19,7 +19,10 @@ struct NX_NETWORK_API ConnectOptions
     }
 
     template<typename... Args>
-	auto emplace(Args&&... args) { return options.emplace(std::forward<decltype(args)>(args)...); }
+    auto emplace(Args&&... args)
+    {
+        return options.emplace(std::forward<decltype(args)>(args)...);
+    }
 
     nx::UrlQuery toUrlQuery() const;
 

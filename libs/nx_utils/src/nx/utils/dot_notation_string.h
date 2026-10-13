@@ -12,7 +12,7 @@ namespace nx::utils {
  * structure/object in the "dot notation", e.g. `server.cpu.vendor` or `response.error.message`.
  * It supports `*` in path strings to help with wildcard matching.
  */
-class NX_UTILS_API DotNotationString : public QMap<QString, DotNotationString>
+class NX_UTILS_API DotNotationString: public QMap<QString, DotNotationString>
 {
 public:
     DotNotationString() = default;

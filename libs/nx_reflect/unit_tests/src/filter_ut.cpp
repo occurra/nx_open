@@ -52,7 +52,9 @@ TEST(Filter, Simple)
 TEST(Filter, Nested)
 {
     std::vector<Model> list{
-        {.nested = {"name", 2}}, {.nested = {"name2", 1}}, {.nested = {"name1", 1}}};
+        {.nested = {"name", 2}},
+        {.nested = {"name2", 1}},
+        {.nested = {"name1", 1}}};
     Filter nestedFilter{.name = "nested", .fields = {{"number", {"1"}}}};
     Filter valueFilter{.fields = {nestedFilter}};
     json::filter(&list, valueFilter);
@@ -64,9 +66,9 @@ TEST(Filter, NestedList)
 {
     std::vector<Model2> list{
         {"name1", 1},
-        {"name2", 1, std::vector<Nested>{
-            {"name", 2}, {"name1", 1}, {"name", 2}, {"name2", 1}, {"name", 2}}}
-    };
+        {"name2",
+         1,
+         std::vector<Nested>{{"name", 2}, {"name1", 1}, {"name", 2}, {"name2", 1}, {"name", 2}}}};
     Filter nestedFilter{.name = "nestedList", .fields = {{"number", {"1"}}}};
     Filter valueFilter{.fields = {nestedFilter}};
     json::filter(&list, valueFilter);

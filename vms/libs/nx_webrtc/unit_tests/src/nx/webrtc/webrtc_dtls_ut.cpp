@@ -27,6 +27,7 @@ public:
     Queue inputQueue();
     Fingerprint fingerprint() const;
     void setFingerprint(const Fingerprint& fingerprint) { m_dtls->setFingerprint(fingerprint); }
+
 private:
     std::unique_ptr<Dtls> m_dtls;
     nx::network::ssl::Pem m_pem;
@@ -152,8 +153,9 @@ bool performReadWrite(
 bool WebRtcDtls::handshake(int mtu)
 {
     Queue queue;
-    queue.emplace_back(std::vector<uint8_t>()); //< Start handshake with empty data input into client.
-    std::array<WebRtcDtlsStreamer*, 2> streamers{ &m_dtlsClient, &m_dtlsServer };
+    queue.emplace_back(
+        std::vector<uint8_t>()); //< Start handshake with empty data input into client.
+    std::array<WebRtcDtlsStreamer*, 2> streamers{&m_dtlsClient, &m_dtlsServer};
     int successCount = 0;
 
     for (int i = 0; i < 8; ++i)

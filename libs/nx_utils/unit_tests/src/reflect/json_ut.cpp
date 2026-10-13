@@ -24,7 +24,9 @@ class Json: public ::testing::Test
 public:
     template<class T>
     void thenDeserializedCorrect(
-        const nx::reflect::DeserializationResult& result, const T& expected, const T& obtained)
+        const nx::reflect::DeserializationResult& result,
+        const T& expected,
+        const T& obtained)
     {
         ASSERT_TRUE(result.success);
         ASSERT_EQ(expected, obtained);

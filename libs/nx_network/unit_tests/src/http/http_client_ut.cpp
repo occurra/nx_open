@@ -25,8 +25,7 @@ namespace nx::network::http::test {
 
 namespace {
 
-class TestBodySource:
-    public BufferSource
+class TestBodySource: public BufferSource
 {
     using base_type = BufferSource;
 
@@ -34,8 +33,7 @@ public:
     TestBodySource(
         const std::string& mimeType,
         nx::Buffer msgBody,
-        std::optional<uint64_t> contentLengthOverride)
-        :
+        std::optional<uint64_t> contentLengthOverride):
         base_type(mimeType, std::move(msgBody)),
         m_contentLengthOverride(contentLengthOverride)
     {
@@ -63,10 +61,7 @@ static constexpr char kIncompleteBodyPath[] = "/HttpClientSync/incomplete-body";
 static constexpr char kCompressedFilePath[] = "/HttpClientSync/compressed-file";
 static constexpr char kHttp10BodyPath[] = "/HttpClientSync/http-1.0-body";
 
-
-class HttpClientSync:
-    public ::testing::Test,
-    public nx::utils::test::TestWithTemporaryDirectory
+class HttpClientSync: public ::testing::Test, public nx::utils::test::TestWithTemporaryDirectory
 {
 protected:
     HttpClientSync():
@@ -74,57 +69,63 @@ protected:
     {
     }
 
-    TestHttpServer* testHttpServer()
-    {
-        return m_testHttpServer.get();
-    }
+    TestHttpServer* testHttpServer() { return m_testHttpServer.get(); }
 
     nx::Url staticDataUrl() const
     {
-        return url::Builder().setScheme(kUrlSchemeName)
+        return url::Builder()
+            .setScheme(kUrlSchemeName)
             .setEndpoint(m_testHttpServer->serverAddress())
-            .setPath(kStaticDataPath).toUrl();
+            .setPath(kStaticDataPath)
+            .toUrl();
     }
 
     nx::Url fileUrl() const
     {
-        return url::Builder().setScheme(kUrlSchemeName)
+        return url::Builder()
+            .setScheme(kUrlSchemeName)
             .setEndpoint(m_testHttpServer->serverAddress())
-            .setPath(kTestFileHttpPath).toUrl();
+            .setPath(kTestFileHttpPath)
+            .toUrl();
     }
 
     nx::Url silentHandlerUrl() const
     {
-        return url::Builder().setScheme(kUrlSchemeName)
+        return url::Builder()
+            .setScheme(kUrlSchemeName)
             .setEndpoint(m_testHttpServer->serverAddress())
-            .setPath(kSilentHandlerPath).toUrl();
+            .setPath(kSilentHandlerPath)
+            .toUrl();
     }
 
     nx::Url incompleteBodyUrl() const
     {
-        return url::Builder().setScheme(kUrlSchemeName)
+        return url::Builder()
+            .setScheme(kUrlSchemeName)
             .setEndpoint(m_testHttpServer->serverAddress())
-            .setPath(kIncompleteBodyPath).toUrl();
+            .setPath(kIncompleteBodyPath)
+            .toUrl();
     }
 
     nx::Url compressedBodyUrl() const
     {
-        return url::Builder().setScheme(kUrlSchemeName)
+        return url::Builder()
+            .setScheme(kUrlSchemeName)
             .setEndpoint(m_testHttpServer->serverAddress())
-            .setPath(kCompressedFilePath).toUrl();
+            .setPath(kCompressedFilePath)
+            .toUrl();
     }
 
     nx::Url http10BodyUrl() const
     {
-        return url::Builder().setScheme(kUrlSchemeName)
+        return url::Builder()
+            .setScheme(kUrlSchemeName)
             .setEndpoint(m_testHttpServer->serverAddress())
-            .setPath(kHttp10BodyPath).toUrl();
+            .setPath(kHttp10BodyPath)
+            .toUrl();
     }
 
-    const nx::Buffer& fileBody() const
-    {
-        return m_fileBody;
-    }
+    const nx::Buffer& fileBody() const { return m_fileBody; }
 
 private:
     std::unique_ptr<TestHttpServer> m_testHttpServer;
@@ -132,10 +133,9 @@ private:
 
     virtual void SetUp() override
     {
-        ASSERT_TRUE(testHttpServer()->registerStaticProcessor(
-            kStaticDataPath,
-            kStaticData,
-            "application/text"));
+        ASSERT_TRUE(
+            testHttpServer()
+                ->registerStaticProcessor(kStaticDataPath, kStaticData, "application/text"));
 
         // Generating and saving a temporary file.
         m_fileBody = nx::utils::random::generate(1024).toStdString();
@@ -145,56 +145,59 @@ private:
         f << (std::string_view) m_fileBody;
         f.close();
 
-        ASSERT_TRUE(testHttpServer()->registerFileProvider(
-            kTestFileHttpPath,
-            filePath,
-            kTestFileMimeType));
+        ASSERT_TRUE(
+            testHttpServer()
+                ->registerFileProvider(kTestFileHttpPath, filePath, kTestFileMimeType));
 
-        ASSERT_TRUE(testHttpServer()->registerRequestProcessorFunc(
-            kSilentHandlerPath,
-            [](RequestContext requestContext, RequestProcessedHandler handler)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                requestContext.conn.lock()->closeConnection(SystemError::connectionReset);
-                handler(StatusCode::internalServerError);
-            }));
+        ASSERT_TRUE(
+            testHttpServer()->registerRequestProcessorFunc(
+                kSilentHandlerPath,
+                [](RequestContext requestContext, RequestProcessedHandler handler)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    requestContext.conn.lock()->closeConnection(SystemError::connectionReset);
+                    handler(StatusCode::internalServerError);
+                }));
 
-        ASSERT_TRUE(testHttpServer()->registerRequestProcessorFunc(
-            kIncompleteBodyPath,
-            [](RequestContext requestContext, RequestProcessedHandler handler)
-            {
-                RequestResult result(StatusCode::ok);
-                result.body = std::make_unique<TestBodySource>(
-                    "text/plain",
-                    "Reported Content-Length of this body is much larger",
-                    10000);
-                requestContext.conn.lock()->setPersistentConnectionEnabled(false);
-                handler(std::move(result));
-            }));
+        ASSERT_TRUE(
+            testHttpServer()->registerRequestProcessorFunc(
+                kIncompleteBodyPath,
+                [](RequestContext requestContext, RequestProcessedHandler handler)
+                {
+                    RequestResult result(StatusCode::ok);
+                    result.body = std::make_unique<TestBodySource>(
+                        "text/plain",
+                        "Reported Content-Length of this body is much larger",
+                        10000);
+                    requestContext.conn.lock()->setPersistentConnectionEnabled(false);
+                    handler(std::move(result));
+                }));
 
-        ASSERT_TRUE(testHttpServer()->registerRequestProcessorFunc(
-            kCompressedFilePath,
-            [this](RequestContext /*requestContext*/, RequestProcessedHandler handler)
-            {
-                RequestResult result(StatusCode::ok);
-                result.body = std::make_unique<BufferSource>(
-                    "application/octet-stream",
-                    nx::utils::bstream::gzip::Compressor::compressData(m_fileBody));
-                result.headers.emplace("Content-Encoding", "gzip");
-                handler(std::move(result));
-            }));
+        ASSERT_TRUE(
+            testHttpServer()->registerRequestProcessorFunc(
+                kCompressedFilePath,
+                [this](RequestContext /*requestContext*/, RequestProcessedHandler handler)
+                {
+                    RequestResult result(StatusCode::ok);
+                    result.body = std::make_unique<BufferSource>(
+                        "application/octet-stream",
+                        nx::utils::bstream::gzip::Compressor::compressData(m_fileBody));
+                    result.headers.emplace("Content-Encoding", "gzip");
+                    handler(std::move(result));
+                }));
 
-        ASSERT_TRUE(testHttpServer()->registerRequestProcessorFunc(
-            kHttp10BodyPath,
-            [this](RequestContext, RequestProcessedHandler handler)
-            {
-                RequestResult result(StatusCode::ok);
-                result.body = std::make_unique<TestBodySource>(
-                    "application/octet-stream",
-                    m_fileBody,
-                    std::nullopt);
-                handler(std::move(result));
-            }));
+        ASSERT_TRUE(
+            testHttpServer()->registerRequestProcessorFunc(
+                kHttp10BodyPath,
+                [this](RequestContext, RequestProcessedHandler handler)
+                {
+                    RequestResult result(StatusCode::ok);
+                    result.body = std::make_unique<TestBodySource>(
+                        "application/octet-stream",
+                        m_fileBody,
+                        std::nullopt);
+                    handler(std::move(result));
+                }));
 
         ASSERT_TRUE(testHttpServer()->bindAndListen());
     }

@@ -39,9 +39,7 @@ private:
     {
         const auto currentTime = nx::utils::monotonicTime();
 
-        for (auto it = m_keyToExpirationTime.begin();
-            it != m_keyToExpirationTime.end();
-            )
+        for (auto it = m_keyToExpirationTime.begin(); it != m_keyToExpirationTime.end();)
         {
             if (it->second < currentTime)
                 it = m_keyToExpirationTime.erase(it);

@@ -18,8 +18,7 @@ AsyncOperationGuard::~AsyncOperationGuard()
     m_sharedGuard->terminate();
 }
 
-const std::shared_ptr<AsyncOperationGuard::SharedGuard>&
-    AsyncOperationGuard::sharedGuard()
+const std::shared_ptr<AsyncOperationGuard::SharedGuard>& AsyncOperationGuard::sharedGuard()
 {
     return m_sharedGuard;
 }

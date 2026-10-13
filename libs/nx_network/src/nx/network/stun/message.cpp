@@ -9,8 +9,8 @@
 #include <openssl/hmac.h>
 
 #include <nx/utils/random.h>
-#include <nx/utils/uuid.h>
 #include <nx/utils/string.h>
+#include <nx/utils/uuid.h>
 
 #include "message_parser.h"
 #include "message_serializer.h"
@@ -87,7 +87,8 @@ Header& Header::operator=(Header&& rhs)
 std::string Header::toString() const
 {
     return nx::format("class %1, method %2, transaction id %3")
-        .args(messageClass, method, nx::utils::toHex(transactionId)).toStdString();
+        .args(messageClass, method, nx::utils::toHex(transactionId))
+        .toStdString();
 }
 
 Buffer Header::makeTransactionId()
@@ -116,16 +117,15 @@ void Message::eraseAllAttributes()
 
 void Message::insertIntegrity(const std::string& userName, const std::string& key)
 {
-    newAttribute< attrs::UserName >(userName);
+    newAttribute<attrs::UserName>(userName);
     if (findAttr(attrs::nonce) == m_attributes.end())
-        newAttribute< attrs::Nonce >(nx::Buffer(nx::Uuid::createUuid().toSimpleByteArray()));
+        newAttribute<attrs::Nonce>(nx::Buffer(nx::Uuid::createUuid().toSimpleByteArray()));
 
-    newAttribute< attrs::MessageIntegrity >(nx::Buffer(
-        attrs::MessageIntegrity::SIZE, 0));
+    newAttribute<attrs::MessageIntegrity>(nx::Buffer(attrs::MessageIntegrity::SIZE, 0));
 
     const auto hmac = calcMessageIntegrity(*this, key, {});
     NX_ASSERT(hmac.size() == attrs::MessageIntegrity::SIZE);
-    newAttribute< attrs::MessageIntegrity >(hmac);
+    newAttribute<attrs::MessageIntegrity>(hmac);
 }
 
 bool Message::verifyIntegrity(
@@ -133,11 +133,11 @@ bool Message::verifyIntegrity(
     const std::string& key,
     MessageIntegrityOptions options) const
 {
-    const auto userNameAttr = getAttribute< attrs::UserName >();
+    const auto userNameAttr = getAttribute<attrs::UserName>();
     if (!userNameAttr || userNameAttr->getString() != userName)
         return false;
 
-    const auto miAttr = getAttribute< attrs::MessageIntegrity >();
+    const auto miAttr = getAttribute<attrs::MessageIntegrity>();
     if (!miAttr)
         return false;
 
@@ -151,15 +151,17 @@ std::optional<std::string> Message::hasError(SystemError::ErrorCode code) const
     if (code != SystemError::noError)
     {
         return nx::format("System error %1: %2")
-            .args(code, SystemError::toString(code)).toStdString();
+            .args(code, SystemError::toString(code))
+            .toStdString();
     }
 
     if (header.messageClass != MessageClass::successResponse)
     {
-        if (const auto err = getAttribute< attrs::ErrorCode >())
+        if (const auto err = getAttribute<attrs::ErrorCode>())
         {
             return nx::format("STUN error %1: %2")
-                .args(err->getCode(), err->getString()).toStdString();
+                .args(err->getCode(), err->getString())
+                .toStdString();
         }
         else
         {
@@ -193,15 +195,23 @@ void Message::clear()
 Message::Attributes::iterator Message::findAttr(int type)
 {
     return std::find_if(
-        m_attributes.begin(), m_attributes.end(),
-        [type](const auto& attr) { return attr->getType() == type; });
+        m_attributes.begin(),
+        m_attributes.end(),
+        [type](const auto& attr)
+        {
+            return attr->getType() == type;
+        });
 }
 
 Message::Attributes::const_iterator Message::findAttr(int type) const
 {
     return std::find_if(
-        m_attributes.begin(), m_attributes.end(),
-        [type](const auto& attr) { return attr->getType() == type; });
+        m_attributes.begin(),
+        m_attributes.end(),
+        [type](const auto& attr)
+        {
+            return attr->getType() == type;
+        });
 }
 
 } // namespace nx::network::stun

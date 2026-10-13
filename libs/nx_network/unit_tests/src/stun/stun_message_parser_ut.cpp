@@ -2,6 +2,8 @@
 
 #include <random>
 
+#include <nx/utils/system_network_headers.h>
+
 #include <gtest/gtest.h>
 
 #include <nx/network/stun/message_integrity.h>
@@ -11,15 +13,13 @@
 #include <nx/utils/auth/utils.h>
 #include <nx/utils/random.h>
 #include <nx/utils/string.h>
-#include <nx/utils/system_network_headers.h>
 
 namespace nx::network::stun::test {
 
 static constexpr int kIntAttributeType = attrs::userDefined + 1;
 static constexpr int kStringAttributeType = attrs::userDefined + 100;
 
-class StunMessageParser:
-    public ::testing::Test
+class StunMessageParser: public ::testing::Test
 {
 protected:
     void prepareMessageWithFingerprint()
@@ -52,10 +52,7 @@ protected:
         }
     }
 
-    void addFingerprint()
-    {
-        m_testMessage.newAttribute<attrs::FingerPrint>();
-    }
+    void addFingerprint() { m_testMessage.newAttribute<attrs::FingerPrint>(); }
 
     void addZeroLengthAttribute()
     {
@@ -77,7 +74,8 @@ protected:
         m_bufferToParse.append(m_bufferToParse.substr(MessageParser::kMessageHeaderSize));
 
         // Adjusting message length.
-        std::uint16_t newMessageLength = htons(m_bufferToParse.size() - MessageParser::kMessageHeaderSize);
+        std::uint16_t newMessageLength =
+            htons(m_bufferToParse.size() - MessageParser::kMessageHeaderSize);
         memcpy(m_bufferToParse.data() + 0x02, &newMessageLength, sizeof(newMessageLength));
     }
 
@@ -90,16 +88,19 @@ protected:
 
     void givenCorruptedMessageWithSmallerLength()
     {
-        m_bufferToParse = nx::utils::fromHex(nx::Buffer(
-            "0111" "0008" "2112A442"         // response: binding, length=20, magic cookie
-            "012345670123456789ABCDEF"      // TID
-            "9001" "0006" "202020202020" "0000"));    // string attr of size 6 (6 spaces) and 2-byte padding.
+        m_bufferToParse = nx::utils::fromHex(
+            nx::Buffer(
+                "0111"
+                "0008"
+                "2112A442" // response: binding, length=20, magic cookie
+                "012345670123456789ABCDEF" // TID
+                "9001"
+                "0006"
+                "202020202020"
+                "0000")); // string attr of size 6 (6 spaces) and 2-byte padding.
     }
 
-    void givenSerializedMessage(nx::Buffer msg)
-    {
-        m_bufferToParse = std::move(msg);
-    }
+    void givenSerializedMessage(nx::Buffer msg) { m_bufferToParse = std::move(msg); }
 
     void whenParseMultipleJunkPackets()
     {
@@ -112,8 +113,8 @@ protected:
 
     void whenParseJunkPacket()
     {
-        m_bufferToParse = nx::utils::random::generate(
-            nx::utils::random::number<int>(1, 1024)).toStdString();
+        m_bufferToParse =
+            nx::utils::random::generate(nx::utils::random::number<int>(1, 1024)).toStdString();
 
         whenParsePacket();
         thenParseDidNotSucceed();
@@ -225,15 +226,9 @@ protected:
         assertEqual(m_testMessage, m_parsedMessage);
     }
 
-    MessageParser& parser()
-    {
-        return m_parser;
-    }
+    MessageParser& parser() { return m_parser; }
 
-    void setAlwaysAddFingerprint(bool val)
-    {
-        m_alwaysAddFingerprint = val;
-    }
+    void setAlwaysAddFingerprint(bool val) { m_alwaysAddFingerprint = val; }
 
 protected:
     Message m_testMessage;
@@ -265,7 +260,8 @@ private:
         one.forEachAttribute(
             [&two](const attrs::Attribute* oneAttr)
             {
-                const attrs::Attribute* twoAttr = two.getAttribute<attrs::Attribute>(oneAttr->getType());
+                const attrs::Attribute* twoAttr =
+                    two.getAttribute<attrs::Attribute>(oneAttr->getType());
                 ASSERT_NE(nullptr, twoAttr);
                 if (oneAttr->getType() >= kIntAttributeType)
                 {
@@ -338,7 +334,9 @@ TEST_F(StunMessageParser, message_without_attributes_and_with_fingerprint)
     andParsedMessageIsExpected();
 }
 
-TEST_F(StunMessageParser, message_without_fingerprint_causes_parse_error_when_in_corresponding_mode)
+TEST_F(
+    StunMessageParser,
+    message_without_fingerprint_causes_parse_error_when_in_corresponding_mode)
 {
     parser().setFingerprintRequired(true);
     prepareRandomMessage();
@@ -371,8 +369,9 @@ TEST_F(StunMessageParser, message_with_wrong_length_and_fingerprint_causes_parse
 {
     // The following message has length field corrupted (it exceeds the actual message length).
     // So, the fingerprint is invalid. Expecting the parser to reach the fingerprint and fail.
-    givenSerializedMessage(nx::utils::fromBase64(nx::Buffer(
-        "AAEsHCESpEJhZU9pWUxBbEpaWErgAQAEAAABAuACAAdNNG5nWmVJAIAoAASxXhGu")));
+    givenSerializedMessage(
+        nx::utils::fromBase64(
+            nx::Buffer("AAEsHCESpEJhZU9pWUxBbEpaWErgAQAEAAABAuACAAdNNG5nWmVJAIAoAASxXhGu")));
 
     whenParsePacket();
     thenParseFailed();
@@ -419,8 +418,7 @@ TEST_F(StunMessageParser, parses_message_with_duplicate_attributes)
 
 //-------------------------------------------------------------------------------------------------
 
-class StunMessageIntegrity:
-    public StunMessageParser
+class StunMessageIntegrity: public StunMessageParser
 {
 public:
     StunMessageIntegrity():
@@ -470,10 +468,7 @@ protected:
         addIntegrity();
     }
 
-    void addIntegrity()
-    {
-        m_testMessage.insertIntegrity(m_userName, m_userPassword);
-    }
+    void addIntegrity() { m_testMessage.insertIntegrity(m_userName, m_userPassword); }
 
     void corruptMessageIntegrityAttribute()
     {
@@ -488,10 +483,7 @@ protected:
         ASSERT_TRUE(m_parsedMessage.verifyIntegrity(m_userName, m_userPassword, options));
     }
 
-    void useVerificationKey(const std::string& key)
-    {
-        m_userPassword = key;
-    }
+    void useVerificationKey(const std::string& key) { m_userPassword = key; }
 
     void assertParsedMessageIntegrityCheckFails(MessageIntegrityOptions options = {})
     {
@@ -524,20 +516,39 @@ private:
         msg.newAttribute<attrs::Unknown>(kStringAttributeType + 1, "ua1val");
         msg.newAttribute<attrs::Unknown>(kStringAttributeType + 2, "ua2val");
 
-        EXPECT_EQ(8, m_userName.size()) << "The following code assumes that m_userName.size() is 8";
+        EXPECT_EQ(8, m_userName.size())
+            << "The following code assumes that m_userName.size() is 8";
 
         nx::Buffer serializedMsg = nx::utils::fromHex(
-            Buffer("00B1" "0048" "2112A442")        // indication 3, length=72 (attrs), magic cookie
+            Buffer(
+                "00B1"
+                "0048"
+                "2112A442") // indication 3, length=72 (attrs), magic cookie
             + kDefaultTid
-            + Buffer("0015" "0008") + nx::utils::toUpper(nx::utils::toHex(nonce))
-            + Buffer("0006" "0008") + nx::utils::toUpper(nx::utils::toHex(m_userName))
-            + Buffer("E065" "0006") + nx::utils::toUpper(nx::utils::toHex(Buffer("ua1val"))) + Buffer("0000")
-            + Buffer("E066" "0006") + nx::utils::toUpper(nx::utils::toHex(Buffer("ua2val"))) + Buffer("0000")
-        );
+            + Buffer(
+                "0015"
+                "0008")
+            + nx::utils::toUpper(nx::utils::toHex(nonce))
+            + Buffer(
+                "0006"
+                "0008")
+            + nx::utils::toUpper(nx::utils::toHex(m_userName))
+            + Buffer(
+                "E065"
+                "0006")
+            + nx::utils::toUpper(nx::utils::toHex(Buffer("ua1val"))) + Buffer("0000")
+            + Buffer(
+                "E066"
+                "0006")
+            + nx::utils::toUpper(nx::utils::toHex(Buffer("ua2val"))) + Buffer("0000"));
 
-        // Calculating integrity without MESSAGE-INTEGRITY attribute but with its length reflected in the message header.
+        // Calculating integrity without MESSAGE-INTEGRITY attribute but with its length reflected
+        // in the message header.
         m_lastCalculatedIntegrity = nx::utils::auth::hmacSha1(m_userPassword, serializedMsg);
-        serializedMsg += nx::utils::fromHex(Buffer("0008" "0014")) + m_lastCalculatedIntegrity;
+        serializedMsg += nx::utils::fromHex(Buffer(
+                             "0008"
+                             "0014"))
+            + m_lastCalculatedIntegrity;
 
         return std::make_tuple(msg, serializedMsg);
     }

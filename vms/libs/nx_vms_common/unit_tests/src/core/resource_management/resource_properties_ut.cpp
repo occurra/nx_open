@@ -17,9 +17,9 @@ protected:
     // There is no message bus, so saveParamsAsync() just drains the modified items, which is what
     // it does before sending the transaction.
     QnResourcePropertyDictionary dictionary{[]()
-        {
-            return ec2::AbstractECConnectionPtr();
-        }};
+                                            {
+                                                return ec2::AbstractECConnectionPtr();
+                                            }};
     const nx::Uuid resourceId = nx::Uuid::createUuid();
 };
 

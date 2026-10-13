@@ -44,7 +44,7 @@ public:
     }
 
 private:
-    template <typename IteratorPeriod>
+    template<typename IteratorPeriod>
     static PeriodList mergeTimePeriodsInternal(
         const QList<PeriodList>& nonEmptyPeriods,
         std::vector<IteratorPeriod>&& minIndices,
@@ -64,8 +64,8 @@ private:
                 [](const PeriodList& l, const PeriodList& r)
                 {
                     return l.size() < r.size();
-                })->size()
-            );
+                })
+                ->size());
         result.reserve(maxSize);
 
         int minIndex = 0;
@@ -126,10 +126,12 @@ private:
                         {
                             last.resetDuration();
                         }
-                        // Last element is live and starts before all of rest - no need to process other elements.
+                        // Last element is live and starts before all of rest - no need to process
+                        // other elements.
                         return result;
                     }
-                    else if (last.startTime() <= minStartTime
+                    else if (
+                        last.startTime() <= minStartTime
                         && last.startTime() + last.duration() >= minStartTime)
                     {
                         last.setDuration(qMax(
@@ -168,8 +170,10 @@ private:
 
     static PeriodList mergeTimePeriodsDesc(const QList<PeriodList>& nonEmptyPeriods, int limit)
     {
-        std::vector<typename PeriodList::const_reverse_iterator> minIndexes(nonEmptyPeriods.size());
-        std::vector<typename PeriodList::const_reverse_iterator> endIndexes(nonEmptyPeriods.size());
+        std::vector<typename PeriodList::const_reverse_iterator> minIndexes(
+            nonEmptyPeriods.size());
+        std::vector<typename PeriodList::const_reverse_iterator> endIndexes(
+            nonEmptyPeriods.size());
         for (int i = 0; i < nonEmptyPeriods.size(); ++i)
         {
             minIndexes[i] = nonEmptyPeriods[i].crbegin();
@@ -187,4 +191,4 @@ private:
     }
 };
 
-} // namespace helpers
+} // namespace nx::vms::common

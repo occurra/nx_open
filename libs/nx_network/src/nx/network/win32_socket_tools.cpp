@@ -2,30 +2,27 @@
 
 #ifdef _WIN32
 
-// This header includes <windows.h> and _must_ be included before everything
-#include <nx/utils/system_network_headers.h>
+    // This header includes <windows.h> and _must_ be included before everything
+    #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include <memory>
+    #include <memory>
 
-#include <Tcpestats.h>
-#include <tcpmib.h>
+    #include <Tcpestats.h>
+    #include <tcpmib.h>
 
-#include <nx/utils/platform/win32_syscall_resolver.h>
+    #include <nx/utils/platform/win32_syscall_resolver.h>
 
-#include "abstract_socket.h"
+    #include "abstract_socket.h"
 
-DWORD GetTcpRow(
-    u_short localPort,
-    u_short remotePort,
-    MIB_TCP_STATE state,
-    __out PMIB_TCPROW row)
+DWORD GetTcpRow(u_short localPort, u_short remotePort, MIB_TCP_STATE state, __out PMIB_TCPROW row)
 {
     // Dynamically resolving functions that require win >= vista we want to use here.
     typedef decltype(&GetTcpTable) GetTcpTableType;
     static GetTcpTableType GetTcpTableAddr =
-        Win32FuncResolver::instance()->resolveFunction<GetTcpTableType>
-        (L"Iphlpapi.dll", "GetTcpTable");
+        Win32FuncResolver::instance()->resolveFunction<GetTcpTableType>(
+            L"Iphlpapi.dll",
+            "GetTcpTable");
 
     if (GetTcpTableAddr == NULL)
         return ERROR_NOT_FOUND;
@@ -42,7 +39,7 @@ DWORD GetTcpRow(
         return status;
     }
 
-    tcpTable = (PMIB_TCPTABLE)malloc(size);
+    tcpTable = (PMIB_TCPTABLE) malloc(size);
     if (tcpTable == NULL)
     {
         return ERROR_OUTOFMEMORY;
@@ -61,8 +58,8 @@ DWORD GetTcpRow(
     for (i = 0; i < tcpTable->dwNumEntries; i++)
     {
         tcpRowIt = &tcpTable->table[i];
-        if (tcpRowIt->dwLocalPort == (DWORD)localPort &&
-            tcpRowIt->dwRemotePort == (DWORD)remotePort)
+        if (tcpRowIt->dwLocalPort == (DWORD) localPort
+            && tcpRowIt->dwRemotePort == (DWORD) remotePort)
         {
             if (tcpRowIt->State == state)
             {
@@ -85,22 +82,25 @@ DWORD GetTcpRow(
     }
 }
 
-DWORD readTcpStat(
-    PMIB_TCPROW row,
-    nx::network::StreamSocketInfo* const sockInfo)
+DWORD readTcpStat(PMIB_TCPROW row, nx::network::StreamSocketInfo* const sockInfo)
 {
-    //dynamically resolving functions that require win >= vista we want to use here
+    // dynamically resolving functions that require win >= vista we want to use here
     typedef decltype(&GetPerTcpConnectionEStats) GetPerTcpConnectionEStatsType;
     static GetPerTcpConnectionEStatsType GetPerTcpConnectionEStatsAddr =
-        Win32FuncResolver::instance()->resolveFunction<GetPerTcpConnectionEStatsType>
-        (L"Iphlpapi.dll", "GetPerTcpConnectionEStats");
+        Win32FuncResolver::instance()->resolveFunction<GetPerTcpConnectionEStatsType>(
+            L"Iphlpapi.dll",
+            "GetPerTcpConnectionEStats");
 
     if (GetPerTcpConnectionEStatsAddr == NULL)
         return ERROR_NOT_FOUND;
 
-    auto freeLambda = [](void* ptr) { ::free(ptr); };
+    auto freeLambda = [](void* ptr)
+    {
+        ::free(ptr);
+    };
     std::unique_ptr<TCP_ESTATS_PATH_ROD_v0, decltype(freeLambda)> pathRod(
-        (TCP_ESTATS_PATH_ROD_v0*) malloc(sizeof(TCP_ESTATS_PATH_ROD_v0)), freeLambda);
+        (TCP_ESTATS_PATH_ROD_v0*) malloc(sizeof(TCP_ESTATS_PATH_ROD_v0)),
+        freeLambda);
     if (!pathRod.get())
     {
         wprintf(L"\nOut of memory");
@@ -111,9 +111,15 @@ DWORD readTcpStat(
     ULONG winStatus = GetPerTcpConnectionEStatsAddr(
         row,
         TcpConnectionEstatsPath,
-        NULL, 0, 0,
-        NULL, 0, 0,
-        (UCHAR*)pathRod.get(), 0, sizeof(*pathRod));
+        NULL,
+        0,
+        0,
+        NULL,
+        0,
+        0,
+        (UCHAR*) pathRod.get(),
+        0,
+        sizeof(*pathRod));
 
     if (winStatus != NO_ERROR)
         return winStatus;

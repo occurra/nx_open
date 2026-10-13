@@ -12,13 +12,9 @@ class NX_NETWORK_API BufferedAsyncChannel:
     using base_type = AsyncChannelAdapter<std::unique_ptr<AbstractAsyncChannel>>;
 
 public:
-    BufferedAsyncChannel(
-        std::unique_ptr<AbstractAsyncChannel> source,
-        nx::Buffer buffer);
+    BufferedAsyncChannel(std::unique_ptr<AbstractAsyncChannel> source, nx::Buffer buffer);
 
-    virtual void readSomeAsync(
-        nx::Buffer* const buffer,
-        IoCompletionHandler handler) override;
+    virtual void readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler) override;
 
 protected:
     virtual void cancelIoInAioThread(nx::network::aio::EventType eventType) override;

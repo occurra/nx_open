@@ -5,8 +5,7 @@
 namespace nx::sql::detail {
 
 MultipleQueryExecutor::MultipleQueryExecutor(
-    std::vector<std::unique_ptr<AbstractExecutor>> queries)
-    :
+    std::vector<std::unique_ptr<AbstractExecutor>> queries):
     base_type(QueryType::modification, /*No aggregation*/ std::string()),
     m_queries(std::move(queries))
 {
@@ -34,8 +33,7 @@ DBResult MultipleQueryExecutor::executeQuery(AbstractDbConnection* const connect
         return result;
     }
 
-    std::tie(result, unexecutedQueriesRangeStart) =
-        executeQueries(connection, &transaction);
+    std::tie(result, unexecutedQueriesRangeStart) = executeQueries(connection, &transaction);
 
     if (result != DBResultCode::ok)
     {
@@ -47,17 +45,14 @@ DBResult MultipleQueryExecutor::executeQuery(AbstractDbConnection* const connect
     return transaction.commit();
 }
 
-std::tuple<DBResult, typename MultipleQueryExecutor::Queries::iterator>
-    MultipleQueryExecutor::executeQueries(
-        AbstractDbConnection* const connection,
-        Transaction* transaction)
+std::tuple<DBResult, typename MultipleQueryExecutor::Queries::iterator> MultipleQueryExecutor::
+    executeQueries(AbstractDbConnection* const connection, Transaction* transaction)
 {
     DBResult result = DBResultCode::ok;
 
     Queries::iterator queryToExecuteIter = m_queries.begin();
-    for (queryToExecuteIter = m_queries.begin();
-        queryToExecuteIter != m_queries.end();
-        ++queryToExecuteIter)
+    for (queryToExecuteIter = m_queries.begin(); queryToExecuteIter != m_queries.end();
+         ++queryToExecuteIter)
     {
         (*queryToExecuteIter)->setExternalTransaction(transaction);
         result = (*queryToExecuteIter)->execute(connection);
@@ -78,8 +73,12 @@ void MultipleQueryExecutor::reportQueryFailure(
     DBResult dbResult)
 {
     std::for_each(
-        begin, end,
-        [dbResult](auto& query) { query->reportErrorWithoutExecution(dbResult); });
+        begin,
+        end,
+        [dbResult](auto& query)
+        {
+            query->reportErrorWithoutExecution(dbResult);
+        });
 }
 
 } // namespace nx::sql::detail

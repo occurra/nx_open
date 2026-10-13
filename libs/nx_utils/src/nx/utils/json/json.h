@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include <rapidjson/document.h>
-
 #include <nx/reflect/json.h>
 #include <nx/utils/log/log_main.h>
 #include <nx/utils/uuid.h>
+#include <rapidjson/document.h>
 
 namespace nx::json {
 
@@ -18,7 +17,8 @@ public:
     Composer(rapidjson::Document::AllocatorType* allocator = nullptr):
         m_value(/*depthLimit*/ 1024, allocator)
     {
-        setSerializeFlags((/*jsonSerializeChronoDurationAsNumber*/ 1 << 0u)
+        setSerializeFlags(
+            (/*jsonSerializeChronoDurationAsNumber*/ 1 << 0u)
             | (/*jsonSerializeInt64AsString*/ 1 << 1u));
     }
 
@@ -58,7 +58,10 @@ public:
     {
         if (m_value.GetStackCapacity() != 0)
         {
-            auto dummy = [](auto&&) { return true; };
+            auto dummy = [](auto&&)
+            {
+                return true;
+            };
             m_value.Populate(dummy);
         }
         return std::move(m_value);
@@ -114,10 +117,15 @@ private:
 struct SerializationContextBase
 {
     template<typename T>
-    unsigned int beforeSerialize(const T&) { return 0u; }
+    unsigned int beforeSerialize(const T&)
+    {
+        return 0u;
+    }
 
     template<typename T>
-    void afterSerialize(const T&, unsigned int) {}
+    void afterSerialize(const T&, unsigned int)
+    {
+    }
 
     constexpr bool uuidWithBraces() const { return false; }
 
@@ -151,7 +159,9 @@ struct StripDefaultSerializationContext: details::SerializationContextBase
 
 template<typename T>
 ::rapidjson::Document serialized(
-    const T& value, bool stripDefault, rapidjson::Document::AllocatorType* allocator = nullptr)
+    const T& value,
+    bool stripDefault,
+    rapidjson::Document::AllocatorType* allocator = nullptr)
 {
     if (!stripDefault)
     {
@@ -167,15 +177,13 @@ template<typename T>
         return result;
 
     using namespace nx::reflect;
-    if constexpr (IsInstrumentedV<T>
-        || IsAssociativeContainerV<T>
-        || IsUnorderedAssociativeContainerV<T>)
+    if constexpr (
+        IsInstrumentedV<T> || IsAssociativeContainerV<T> || IsUnorderedAssociativeContainerV<T>)
     {
         result.SetObject();
     }
-    else if constexpr (IsArrayV<T>
-        || IsSequenceContainerV<T>
-        || IsSetContainerV<T>
+    else if constexpr (
+        IsArrayV<T> || IsSequenceContainerV<T> || IsSetContainerV<T>
         || IsUnorderedSetContainerV<T>)
     {
         result.SetArray();
@@ -195,7 +203,8 @@ public:
     using StripDefaultSerializationContext = nx::json::StripDefaultSerializationContext;
 
     Visitor(StripDefaultSerializationContext* context, const Data& data):
-        m_context(context), m_data(data)
+        m_context(context),
+        m_data(data)
     {
         m_context->composer.startObject();
     }
@@ -212,12 +221,15 @@ public:
 
 private:
     template<typename T, typename = std::void_t<>>
-    struct HasEqualOperator: std::false_type {};
+    struct HasEqualOperator: std::false_type
+    {
+    };
 
     template<typename T>
     struct HasEqualOperator<T, std::void_t<decltype(std::declval<T>() == std::declval<T>())>>:
         std::true_type
-    {};
+    {
+    };
 
     template<typename T>
     static bool isDefault(const T& lhs, const T& rhs)
@@ -230,7 +242,11 @@ private:
         {
             return rhs.valueless_by_exception()
                 || std::visit(
-                    [](const auto& v) { return isDefault(std::decay_t<decltype(v)>{}, v); }, rhs);
+                       [](const auto& v)
+                       {
+                           return isDefault(std::decay_t<decltype(v)>{}, v);
+                       },
+                       rhs);
         }
         else if constexpr (IsContainerV<T>)
         {
@@ -243,8 +259,12 @@ private:
         }
         else if constexpr (IsInstrumentedV<T>)
         {
-            return nxReflectVisitAllFields((T*) nullptr,
-                [&lhs, &rhs](auto&&... f) { return (isDefault(f.get(lhs), f.get(rhs)) && ...); });
+            return nxReflectVisitAllFields(
+                (T*) nullptr,
+                [&lhs, &rhs](auto&&... f)
+                {
+                    return (isDefault(f.get(lhs), f.get(rhs)) && ...);
+                });
         }
         else
         {

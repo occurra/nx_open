@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <QtCore/QScopedPointer>
 #include <QtCore/QList>
+#include <QtCore/QScopedPointer>
 #include <QtGui/QMatrix3x3>
 #include <QtGui/QMatrix4x4>
 #include <QtGui/QVector2D>

@@ -101,12 +101,10 @@ void HevcParser::setSdpInfo(const Sdp::Media& sdp)
 
 void HevcParser::parseFmtp(const QStringList& fmtpParams)
 {
-    for (const auto& param : fmtpParams)
+    for (const auto& param: fmtpParams)
     {
-        bool isParameterSet = param.startsWith(kSdpVpsPrefix)
-            || param.startsWith(kSdpSpsPrefix)
-            || param.startsWith(kSdpPpsPrefix)
-            || param.startsWith(kSdpSeiPrefix);
+        bool isParameterSet = param.startsWith(kSdpVpsPrefix) || param.startsWith(kSdpSpsPrefix)
+            || param.startsWith(kSdpPpsPrefix) || param.startsWith(kSdpSeiPrefix);
 
         if (!isParameterSet)
             continue;
@@ -126,7 +124,7 @@ void HevcParser::parseFmtp(const QStringList& fmtpParams)
         else if (param.startsWith(kSdpSpsPrefix))
         {
             m_context.sps = parameterSet;
-            extractPictureDimensionsFromSps((uint8_t*)parameterSet.data(), parameterSet.size());
+            extractPictureDimensionsFromSps((uint8_t*) parameterSet.data(), parameterSet.size());
         }
         else if (param.startsWith(kSdpPpsPrefix))
         {
@@ -170,7 +168,10 @@ Result HevcParser::handlePayload(const uint8_t* payload, int payloadLength)
     }
 }
 
-bool HevcParser::isNewFrame(nx::media::h265::NalUnitType unitType, const uint8_t* payload, int payloadLength)
+bool HevcParser::isNewFrame(
+    nx::media::h265::NalUnitType unitType,
+    const uint8_t* payload,
+    int payloadLength)
 {
     const uint8_t* data = payload;
     const uint8_t* dataEnd = payload + payloadLength;
@@ -214,7 +215,10 @@ bool HevcParser::isNewFrame(nx::media::h265::NalUnitType unitType, const uint8_t
 }
 
 void HevcParser::addChunk(
-    nx::media::h265::NalUnitType unitType, int bufferOffset, int payloadLength, bool hasStartCode)
+    nx::media::h265::NalUnitType unitType,
+    int bufferOffset,
+    int payloadLength,
+    bool hasStartCode)
 {
     const uint8_t* payload = m_rtpBufferBase + bufferOffset;
 
@@ -276,7 +280,7 @@ Result HevcParser::handleAggregationPacket(
         skipDonIfNeeded(&payload, &payloadLength, donType);
         donType = DonType::dond;
 
-        auto nalSize = ntohs(*(uint16_t*)payload);
+        auto nalSize = ntohs(*(uint16_t*) payload);
         payload += 2; //< Skip size field.
         payloadLength -= 2;
 
@@ -297,8 +301,11 @@ Result HevcParser::handleAggregationPacket(
 
     if (payloadLength)
     {
-        return {false, NX_FMT(
-            "Unexpected payload rest in %1 byte(s) at the end of RTP packet", payloadLength)};
+        return {
+            false,
+            NX_FMT(
+                "Unexpected payload rest in %1 byte(s) at the end of RTP packet",
+                payloadLength)};
     }
 
     return {true};
@@ -310,7 +317,7 @@ Result HevcParser::handleFragmentationPacket(
     int payloadLength)
 {
     nx::media::h265::FuHeader fuHeader;
-    if(!fuHeader.decode(payload, payloadLength))
+    if (!fuHeader.decode(payload, payloadLength))
         return {false, "Can't decode FU header"};
 
     if (fuHeader.startFlag && fuHeader.endFlag)
@@ -325,7 +332,7 @@ Result HevcParser::handleFragmentationPacket(
     if (fuHeader.startFlag)
     {
         insertPayloadHeader(
-            const_cast<uint8_t**>(&payload),  //< Dirty-dirty practice.
+            const_cast<uint8_t**>(&payload), //< Dirty-dirty practice.
             &payloadLength,
             fuHeader.unitType,
             header->tid);
@@ -396,7 +403,7 @@ void HevcParser::updateNalFlags(
     {
         m_context.inStreamPpsFound = true;
     }
-    else if(nx::media::h265::isRandomAccessPoint(unitType))
+    else if (nx::media::h265::isRandomAccessPoint(unitType))
     {
         m_context.keyDataFound = true;
     }
@@ -410,7 +417,7 @@ QnCompressedVideoDataPtr HevcParser::createVideoData(const uint8_t* rtpBuffer, u
 
     QnWritableCompressedVideoDataPtr result;
     if (header.size() != 0)
-        result = m_chunks.buildFrame(rtpBuffer, (uint8_t*)header.data(), header.size());
+        result = m_chunks.buildFrame(rtpBuffer, (uint8_t*) header.data(), header.size());
     else
         result = m_chunks.buildFrame(rtpBuffer, nullptr, 0);
 
@@ -419,13 +426,16 @@ QnCompressedVideoDataPtr HevcParser::createVideoData(const uint8_t* rtpBuffer, u
     result->height = m_context.height;
 
     // Check all nal units for key frame slice
-    if (isKeyFrame((const uint8_t*)result->data(), result->dataSize()))
+    if (isKeyFrame((const uint8_t*) result->data(), result->dataSize()))
     {
         result->flags |= QnAbstractMediaData::MediaFlags_AVKey;
         auto codecParameters = QnFfmpegHelper::createVideoCodecParametersMp4(
-            result.get(), result->width, result->height);
-    if (codecParameters && (!m_codecParameters || !m_codecParameters->isEqual(*codecParameters)))
-        m_codecParameters = codecParameters;
+            result.get(),
+            result->width,
+            result->height);
+        if (codecParameters
+            && (!m_codecParameters || !m_codecParameters->isEqual(*codecParameters)))
+            m_codecParameters = codecParameters;
     }
     result->context = m_codecParameters;
     result->timestamp = rtpTime;
@@ -472,7 +482,7 @@ void HevcParser::insertPayloadHeader(
 {
     *payloadStart -= nx::media::h265::NalUnitHeader::kTotalLength;
     *payloadLength += nx::media::h265::NalUnitHeader::kTotalLength;
-    (*payloadStart)[0] = ((uint8_t)unitType) << 1;
+    (*payloadStart)[0] = ((uint8_t) unitType) << 1;
     (*payloadStart)[1] = tid;
 }
 
@@ -483,26 +493,20 @@ nx::utils::ByteArray HevcParser::buildParameterSetsIfNeeded()
     if (!m_context.inStreamVpsFound && m_context.vps)
     {
         uint32_t sizeData = htonl(m_context.vps->size());
-        buffer.write((const char*)&sizeData, sizeof(uint32_t));
-        buffer.write(
-            m_context.vps->data(),
-            m_context.vps->size());
+        buffer.write((const char*) &sizeData, sizeof(uint32_t));
+        buffer.write(m_context.vps->data(), m_context.vps->size());
     }
     if (!m_context.inStreamSpsFound && m_context.sps)
     {
         uint32_t sizeData = htonl(m_context.sps->size());
-        buffer.write((const char*)&sizeData, sizeof(uint32_t));
-        buffer.write(
-            m_context.sps->data(),
-            m_context.sps->size());
+        buffer.write((const char*) &sizeData, sizeof(uint32_t));
+        buffer.write(m_context.sps->data(), m_context.sps->size());
     }
     if (!m_context.inStreamPpsFound && m_context.pps)
     {
         uint32_t sizeData = htonl(m_context.pps->size());
-        buffer.write((const char*)&sizeData, sizeof(uint32_t));
-        buffer.write(
-            m_context.pps->data(),
-            m_context.pps->size());
+        buffer.write((const char*) &sizeData, sizeof(uint32_t));
+        buffer.write(m_context.pps->data(), m_context.pps->size());
     }
     return buffer;
 }

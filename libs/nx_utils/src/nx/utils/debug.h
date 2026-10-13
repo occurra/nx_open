@@ -14,8 +14,7 @@ using OnAboutToBlockHandler = nx::MoveOnlyFunc<void()>;
 /**
  * @return The previous handler
  */
-NX_UTILS_API OnAboutToBlockHandler setOnAboutToBlockHandler(
-    OnAboutToBlockHandler handler);
+NX_UTILS_API OnAboutToBlockHandler setOnAboutToBlockHandler(OnAboutToBlockHandler handler);
 
 NX_UTILS_API void onAboutToBlock();
 
@@ -35,8 +34,8 @@ enum class FormatFilePattern
  *   %N - client name
  *   %V - client version
  */
-NX_UTILS_API QString formatFileName(
-    QString name, FormatFilePattern formatPattern, const QDir& defaultDir = {});
+NX_UTILS_API QString
+    formatFileName(QString name, FormatFilePattern formatPattern, const QDir& defaultDir = {});
 
 /*
  * Returns full path to the file name withing the given directory.

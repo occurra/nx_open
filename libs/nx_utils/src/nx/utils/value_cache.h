@@ -40,10 +40,7 @@ public:
         return updated(&lock);
     }
 
-    void reset()
-    {
-        ++m_version;
-    }
+    void reset() { ++m_version; }
 
     void update()
     {
@@ -58,7 +55,6 @@ public:
     }
 
 private:
-
     ValueType updated(nx::Locker<nx::Mutex>* lock) const
     {
         update(lock);
@@ -102,8 +98,7 @@ public:
      */
     CachedValueWithTimeout(
         MoveOnlyFunc<ValueType()> valueGenerator,
-        std::chrono::milliseconds expirationTime)
-        :
+        std::chrono::milliseconds expirationTime):
         m_valueGenerator(std::move(valueGenerator)),
         m_expirationTime(expirationTime)
     {
@@ -188,8 +183,7 @@ class ValueCacheUnSafe
 public:
     ValueCacheUnSafe(
         nx::MoveOnlyFunc<Value()> generator,
-        std::chrono::milliseconds valueUpdatePeriod)
-        :
+        std::chrono::milliseconds valueUpdatePeriod):
         m_generator(std::move(generator)),
         m_valueUpdatePeriod(valueUpdatePeriod)
     {
@@ -229,8 +223,7 @@ private:
  * Value type must be suitable for std::atomic<Value>.
  */
 template<typename Value>
-class AtomicValueCache:
-    public ValueCacheUnSafe<Value, std::atomic<Value>>
+class AtomicValueCache: public ValueCacheUnSafe<Value, std::atomic<Value>>
 {
     using base_type = ValueCacheUnSafe<Value, std::atomic<Value>>;
 

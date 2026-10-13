@@ -9,55 +9,38 @@ namespace nx {
 namespace utils {
 namespace test {
 
-class ElapsedTimerPool:
-    public ::testing::Test
+class ElapsedTimerPool: public ::testing::Test
 {
 public:
     ElapsedTimerPool():
-        m_timerPool(std::bind(&ElapsedTimerPool::saveInvokedTimer, this,
-            std::placeholders::_1)),
+        m_timerPool(std::bind(&ElapsedTimerPool::saveInvokedTimer, this, std::placeholders::_1)),
         m_timeShift(utils::test::ClockType::steady),
         m_timeout(1)
     {
     }
 
 protected:
-    void addTimer()
-    {
-        m_timerPool.addTimer(++m_prevTimerId, m_timeout);
-    }
+    void addTimer() { m_timerPool.addTimer(++m_prevTimerId, m_timeout); }
 
-    void removeTimer()
-    {
-        m_timerPool.removeTimer(m_prevTimerId);
-    }
+    void removeTimer() { m_timerPool.removeTimer(m_prevTimerId); }
 
-    void replaceTimer()
-    {
-        m_timerPool.addTimer(m_prevTimerId, m_timeout);
-    }
+    void replaceTimer() { m_timerPool.addTimer(m_prevTimerId, m_timeout); }
 
-    void waitForTimerDeadline()
-    {
-        m_timeShift.applyRelativeShift(m_timeout);
-    }
+    void waitForTimerDeadline() { m_timeShift.applyRelativeShift(m_timeout); }
 
     void assertTimerIsInvoked()
     {
         m_timerPool.processTimers();
 
-        ASSERT_TRUE(std::count(
-            m_invokedTimers.begin(), m_invokedTimers.end(),
-            m_prevTimerId) > 0);
+        ASSERT_TRUE(std::count(m_invokedTimers.begin(), m_invokedTimers.end(), m_prevTimerId) > 0);
     }
 
     void assertTimerIsNotInvoked()
     {
         m_timerPool.processTimers();
 
-        ASSERT_TRUE(std::count(
-            m_invokedTimers.begin(), m_invokedTimers.end(),
-            m_prevTimerId) == 0);
+        ASSERT_TRUE(
+            std::count(m_invokedTimers.begin(), m_invokedTimers.end(), m_prevTimerId) == 0);
     }
 
 private:
@@ -67,10 +50,7 @@ private:
     nx::utils::test::ScopedTimeShift m_timeShift;
     const std::chrono::hours m_timeout;
 
-    void saveInvokedTimer(int timerId)
-    {
-        m_invokedTimers.push_back(timerId);
-    }
+    void saveInvokedTimer(int timerId) { m_invokedTimers.push_back(timerId); }
 };
 
 TEST_F(ElapsedTimerPool, timer_works)
@@ -106,7 +86,11 @@ TEST(ElapsedTimerPoolEarliest, fires_single_earliest_elapsed_timer)
 {
     ScopedTimeShift timeShift(ClockType::steady);
     std::vector<int> invoked;
-    utils::ElapsedTimerPool<int> pool([&invoked](int id) { invoked.push_back(id); });
+    utils::ElapsedTimerPool<int> pool(
+        [&invoked](int id)
+        {
+            invoked.push_back(id);
+        });
 
     pool.addTimer(1, std::chrono::seconds(1));
     pool.addTimer(2, std::chrono::seconds(2));
@@ -137,7 +121,11 @@ TEST(ElapsedTimerPoolEarliest, drains_one_per_call_in_deadline_order)
 {
     ScopedTimeShift timeShift(ClockType::steady);
     std::vector<int> invoked;
-    utils::ElapsedTimerPool<int> pool([&invoked](int id) { invoked.push_back(id); });
+    utils::ElapsedTimerPool<int> pool(
+        [&invoked](int id)
+        {
+            invoked.push_back(id);
+        });
 
     pool.addTimer(10, std::chrono::seconds(2));
     pool.addTimer(20, std::chrono::seconds(1)); //< Earlier deadline.

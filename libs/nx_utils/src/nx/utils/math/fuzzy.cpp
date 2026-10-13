@@ -62,9 +62,8 @@ double qFuzzyCeil(double value)
     }
 }
 
-bool qFuzzyContains(const QRectF &rect, const QPointF &point)
+bool qFuzzyContains(const QRectF& rect, const QPointF& point)
 {
-    return
-        qFuzzyBetween(rect.left(), point.x(), rect.right()) &&
-        qFuzzyBetween(rect.top(), point.y(), rect.bottom());
+    return qFuzzyBetween(rect.left(), point.x(), rect.right())
+        && qFuzzyBetween(rect.top(), point.y(), rect.bottom());
 }

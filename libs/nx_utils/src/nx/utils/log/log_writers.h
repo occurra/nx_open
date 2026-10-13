@@ -69,8 +69,7 @@ public:
             Item{log, ".log"},
             Item{tmp, ".log.tmp"},
             Item{zip, ".log.zip"},
-            Item{zipTmp, ".log.zip.tmp"}
-        );
+            Item{zipTmp, ".log.zip.tmp"});
     }
 
     static QString makeFileName(QString fileName, size_t backupNumber, Extension ext);
@@ -81,7 +80,8 @@ public:
         QString name; /**< Base file name with path. */
         qint64 maxVolumeSizeB = kDefaultMaxLogVolumeSizeB; /**< Maximum volume size. */
         qint64 maxFileSizeB = kDefaultMaxLogFileSizeB; /**< Maximum file size. */
-        std::chrono::seconds maxFileTimePeriodS = kDefaultMaxLogFileTimePeriodS; /**< Maximum file duration in time. */
+        std::chrono::seconds maxFileTimePeriodS =
+            kDefaultMaxLogFileTimePeriodS; /**< Maximum file duration in time. */
         bool archivingEnabled = kDefaultLogArchivingEnabled; /**< Zipping enabled/disabled flag. */
     };
 

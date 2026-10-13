@@ -104,7 +104,11 @@ private:
     void parseFmtp(const QStringList& fmtp);
     bool extractPictureDimensionsFromSps(const uint8_t* buffer, int bufferLength);
     void reset(bool softReset = false); //< Always returns false
-    void addChunk(nx::media::h265::NalUnitType, int bufferOffset, int payloadLength, bool hasStartCode);
+    void addChunk(
+        nx::media::h265::NalUnitType,
+        int bufferOffset,
+        int payloadLength,
+        bool hasStartCode);
 
     bool isNewFrame(
         nx::media::h265::NalUnitType unitType,
@@ -119,7 +123,8 @@ private:
     const uint8_t* m_rtpBufferBase;
     CodecParametersConstPtr m_codecParameters;
     bool m_frameStartFound = false;
-    bool m_gotData = false; //< It is only needed to forward got data from addChunk(need to be refactored)
+    bool m_gotData =
+        false; //< It is only needed to forward got data from addChunk(need to be refactored)
     bool m_trustMarkerBit = true;
 };
 

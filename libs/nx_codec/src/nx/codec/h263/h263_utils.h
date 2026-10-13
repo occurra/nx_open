@@ -50,4 +50,4 @@ struct NX_CODEC_API PictureHeader
     Format format = Format::Forbidden;
 };
 
-} // nx::media::h263
+} // namespace nx::media::h263

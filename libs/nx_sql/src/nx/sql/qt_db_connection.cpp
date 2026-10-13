@@ -9,21 +9,19 @@
 #include <nx/utils/uuid.h>
 
 #include "database.h"
-
 #include "db_statistics_collector.h"
 
 namespace nx::sql {
 
-QtDbConnection::QtDbConnection(const ConnectionOptions& connectionOptions)
-    :
+QtDbConnection::QtDbConnection(const ConnectionOptions& connectionOptions):
     m_driverType(connectionOptions.driverType)
 {
     m_connectionName = QUuid::createUuid().toString();
-    m_connection = Database::addDatabase(
-        toString(connectionOptions.driverType),
-        m_connectionName);
+    m_connection = Database::addDatabase(toString(connectionOptions.driverType), m_connectionName);
 
-    NX_DEBUG(this, "Opening DB connection with the following parameters: %1",
+    NX_DEBUG(
+        this,
+        "Opening DB connection with the following parameters: %1",
         nx::reflect::json::serialize(connectionOptions));
 
     m_connection.setConnectOptions(connectionOptions.connectOptions);

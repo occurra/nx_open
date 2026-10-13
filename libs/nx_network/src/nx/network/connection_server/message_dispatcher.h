@@ -21,8 +21,7 @@ template<
     class MessageType,
     class ProcessorDictionaryType,
     class CompletionFuncType>
-    class MessageDispatcher:
-    public QnStoppableAsync
+class MessageDispatcher: public QnStoppableAsync
 {
 public:
     typedef ConnectionType connection_type;
@@ -38,14 +37,12 @@ public:
      *   than it is strongly recommended to save weak pointer to connection, not strong one!
      *   And register connection closure handler with BaseServerConnection::registerCloseHandler.
      */
-    using MessageProcessorType = std::function<bool(
-        const connection_type&,
-        message_type&&,
-        CompletionFuncType)>;
+    using MessageProcessorType =
+        std::function<bool(const connection_type&, message_type&&, CompletionFuncType)>;
 
     virtual void pleaseStop(nx::MoveOnlyFunc<void()> /*completionHandler*/) override
     {
-        //TODO #akolesnikov
+        // TODO #akolesnikov
     }
 
     /**

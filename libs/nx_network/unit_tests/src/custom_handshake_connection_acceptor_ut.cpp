@@ -18,8 +18,7 @@ namespace nx::network::test {
 
 namespace {
 
-class FailingTcpServerSocket:
-    public TCPServerSocket
+class FailingTcpServerSocket: public TCPServerSocket
 {
 public:
     FailingTcpServerSocket(SystemError::ErrorCode systemErrorCode):
@@ -42,8 +41,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class TestSocket:
-    public ssl::ServerSideStreamSocket
+class TestSocket: public ssl::ServerSideStreamSocket
 {
     using base_type = ssl::ServerSideStreamSocket;
 
@@ -55,8 +53,7 @@ public:
         std::unique_ptr<AbstractStreamSocket> delegate,
         std::atomic<int>& ctr,
         nx::utils::TimerManager& timerManager,
-        std::atomic<bool>& needToDelayHandshake)
-        :
+        std::atomic<bool>& needToDelayHandshake):
         base_type(context, std::move(delegate)),
         m_ctr(ctr),
         m_timerManager(timerManager),
@@ -65,13 +62,9 @@ public:
         ++m_ctr;
     }
 
-    ~TestSocket()
-    {
-        --m_ctr;
-    }
+    ~TestSocket() { --m_ctr; }
 
-    virtual void handshakeAsync(
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler) override
+    virtual void handshakeAsync(nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler) override
     {
         m_handshakeThread = getAioThread();
         if (m_needToDelayHandshake)
@@ -90,10 +83,7 @@ public:
         }
     }
 
-    aio::AbstractAioThread* handshakeThread() const
-    {
-        return m_handshakeThread;
-    }
+    aio::AbstractAioThread* handshakeThread() const { return m_handshakeThread; }
 
 private:
     aio::AbstractAioThread* m_handshakeThread = nullptr;
@@ -107,13 +97,11 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class CustomHandshakeConnectionAcceptor:
-    public ::testing::Test
+class CustomHandshakeConnectionAcceptor: public ::testing::Test
 {
 public:
-    using Acceptor = nx::network::CustomHandshakeConnectionAcceptor<
-        AbstractStreamServerSocket,
-        TestSocket>;
+    using Acceptor =
+        nx::network::CustomHandshakeConnectionAcceptor<AbstractStreamServerSocket, TestSocket>;
 
     ~CustomHandshakeConnectionAcceptor()
     {
@@ -135,15 +123,11 @@ protected:
         initializeAcceptor(std::move(tcpServer));
     }
 
-    Acceptor& acceptor()
-    {
-        return *m_acceptor;
-    }
+    Acceptor& acceptor() { return *m_acceptor; }
 
     void givenManySilentConnectionCountGreaterThanListenQueue()
     {
-        openSilentConnections(
-            m_acceptor->readyConnectionQueueSize()*2);
+        openSilentConnections(m_acceptor->readyConnectionQueueSize() * 2);
     }
 
     void whenEstablishValidConnection()
@@ -153,9 +137,7 @@ protected:
             std::make_unique<TCPSocket>(AF_INET),
             ssl::kAcceptAnyCertificateCallback);
 
-        ASSERT_TRUE(m_clientConnection->connect(
-            m_tcpServer->getLocalAddress(),
-            kNoTimeout));
+        ASSERT_TRUE(m_clientConnection->connect(m_tcpServer->getLocalAddress(), kNoTimeout));
     }
 
     void whenEstablishSilentConnection()
@@ -171,8 +153,7 @@ protected:
         m_acceptor->pleaseStopSync();
         m_acceptor.reset();
 
-        initializeAcceptor(
-            std::make_unique<FailingTcpServerSocket>(SystemError::ioError));
+        initializeAcceptor(std::make_unique<FailingTcpServerSocket>(SystemError::ioError));
     }
 
     void whenRawServerConnectionReportsTimedOut()
@@ -180,14 +161,10 @@ protected:
         m_acceptor->pleaseStopSync();
         m_acceptor.reset();
 
-        initializeAcceptor(
-            std::make_unique<FailingTcpServerSocket>(SystemError::timedOut));
+        initializeAcceptor(std::make_unique<FailingTcpServerSocket>(SystemError::timedOut));
     }
 
-    void thenConnectionIsAccepted()
-    {
-        ASSERT_NE(nullptr, m_acceptedConnections.pop().connection);
-    }
+    void thenConnectionIsAccepted() { ASSERT_NE(nullptr, m_acceptedConnections.pop().connection); }
 
     void thenConnectionIsClosedByServerAfterSomeTime()
     {
@@ -196,10 +173,7 @@ protected:
             << SystemError::getLastOSErrorText();
     }
 
-    void thenNoConnectionsHaveBeenAccepted()
-    {
-        ASSERT_TRUE(m_acceptedConnections.empty());
-    }
+    void thenNoConnectionsHaveBeenAccepted() { ASSERT_TRUE(m_acceptedConnections.empty()); }
 
     void thenCorrespondingErrorIsReported()
     {
@@ -237,7 +211,11 @@ protected:
 
     void deleteAcceptorInItsAioThread()
     {
-        m_acceptor->executeInAioThreadSync([this]() { m_acceptor.reset(); });
+        m_acceptor->executeInAioThreadSync(
+            [this]()
+            {
+                m_acceptor.reset();
+            });
     }
 
     void stopAndDeleteAcceptor()
@@ -251,13 +229,20 @@ protected:
         const auto allThreads = SocketGlobals::aioService().getAllAioThreads();
         std::vector<std::tuple<aio::AbstractAioThread*, bool /*used*/>> threadsWithUsageFlag;
         std::transform(
-            allThreads.begin(), allThreads.end(),
+            allThreads.begin(),
+            allThreads.end(),
             std::back_inserter(threadsWithUsageFlag),
-            [](auto* aioThread) { return std::make_tuple(aioThread, false); });
+            [](auto* aioThread)
+            {
+                return std::make_tuple(aioThread, false);
+            });
 
         while (std::ranges::any_of(
             threadsWithUsageFlag,
-            [](const auto& val) { return !std::get<1>(val); }))
+            [](const auto& val)
+            {
+                return !std::get<1>(val);
+            }))
         {
             auto acceptResult = m_acceptedConnections.pop();
             if (acceptResult.connection)
@@ -267,9 +252,9 @@ protected:
                     acceptResult.connection->handshakeThread());
 
                 std::get<1>(*std::find_if(
-                    threadsWithUsageFlag.begin(), threadsWithUsageFlag.end(),
-                    [aioThread = acceptResult.connection->handshakeThread()](
-                        const auto& val)
+                    threadsWithUsageFlag.begin(),
+                    threadsWithUsageFlag.end(),
+                    [aioThread = acceptResult.connection->handshakeThread()](const auto& val)
                     {
                         return std::get<0>(val) == aioThread;
                     })) = true;
@@ -277,20 +262,11 @@ protected:
         }
     }
 
-    void clearSavedConnections()
-    {
-        m_acceptedConnections.clear();
-    }
+    void clearSavedConnections() { m_acceptedConnections.clear(); }
 
-    void thenAllConnectionsAreDestroyed()
-    {
-        ASSERT_EQ(0, m_totalConnectionsCount);
-    }
+    void thenAllConnectionsAreDestroyed() { ASSERT_EQ(0, m_totalConnectionsCount); }
 
-    void enableDelayingHandshakes()
-    {
-        m_needToDelayHandshake = true;
-    }
+    void enableDelayingHandshakes() { m_needToDelayHandshake = true; }
 
     void givenLimitOnConnectionsBeingHandshaked(std::size_t limit)
     {
@@ -331,7 +307,8 @@ protected:
     // The TCP connect succeeds whatever the acceptor does, so it is the handshake that waits.
     void thenNewConnectionIsAccepted()
     {
-        auto connection = std::make_unique<ssl::ClientStreamSocket>(ssl::Context::instance(),
+        auto connection = std::make_unique<ssl::ClientStreamSocket>(
+            ssl::Context::instance(),
             std::make_unique<TCPSocket>(AF_INET),
             ssl::kAcceptAnyCertificateCallback);
 
@@ -360,8 +337,7 @@ private:
     nx::utils::TimerManager m_timerManager;
     std::atomic<bool> m_needToDelayHandshake = false;
 
-    void initializeAcceptor(
-        std::unique_ptr<AbstractStreamServerSocket> rawConnectionSocket)
+    void initializeAcceptor(std::unique_ptr<AbstractStreamServerSocket> rawConnectionSocket)
     {
         using namespace std::placeholders;
 
@@ -390,9 +366,10 @@ private:
     {
         using namespace std::placeholders;
 
-        m_acceptedConnections.push(AcceptResult{
-            systemErrorCode,
-            nx::static_unique_ptr_cast<TestSocket>(std::move(streamSocket))});
+        m_acceptedConnections.push(
+            AcceptResult{
+                systemErrorCode,
+                nx::static_unique_ptr_cast<TestSocket>(std::move(streamSocket))});
 
         m_acceptor->acceptAsync(
             std::bind(&CustomHandshakeConnectionAcceptor::saveAcceptedConnection, this, _1, _2));
@@ -521,7 +498,9 @@ TEST_F(
 }
 
 // TODO: #akolesnikov Delete or enable in NXLIB-338.
-TEST_F(CustomHandshakeConnectionAcceptor, DISABLED_acceptor_can_be_safely_deleted_in_the_middle_of_work)
+TEST_F(
+    CustomHandshakeConnectionAcceptor,
+    DISABLED_acceptor_can_be_safely_deleted_in_the_middle_of_work)
 {
     startMultipleConnectAttempts();
 

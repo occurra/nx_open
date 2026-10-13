@@ -31,7 +31,8 @@ TEST(QnTimePeriodsTest, intersected)
 
     {
         // Infinite B inside of infinite A
-        QnTimePeriod a(10, QnTimePeriod::kInfiniteDuration), b(15, QnTimePeriod::kInfiniteDuration);
+        QnTimePeriod a(10, QnTimePeriod::kInfiniteDuration),
+            b(15, QnTimePeriod::kInfiniteDuration);
         ASSERT_EQ(a.intersected(b), b);
         ASSERT_EQ(b.intersected(a), b);
     }

@@ -39,7 +39,8 @@ constexpr SrtpCryptoPolicy kAes256GcmPolicy{
     .authenticationTagLength = kSrtpAesGcmTagLen,
 };
 
-void assertRoundTrip(const SrtpCryptoPolicy& policy,
+void assertRoundTrip(
+    const SrtpCryptoPolicy& policy,
     const std::vector<std::uint8_t>& mki,
     bool moveMkiAfterAuthTag = false)
 {
@@ -66,21 +67,26 @@ void assertRoundTrip(const SrtpCryptoPolicy& policy,
     {
         const int mkiOffset = (int) packet.size() - (int) mki.size() - (isGcm ? 0 : 10);
         ASSERT_GE(mkiOffset, 0);
-        EXPECT_TRUE(std::equal(mki.cbegin(),
-            mki.cend(),
-            reinterpret_cast<const std::uint8_t*>(packet.data()) + mkiOffset));
+        EXPECT_TRUE(
+            std::equal(
+                mki.cbegin(),
+                mki.cend(),
+                reinterpret_cast<const std::uint8_t*>(packet.data()) + mkiOffset));
 
         if (moveMkiAfterAuthTag && !isGcm)
         {
             constexpr int kAuthTagSize = 10;
             memmove(
-                packet.data() + mkiOffset, packet.data() + mkiOffset + mki.size(), kAuthTagSize);
+                packet.data() + mkiOffset,
+                packet.data() + mkiOffset + mki.size(),
+                kAuthTagSize);
             memcpy(packet.data() + packet.size() - mki.size(), mki.data(), mki.size());
         }
     }
 
     int packetSize = (int) packet.size();
-    ASSERT_EQ(SrtpDecryptor::Result::success,
+    ASSERT_EQ(
+        SrtpDecryptor::Result::success,
         client.decryptPacket(reinterpret_cast<std::uint8_t*>(packet.data()), &packetSize));
 
     EXPECT_EQ(QByteArray(packet.data(), packetSize), plainPacket);
@@ -123,7 +129,7 @@ TEST(SrtpEncryptor, acceptsSsrcDifferentFromMikey)
     ASSERT_TRUE(client.init(context));
 
     for (const char* packetHex:
-        {"80600001000000011234567801020304", "80600001000000021234567901020304"})
+         {"80600001000000011234567801020304", "80600001000000021234567901020304"})
     {
         const QByteArray plainPacket = QByteArray::fromHex(packetHex);
         nx::utils::ByteArray packet;
@@ -131,7 +137,8 @@ TEST(SrtpEncryptor, acceptsSsrcDifferentFromMikey)
         ASSERT_TRUE(server.encryptPacket(&packet, 0));
 
         int packetSize = (int) packet.size();
-        ASSERT_EQ(SrtpDecryptor::Result::success,
+        ASSERT_EQ(
+            SrtpDecryptor::Result::success,
             client.decryptPacket(reinterpret_cast<std::uint8_t*>(packet.data()), &packetSize));
         EXPECT_EQ(QByteArray(packet.data(), packetSize), plainPacket);
     }
@@ -147,7 +154,7 @@ TEST(SrtpEncryptor, appliesRocToActualSsrc)
 
     nx::utils::ByteArray lastPacket;
     for (const char* packetHex:
-        {"8060ffff000000011234567801020304", "80600000000000021234567801020304"})
+         {"8060ffff000000011234567801020304", "80600000000000021234567801020304"})
     {
         lastPacket.clear();
         const QByteArray plainPacket = QByteArray::fromHex(packetHex);
@@ -162,9 +169,11 @@ TEST(SrtpEncryptor, appliesRocToActualSsrc)
     ASSERT_TRUE(client.init(clientContext));
 
     int packetSize = (int) lastPacket.size();
-    ASSERT_EQ(SrtpDecryptor::Result::success,
+    ASSERT_EQ(
+        SrtpDecryptor::Result::success,
         client.decryptPacket(reinterpret_cast<std::uint8_t*>(lastPacket.data()), &packetSize));
-    EXPECT_EQ(QByteArray(lastPacket.data(), packetSize),
+    EXPECT_EQ(
+        QByteArray(lastPacket.data(), packetSize),
         QByteArray::fromHex("80600000000000021234567801020304"));
 }
 
@@ -185,11 +194,13 @@ TEST(SrtpEncryptor, reportsReplayedPacket)
     QByteArray duplicate(packet.data(), packet.size());
 
     int packetSize = (int) packet.size();
-    ASSERT_EQ(SrtpDecryptor::Result::success,
+    ASSERT_EQ(
+        SrtpDecryptor::Result::success,
         client.decryptPacket(reinterpret_cast<std::uint8_t*>(packet.data()), &packetSize));
 
     int duplicateSize = duplicate.size();
-    EXPECT_EQ(SrtpDecryptor::Result::packetRejected,
+    EXPECT_EQ(
+        SrtpDecryptor::Result::packetRejected,
         client.decryptPacket(reinterpret_cast<std::uint8_t*>(duplicate.data()), &duplicateSize));
 }
 
@@ -213,16 +224,19 @@ void assertSrtcpRoundTrip(const SrtpCryptoPolicy& policy)
     report.ntpTimestamp = 1'552'500'923'000'000;
     std::array<std::uint8_t, nx::rtp::RtcpSenderReport::kSize> plainPacket;
     ASSERT_EQ(
-        report.write(plainPacket.data(), (int) plainPacket.size()), (int) plainPacket.size());
+        report.write(plainPacket.data(), (int) plainPacket.size()),
+        (int) plainPacket.size());
 
     nx::utils::ByteArray packet;
     packet.write(reinterpret_cast<const char*>(plainPacket.data()), plainPacket.size());
     ASSERT_TRUE(server.encryptPacket(&packet, 0));
 
     int packetSize = (int) packet.size();
-    ASSERT_EQ(SrtpDecryptor::Result::success,
+    ASSERT_EQ(
+        SrtpDecryptor::Result::success,
         client.decryptPacket(reinterpret_cast<std::uint8_t*>(packet.data()), &packetSize));
-    EXPECT_EQ(QByteArray(packet.data(), packetSize),
+    EXPECT_EQ(
+        QByteArray(packet.data(), packetSize),
         QByteArray(reinterpret_cast<const char*>(plainPacket.data()), plainPacket.size()));
 }
 

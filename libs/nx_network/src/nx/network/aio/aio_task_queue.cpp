@@ -29,10 +29,8 @@ void AioTaskQueue::addTask(SocketAddRemoveTask task)
     addTask(lock, std::move(task));
 }
 
-bool AioTaskQueue::taskExists(
-    Pollable* const socket,
-    aio::EventType eventType,
-    TaskType taskType) const
+bool AioTaskQueue::taskExists(Pollable* const socket, aio::EventType eventType, TaskType taskType)
+    const
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
     return taskExists(lock, socket, eventType, taskType);
@@ -110,9 +108,7 @@ qint64 AioTaskQueue::nextPeriodicEventClock() const
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
 
-    return m_periodicTasksByClock.empty()
-        ? 0
-        : m_periodicTasksByClock.cbegin()->first;
+    return m_periodicTasksByClock.empty() ? 0 : m_periodicTasksByClock.cbegin()->first;
 }
 
 std::size_t AioTaskQueue::periodicTasksCount() const
@@ -139,19 +135,16 @@ bool AioTaskQueue::empty() const
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
 
-    return m_postedCalls.empty()
-        && m_pollSetModificationQueue.empty()
+    return m_postedCalls.empty() && m_pollSetModificationQueue.empty()
         && m_periodicTasksByClock.empty();
 }
 
-void AioTaskQueue::setAboutToInvoke(
-    nx::MoveOnlyFunc<void(const char* /*functionType*/)> handler)
+void AioTaskQueue::setAboutToInvoke(nx::MoveOnlyFunc<void(const char* /*functionType*/)> handler)
 {
     m_aboutToInvokeHandler = std::move(handler);
 }
 
-void AioTaskQueue::setDoneInvoking(
-    nx::MoveOnlyFunc<void(std::chrono::microseconds)> handler)
+void AioTaskQueue::setDoneInvoking(nx::MoveOnlyFunc<void(std::chrono::microseconds)> handler)
 {
     m_doneInvokingHandler = std::move(handler);
 }
@@ -164,10 +157,9 @@ void AioTaskQueue::processPollSetModificationQueue(TaskType taskFilter)
 
     NX_MUTEX_LOCKER lock(&m_mutex);
 
-    for (typename std::deque<SocketAddRemoveTask>::iterator
-        it = m_pollSetModificationQueue.begin();
-        it != m_pollSetModificationQueue.end();
-        )
+    for (typename std::deque<SocketAddRemoveTask>::iterator it =
+             m_pollSetModificationQueue.begin();
+         it != m_pollSetModificationQueue.end();)
     {
         SocketAddRemoveTask& task = *it;
         if ((taskFilter != TaskType::tAll) && (task.type != taskFilter))
@@ -212,7 +204,8 @@ void AioTaskQueue::processPollSetModificationQueue(TaskType taskFilter)
             }
             else
             {
-                totalElementsToRemove.reserve(totalElementsToRemove.size() + elementsToRemove.size());
+                totalElementsToRemove.reserve(
+                    totalElementsToRemove.size() + elementsToRemove.size());
                 std::move(
                     elementsToRemove.begin(),
                     elementsToRemove.end(),
@@ -244,36 +237,47 @@ void AioTaskQueue::processSocketEvents(const qint64 curClock)
         const aio::EventType handlerToInvokeType =
             (sockEventType == aio::etRead || sockEventType == aio::etWrite)
             ? sockEventType
-            : (socket->impl()->monitoredEvents[aio::etRead].aioHelperData //in case of error calling any handler
-                ? aio::etRead
-                : aio::etWrite);
+            : (socket->impl()
+                       ->monitoredEvents[aio::etRead]
+                       .aioHelperData // in case of error calling any handler
+                   ? aio::etRead
+                   : aio::etWrite);
 
-        //TODO #akolesnikov in case of error pollSet reports etError once,
-        //but two handlers may be registered for socket.
-        //So, we must notify both (if they differ, probably).
-        //Currently, leaving as-is since any socket installs single handler for both events
+        // TODO #akolesnikov in case of error pollSet reports etError once,
+        // but two handlers may be registered for socket.
+        // So, we must notify both (if they differ, probably).
+        // Currently, leaving as-is since any socket installs single handler for both events
 
-        //TODO #akolesnikov notify second handler (if any) and if it not removed by first handler
+        // TODO #akolesnikov notify second handler (if any) and if it not removed by first handler
 
         // No need to lock mutex, since data is removed in this thread only.
         // Copying shared_ptr here because socket can be removed in eventTriggered call.
         auto handlingData = socket->impl()->monitoredEvents[handlerToInvokeType].aioHelperData;
-        if (!NX_ASSERT(handlingData, "Socket %1 has no read or write handler for event type %2",
-            socket, toString(sockEventType)))
+        if (!NX_ASSERT(
+                handlingData,
+                "Socket %1 has no read or write handler for event type %2",
+                socket,
+                toString(sockEventType)))
         {
             continue;
         }
 
         ++handlingData->beingProcessed;
-        auto beingProcessedScopedGuard =
-            nx::utils::makeScopeGuard([&handlingData]() { --handlingData->beingProcessed; });
+        auto beingProcessedScopedGuard = nx::utils::makeScopeGuard(
+            [&handlingData]()
+            {
+                --handlingData->beingProcessed;
+            });
 
         if (handlingData->markedForRemoval.load() > 0) //< Socket has been removed from watch.
             continue;
 
-        //eventTriggered is allowed to call stopMonitoring which can remove socket from pollset
+        // eventTriggered is allowed to call stopMonitoring which can remove socket from pollset
         callAndReportAbnormalProcessingTime(
-            [&]() { handlingData->eventHandler->eventTriggered(socket, sockEventType); },
+            [&]()
+            {
+                handlingData->eventHandler->eventTriggered(socket, sockEventType);
+            },
             "socket event");
 
         // Updating the socket periodic task (it's guaranteed that there is a periodic task for the
@@ -301,18 +305,21 @@ bool AioTaskQueue::processPeriodicTasks(const qint64 curClock)
         handlingData->nextTimeoutClock = 0;
 
         ++handlingData->beingProcessed;
-        auto beingProcessedScopedGuard =
-            nx::utils::makeScopeGuard([&handlingData]() { --handlingData->beingProcessed; });
+        auto beingProcessedScopedGuard = nx::utils::makeScopeGuard(
+            [&handlingData]()
+            {
+                --handlingData->beingProcessed;
+            });
 
         if (handlingData->markedForRemoval.load() > 0) //< Task has been removed from watch.
             continue;
 
         if (handlingData->updatedPeriodicTaskClock > 0)
         {
-            //not processing task, but updating.
+            // not processing task, but updating.
             if (handlingData->updatedPeriodicTaskClock > curClock)
             {
-                //adding new task with updated clock
+                // adding new task with updated clock
                 NX_MUTEX_LOCKER lock(&m_mutex);
                 addPeriodicTask(
                     lock,
@@ -325,28 +332,30 @@ bool AioTaskQueue::processPeriodicTasks(const qint64 curClock)
             }
 
             handlingData->updatedPeriodicTaskClock = 0;
-            //updated task has to be executed now
+            // updated task has to be executed now
         }
         else if (handlingData->updatedPeriodicTaskClock == -1)
         {
-            //cancelling periodic task
+            // cancelling periodic task
             handlingData->updatedPeriodicTaskClock = 0;
             continue;
         }
 
-        if (periodicTaskData->socket)    //periodic event, associated with socket (e.g., socket operation timeout)
+        if (periodicTaskData->socket) // periodic event, associated with socket (e.g., socket
+                                      // operation timeout)
         {
-            //NOTE socket is allowed to be removed in eventTriggered
+            // NOTE socket is allowed to be removed in eventTriggered
             callAndReportAbnormalProcessingTime(
                 [&]()
                 {
                     handlingData->eventHandler->eventTriggered(
                         periodicTaskData->socket,
-                        static_cast<aio::EventType>(periodicTaskData->eventType | aio::etTimedOut));
+                        static_cast<aio::EventType>(
+                            periodicTaskData->eventType | aio::etTimedOut));
                 },
                 "timer");
 
-            //adding periodic task with same timeout
+            // adding periodic task with same timeout
             NX_MUTEX_LOCKER lock(&m_mutex);
             addPeriodicTask(
                 lock,
@@ -356,8 +365,9 @@ bool AioTaskQueue::processPeriodicTasks(const qint64 curClock)
                 periodicTaskData->eventType);
             ++tasksProcessedCount;
         }
-        //else
-        //    periodicTaskData.periodicEventHandler->onTimeout( periodicTaskData.taskID );  //for periodic tasks not bound to socket
+        // else
+        //     periodicTaskData.periodicEventHandler->onTimeout( periodicTaskData.taskID );  //for
+        //     periodic tasks not bound to socket
     }
 
     return tasksProcessedCount > 0;
@@ -372,8 +382,11 @@ void AioTaskQueue::processPostedCalls()
         auto postHandler = std::move(m_postedCalls.begin()->postHandler);
         auto span = m_postedCalls.begin()->telemetrySpan;
         auto socket = m_postedCalls.front().socket;
-        NX_ASSERT(!socket || socket->isInSelfAioThread(), "Socket %1 thread %2",
-            socket, socket->getAioThread());
+        NX_ASSERT(
+            !socket || socket->isInSelfAioThread(),
+            "Socket %1 thread %2",
+            socket,
+            socket->getAioThread());
         m_postedCalls.erase(m_postedCalls.begin());
 
         // NOTE: User handler may cancel some calls, so m_postedCalls may change.
@@ -384,25 +397,26 @@ void AioTaskQueue::processPostedCalls()
         auto spanScope = span.activate();
 
         callAndReportAbnormalProcessingTime(
-            [&]() { postHandler(); },
+            [&]()
+            {
+                postHandler();
+            },
             "post");
 
-        // Destroying user callback with no lock since it can produce recursive call to this object.
+        // Destroying user callback with no lock since it can produce recursive call to this
+        // object.
         postHandler = nullptr;
     }
 }
 
-void AioTaskQueue::removeSocketFromPollSet(
-    Pollable* sock,
-    aio::EventType eventType)
+void AioTaskQueue::removeSocketFromPollSet(Pollable* sock, aio::EventType eventType)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
 
     removeSocketFromPollSet(lock, sock, eventType);
 }
 
-std::vector<SocketAddRemoveTask> AioTaskQueue::cancelPostedCalls(
-    SocketSequence socketSequence)
+std::vector<SocketAddRemoveTask> AioTaskQueue::cancelPostedCalls(SocketSequence socketSequence)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
 
@@ -424,15 +438,14 @@ std::chrono::microseconds AioTaskQueue::averageExecutionTimePerLastPeriod() cons
 qint64 AioTaskQueue::getMonotonicTime()
 {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
-        nx::utils::monotonicTime().time_since_epoch()).count();
+               nx::utils::monotonicTime().time_since_epoch())
+        .count();
 }
 
 //-------------------------------------------------------------------------------------------------
 // private section.
 
-void AioTaskQueue::addTask(
-    const nx::Locker<nx::Mutex>&,
-    SocketAddRemoveTask task)
+void AioTaskQueue::addTask(const nx::Locker<nx::Mutex>&, SocketAddRemoveTask task)
 {
     m_pollSetModificationQueue.push_back(std::move(task));
 
@@ -471,20 +484,19 @@ std::tuple<bool, std::deque<SocketAddRemoveTask>> AioTaskQueue::takeReverseTasks
     // a recursive call to this object.
     std::deque<SocketAddRemoveTask> toRemove;
 
-    for (auto it = m_pollSetModificationQueue.begin();
-        it != m_pollSetModificationQueue.end();
-        ++it)
+    for (auto it = m_pollSetModificationQueue.begin(); it != m_pollSetModificationQueue.end();
+         ++it)
     {
         if (!(it->socket == sock && it->eventType == eventType && taskType != it->type))
             continue;
 
-        //removing reverse task (if any)
+        // removing reverse task (if any)
         if (taskType == TaskType::tAdding && it->type == TaskType::tRemoving)
         {
-            //cancelling removing socket
+            // cancelling removing socket
             if (eventHandler != it->eventHandler)
-                continue;   //event handler changed, cannot ignore task
-            //cancelling remove task
+                continue; // event handler changed, cannot ignore task
+            // cancelling remove task
 
             NX_ASSERT(sock->impl()->monitoredEvents[eventType].aioHelperData);
             sock->impl()->monitoredEvents[eventType].aioHelperData->timeout = newTimeout;
@@ -494,21 +506,20 @@ std::tuple<bool, std::deque<SocketAddRemoveTask>> AioTaskQueue::takeReverseTasks
             m_pollSetModificationQueue.erase(it);
             return std::make_tuple(true, std::move(toRemove));
         }
-        else if (taskType == TaskType::tRemoving &&
-            (it->type == TaskType::tAdding || it->type == TaskType::tChangingTimeout))
+        else if (
+            taskType == TaskType::tRemoving
+            && (it->type == TaskType::tAdding || it->type == TaskType::tChangingTimeout))
         {
-            //if( it->type == TaskType::tChangingTimeout )
-            //    cancelling scheduled tasks, since socket removal from poll is requested.
+            // if( it->type == TaskType::tChangingTimeout )
+            //     cancelling scheduled tasks, since socket removal from poll is requested.
             const TaskType foundTaskType = it->type;
 
-            //cancelling adding socket
+            // cancelling adding socket
             toRemove.push_back(std::move(*it));
             it = m_pollSetModificationQueue.erase(it);
 
-            //removing further tChangingTimeout tasks
-            for (;
-                it != m_pollSetModificationQueue.end();
-                )
+            // removing further tChangingTimeout tasks
+            for (; it != m_pollSetModificationQueue.end();)
             {
                 if (it->socket == sock && it->eventType == eventType)
                 {
@@ -525,36 +536,30 @@ std::tuple<bool, std::deque<SocketAddRemoveTask>> AioTaskQueue::takeReverseTasks
             if (foundTaskType == TaskType::tAdding)
                 return std::make_tuple(true, std::move(toRemove));
             else
-                return std::make_tuple(false, std::move(toRemove));   //foundTaskEventType == TaskType::tChangingTimeout
+                return std::make_tuple(
+                    false,
+                    std::move(toRemove)); // foundTaskEventType == TaskType::tChangingTimeout
         }
     }
 
     return std::make_tuple(false, std::move(toRemove));
 }
 
-void AioTaskQueue::processAddTask(
-    const nx::Locker<nx::Mutex>& lock,
-    SocketAddRemoveTask& task)
+void AioTaskQueue::processAddTask(const nx::Locker<nx::Mutex>& lock, SocketAddRemoveTask& task)
 {
     if (task.eventType == aio::etRead)
         --m_newReadMonitorTaskCount;
     else if (task.eventType == aio::etWrite)
         --m_newWriteMonitorTaskCount;
 
-    addSocketToPollset(
-        lock,
-        task.socket,
-        task.eventType,
-        task.timeout,
-        task.eventHandler);
+    addSocketToPollset(lock, task.socket, task.eventType, task.timeout, task.eventHandler);
 }
 
 void AioTaskQueue::processChangeTimeoutTask(
     const nx::Locker<nx::Mutex>& lock,
     SocketAddRemoveTask& task)
 {
-    const auto& handlingData =
-        task.socket->impl()->monitoredEvents[task.eventType].aioHelperData;
+    const auto& handlingData = task.socket->impl()->monitoredEvents[task.eventType].aioHelperData;
     // NOTE: We are in aio thread currently.
     if (task.timeout > std::chrono::milliseconds::zero())
     {
@@ -569,12 +574,7 @@ void AioTaskQueue::processChangeTimeoutTask(
             }
             else
             {
-                replacePeriodicTask(
-                    lock,
-                    handlingData,
-                    newClock,
-                    task.socket,
-                    task.eventType);
+                replacePeriodicTask(lock, handlingData, newClock, task.socket, task.eventType);
             }
         }
         else
@@ -587,7 +587,7 @@ void AioTaskQueue::processChangeTimeoutTask(
                 task.eventType);
         }
     }
-    else if (handlingData->timeout > std::chrono::milliseconds::zero())  //&& timeout == 0
+    else if (handlingData->timeout > std::chrono::milliseconds::zero()) //&& timeout == 0
     {
         // Cancelling existing periodic task (there must be one).
         handlingData->updatedPeriodicTaskClock = -1;
@@ -595,9 +595,7 @@ void AioTaskQueue::processChangeTimeoutTask(
     handlingData->timeout = task.timeout;
 }
 
-void AioTaskQueue::processRemoveTask(
-    const nx::Locker<nx::Mutex>& lock,
-    SocketAddRemoveTask& task)
+void AioTaskQueue::processRemoveTask(const nx::Locker<nx::Mutex>& lock, SocketAddRemoveTask& task)
 {
     removeSocketFromPollSet(lock, task.socket, task.eventType);
 }
@@ -637,19 +635,20 @@ void AioTaskQueue::addSocketToPollset(
         if (!m_pollSet->add(socket, eventType))
         {
             const SystemError::ErrorCode errorCode = SystemError::getLastOSErrorCode();
-            NX_WARNING(this, nx::format("Failed to add %1 to pollset. %2")
-                .args(socket, SystemError::toString(errorCode)));
+            NX_WARNING(
+                this,
+                nx::format("Failed to add %1 to pollset. %2")
+                    .args(socket, SystemError::toString(errorCode)));
 
             socket->impl()->monitoredEvents[eventType].isUsed = false;
             socket->impl()->monitoredEvents[eventType].timeout = std::nullopt;
 
-            m_postedCalls.push_back(
-                PostAsyncCallTask(
-                    socket,
-                    [eventHandler, socket]()
-                    {
-                        eventHandler->eventTriggered(socket, aio::etError);
-                    }));
+            m_postedCalls.push_back(PostAsyncCallTask(
+                socket,
+                [eventHandler, socket]()
+                {
+                    eventHandler->eventTriggered(socket, aio::etError);
+                }));
             return;
         }
     }
@@ -697,9 +696,7 @@ void AioTaskQueue::addPeriodicTask(
     aio::EventType eventType)
 {
     handlingData->nextTimeoutClock = taskClock;
-    m_periodicTasksByClock.emplace(
-        taskClock,
-        PeriodicTaskData(handlingData, _socket, eventType));
+    m_periodicTasksByClock.emplace(taskClock, PeriodicTaskData(handlingData, _socket, eventType));
 }
 
 std::optional<PeriodicTaskData> AioTaskQueue::takeNextExpiredPeriodicTask(qint64 curClock)
@@ -725,14 +722,13 @@ void AioTaskQueue::replacePeriodicTask(
     aio::EventType eventType)
 {
     for (auto it = m_periodicTasksByClock.lower_bound(handlingData->nextTimeoutClock);
-        it != m_periodicTasksByClock.end() && it->first == handlingData->nextTimeoutClock;
-        ++it)
+         it != m_periodicTasksByClock.end() && it->first == handlingData->nextTimeoutClock;
+         ++it)
     {
         if (it->second.socket == socket)
         {
             m_periodicTasksByClock.erase(it);
-            addPeriodicTask(
-                lock, newClock, handlingData, socket, eventType);
+            addPeriodicTask(lock, newClock, handlingData, socket, eventType);
             break;
         }
     }
@@ -744,8 +740,8 @@ void AioTaskQueue::cancelPeriodicTask(
     aio::EventType eventType)
 {
     for (auto it = m_periodicTasksByClock.lower_bound(handlingData->nextTimeoutClock);
-        it != m_periodicTasksByClock.end() && it->first == handlingData->nextTimeoutClock;
-        ++it)
+         it != m_periodicTasksByClock.end() && it->first == handlingData->nextTimeoutClock;
+         ++it)
     {
         if (it->second.data.get() == handlingData && it->second.eventType == eventType)
         {
@@ -768,19 +764,16 @@ std::vector<SocketAddRemoveTask> AioTaskQueue::cancelPostedCalls(
     // Should optimize it here.
     // Probably, it can become O(C) after some refactoring.
 
-    //detecting range of elements to remove
+    // detecting range of elements to remove
     const auto tasksToRemoveRangeStart = nx::utils::move_if(
         m_pollSetModificationQueue.begin(),
         m_pollSetModificationQueue.end(),
         std::back_inserter(elementsToRemove),
         [socketSequence](const SocketAddRemoveTask& val)
         {
-            return val.type == TaskType::tCallFunc
-                && val.socketSequence == socketSequence;
+            return val.type == TaskType::tCallFunc && val.socketSequence == socketSequence;
         });
-    m_pollSetModificationQueue.erase(
-        tasksToRemoveRangeStart,
-        m_pollSetModificationQueue.end());
+    m_pollSetModificationQueue.erase(tasksToRemoveRangeStart, m_pollSetModificationQueue.end());
 
     const auto postedCallsRemoveRangeStart = nx::utils::move_if(
         m_postedCalls.begin(),
@@ -790,17 +783,13 @@ std::vector<SocketAddRemoveTask> AioTaskQueue::cancelPostedCalls(
         {
             return val.socketSequence == socketSequence;
         });
-    m_postedCalls.erase(
-        postedCallsRemoveRangeStart,
-        m_postedCalls.end());
+    m_postedCalls.erase(postedCallsRemoveRangeStart, m_postedCalls.end());
 
     return elementsToRemove;
 }
 
 template<typename Func>
-void AioTaskQueue::callAndReportAbnormalProcessingTime(
-    Func func,
-    const char* description)
+void AioTaskQueue::callAndReportAbnormalProcessingTime(Func func, const char* description)
 {
     if (m_aboutToInvokeHandler)
         m_aboutToInvokeHandler(description);
@@ -830,8 +819,12 @@ void AioTaskQueue::reportAbnormalProcessingTime(
     std::chrono::microseconds average,
     const char* where_)
 {
-    NX_DEBUG(this, "Abnormal %1 running time detected: %2 vs %3 on average",
-        where_, value, average);
+    NX_DEBUG(
+        this,
+        "Abnormal %1 running time detected: %2 vs %3 on average",
+        where_,
+        value,
+        average);
 }
 
 } // namespace nx::network::aio::detail

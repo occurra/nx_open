@@ -2,13 +2,13 @@
 
 #include "os_info.h"
 
+#include <QtCore/QJsonDocument>
+#include <QtCore/QJsonObject>
 #include <QtCore/QStringList>
 #include <QtCore/QSysInfo>
-#include <QtCore/QJsonObject>
-#include <QtCore/QJsonDocument>
 
-#include <nx/utils/thread/mutex.h>
 #include <nx/build_info.h>
+#include <nx/utils/thread/mutex.h>
 
 namespace nx::utils {
 
@@ -17,8 +17,7 @@ QJsonObject OsInfo::toJson() const
     return QJsonObject{
         {"platform", platform},
         {"variant", variant},
-        {"variantVersion", variantVersion}
-    };
+        {"variantVersion", variantVersion}};
 }
 
 OsInfo OsInfo::fromJson(const QJsonObject& obj)

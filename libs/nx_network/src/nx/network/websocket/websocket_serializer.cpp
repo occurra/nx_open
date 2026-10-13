@@ -4,13 +4,14 @@
 #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "websocket_serializer.h"
-
 #include <cstdint>
+
 #include <zlib.h>
 
 #include <nx/utils/gzip/gzip_compressor.h>
 #include <nx/utils/random.h>
+
+#include "websocket_serializer.h"
 
 namespace nx::network::websocket {
 
@@ -35,7 +36,7 @@ static int payloadLenTypeByLen(int64_t len)
         return 127;
 }
 
-} // namespace <anonymous>
+} // namespace
 
 struct Serializer::Private
 {
@@ -91,13 +92,18 @@ Serializer::Serializer(bool masked, unsigned mask)
 Serializer::~Serializer() = default;
 
 nx::Buffer Serializer::prepareMessage(
-    const nx::Buffer& payload, FrameType type, std::optional<Compression> compression)
+    const nx::Buffer& payload,
+    FrameType type,
+    std::optional<Compression> compression)
 {
     return prepareFrame(payload, type, /*fin*/ true, std::move(compression));
 }
 
 nx::Buffer Serializer::prepareFrame(
-    nx::Buffer payload, FrameType type, bool fin, std::optional<Compression> compression)
+    nx::Buffer payload,
+    FrameType type,
+    bool fin,
+    std::optional<Compression> compression)
 {
     if (isDataFrame(type))
         m_statistics.totalIn += payload.size();
@@ -121,7 +127,8 @@ nx::Buffer Serializer::prepareFrame(
                         nx::utils::bstream::gzip::Compressor::deflateData(std::move(payload));
                     /* https://datatracker.ietf.org/doc/html/rfc7692#section-7.2.3.4
                      * deflateData() generates DEFLATE block with BFINAL bit set. Such payload
-                     * should be flushed with empty uncompressed DEFLATE block with BFINAL set to 0.
+                     * should be flushed with empty uncompressed DEFLATE block with BFINAL set to
+                     * 0.
                      */
                     payload.append('\x00');
                 }
@@ -173,7 +180,12 @@ void Serializer::setMasked(bool masked, unsigned mask)
 }
 
 int Serializer::fillHeader(
-    char* data, bool fin, FrameType opCode, int payloadLenType, int payloadLen, bool compression)
+    char* data,
+    bool fin,
+    FrameType opCode,
+    int payloadLenType,
+    int payloadLen,
+    bool compression)
 {
     char* pdata = data;
 
@@ -217,4 +229,4 @@ int Serializer::fillHeader(
     return pdata - data;
 }
 
-} // nx::network::websocket
+} // namespace nx::network::websocket

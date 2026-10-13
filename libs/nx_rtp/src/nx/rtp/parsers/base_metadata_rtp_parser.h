@@ -13,7 +13,6 @@ namespace nx::rtp {
 
 class NX_RTP_API BaseMetadataRtpParser: public StreamParser
 {
-
 public:
     virtual void setSdpInfo(const Sdp::Media& sdp) override;
 

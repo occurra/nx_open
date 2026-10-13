@@ -66,7 +66,7 @@ void TestOptions::setTemporaryDirectoryPath(const QString& path)
 
 QString TestOptions::temporaryDirectoryPath(bool canCreate)
 {
-   return tmpDirInstance().path(canCreate);
+    return tmpDirInstance().path(canCreate);
 }
 
 void TestOptions::setModuleName(const QString& value)
@@ -105,7 +105,7 @@ static void printHelp()
     // The CI scripts parse this help text in order to understand which options are supported.
 
     std::cout << //< The initial newline separates this printout from the gtest's one.
-R"(
+        R"(
 The following command line arguments are supported by this particular unit test suite:
   -h, --help
       Show this help, and exit with a successful (zero) exit status.
@@ -133,15 +133,16 @@ The following command line arguments are supported by this particular unit test 
       Crash if the process does not finish within specified timeout.
 )";
 
-    #if defined(_WIN32)
-        std::cout << /*suppress newline*/ 1 + (const char*)
-R"(
+#if defined(_WIN32)
+    std::cout << /*suppress newline*/ 1
+            + (const char*)
+                R"(
   --disable-crash-dump
       Do not create a crash dump if the test fails.
   --enable-full-crash-dump
       Generate full crash dump if the test fails.
 )";
-    #endif
+#endif
 }
 
 static void showHelpAndExitIfNeeded(const ArgumentParser& argumentParser)
@@ -187,14 +188,14 @@ void TestOptions::applyArguments(const ArgumentParser& arguments)
     if (const auto value = arguments.get("load-mode"))
         setLoadMode(*value);
 
-    #if defined(_WIN32)
-        if (!arguments.get("disable-crash-dump"))
-        {
-            win32_exception::installGlobalUnhandledExceptionHandler();
-            win32_exception::setCreateFullCrashDump(
-                arguments.get("enable-full-crash-dump").has_value());
-        }
-    #endif
+#if defined(_WIN32)
+    if (!arguments.get("disable-crash-dump"))
+    {
+        win32_exception::installGlobalUnhandledExceptionHandler();
+        win32_exception::setCreateFullCrashDump(
+            arguments.get("enable-full-crash-dump").has_value());
+    }
+#endif
 }
 
 TestOptions::TemporaryDirectory& TestOptions::tmpDirInstance()

@@ -174,9 +174,10 @@ struct PartitionSums: std::ranges::range_adaptor_closure<PartitionSums<Materiali
                         }
                         else
                         {
-                            ((Is == detail::sumIndex(elem)
-                                ? nx::appendOne(std::addressof(std::get<Is>(acc)), detail::get<Is>(elem))
-                                : void()),
+                            ((Is == detail::sumIndex(elem) ? nx::appendOne(
+                                                                 std::addressof(std::get<Is>(acc)),
+                                                                 detail::get<Is>(elem))
+                                                           : void()),
                              ...);
                         }
 

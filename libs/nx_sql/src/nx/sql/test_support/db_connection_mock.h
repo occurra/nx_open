@@ -8,8 +8,7 @@
 
 namespace nx::sql::test {
 
-class NX_SQL_API DbConnectionMock:
-    public QtDbConnection
+class NX_SQL_API DbConnectionMock: public QtDbConnection
 {
     using base_type = QtDbConnection;
 

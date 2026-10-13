@@ -54,8 +54,7 @@ static constexpr char kParam[] = "restParam";
 
 static constexpr char kCallWithHttpStatusCodeAsResultPath[] = "/test/http-status-as-result/";
 
-class HttpServerRestRequestHandler:
-    public ::testing::Test
+class HttpServerRestRequestHandler: public ::testing::Test
 {
     using base_type = ::testing::Test;
 
@@ -80,8 +79,11 @@ protected:
         m_expectedInput.s = nx::utils::generateRandomName(7);
 
         FusionDataHttpClient<Input, Output> client(
-            generateRequestUrl(http::rest::substituteParameters(kCallWithInputOutputPath, {kParam})),
-            Credentials(), ssl::kAcceptAnyCertificate, m_expectedInput);
+            generateRequestUrl(
+                http::rest::substituteParameters(kCallWithInputOutputPath, {kParam})),
+            Credentials(),
+            ssl::kAcceptAnyCertificate,
+            m_expectedInput);
         client.setRequestTimeout(kNoTimeout);
 
         invokeOverHttp(&client, Method::put);
@@ -91,31 +93,20 @@ protected:
     {
         FusionDataHttpClient<void, void> client(
             generateRequestUrl(kCallWithHttpStatusCodeAsResultPath),
-            Credentials(), ssl::kAcceptAnyCertificate);
+            Credentials(),
+            ssl::kAcceptAnyCertificate);
         client.setRequestTimeout(kNoTimeout);
 
         invokeOverHttp(&client, Method::delete_);
     }
 
-    void thenResponseIsReceived()
-    {
-        m_lastResponse = m_responseQueue.pop();
-    }
+    void thenResponseIsReceived() { m_lastResponse = m_responseQueue.pop(); }
 
-    void andRequestSucceeded()
-    {
-        ASSERT_EQ(StatusCode::ok, m_lastResponse->statusCode);
-    }
+    void andRequestSucceeded() { ASSERT_EQ(StatusCode::ok, m_lastResponse->statusCode); }
 
-    void andInputWasReceived()
-    {
-        ASSERT_EQ(m_expectedInput.s, m_requestQueue.pop().input.s);
-    }
+    void andInputWasReceived() { ASSERT_EQ(m_expectedInput.s, m_requestQueue.pop().input.s); }
 
-    void andOutputIsReceived()
-    {
-        ASSERT_EQ(m_expectedOutput.s, m_lastResponse->output.s);
-    }
+    void andOutputIsReceived() { ASSERT_EQ(m_expectedOutput.s, m_lastResponse->output.s); }
 
 private:
     struct RequestContext
@@ -129,10 +120,14 @@ private:
         int statusCode;
         Output output;
 
-        ResponseContext(int statusCode): statusCode(statusCode) {}
+        ResponseContext(int statusCode):
+            statusCode(statusCode)
+        {
+        }
 
         ResponseContext(int statusCode, Output output):
-            statusCode(statusCode), output(std::move(output))
+            statusCode(statusCode),
+            output(std::move(output))
         {
         }
     };
@@ -147,7 +142,8 @@ private:
     nx::Url generateRequestUrl(const std::string& path)
     {
         return nx::network::url::Builder()
-            .setScheme(kUrlSchemeName).setEndpoint(m_httpServer.serverAddress())
+            .setScheme(kUrlSchemeName)
+            .setEndpoint(m_httpServer.serverAddress())
             .setPath(path);
     }
 
@@ -178,11 +174,7 @@ private:
         handler(Result{true}, m_expectedOutput);
     }
 
-    void apiCall(
-        nx::MoveOnlyFunc<void(StatusCode::Value)> handler)
-    {
-        handler(StatusCode::ok);
-    }
+    void apiCall(nx::MoveOnlyFunc<void(StatusCode::Value)> handler) { handler(StatusCode::ok); }
 
     template<typename... OutputArgs>
     void saveResponse(
@@ -190,9 +182,8 @@ private:
         const nx::network::http::Response* response,
         OutputArgs&&... output)
     {
-        m_responseQueue.push(ResponseContext(
-            response->statusLine.statusCode,
-            std::forward<OutputArgs>(output)...));
+        m_responseQueue.push(
+            ResponseContext(response->statusLine.statusCode, std::forward<OutputArgs>(output)...));
     }
 
     template<typename Client>

@@ -9,10 +9,9 @@
 //// class QnCompressedAudioData
 ////////////////////////////////////////////////////////////
 
-QnCompressedAudioData::QnCompressedAudioData(const CodecParametersConstPtr& ctx)
-:
-    QnAbstractMediaData( AUDIO ),
-    duration( 0 )
+QnCompressedAudioData::QnCompressedAudioData(const CodecParametersConstPtr& ctx):
+    QnAbstractMediaData(AUDIO),
+    duration(0)
 {
     context = ctx;
 }
@@ -29,18 +28,18 @@ quint64 QnCompressedAudioData::getDurationMs() const
         return 0;
 
     if (context->getSampleRate())
-        return (quint64)((context->getFrameSize() / (double)context->getSampleRate()) * 1000);
+        return (quint64) ((context->getFrameSize() / (double) context->getSampleRate()) * 1000);
     else
         return 0;
 }
-
 
 ////////////////////////////////////////////////////////////
 //// class QnWritableCompressedAudioData
 ////////////////////////////////////////////////////////////
 
 QnWritableCompressedAudioData::QnWritableCompressedAudioData(
-    size_t capacity, CodecParametersConstPtr ctx):
+    size_t capacity,
+    CodecParametersConstPtr ctx):
     QnCompressedAudioData(ctx),
     m_data(capacity, CL_MEDIA_ALIGNMENT, AV_INPUT_BUFFER_PADDING_SIZE)
 {
@@ -73,8 +72,8 @@ void QnWritableCompressedAudioData::setData(nx::utils::ByteArray&& buffer)
     m_data = std::move(buffer);
 }
 
-void QnWritableCompressedAudioData::assign( const QnWritableCompressedAudioData* other )
+void QnWritableCompressedAudioData::assign(const QnWritableCompressedAudioData* other)
 {
-    QnCompressedAudioData::assign( other );
+    QnCompressedAudioData::assign(other);
     m_data = other->m_data;
 }

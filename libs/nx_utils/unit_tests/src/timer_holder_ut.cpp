@@ -35,7 +35,11 @@ class TimerHolderTest: public ::testing::Test
 {
 public:
     TimerHolderTest():
-        m_timerHolder([this]() { return &m_timerManager; })
+        m_timerHolder(
+            [this]()
+            {
+                return &m_timerManager;
+            })
     {
     }
 
@@ -48,9 +52,20 @@ TEST_F(TimerHolderTest, singleShotTimerFiresOnce)
 {
     std::atomic<int> callCount = 0;
 
-    m_timerHolder.addTimer("owner", [&callCount]() { ++callCount; }, 30ms);
+    m_timerHolder.addTimer(
+        "owner",
+        [&callCount]()
+        {
+            ++callCount;
+        },
+        30ms);
 
-    ASSERT_TRUE(waitUntil(2s, [&callCount]() { return callCount.load() == 1; }));
+    ASSERT_TRUE(waitUntil(
+        2s,
+        [&callCount]()
+        {
+            return callCount.load() == 1;
+        }));
 
     std::this_thread::sleep_for(100ms);
     ASSERT_EQ(1, callCount.load());
@@ -63,15 +78,26 @@ TEST_F(TimerHolderTest, addTimerReplacesPreviousTimerForSameOwner)
 
     m_timerHolder.addTimer(
         "owner",
-        [&firstCallbackCalls]() { ++firstCallbackCalls; },
+        [&firstCallbackCalls]()
+        {
+            ++firstCallbackCalls;
+        },
         250ms);
 
     m_timerHolder.addTimer(
         "owner",
-        [&secondCallbackCalls]() { ++secondCallbackCalls; },
+        [&secondCallbackCalls]()
+        {
+            ++secondCallbackCalls;
+        },
         30ms);
 
-    ASSERT_TRUE(waitUntil(2s, [&secondCallbackCalls]() { return secondCallbackCalls.load() == 1; }));
+    ASSERT_TRUE(waitUntil(
+        2s,
+        [&secondCallbackCalls]()
+        {
+            return secondCallbackCalls.load() == 1;
+        }));
 
     std::this_thread::sleep_for(350ms);
     ASSERT_EQ(0, firstCallbackCalls.load());
@@ -82,7 +108,13 @@ TEST_F(TimerHolderTest, cancelTimerSyncCancelsTimer)
 {
     std::atomic<int> callCount = 0;
 
-    m_timerHolder.addTimer("owner", [&callCount]() { ++callCount; }, 200ms);
+    m_timerHolder.addTimer(
+        "owner",
+        [&callCount]()
+        {
+            ++callCount;
+        },
+        200ms);
     m_timerHolder.cancelTimerSync("owner");
 
     std::this_thread::sleep_for(350ms);
@@ -94,8 +126,20 @@ TEST_F(TimerHolderTest, cancelAllTimersSyncCancelsTimersForAllOwners)
     std::atomic<int> firstCallCount = 0;
     std::atomic<int> secondCallCount = 0;
 
-    m_timerHolder.addTimer("owner1", [&firstCallCount]() { ++firstCallCount; }, 200ms);
-    m_timerHolder.addTimer("owner2", [&secondCallCount]() { ++secondCallCount; }, 200ms);
+    m_timerHolder.addTimer(
+        "owner1",
+        [&firstCallCount]()
+        {
+            ++firstCallCount;
+        },
+        200ms);
+    m_timerHolder.addTimer(
+        "owner2",
+        [&secondCallCount]()
+        {
+            ++secondCallCount;
+        },
+        200ms);
 
     m_timerHolder.cancelAllTimersSync();
 
@@ -109,10 +153,22 @@ TEST_F(TimerHolderTest, terminateCancelsCurrentTimersAndPreventsNewTimers)
     std::atomic<int> oldTimerCallCount = 0;
     std::atomic<int> newTimerCallCount = 0;
 
-    m_timerHolder.addTimer("owner1", [&oldTimerCallCount]() { ++oldTimerCallCount; }, 200ms);
+    m_timerHolder.addTimer(
+        "owner1",
+        [&oldTimerCallCount]()
+        {
+            ++oldTimerCallCount;
+        },
+        200ms);
 
     m_timerHolder.terminate();
-    m_timerHolder.addTimer("owner2", [&newTimerCallCount]() { ++newTimerCallCount; }, 30ms);
+    m_timerHolder.addTimer(
+        "owner2",
+        [&newTimerCallCount]()
+        {
+            ++newTimerCallCount;
+        },
+        30ms);
 
     std::this_thread::sleep_for(350ms);
     ASSERT_EQ(0, oldTimerCallCount.load());
@@ -123,10 +179,21 @@ TEST_F(TimerHolderTest, cancelUnknownOwnerDoesNotAffectExistingTimer)
 {
     std::atomic<int> callCount = 0;
 
-    m_timerHolder.addTimer("owner", [&callCount]() { ++callCount; }, 30ms);
+    m_timerHolder.addTimer(
+        "owner",
+        [&callCount]()
+        {
+            ++callCount;
+        },
+        30ms);
     m_timerHolder.cancelTimerSync("missing");
 
-    ASSERT_TRUE(waitUntil(2s, [&callCount]() { return callCount.load() == 1; }));
+    ASSERT_TRUE(waitUntil(
+        2s,
+        [&callCount]()
+        {
+            return callCount.load() == 1;
+        }));
 
     std::this_thread::sleep_for(100ms);
     ASSERT_EQ(1, callCount.load());
@@ -139,16 +206,27 @@ TEST_F(TimerHolderTest, cancelledTimerCanBeScheduledAgainForSameOwner)
 
     m_timerHolder.addTimer(
         "owner",
-        [&firstCallbackCalls]() { ++firstCallbackCalls; },
+        [&firstCallbackCalls]()
+        {
+            ++firstCallbackCalls;
+        },
         250ms);
     m_timerHolder.cancelTimerSync("owner");
 
     m_timerHolder.addTimer(
         "owner",
-        [&secondCallbackCalls]() { ++secondCallbackCalls; },
+        [&secondCallbackCalls]()
+        {
+            ++secondCallbackCalls;
+        },
         30ms);
 
-    ASSERT_TRUE(waitUntil(2s, [&secondCallbackCalls]() { return secondCallbackCalls.load() == 1; }));
+    ASSERT_TRUE(waitUntil(
+        2s,
+        [&secondCallbackCalls]()
+        {
+            return secondCallbackCalls.load() == 1;
+        }));
 
     std::this_thread::sleep_for(350ms);
     ASSERT_EQ(0, firstCallbackCalls.load());
@@ -159,7 +237,13 @@ TEST_F(TimerHolderTest, terminateIsIdempotent)
 {
     std::atomic<int> callCount = 0;
 
-    m_timerHolder.addTimer("owner", [&callCount]() { ++callCount; }, 200ms);
+    m_timerHolder.addTimer(
+        "owner",
+        [&callCount]()
+        {
+            ++callCount;
+        },
+        200ms);
     m_timerHolder.terminate();
     m_timerHolder.terminate();
 

@@ -22,8 +22,7 @@ struct NX_UTILS_API OsInfo
     OsInfo(
         const QString& platform = {},
         const QString& variant = {},
-        const QString& variantVersion = {})
-        :
+        const QString& variantVersion = {}):
         platform(platform),
         variant(variant),
         variantVersion(variantVersion)

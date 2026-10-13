@@ -15,9 +15,7 @@ namespace nx::network::http {
 // Content-Encoding: gzip (ANAS-191).
 static constexpr std::uint64_t kMaxDecompressedMessageBodySize = 32 * 1024 * 1024;
 
-bool HttpStreamReader::parseBytes(
-    const ConstBufferRefType& data,
-    size_t* bytesProcessed)
+bool HttpStreamReader::parseBytes(const ConstBufferRefType& data, size_t* bytesProcessed)
 {
     if (bytesProcessed)
         *bytesProcessed = 0;
@@ -25,15 +23,16 @@ bool HttpStreamReader::parseBytes(
 
     // Reading line-by-line.
     // TODO #akolesnikov automate bytesProcessed modification based on currentDataPos.
-    for (size_t currentDataPos = 0; currentDataPos < count; )
+    for (size_t currentDataPos = 0; currentDataPos < count;)
     {
         switch (m_state)
         {
             case ReadState::pullingLineEndingBeforeMessageBody:
             {
                 // Reading line ending of the previous line.
-                // This is needed to handle rtsp servers which are allowed to use CRLF and CR or LF alone.
-                // So, we allow HTTP headers to be terminated with CR or LF. Thus, if CRLF has been split to
+                // This is needed to handle rtsp servers which are allowed to use CRLF and CR or LF
+                // alone. So, we allow HTTP headers to be terminated with CR or LF. Thus, if CRLF
+                // has been split to
                 //   different buffers, we MUST read LF before reading message body.
                 size_t bytesRead = 0;
                 m_lineSplitter.finishCurrentLineEnding(
@@ -43,8 +42,10 @@ bool HttpStreamReader::parseBytes(
                 if (bytesProcessed)
                     *bytesProcessed = currentDataPos;
                 m_state = m_nextState;
-                if (m_breakAfterReadingHeaders ||
-                    m_state == ReadState::messageDone)    //< MUST break parsing on message boundary so that calling entity has a chance to handle message.
+                if (m_breakAfterReadingHeaders
+                    || m_state == ReadState::messageDone) //< MUST break parsing on message
+                                                          // boundary so that calling entity has a
+                                                          // chance to handle message.
                 {
                     return true;
                 }
@@ -53,7 +54,8 @@ bool HttpStreamReader::parseBytes(
 
             case ReadState::readingMessageBody:
             {
-                // If m_contentLength == 0 and m_state == readingMessageBody then content-length is unknown.
+                // If m_contentLength == 0 and m_state == readingMessageBody then content-length is
+                // unknown.
                 size_t msgBodyBytesRead = 0;
                 if (m_contentDecoder)
                 {
@@ -65,7 +67,7 @@ bool HttpStreamReader::parseBytes(
                             m_messageBodyBytesRead += data.size();
                         });
                     // Decoding content.
-                    if ((msgBodyBytesRead != (size_t)-1) && (msgBodyBytesRead > 0))
+                    if ((msgBodyBytesRead != (size_t) -1) && (msgBodyBytesRead > 0))
                     {
                         if (!m_codedMessageBodyBuffer.empty())
                         {
@@ -99,7 +101,8 @@ bool HttpStreamReader::parseBytes(
                 // implies (ANAS-323).
                 if (m_maxMessageBodySize && m_messageBodyBytesRead > *m_maxMessageBodySize)
                 {
-                    NX_DEBUG(this,
+                    NX_DEBUG(
+                        this,
                         "Failed to parse HTTP stream: message body exceeds the %1 "
                         "byte limit (%2 bytes read)",
                         *m_maxMessageBodySize,
@@ -108,8 +111,9 @@ bool HttpStreamReader::parseBytes(
                     return false;
                 }
 
-                if ((m_contentLength &&         //< Content-Length known.
-                    m_messageBodyBytesRead >= *m_contentLength) ||     //< Read whole message body.
+                if ((m_contentLength && //< Content-Length known.
+                     m_messageBodyBytesRead >= *m_contentLength)
+                    || //< Read whole message body.
                     (m_isChunkedTransfer && m_chunkedStreamParser.eof()))
                 {
                     if (m_contentDecoder)
@@ -142,7 +146,8 @@ bool HttpStreamReader::parseBytes(
                     *bytesProcessed = currentDataPos;
                 if (m_lineSplitter.lineLengthExceeded())
                 {
-                    NX_DEBUG(this,
+                    NX_DEBUG(
+                        this,
                         "Failed to parse HTTP stream: a request/status or header line "
                         "exceeds the %1 byte limit",
                         m_lineSplitter.maxLineLength());
@@ -155,7 +160,8 @@ bool HttpStreamReader::parseBytes(
                 m_headerBytesRead += bytesRead;
                 if (m_maxHeadersSize && m_headerBytesRead > *m_maxHeadersSize)
                 {
-                    NX_DEBUG(this,
+                    NX_DEBUG(
+                        this,
                         "Failed to parse HTTP stream: headers exceed the %1 byte "
                         "limit (%2 bytes read)",
                         *m_maxHeadersSize,
@@ -172,9 +178,10 @@ bool HttpStreamReader::parseBytes(
                     return false;
                 }
 
-                // We can move to messageDone state in parseLine function if no message body present.
-                if (m_state == ReadState::messageDone ||
-                    (m_state == ReadState::readingMessageBody && m_breakAfterReadingHeaders))
+                // We can move to messageDone state in parseLine function if no message body
+                // present.
+                if (m_state == ReadState::messageDone
+                    || (m_state == ReadState::readingMessageBody && m_breakAfterReadingHeaders))
                 {
                     // MUST break parsing on message boundary so that calling entity has chance
                     // to handle message.
@@ -281,9 +288,7 @@ void HttpStreamReader::setMaxHeadersSize(std::optional<std::uint64_t> maxSize)
 
 bool HttpStreamReader::isEncodingSupported(std::string_view encoding)
 {
-    return encoding == "gzip"
-        || encoding == "deflate"
-        || encoding == "identity";
+    return encoding == "gzip" || encoding == "deflate" || encoding == "identity";
 }
 
 bool HttpStreamReader::parseLine(const ConstBufferRefType& data)
@@ -305,19 +310,21 @@ bool HttpStreamReader::parseLine(const ConstBufferRefType& data)
 
                 // Deciding what we parsing: request line or status line.
                 // Splitting to tokens separated by ' '.
-                // If first token contains '/' then considering line to be status line, else it is request line
-                // const size_t pos = data.find_first_of( " /\r\n", offset, sizeof(" /\r\n")-1 );
+                // If first token contains '/' then considering line to be status line, else it is
+                // request line const size_t pos = data.find_first_of( " /\r\n", offset, sizeof("
+                // /\r\n")-1 );
                 static const char separators[] = " /\r\n";
                 const auto pos = data.find_first_of(separators);
                 if (pos == data.npos || data[pos] == '\r' || data[pos] == '\n')
                     return false;
-                if (data[pos] == ' ')  //< Considering message to be request (first token does not contain /, so it looks like METHOD).
+                if (data[pos] == ' ') //< Considering message to be request (first token does not
+                                      // contain /, so it looks like METHOD).
                 {
                     m_httpMessage = Message(MessageType::request);
                     if (!m_httpMessage.request->requestLine.parse(data))
                         NX_DEBUG(this, "Error parsing '%1' as request line", data);
                 }
-                else    //< Response.
+                else //< Response.
                 {
                     m_httpMessage = Message(MessageType::response);
                     if (!m_httpMessage.response->statusLine.parse(data))
@@ -330,9 +337,10 @@ bool HttpStreamReader::parseLine(const ConstBufferRefType& data)
             case ReadState::readingMessageHeaders:
             {
                 // Parsing header.
-                if (data.empty())    //< Empty line received: assuming all headers read.
+                if (data.empty()) //< Empty line received: assuming all headers read.
                 {
-                    if (prepareToReadMessageBody()) //< Checking message body parameters in response.
+                    if (prepareToReadMessageBody()) //< Checking message body parameters in
+                                                    // response.
                     {
                         // TODO #akolesnikov reliably check that message body is expected
                         //   in any case allowing to read message body because it could be present
@@ -392,14 +400,15 @@ bool HttpStreamReader::prepareToReadMessageBody()
 
     m_contentDecoder.reset();
     auto contentEncodingIter = m_httpMessage.headers().find("Content-Encoding");
-    if (contentEncodingIter != m_httpMessage.headers().end() &&
-        !contentEncodingIter->second.empty() && //< Buggy servers (AWS S3) may send the header with no value.
+    if (contentEncodingIter != m_httpMessage.headers().end()
+        && !contentEncodingIter->second.empty()
+        && //< Buggy servers (AWS S3) may send the header with no value.
         contentEncodingIter->second != "identity")
     {
         auto contentDecoder = createContentDecoder(contentEncodingIter->second);
         if (contentDecoder == nullptr)
-            return false;   //< Cannot decode message body.
-                            // All operations with m_msgBodyBuffer MUST be done with m_mutex locked.
+            return false; //< Cannot decode message body.
+                          // All operations with m_msgBodyBuffer MUST be done with m_mutex locked.
         auto safeAppendToBufferLambda = [this](const ConstBufferRefType& data)
         {
             NX_MUTEX_LOCKER lk(&m_mutex);
@@ -444,10 +453,9 @@ void HttpStreamReader::checkIfMessageBodyIsAppropriateByDefault()
     // Assuming that "upgrade connection" requests do not have message body unless specified
     // explicitly.
     // TODO: #akolesnikov Not sure whether the following condition is conformant to the RFC.
-    if (!m_contentLength &&
-        contentTypeHeaderIter == m_httpMessage.headers().end() &&
-        connectionHeaderIter != m_httpMessage.headers().end() &&
-        nx::utils::stricmp(connectionHeaderIter->second, "upgrade") == 0)
+    if (!m_contentLength && contentTypeHeaderIter == m_httpMessage.headers().end()
+        && connectionHeaderIter != m_httpMessage.headers().end()
+        && nx::utils::stricmp(connectionHeaderIter->second, "upgrade") == 0)
     {
         m_contentLength = 0;
         return;
@@ -456,9 +464,9 @@ void HttpStreamReader::checkIfMessageBodyIsAppropriateByDefault()
     // explicitly with "Content-..." headers.
     if (m_httpMessage.type == MessageType::request)
     {
-        if (m_httpMessage.request->requestLine.method != nx::network::http::Method::post &&
-            m_httpMessage.request->requestLine.method != nx::network::http::Method::patch &&
-            m_httpMessage.request->requestLine.method != nx::network::http::Method::put)
+        if (m_httpMessage.request->requestLine.method != nx::network::http::Method::post
+            && m_httpMessage.request->requestLine.method != nx::network::http::Method::patch
+            && m_httpMessage.request->requestLine.method != nx::network::http::Method::put)
         {
             m_contentLength = 0;
             return;
@@ -475,29 +483,24 @@ void HttpStreamReader::checkIfMessageBodyIsAppropriateByDefault()
 }
 
 template<class Func>
-size_t HttpStreamReader::readMessageBody(
-    const ConstBufferRefType& data,
-    Func func)
+size_t HttpStreamReader::readMessageBody(const ConstBufferRefType& data, Func func)
 {
-    return (m_isChunkedTransfer && m_decodeChunked)
-        ? m_chunkedStreamParser.parse(data, func)
-        : readIdentityStream(data, func);
+    return (m_isChunkedTransfer && m_decodeChunked) ? m_chunkedStreamParser.parse(data, func)
+                                                    : readIdentityStream(data, func);
 }
 
 template<class Func>
-size_t HttpStreamReader::readIdentityStream(
-    const ConstBufferRefType& data,
-    Func func)
+size_t HttpStreamReader::readIdentityStream(const ConstBufferRefType& data, Func func)
 {
     const size_t bytesToCopy = m_contentLength
         ? std::min<size_t>(data.size(), *m_contentLength - m_messageBodyBytesRead)
-        : data.size();    //< Content-Length is unknown.
+        : data.size(); //< Content-Length is unknown.
     func(data.substr(0, bytesToCopy));
     return bytesToCopy;
 }
 
-std::unique_ptr<nx::utils::bstream::AbstractByteStreamFilter>
-    HttpStreamReader::createContentDecoder(const std::string& encodingName)
+std::unique_ptr<nx::utils::bstream::AbstractByteStreamFilter> HttpStreamReader::
+    createContentDecoder(const std::string& encodingName)
 {
     if (encodingName == "gzip" || encodingName == "deflate")
     {

@@ -10,11 +10,11 @@
 
 #include "abstract_media_data_filter.h"
 
-//!Remove AUD delimiter from h.264/h.265 streams
+//! Remove AUD delimiter from h.264/h.265 streams
 class NX_VMS_COMMON_API H2645RemoveAudDelimiter: public AbstractMediaDataFilter
 {
 public:
-    //!Implementation of AbstractMediaDataFilter::processData
+    //! Implementation of AbstractMediaDataFilter::processData
     virtual QnConstAbstractDataPacketPtr processData(
         const QnConstAbstractDataPacketPtr& data) override;
 
@@ -22,7 +22,6 @@ public:
     QnCompressedVideoDataPtr processVideoData(const QnConstCompressedVideoDataPtr& data);
 
 private:
-
     QnCompressedVideoDataPtr removeAuxFromAnexBFormat(
         const QnConstCompressedVideoDataPtr& videoData);
 

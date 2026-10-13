@@ -17,12 +17,10 @@ Statistics StatisticsCalculator::statistics(int aliveConnectionCount) const
 
     Statistics result;
     result.connectionCount = aliveConnectionCount;
-    result.connectionsAcceptedPerMinute =
-        m_connectionsPerMinuteCalculator.getSumPerLastPeriod();
+    result.connectionsAcceptedPerMinute = m_connectionsPerMinuteCalculator.getSumPerLastPeriod();
     result.requestsAveragePerConnection =
         m_requestsAveragePerConnectionCalculator.getAveragePerLastPeriod();
-    result.requestsReceivedPerMinute =
-        m_requestsReceivedPerMinuteCalculator.getSumPerLastPeriod();
+    result.requestsReceivedPerMinute = m_requestsReceivedPerMinuteCalculator.getSumPerLastPeriod();
     return result;
 }
 

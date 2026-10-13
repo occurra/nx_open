@@ -27,8 +27,9 @@ struct NX_NETWORK_API Statistics
     auto operator<=>(const Statistics&) const = default;
 };
 
-#define Statistics_server_Fields (connectionCount)(connectionsAcceptedPerMinute) \
-    (requestsReceivedPerMinute)(requestsAveragePerConnection)
+#define Statistics_server_Fields \
+    (connectionCount)(connectionsAcceptedPerMinute)( \
+        requestsReceivedPerMinute) (requestsAveragePerConnection)
 
 NX_REFLECTION_INSTRUMENT(Statistics, Statistics_server_Fields)
 
@@ -44,8 +45,7 @@ public:
 
 //-------------------------------------------------------------------------------------------------
 
-class NX_NETWORK_API AggregateStatisticsProvider:
-    public AbstractStatisticsProvider
+class NX_NETWORK_API AggregateStatisticsProvider: public AbstractStatisticsProvider
 {
 public:
     AggregateStatisticsProvider(const std::vector<const AbstractStatisticsProvider*>& providers);

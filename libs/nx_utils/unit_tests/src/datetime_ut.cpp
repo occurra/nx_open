@@ -9,12 +9,14 @@
 #include <nx/utils/time.h>
 
 namespace nx::utils {
+
 using namespace std::chrono;
 
 TEST(DateTime, datetime_lock_free_validation)
 {
-    ASSERT_EQ(nx::utils::formatDateTime(
-                  QDateTime::fromMSecsSinceEpoch(nx::utils::millisSinceEpoch().count())),
+    ASSERT_EQ(
+        nx::utils::formatDateTime(
+            QDateTime::fromMSecsSinceEpoch(nx::utils::millisSinceEpoch().count())),
         nx::utils::formatDateTimeLockFree(nx::utils::utcTime().time_since_epoch()));
 }
 

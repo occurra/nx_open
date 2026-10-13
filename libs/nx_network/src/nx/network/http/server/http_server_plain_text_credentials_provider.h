@@ -11,8 +11,7 @@
 
 namespace nx::network::http::server {
 
-class NX_NETWORK_API PlainTextCredentialsProvider:
-    public AbstractAuthenticationDataProvider
+class NX_NETWORK_API PlainTextCredentialsProvider: public AbstractAuthenticationDataProvider
 {
 public:
     virtual void getPasswordByUserName(

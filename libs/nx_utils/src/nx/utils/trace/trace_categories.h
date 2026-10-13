@@ -4,17 +4,14 @@
 
 #ifndef __EMSCRIPTEN__
 
-#define PERFETTO_COMPONENT_EXPORT NX_UTILS_API
+    #define PERFETTO_COMPONENT_EXPORT NX_UTILS_API
 
-#include <perfetto.h>
+    #include <perfetto.h>
 
 PERFETTO_DEFINE_CATEGORIES(
-    perfetto::Category("rendering")
-        .SetDescription("Events from the graphics subsystem"),
+    perfetto::Category("rendering").SetDescription("Events from the graphics subsystem"),
     perfetto::Category("resources")
         .SetDescription("System resources (CPU, RAM etc.) utilization statistics"),
-    perfetto::Category("models")
-        .SetDescription("Events from data models")
-);
+    perfetto::Category("models").SetDescription("Events from data models"));
 
 #endif

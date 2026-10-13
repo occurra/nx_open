@@ -28,7 +28,7 @@ enum Value
 
 } // namespace error
 
-//!Contains STUN attributes
+//! Contains STUN attributes
 namespace attrs {
 
 enum Type
@@ -73,8 +73,7 @@ struct NX_NETWORK_API Attribute
     virtual int getType() const = 0;
 };
 
-class NX_NETWORK_API SerializableAttribute:
-    public Attribute
+class NX_NETWORK_API SerializableAttribute: public Attribute
 {
 public:
     virtual nx::network::server::SerializerState serialize(
@@ -93,8 +92,7 @@ public:
 static constexpr int kAddressFamilyIpV4 = 1;
 static constexpr int kAddressFamilyIpV6 = 2;
 
-class NX_NETWORK_API AddressAttribute:
-    public SerializableAttribute
+class NX_NETWORK_API AddressAttribute: public SerializableAttribute
 {
 public:
     AddressAttribute(int type);
@@ -118,8 +116,7 @@ private:
     SocketAddress m_endpoint;
 };
 
-class NX_NETWORK_API MappedAddress:
-    public AddressAttribute
+class NX_NETWORK_API MappedAddress: public AddressAttribute
 {
 public:
     static constexpr int TYPE = mappedAddress;
@@ -128,8 +125,7 @@ public:
     MappedAddress(SocketAddress endpoint);
 };
 
-class NX_NETWORK_API AlternateServer:
-    public AddressAttribute
+class NX_NETWORK_API AlternateServer: public AddressAttribute
 {
 public:
     static constexpr int TYPE = alternateServer;
@@ -173,7 +169,7 @@ struct NX_NETWORK_API XorMappedAddress: Attribute
     {
         uint32_t ipv4;
         Ipv6 ipv6;
-    } address;  //!< address in host byte order
+    } address; //!< address in host byte order
 };
 
 struct NX_NETWORK_API XorPeerAddress: XorMappedAddress
@@ -226,8 +222,8 @@ struct NX_NETWORK_API ErrorCode: Attribute, BufferedValue
     const std::string& getReason() const { return m_reason; }
 
 private:
-    int m_code;           //!< This value is full error code
-    std::string m_reason;  //!< utf8 string, limited to 127 characters
+    int m_code; //!< This value is full error code
+    std::string m_reason; //!< utf8 string, limited to 127 characters
 };
 
 struct NX_NETWORK_API FingerPrint: Attribute
@@ -305,7 +301,10 @@ struct NX_NETWORK_API UseCandidate: Unknown
 {
     static const int TYPE = useCandidate;
 
-    UseCandidate(nx::Buffer value_ = nx::Buffer()): Unknown(TYPE, value_) {}
+    UseCandidate(nx::Buffer value_ = nx::Buffer()):
+        Unknown(TYPE, value_)
+    {
+    }
     virtual int getType() const override { return TYPE; }
 };
 
@@ -313,7 +312,10 @@ struct NX_NETWORK_API IceControlled: Unknown
 {
     static const int TYPE = iceControlled;
 
-    IceControlled(nx::Buffer value_ = nx::Buffer()): Unknown(TYPE, value_) {}
+    IceControlled(nx::Buffer value_ = nx::Buffer()):
+        Unknown(TYPE, value_)
+    {
+    }
     virtual int getType() const override { return TYPE; }
 };
 
@@ -321,7 +323,10 @@ struct NX_NETWORK_API IceControlling: Unknown
 {
     static const int TYPE = iceControlling;
 
-    IceControlling(nx::Buffer value_ = nx::Buffer()): Unknown(TYPE, value_) {}
+    IceControlling(nx::Buffer value_ = nx::Buffer()):
+        Unknown(TYPE, value_)
+    {
+    }
     virtual int getType() const override { return TYPE; }
 };
 
@@ -329,7 +334,10 @@ struct NX_NETWORK_API Realm: Unknown
 {
     static const int TYPE = realm;
 
-    Realm(nx::Buffer value_ = nx::Buffer()): Unknown(TYPE, value_) {}
+    Realm(nx::Buffer value_ = nx::Buffer()):
+        Unknown(TYPE, value_)
+    {
+    }
     virtual int getType() const override { return TYPE; }
 };
 
@@ -337,7 +345,10 @@ struct NX_NETWORK_API ThirdPartyAuthorization: Unknown
 {
     static const int TYPE = thirdPartyAuthorization;
 
-    ThirdPartyAuthorization(nx::Buffer value_ = nx::Buffer()): Unknown(TYPE, value_) {}
+    ThirdPartyAuthorization(nx::Buffer value_ = nx::Buffer()):
+        Unknown(TYPE, value_)
+    {
+    }
     virtual int getType() const override { return TYPE; }
 };
 
@@ -345,7 +356,10 @@ struct NX_NETWORK_API AccessToken: Unknown
 {
     static const int TYPE = accessToken;
 
-    AccessToken(nx::Buffer value_ = nx::Buffer()): Unknown(TYPE, value_) {}
+    AccessToken(nx::Buffer value_ = nx::Buffer()):
+        Unknown(TYPE, value_)
+    {
+    }
     virtual int getType() const override { return TYPE; }
 };
 
@@ -353,7 +367,10 @@ struct NX_NETWORK_API Data: Unknown
 {
     static const int TYPE = data;
 
-    Data(nx::Buffer value_ = nx::Buffer()): Unknown(TYPE, value_) {}
+    Data(nx::Buffer value_ = nx::Buffer()):
+        Unknown(TYPE, value_)
+    {
+    }
     virtual int getType() const override { return TYPE; }
 };
 
@@ -361,7 +378,7 @@ struct NX_NETWORK_API RequestedTransport: Unknown
 {
     static const int TYPE = requestedTransport;
     /* UDP (0x11) is the only possible value for this attribute. */
-    enum class Transport: char
+    enum class Transport : char
     {
         udp = 0x11,
         tcp = 0x6

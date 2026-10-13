@@ -106,7 +106,8 @@ public:
      *     to the handlers as connectionDestroyed.
      */
     void invokeAll(
-        SystemError::ErrorCode closeReason, nx::utils::InterruptionFlag* connectionFreedFlag)
+        SystemError::ErrorCode closeReason,
+        nx::utils::InterruptionFlag* connectionFreedFlag)
     {
         // The local copy keeps the handlers alive if one of them destroys the connection.
         const auto handlers = m_handlers;
@@ -140,16 +141,14 @@ private:
  * aio thread)
  * NOTE: It is allowed to free instance within event handler
  */
-class NX_NETWORK_API BaseServerConnection:
-    public aio::BasicPollable
+class NX_NETWORK_API BaseServerConnection: public aio::BasicPollable
 {
     using base_type = aio::BasicPollable;
 
 public:
     using OnConnectionClosedHandler = server::OnConnectionClosedHandler;
 
-    BaseServerConnection(
-        std::unique_ptr<AbstractStreamSocket> streamSocket);
+    BaseServerConnection(std::unique_ptr<AbstractStreamSocket> streamSocket);
 
     virtual void bindToAioThread(aio::AbstractAioThread* aioThread) override;
 
@@ -250,8 +249,7 @@ public:
     virtual void readyToSendData() = 0;
 };
 
-class NX_NETWORK_API BaseServerConnectionWrapper:
-    public BaseServerConnection
+class NX_NETWORK_API BaseServerConnectionWrapper: public BaseServerConnection
 {
 public:
     BaseServerConnectionWrapper(

@@ -1,20 +1,31 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <nx/utils/switch.h>
-
 #include <gtest/gtest.h>
 
 #include <nx/utils/nx_utils_ini.h>
+#include <nx/utils/switch.h>
 
 namespace nx::utils::test {
 
 static void expectVoice(const QString& animal, const QString& expectedVoice)
 {
-    const auto voice = switch_(animal,
-        "cat", [] { return "meow"; },
-        "dog", [] { return "woof"; },
-        default_, [] { return "unknown"; }
-    );
+    const auto voice = switch_(
+        animal,
+        "cat",
+        []
+        {
+            return "meow";
+        },
+        "dog",
+        []
+        {
+            return "woof";
+        },
+        default_,
+        []
+        {
+            return "unknown";
+        });
 
     ASSERT_EQ(expectedVoice, voice);
 }
@@ -27,14 +38,26 @@ TEST(Switch, StringToString)
     expectVoice("mouse", "unknown");
 }
 
-enum class Type { a, b };
+enum class Type
+{
+    a,
+    b
+};
 
 static void expectParsedType(const QString& value, Type expectedType = Type::a)
 {
-    const auto parsedType = switch_(value,
-        "a", [] { return Type::a; },
-        "b", [] { return Type::b; }
-    );
+    const auto parsedType = switch_(
+        value,
+        "a",
+        []
+        {
+            return Type::a;
+        },
+        "b",
+        []
+        {
+            return Type::b;
+        });
 
     ASSERT_EQ(expectedType, parsedType);
 }
@@ -53,14 +76,21 @@ TEST(Switch, StringToEnum)
 TEST(Switch, Action)
 {
     int value = 0;
-    const auto execute =
-        [&value](const QString& command)
-        {
-            switch_(command,
-                "increment", [&] { value++; },
-                "null", [&] { value = 0; }
-            );
-        };
+    const auto execute = [&value](const QString& command)
+    {
+        switch_(
+            command,
+            "increment",
+            [&]
+            {
+                value++;
+            },
+            "null",
+            [&]
+            {
+                value = 0;
+            });
+    };
 
     execute("increment");
     ASSERT_EQ(1, value);

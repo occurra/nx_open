@@ -15,11 +15,7 @@ namespace nx::utils::math {
 /**
  * Detects abnormal numeric value in a sequence of values and invokes a functor.
  */
-template<
-    typename Value,
-    typename Multiplier = Value,
-    typename... AuxReportArgs
->
+template<typename Value, typename Multiplier = Value, typename... AuxReportArgs>
 class AbnormalValueDetector
 {
 public:
@@ -34,8 +30,7 @@ public:
     AbnormalValueDetector(
         Multiplier multiplier,
         std::chrono::milliseconds period,
-        ReportAnomalyFunc reportAnomalyFunc)
-        :
+        ReportAnomalyFunc reportAnomalyFunc):
         m_multiplier(multiplier),
         m_averageCalculator(period),
         m_period(period),
@@ -69,10 +64,7 @@ public:
         return Value();
     }
 
-    Multiplier multiplier() const
-    {
-        return m_multiplier;
-    }
+    Multiplier multiplier() const { return m_multiplier; }
 
 private:
     const Multiplier m_multiplier;
@@ -93,9 +85,7 @@ private:
         if (average == Value()) // aka zero
             average = Value(1);
         const auto threshold = average * m_multiplier;
-        const bool anomaly = m_multiplier >= 1
-            ? value > threshold
-            : value < threshold;
+        const bool anomaly = m_multiplier >= 1 ? value > threshold : value < threshold;
 
         if (anomaly)
             m_reportAnomalyFunc(value, average, std::forward<AuxArgs>(args)...);

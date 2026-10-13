@@ -20,8 +20,8 @@ constexpr char kQueueWaitHelp[] = "Time SQL query execution tasks spent queued b
 const std::string kOutcomeLabel = "outcome";
 
 // Not the HTTP defaults, which start at 5ms; 0.5 is an edge so the SQL latency alert reads one.
-const std::vector<double> kDurationBuckets = {
-    0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10};
+const std::vector<double> kDurationBuckets =
+    {0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10};
 
 constexpr char kPendingQueriesName[] = "nx_sql_queue_pending_queries";
 constexpr char kPendingQueriesHelp[] = "SQL query execution tasks waiting in the queue";
@@ -77,7 +77,8 @@ Metrics makeMetrics(nx::prometheus::Registry* registry)
         queueWait.push_back(queueWaitFamily.withLabels(queryTypeLabels));
     }
 
-    return Metrics{std::move(queryTasks),
+    return Metrics{
+        std::move(queryTasks),
         std::move(queryDuration),
         std::move(queueWait),
         registry->gauge(kPendingQueriesName, kPendingQueriesHelp),

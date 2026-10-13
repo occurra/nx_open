@@ -49,8 +49,7 @@ using AbstractByteStreamFilterPtr = std::shared_ptr<AbstractByteStreamFilter>;
 /**
  * @return The last filter of the filter chain with first element beginPtr.
  */
-NX_UTILS_API AbstractByteStreamFilterPtr last(
-    const AbstractByteStreamFilterPtr& beginPtr);
+NX_UTILS_API AbstractByteStreamFilterPtr last(const AbstractByteStreamFilterPtr& beginPtr);
 
 /**
  * Inserts element what at position pointed to by _where (_where will be placed after what).

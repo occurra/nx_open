@@ -14,8 +14,7 @@ namespace nx::network::http {
  * This class is just a wrapper on top of nx::network::http::HttpStreamReader
  * for use with nx::network::server::BaseStreamProtocolConnection class.
  */
-class NX_NETWORK_API MessageParser:
-    public nx::network::server::AbstractMessageParser<Message>
+class NX_NETWORK_API MessageParser: public nx::network::server::AbstractMessageParser<Message>
 {
 public:
     MessageParser();
@@ -29,8 +28,8 @@ public:
      *
      * @param bytesProcessed Number of bytes from buf which were read and parsed is stored here.
      * Returns current parse state.
-     * NOTE: *buf MAY NOT contain whole message, but any part of it (it can be as little as 1 byte).
-     * NOTE: Reads whole message even if parse error occurred.
+     * NOTE: *buf MAY NOT contain whole message, but any part of it (it can be as little as 1
+     * byte). NOTE: Reads whole message even if parse error occurred.
      */
     virtual nx::network::server::ParserState parse(
         const nx::ConstBufferRefType& buf,
@@ -61,8 +60,7 @@ namespace deprecated {
  * Introduced for backward compatibility.
  * Should be removed and all usages refactored to use MessageParser.
  */
-class NX_NETWORK_API MessageParser:
-    public nx::network::server::AbstractMessageParser<Message>
+class NX_NETWORK_API MessageParser: public nx::network::server::AbstractMessageParser<Message>
 {
 public:
     virtual void setMessage(Message* const message) override;

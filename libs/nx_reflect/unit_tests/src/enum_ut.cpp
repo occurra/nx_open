@@ -10,7 +10,9 @@ using namespace std::literals::string_view_literals;
 
 enum class SimpleEnum
 {
-    one, two, three
+    one,
+    two,
+    three
 };
 NX_REFLECTION_INSTRUMENT_ENUM(SimpleEnum, one, two, three)
 
@@ -105,7 +107,12 @@ TEST(Enum, TrailingUnderscores)
     EXPECT_EQ(v, TrailingUnderscores::default_);
 }
 
-enum class CustomNames { one, two, three };
+enum class CustomNames
+{
+    one,
+    two,
+    three
+};
 template<typename Visitor>
 constexpr auto nxReflectVisitAllEnumItems(CustomNames*, Visitor&& visitor)
 {
@@ -113,8 +120,7 @@ constexpr auto nxReflectVisitAllEnumItems(CustomNames*, Visitor&& visitor)
     return visitor(
         Item{CustomNames::one, "ONE"},
         Item{CustomNames::two, "TWO"},
-        Item{CustomNames::three, "THREE"}
-    );
+        Item{CustomNames::three, "THREE"});
 }
 
 TEST(Enum, customNames)
@@ -126,7 +132,12 @@ TEST(Enum, customNames)
     EXPECT_EQ(v, CustomNames::three);
 }
 
-enum class MultipleNames { one, two, three };
+enum class MultipleNames
+{
+    one,
+    two,
+    three
+};
 template<typename Visitor>
 constexpr auto nxReflectVisitAllEnumItems(MultipleNames*, Visitor&& visitor)
 {
@@ -137,8 +148,7 @@ constexpr auto nxReflectVisitAllEnumItems(MultipleNames*, Visitor&& visitor)
         Item{MultipleNames::two, "two"},
         Item{MultipleNames::two, "TWO"},
         Item{MultipleNames::three, "three"},
-        Item{MultipleNames::three, "THREE"}
-    );
+        Item{MultipleNames::three, "THREE"});
 }
 
 TEST(Enum, multipleNamesForItem)

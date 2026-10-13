@@ -48,9 +48,8 @@ struct NX_MEDIA_CORE_API FfmpegSharedMemoryBufferContext
  * Create a named shared-memory allocator instance.
  * Returns null on name collision/open failure.
  */
-NX_MEDIA_CORE_API FfmpegSharedMemoryAllocatorPtr createFfmpegSharedMemoryAllocator(
-    std::string segmentName,
-    std::size_t segmentSizeBytes);
+NX_MEDIA_CORE_API FfmpegSharedMemoryAllocatorPtr
+    createFfmpegSharedMemoryAllocator(std::string segmentName, std::size_t segmentSizeBytes);
 
 /**
  * FFmpeg get_buffer2 callback that allocates frame planes in FfmpegSharedMemory.
@@ -77,8 +76,8 @@ NX_MEDIA_CORE_API bool isFrameBackedBySharedMemory(const AVFrame* frame);
 /**
  * Returns allocator associated with the AVFrame buffers, or null if frame is not SHM-backed.
  */
-NX_MEDIA_CORE_API FfmpegSharedMemoryAllocatorPtr ffmpegSharedMemoryAllocatorFromFrame(
-    const AVFrame* frame);
+NX_MEDIA_CORE_API FfmpegSharedMemoryAllocatorPtr
+    ffmpegSharedMemoryAllocatorFromFrame(const AVFrame* frame);
 
 /**
  * Returns segment name for SHM-backed AVFrame buffers, or empty string otherwise.

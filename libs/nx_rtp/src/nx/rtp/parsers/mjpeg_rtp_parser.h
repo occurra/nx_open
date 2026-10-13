@@ -22,7 +22,9 @@ public:
         bool& gotData) override;
 
     virtual Result processRtpExtension(
-        const RtpHeaderExtensionHeader& extensionHeader, quint8* data, int size) override;
+        const RtpHeaderExtensionHeader& extensionHeader,
+        quint8* data,
+        int size) override;
     virtual void clear() override {}
 
     // Resolution that was configured using the camera API.
@@ -30,7 +32,12 @@ public:
 
 private:
     void makeHeaders(
-        int type, int width, int height, const quint8* lqt, const quint8* cqt, unsigned short dri);
+        int type,
+        int width,
+        int height,
+        const quint8* lqt,
+        const quint8* cqt,
+        unsigned short dri);
 
     void updateHeaderTables(const quint8* lumaTable, const quint8* chromaTable);
     void fixResolution(int* width, int* height);
@@ -39,7 +46,7 @@ private:
     bool resolutionWorkaroundLogged = false;
     bool mjpeg16BitWarningLogged = false;
 
-    //AVJpeg::Header m_jpegHeader;
+    // AVJpeg::Header m_jpegHeader;
     quint8 m_lumaTable[64 * 2];
     quint8 m_chromaTable[64 * 2];
     int m_frameWidth;
@@ -58,7 +65,7 @@ private:
     int m_lumaTablePos;
     int m_chromaTablePos;
 
-    //nx::utils::ByteArray m_frameData;
+    // nx::utils::ByteArray m_frameData;
     int m_frameSize;
     std::vector<uint8_t> m_onvifJpegHeader;
     bool m_sofFound = false;

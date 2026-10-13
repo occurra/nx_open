@@ -34,10 +34,7 @@ public:
      * @return true if registered, false if such (method; path) is already registered.
      */
     template<typename MappedRef>
-    bool add(
-        const Method& method,
-        std::string_view path,
-        MappedRef&& mapped)
+    bool add(const Method& method, std::string_view path, MappedRef&& mapped)
     {
         PathMatchContext& ctx = m_methodToPath[method];
         if (path.empty())
@@ -52,11 +49,10 @@ public:
     }
 
     /**
-     * @return Value that corresponds to the given (method; path). std::nullopt if nothing was matched.
+     * @return Value that corresponds to the given (method; path). std::nullopt if nothing was
+     * matched.
      */
-    std::optional<MatchResult> match(
-        const Method& method,
-        std::string_view path) const
+    std::optional<MatchResult> match(const Method& method, std::string_view path) const
     {
         if (auto res = matchInternal(method, path); res)
             return res;
@@ -71,10 +67,7 @@ public:
         return std::nullopt;
     }
 
-    void clear()
-    {
-        m_methodToPath.clear();
-    }
+    void clear() { m_methodToPath.clear(); }
 
 private:
     struct PathMatchContext
@@ -83,9 +76,7 @@ private:
         std::optional<Mapped> defaultItem;
     };
 
-    std::optional<MatchResult> matchInternal(
-        const Method& method,
-        std::string_view path) const
+    std::optional<MatchResult> matchInternal(const Method& method, std::string_view path) const
     {
         if (auto ctxIter = m_methodToPath.find(method); ctxIter != m_methodToPath.end())
             return matchPath(ctxIter->second, path);

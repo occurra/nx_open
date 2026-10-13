@@ -60,14 +60,14 @@ public:
      * @param mediaSourceSsrc The publisher's video SSRC (RTPFB target).
      * @return Number of bytes written, or 0 on error / nothing-to-send.
      */
-    int build(
-        uint8_t* dst,
-        int dstSize,
-        uint32_t senderSsrc,
-        uint32_t mediaSourceSsrc);
+    int build(uint8_t* dst, int dstSize, uint32_t senderSsrc, uint32_t mediaSourceSsrc);
 
 private:
-    struct Entry { uint16_t seq; std::chrono::microseconds arrival; };
+    struct Entry
+    {
+        uint16_t seq;
+        std::chrono::microseconds arrival;
+    };
     std::vector<Entry> m_packets;
     uint8_t m_feedbackCount = 0;
 };
@@ -97,9 +97,7 @@ public:
      * @param now Current steady-clock time.
      * @param out Vector the feedback packet is appended to, when one is emitted.
      */
-    void maybeBuildFeedback(
-        std::chrono::microseconds now,
-        std::vector<nx::Buffer>& out);
+    void maybeBuildFeedback(std::chrono::microseconds now, std::vector<nx::Buffer>& out);
 
 private:
     uint32_t m_mediaSourceSsrc = 0;

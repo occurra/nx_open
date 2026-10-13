@@ -27,10 +27,7 @@ template<typename Value>
 class SumPerPeriod
 {
 public:
-    SumPerPeriod(
-        std::chrono::milliseconds period,
-        int subPeriodCount = 20)
-        :
+    SumPerPeriod(std::chrono::milliseconds period, int subPeriodCount = 20):
         m_subperiodCount(subPeriodCount),
         m_subperiod(
             std::chrono::duration_cast<std::chrono::microseconds>(period) / m_subperiodCount)
@@ -61,12 +58,10 @@ public:
         const auto now = monotonicTime();
         closeExpiredPeriods(now);
 
-        for (int count = 0, i = m_front;
-            count < m_subperiodCount;
-            ++count, i = i == m_subperiodCount - 1 ? 0 : i + 1)
+        for (int count = 0, i = m_front; count < m_subperiodCount;
+             ++count, i = i == m_subperiodCount - 1 ? 0 : i + 1)
         {
-            const auto currentPeriodLength =
-                i == m_front
+            const auto currentPeriodLength = i == m_front
                 ? duration_cast<microseconds>(now - *m_currentPeriodStart)
                 : m_subperiod;
             if (currentPeriodLength >= valuePeriod)
@@ -93,15 +88,9 @@ public:
         return m_currentSum;
     }
 
-    float maxError() const
-    {
-        return 1.0 / m_subperiodCount;
-    }
+    float maxError() const { return 1.0 / m_subperiodCount; }
 
-    void reset()
-    {
-        initialize(std::nullopt);
-    }
+    void reset() { initialize(std::nullopt); }
 
 private:
     const int m_subperiodCount;
@@ -121,8 +110,7 @@ private:
         m_currentPeriodStart = currentPeriodStart;
     }
 
-    void closeExpiredPeriods(
-        std::chrono::steady_clock::time_point now)
+    void closeExpiredPeriods(std::chrono::steady_clock::time_point now)
     {
         const auto deadline = now - m_subperiod * m_subperiodCount;
 
@@ -157,8 +145,7 @@ private:
 //-------------------------------------------------------------------------------------------------
 
 template<typename Value>
-class SumPerMinute:
-    public SumPerPeriod<Value>
+class SumPerMinute: public SumPerPeriod<Value>
 {
     using base_type = SumPerPeriod<Value>;
 

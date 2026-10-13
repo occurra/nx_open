@@ -28,7 +28,8 @@ public:
     /**
      * Prepare set of filters to apply to video data.
      */
-    void prepare(const QSize& srcFrameResolution,
+    void prepare(
+        const QSize& srcFrameResolution,
         const QSize& resolutionLimit = kDefaultResolutionLimit);
 
     /**
@@ -38,7 +39,8 @@ public:
      */
     void prepareForImage(const QSize& fullImageResolution);
 
-    bool isImageTranscodingRequired(const QSize& fullImageResolution,
+    bool isImageTranscodingRequired(
+        const QSize& fullImageResolution,
         const QSize& resolutionLimit = kDefaultResolutionLimit) const;
 
     bool isDownscaleRequired(const QSize& srcResolution) const;

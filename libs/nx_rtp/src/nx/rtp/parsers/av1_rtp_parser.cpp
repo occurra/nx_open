@@ -33,7 +33,8 @@ Av1Parser::Av1Parser()
     StreamParser::setFrequency(kAv1ClockRate);
 }
 
-Result Av1Parser::processData(const RtpHeader& rtpHeader,
+Result Av1Parser::processData(
+    const RtpHeader& rtpHeader,
     quint8* rtpBufferBase,
     int bufferOffset,
     int bytesRead,
@@ -66,7 +67,8 @@ Result Av1Parser::processData(const RtpHeader& rtpHeader,
     // duplicate RtpParser's line: what this one adds is the effect on the temporal unit.
     if (m_lastSequenceNumber && uint16_t(*m_lastSequenceNumber + 1) != sequenceNumber)
     {
-        NX_VERBOSE(this,
+        NX_VERBOSE(
+            this,
             "%1: dropping the temporal unit, RTP packet loss: sequence number %2 followed by %3",
             logId(),
             *m_lastSequenceNumber,
@@ -134,7 +136,8 @@ Result Av1Parser::handlePayload(const uint8_t* payload, int payloadLength)
     {
         // Either a continuation without a start, or a fragment whose continuation never arrived.
         // Both are normal consequences of packet loss, so this is not reported as an error.
-        NX_VERBOSE(this,
+        NX_VERBOSE(
+            this,
             "%1: broken OBU fragment sequence, Z=%2, has pending fragment=%3",
             logId(),
             aggregationHeader.continuesPreviousObu,
@@ -165,8 +168,10 @@ Result Av1Parser::handlePayload(const uint8_t* payload, int payloadLength)
             payloadLength -= lengthFieldSize;
             if ((uint64_t) payloadLength < length)
             {
-                return {false,
-                    NX_FMT("OBU element length %1 exceeds the rest of the payload %2",
+                return {
+                    false,
+                    NX_FMT(
+                        "OBU element length %1 exceeds the rest of the payload %2",
                         length,
                         payloadLength)};
             }
@@ -191,8 +196,10 @@ Result Av1Parser::handlePayload(const uint8_t* payload, int payloadLength)
     if (aggregationHeader.obuElementCount != 0
         && elementIndex != aggregationHeader.obuElementCount)
     {
-        return {false,
-            NX_FMT("The aggregation header declares %1 OBU elements, got %2",
+        return {
+            false,
+            NX_FMT(
+                "The aggregation header declares %1 OBU elements, got %2",
                 aggregationHeader.obuElementCount,
                 elementIndex)};
     }
@@ -201,7 +208,10 @@ Result Av1Parser::handlePayload(const uint8_t* payload, int payloadLength)
 }
 
 Result Av1Parser::handleObuElement(
-    const uint8_t* data, int size, bool isContinuation, bool willContinue)
+    const uint8_t* data,
+    int size,
+    bool isContinuation,
+    bool willContinue)
 {
     if (!isContinuation && !willContinue)
         return appendObu(data, size); //< The whole OBU is in this element.
@@ -251,7 +261,8 @@ Result Av1Parser::appendObu(const uint8_t* data, int size)
 
         if ((uint64_t) payloadSize != obuSize)
         {
-            NX_VERBOSE(this,
+            NX_VERBOSE(
+                this,
                 "%1: %2 extra byte(s) after the OBU payload",
                 logId(),
                 payloadSize - (int) obuSize);
@@ -274,7 +285,10 @@ Result Av1Parser::appendObu(const uint8_t* data, int size)
             break;
         default:
             NX_VERBOSE(
-                this, "%1: dropping OBU of a reserved type %2", logId(), (int) obuHeader.type);
+                this,
+                "%1: dropping OBU of a reserved type %2",
+                logId(),
+                (int) obuHeader.type);
             return {true};
     }
 
@@ -293,7 +307,8 @@ Result Av1Parser::appendObu(const uint8_t* data, int size)
 
     if (m_temporalUnit.empty())
     {
-        m_temporalUnit.insert(m_temporalUnit.end(),
+        m_temporalUnit.insert(
+            m_temporalUnit.end(),
             kTemporalDelimiterObu,
             kTemporalDelimiterObu + sizeof(kTemporalDelimiterObu));
     }
@@ -445,7 +460,8 @@ void Av1Parser::setSdpInfo(const Sdp::Media& sdp)
     {
         if (sdp.rtpmap.clockRate != kAv1ClockRate)
         {
-            NX_WARNING(this,
+            NX_WARNING(
+                this,
                 "%1: unexpected AV1 clock rate %2, expected %3",
                 logId(),
                 sdp.rtpmap.clockRate,

@@ -9,11 +9,13 @@
 
 namespace nx {
 
-template <typename Value>
+template<typename Value>
 class ValueLocker
 {
 public:
-    ValueLocker(nx::Mutex* mutex = nullptr, Value* value = nullptr): m_mutex(mutex), m_value(value)
+    ValueLocker(nx::Mutex* mutex = nullptr, Value* value = nullptr):
+        m_mutex(mutex),
+        m_value(value)
     {
         if (m_mutex)
             m_mutex->lock();
@@ -66,15 +68,9 @@ public:
     {
     }
 
-    LockedType lock()
-    {
-        return ValueLocker<Value>(&m_mutex, &m_value);
-    };
+    LockedType lock() { return ValueLocker<Value>(&m_mutex, &m_value); };
 
-    const LockedType lock() const
-    {
-        return LockedType(&m_mutex, &m_value);
-    };
+    const LockedType lock() const { return LockedType(&m_mutex, &m_value); };
 
     /**
      * Calls the visitor with the value while holding the lock, so that a caller needing only a

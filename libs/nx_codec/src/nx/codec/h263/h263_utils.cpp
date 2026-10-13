@@ -7,12 +7,12 @@
 namespace nx::media::h263 {
 
 const uint16_t kFormatResolutions[8][2] = {
-    {    0,    0 },
-    {  128,   96 },
-    {  176,  144 },
-    {  352,  288 },
-    {  704,  576 },
-    { 1408, 1152 },
+    {0, 0},
+    {128, 96},
+    {176, 144},
+    {352, 288},
+    {704, 576},
+    {1408, 1152},
 };
 
 // based on ff_h263_decode_picture_header
@@ -35,13 +35,13 @@ bool PictureHeader::decode(const uint8_t* data, uint32_t size)
         reader.skipBit(); /* split screen off */
         reader.skipBit(); /* camera  off */
         reader.skipBit(); /* freeze picture release off */
-        format = (Format)reader.getBits(3);
+        format = (Format) reader.getBits(3);
         if (format != Format::ExtendedPType && format != Format::Reserved)
         {
             /* H.263v1 */
             pictureType = reader.getBit() == 1 ? PictureType::IPicture : PictureType::PPicture;
-            width = kFormatResolutions[(int)format][0];
-            height = kFormatResolutions[(int)format][1];
+            width = kFormatResolutions[(int) format][0];
+            height = kFormatResolutions[(int) format][1];
         }
         else
         {
@@ -52,7 +52,7 @@ bool PictureHeader::decode(const uint8_t* data, uint32_t size)
             if (ufep == 1)
             {
                 /* OPPTYPE */
-                format = (Format)reader.getBits(3);
+                format = (Format) reader.getBits(3);
                 reader.skipBits(15); // TODO process skipped bits
             }
             else if (ufep != 0)
@@ -60,7 +60,7 @@ bool PictureHeader::decode(const uint8_t* data, uint32_t size)
                 return false;
             }
             /* MPPTYPE */
-            pictureType = (PictureType)reader.getBits(3);
+            pictureType = (PictureType) reader.getBits(3);
 
             reader.skipBits(7);
             if (ufep)
@@ -75,8 +75,8 @@ bool PictureHeader::decode(const uint8_t* data, uint32_t size)
                 }
                 else
                 {
-                    width = kFormatResolutions[(int)format][0];
-                    height = kFormatResolutions[(int)format][1];
+                    width = kFormatResolutions[(int) format][0];
+                    height = kFormatResolutions[(int) format][1];
                 }
             }
         }
@@ -86,7 +86,6 @@ bool PictureHeader::decode(const uint8_t* data, uint32_t size)
         return false;
     }
     return true;
-
 }
 
 } // namespace nx::media::h263

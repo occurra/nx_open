@@ -4,10 +4,7 @@
 
 namespace nx::utils::bstream {
 
-StringReplacer::StringReplacer(
-    const std::string& before,
-    const std::string& after)
-    :
+StringReplacer::StringReplacer(const std::string& before, const std::string& after):
     m_replacer(before, after)
 {
 }

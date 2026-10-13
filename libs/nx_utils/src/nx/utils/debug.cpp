@@ -18,8 +18,7 @@ namespace nx::utils::debug {
 
 static OnAboutToBlockHandler onAboutToBlockHandler;
 
-OnAboutToBlockHandler setOnAboutToBlockHandler(
-    OnAboutToBlockHandler handler)
+OnAboutToBlockHandler setOnAboutToBlockHandler(OnAboutToBlockHandler handler)
 {
     return std::exchange(onAboutToBlockHandler, std::move(handler));
 }
@@ -36,15 +35,13 @@ QString formatFileName(QString name, FormatFilePattern formatPattern, const QDir
         QRegularExpression(QLatin1String("%T")),
         QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH-mm-ss-zzz")));
 
-    #if defined(Q_OS_WIN)
-        const qulonglong processId = GetCurrentProcessId();
-    #else
-        const qulonglong processId = getpid();
-    #endif
+#if defined(Q_OS_WIN)
+    const qulonglong processId = GetCurrentProcessId();
+#else
+    const qulonglong processId = getpid();
+#endif
 
-    name.replace(
-        QRegularExpression(QLatin1String("%P")),
-        QString::number(processId));
+    name.replace(QRegularExpression(QLatin1String("%P")), QString::number(processId));
 
     if (formatPattern == FormatFilePattern::desktopClient)
     {
@@ -57,9 +54,7 @@ QString formatFileName(QString name, FormatFilePattern formatPattern, const QDir
             QCoreApplication::applicationVersion());
     }
 
-    return QFileInfo(name).isAbsolute()
-        ? name
-        : defaultDir.absoluteFilePath(name);
+    return QFileInfo(name).isAbsolute() ? name : defaultDir.absoluteFilePath(name);
 }
 
 QString formatFileName(QString name, const QDir& defaultDir)

@@ -106,9 +106,7 @@ TEST(ranges, catValueTupleLikeOwningAsRvalueWorksWithMapOfUniquePtr)
         std::vector<std::tuple<std::string_view, std::string, int>> rows;
 
         for (auto&& [serverName, deviceName, idPtr]:
-                makeUniquePtrMap(33, 44)
-                | std::views::as_rvalue
-                | nx::views::catLeft("beta"sv))
+             makeUniquePtrMap(33, 44) | std::views::as_rvalue | nx::views::catLeft("beta"sv))
         {
             ASSERT_TRUE(idPtr);
             rows.emplace_back(serverName, deviceName, *idPtr);
@@ -127,9 +125,7 @@ TEST(ranges, catValueTupleLikeOwningAsRvalueWorksWithMapOfUniquePtr)
         std::vector<std::tuple<std::string, int, std::string_view>> rows;
 
         for (auto&& [deviceName, idPtr, serverName]:
-                nx::views::catRight(
-                    makeUniquePtrMap(55, 66) | std::views::as_rvalue,
-                    "prod"sv))
+             nx::views::catRight(makeUniquePtrMap(55, 66) | std::views::as_rvalue, "prod"sv))
         {
             ASSERT_TRUE(idPtr);
             rows.emplace_back(deviceName, *idPtr, serverName);

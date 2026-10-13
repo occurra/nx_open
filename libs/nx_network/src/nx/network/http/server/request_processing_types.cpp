@@ -12,7 +12,9 @@ static std::optional<TraceContext> parseAmznTraceId(const std::string& text)
 
     TraceContext ctx;
     nx::utils::splitNameValuePairs(
-        text, ';', '=',
+        text,
+        ';',
+        '=',
         [&ctx](const std::string_view name, const std::string_view value)
         {
             if (name == "Root")
@@ -68,8 +70,7 @@ RequestContext::RequestContext(
     const SocketAddress& clientEndpoint,
     Attrs attrs,
     http::Request request,
-    std::unique_ptr<AbstractMsgBodySourceWithCache> body)
-    :
+    std::unique_ptr<AbstractMsgBodySourceWithCache> body):
     connectionAttrs(std::move(connectionAttrs)),
     conn(connection),
     clientEndpoint(clientEndpoint),
@@ -95,8 +96,7 @@ RequestResult::RequestResult(StatusCode::Value statusCode):
 
 RequestResult::RequestResult(
     nx::network::http::StatusCode::Value statusCode,
-    std::unique_ptr<nx::network::http::AbstractMsgBodySource> body)
-    :
+    std::unique_ptr<nx::network::http::AbstractMsgBodySource> body):
     statusCode(statusCode),
     body(std::move(body))
 {
@@ -105,8 +105,7 @@ RequestResult::RequestResult(
 RequestResult::RequestResult(
     nx::network::http::StatusCode::Value statusCode,
     std::unique_ptr<nx::network::http::AbstractMsgBodySource> body,
-    ConnectionEvents connectionEvents)
-    :
+    ConnectionEvents connectionEvents):
     statusCode(statusCode),
     body(std::move(body)),
     connectionEvents(std::move(connectionEvents))
@@ -116,8 +115,7 @@ RequestResult::RequestResult(
 RequestResult::RequestResult(
     StatusCode::Value statusCode,
     nx::network::http::HttpHeaders responseHeaders,
-    std::unique_ptr<nx::network::http::AbstractMsgBodySource> msgBody)
-    :
+    std::unique_ptr<nx::network::http::AbstractMsgBodySource> msgBody):
     statusCode(statusCode),
     headers(std::move(responseHeaders)),
     body(std::move(msgBody))

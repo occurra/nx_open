@@ -39,37 +39,36 @@ struct AVRtpPayloadType
     int audio_channels;
 };
 
-std::array<AVRtpPayloadType, 29> kStaticPayloadTypes = {{
-    {0, "PCMU",        AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_PCM_MULAW, 8000, 1},
-    {3, "GSM",         AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_NONE, 8000, 1},
-    {4, "G723",        AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_G723_1, 8000, 1},
-    {5, "DVI4",        AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_NONE, 8000, 1},
-    {6, "DVI4",        AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_NONE, 16000, 1},
-    {7, "LPC",         AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_NONE, 8000, 1},
-    {8, "PCMA",        AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_PCM_ALAW, 8000, 1},
-    {9, "G722",        AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_ADPCM_G722, 8000, 1},
-    {10, "L16",        AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_PCM_S16BE, 44100, 2},
-    {11, "L16",        AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_PCM_S16BE, 44100, 1},
-    {12, "QCELP",      AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_QCELP, 8000, 1},
-    {13, "CN",         AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_NONE, 8000, 1},
-    {14, "MPA",        AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_MP2, -1, -1},
-    {97, "mpa-robust", AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_MP3, -1, -1},
-    {15, "G728",       AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_NONE, 8000, 1},
-    {16, "DVI4",       AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_NONE, 11025, 1},
-    {17, "DVI4",       AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_NONE, 22050, 1},
-    {18, "G729",       AVMEDIA_TYPE_AUDIO,   AV_CODEC_ID_NONE, 8000, 1},
-    {25, "CelB",       AVMEDIA_TYPE_VIDEO,   AV_CODEC_ID_NONE, 90000, -1},
-    {26, "JPEG",       AVMEDIA_TYPE_VIDEO,   AV_CODEC_ID_MJPEG, 90000, -1},
-    {28, "nv",         AVMEDIA_TYPE_VIDEO,   AV_CODEC_ID_NONE, 90000, -1},
-    {31, "H261",       AVMEDIA_TYPE_VIDEO,   AV_CODEC_ID_H261, 90000, -1},
-    {32, "MPV",        AVMEDIA_TYPE_VIDEO,   AV_CODEC_ID_MPEG1VIDEO, 90000, -1},
-    {32, "MPV",        AVMEDIA_TYPE_VIDEO,   AV_CODEC_ID_MPEG2VIDEO, 90000, -1},
-    {33, "MP2T",       AVMEDIA_TYPE_DATA,    AV_CODEC_ID_MPEG2TS, 90000, -1},
-    {34, "H263",       AVMEDIA_TYPE_VIDEO,   AV_CODEC_ID_H263, 90000, -1},
-    {96, "H264",       AVMEDIA_TYPE_VIDEO,   AV_CODEC_ID_H264, 90000, -1},
-    {96, "MPEG4-GENERIC",  AVMEDIA_TYPE_VIDEO,   AV_CODEC_ID_MPEG4, 90000, -1},
-    {96, "H265", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_HEVC, 90000, -1}
-}};
+std::array<AVRtpPayloadType, 29> kStaticPayloadTypes = {
+    {{0, "PCMU", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_PCM_MULAW, 8000, 1},
+     {3, "GSM", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_NONE, 8000, 1},
+     {4, "G723", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_G723_1, 8000, 1},
+     {5, "DVI4", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_NONE, 8000, 1},
+     {6, "DVI4", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_NONE, 16000, 1},
+     {7, "LPC", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_NONE, 8000, 1},
+     {8, "PCMA", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_PCM_ALAW, 8000, 1},
+     {9, "G722", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_ADPCM_G722, 8000, 1},
+     {10, "L16", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_PCM_S16BE, 44100, 2},
+     {11, "L16", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_PCM_S16BE, 44100, 1},
+     {12, "QCELP", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_QCELP, 8000, 1},
+     {13, "CN", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_NONE, 8000, 1},
+     {14, "MPA", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_MP2, -1, -1},
+     {97, "mpa-robust", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_MP3, -1, -1},
+     {15, "G728", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_NONE, 8000, 1},
+     {16, "DVI4", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_NONE, 11025, 1},
+     {17, "DVI4", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_NONE, 22050, 1},
+     {18, "G729", AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_NONE, 8000, 1},
+     {25, "CelB", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_NONE, 90000, -1},
+     {26, "JPEG", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_MJPEG, 90000, -1},
+     {28, "nv", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_NONE, 90000, -1},
+     {31, "H261", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_H261, 90000, -1},
+     {32, "MPV", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_MPEG1VIDEO, 90000, -1},
+     {32, "MPV", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_MPEG2VIDEO, 90000, -1},
+     {33, "MP2T", AVMEDIA_TYPE_DATA, AV_CODEC_ID_MPEG2TS, 90000, -1},
+     {34, "H263", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_H263, 90000, -1},
+     {96, "H264", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_H264, 90000, -1},
+     {96, "MPEG4-GENERIC", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_MPEG4, 90000, -1},
+     {96, "H265", AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_HEVC, 90000, -1}}};
 
 QSize getVideoSize(QnConstAbstractMediaDataPtr media)
 {
@@ -181,7 +180,7 @@ QList<QString> getSdpAttributesFromContext(AVFormatContext* fmt, int payloadType
     if (fmt && fmt->streams[0] && fmt->streams[0]->codecpar)
         codecpar = fmt->streams[0]->codecpar;
 
-    static const int kMaxSdpSize = 1024*16;
+    static const int kMaxSdpSize = 1024 * 16;
     char buffer[kMaxSdpSize];
     memset(buffer, 0, sizeof(buffer));
 
@@ -190,9 +189,8 @@ QList<QString> getSdpAttributesFromContext(AVFormatContext* fmt, int payloadType
     QList<QString> result;
     for (auto& line: lines)
     {
-        if (line.startsWith("a=rtpmap") ||
-            line.startsWith("a=fmtp") ||
-            line.startsWith("a=framesize"))
+        if (line.startsWith("a=rtpmap") || line.startsWith("a=fmtp")
+            || line.startsWith("a=framesize"))
         {
             bool isH264 = codecpar && codecpar->codec_id == AV_CODEC_ID_H264;
             if (webRtcMode && isH264 && line.startsWith("a=fmtp"))
@@ -206,14 +204,17 @@ QList<QString> getSdpAttributesFromContext(AVFormatContext* fmt, int payloadType
     }
     if (codecpar && codecpar->codec_id == AV_CODEC_ID_MJPEG)
     {
-        result.push_back(nx::format("a=framesize:%1 %2-%3").args(
-            payloadType, codecpar->width, codecpar->height));
+        result.push_back(
+            nx::format("a=framesize:%1 %2-%3")
+                .args(payloadType, codecpar->width, codecpar->height));
     }
     return result;
 }
 
 QList<QString> getSdpAttributesFromCodecpar(
-    const AVCodecParameters* codecParameters, int payloadType, bool webRtcMode)
+    const AVCodecParameters* codecParameters,
+    int payloadType,
+    bool webRtcMode)
 {
     if (!codecParameters)
         return QList<QString>();
@@ -265,7 +266,9 @@ void QnUniversalRtpEncoder::buildSdp(
     if (transcoding || !m_isVideo || !m_config.useMultipleSdpPayloadTypes)
     {
         m_sdpAttributes = getSdpAttributesFromContext(
-            m_transcoder.muxer().getFormatContext(), m_payloadType, m_config.webRtcMode);
+            m_transcoder.muxer().getFormatContext(),
+            m_payloadType,
+            m_config.webRtcMode);
     }
     else
     {
@@ -277,9 +280,9 @@ void QnUniversalRtpEncoder::buildSdp(
         if (mediaHigh && mediaHigh->context)
         {
             m_sdpAttributes.append(getSdpAttributesFromCodecpar(
-                    mediaHigh->context->getAvCodecParameters(),
-                    highPayloadType,
-                    m_config.webRtcMode));
+                mediaHigh->context->getAvCodecParameters(),
+                highPayloadType,
+                m_config.webRtcMode));
         }
         if (mediaLow && mediaLow->context)
         {
@@ -339,7 +342,8 @@ bool QnUniversalRtpEncoder::open(
                 NX_DEBUG(this, "Failed to get frame size, codec: %1", media->compressionType);
         }
         m_transcoder.setTranscodingSettings(extraTranscodeParams);
-        m_transcoder.setVideoCodec(codec, method, Qn::StreamQuality::normal, sourceSize, videoSize);
+        m_transcoder
+            .setVideoCodec(codec, method, Qn::StreamQuality::normal, sourceSize, videoSize);
         status = m_transcoder.open(
             std::dynamic_pointer_cast<const QnCompressedVideoData>(media),
             QnConstCompressedAudioDataPtr());
@@ -384,8 +388,8 @@ bool QnUniversalRtpEncoder::open(const AVCodecParameters* codecParameters)
         return false;
     }
     m_payloadType = getPayloadType(codecParameters->codec_id, m_isVideo);
-    m_sdpAttributes = getSdpAttributesFromCodecpar(
-        codecParameters, m_payloadType, m_config.webRtcMode);
+    m_sdpAttributes =
+        getSdpAttributesFromCodecpar(codecParameters, m_payloadType, m_config.webRtcMode);
     return true;
 }
 
@@ -399,8 +403,8 @@ QString QnUniversalRtpEncoder::getSdpMedia(bool isVideo, int trackId, int port, 
     static const QString kEndl = "\r\n";
     QString sdpMedia;
     QTextStream stream(&sdpMedia);
-    stream << "m=" << (isVideo ? "video " : "audio ") << port <<
-        (ssl ? " UDP/TLS/RTP/SAVPF " : " RTP/AVP ") << m_payloadType;
+    stream << "m=" << (isVideo ? "video " : "audio ") << port
+           << (ssl ? " UDP/TLS/RTP/SAVPF " : " RTP/AVP ") << m_payloadType;
     if (m_useSecondaryPayloadType)
         stream << ' ' << kSecondaryStreamPayloadType;
     stream << kEndl;
@@ -445,8 +449,11 @@ void QnUniversalRtpEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
     // Do not continue rtsp stream if codec changed.
     if (!m_transcodingEnabled && media && m_sourceCodec != media->compressionType)
     {
-        NX_DEBUG(this, "Codec changed from %1 to %2, close rtsp session",
-            m_sourceCodec, media->compressionType);
+        NX_DEBUG(
+            this,
+            "Codec changed from %1 to %2, close rtsp session",
+            m_sourceCodec,
+            media->compressionType);
         m_eof = true;
     }
     if (m_eof)
@@ -464,11 +471,15 @@ void QnUniversalRtpEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
 //  16-bit profile: 0xBEDE
 //  16-bit length: number of 32-bit words following
 //  extensions: [ (id<<4 | (len-1)) + data... ] + padding to 32-bit
-static int writeMidExtensionBlock(uint8_t* out, int outCap, uint8_t midExtId, const std::string& mid)
+static int writeMidExtensionBlock(
+    uint8_t* out,
+    int outCap,
+    uint8_t midExtId,
+    const std::string& mid)
 {
     // MID in RFC8285 is the ASCII string (e.g. "0", "1", "128" etc).
     // One-byte header len field supports 1..16 bytes.
-    const int midLen = (int)mid.size();
+    const int midLen = (int) mid.size();
     if (midLen <= 0 || midLen > 16)
         return 0;
 
@@ -518,13 +529,12 @@ bool QnUniversalRtpEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
         return false;
 
     const QList<int> packets = m_transcoder.muxer().getPacketsSize();
-    if (m_outputPos >= (int) m_outputBuffer.size() - nx::rtp::RtpHeader::kSize ||
-        m_packetIndex >= packets.size())
+    if (m_outputPos >= (int) m_outputBuffer.size() - nx::rtp::RtpHeader::kSize
+        || m_packetIndex >= packets.size())
         return false;
 
     auto timestamps = m_transcoder.muxer().getLastPacketTimestamp();
-    nx::rtp::RtpHeader* rtpHeader =
-        (nx::rtp::RtpHeader*)(m_outputBuffer.data() + m_outputPos);
+    nx::rtp::RtpHeader* rtpHeader = (nx::rtp::RtpHeader*) (m_outputBuffer.data() + m_outputPos);
 
     if (m_isCurrentPacketSecondaryStream)
         rtpHeader->payloadType = kSecondaryStreamPayloadType;
@@ -543,7 +553,7 @@ bool QnUniversalRtpEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
                 m_rtcpReporter.setCName(*m_cname);
             int size = m_rtcpReporter.getReport().write(buffer, sizeof(buffer));
 
-            sendBuffer.write((char*)buffer, size);
+            sendBuffer.write((char*) buffer, size);
             if (m_encryptor)
                 return m_encryptor->encryptPacket(&sendBuffer, dataStartIndex);
             return true;
@@ -573,16 +583,17 @@ bool QnUniversalRtpEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
         nx::rtp::OnvifHeaderExtension onvifExtension;
         onvifExtension.ntp = std::chrono::microseconds(timestamps.ntpTimestamp);
         uint32_t size = onvifExtension.write(buffer, sizeof(buffer));
-        sendBuffer.write((char*)buffer, size);
+        sendBuffer.write((char*) buffer, size);
     }
 
     if (!m_mid.empty())
     {
         // Write MID extension block (example: ID=1, mid="0"/"1")
         uint8_t extBuf[64];
-        const int extSize = writeMidExtensionBlock( extBuf, (int)sizeof(extBuf), /*midExtId*/ 1, m_mid);
+        const int extSize =
+            writeMidExtensionBlock(extBuf, (int) sizeof(extBuf), /*midExtId*/ 1, m_mid);
         if (extSize > 0)
-            sendBuffer.write((char*)extBuf, extSize);
+            sendBuffer.write((char*) extBuf, extSize);
     }
 
     sendBuffer.write(packetOffset, packetSize);

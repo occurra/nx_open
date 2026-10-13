@@ -32,7 +32,8 @@ public:
     using hasher = typename HashMap::hasher;
 
     /**
-     * @param partitionCount If zero, then initialized with 2 * std::thread::hardware_concurrency();
+     * @param partitionCount If zero, then initialized with 2 *
+     * std::thread::hardware_concurrency();
      */
     PartitionedConcurrentHashMap(unsigned int partitionCount = 0);
 
@@ -43,7 +44,8 @@ public:
     bool insert(value_type&& value);
     bool insert_or_assign(const Key& key, const T& value);
     bool insert_or_assign(Key&& key, T&& value);
-    template<typename... Args> bool emplace(Args&&... args);
+    template<typename... Args>
+    bool emplace(Args&&... args);
     size_type erase(const Key& key);
 
     /** Removes and returns element from the dictionary. */

@@ -19,7 +19,9 @@ public:
     std::string toBase64(int /*dummyOptions*/) const { return ""; }
 };
 
-class NotBase64Convertible {};
+class NotBase64Convertible
+{
+};
 
 } // namespace
 

@@ -9,8 +9,7 @@
 namespace nx::network::http::test {
 
 // TODO: Use TestHttpServer?
-class AuthHttpServer:
-    public nx::network::test::SynchronousStreamSocketServer
+class AuthHttpServer: public nx::network::test::SynchronousStreamSocketServer
 {
 public:
     struct AuthHeader
@@ -26,7 +25,11 @@ public:
     void setUseProxyAuthentication(bool value);
 
 private:
-    enum class NextResponse {unauthorized, success};
+    enum class NextResponse
+    {
+        unauthorized,
+        success
+    };
 
     std::vector<nx::Buffer> m_receivedRequests;
     std::vector<AuthHeader> m_authHeaders;
@@ -48,18 +51,17 @@ struct TestParams
     int expectedHttpCode = 0;
 };
 
-class HttpClientAsyncAuthorization:
-    public ::testing::TestWithParam<TestParams>
+class HttpClientAsyncAuthorization: public ::testing::TestWithParam<TestParams>
 {
 public:
     HttpClientAsyncAuthorization();
     virtual ~HttpClientAsyncAuthorization() override;
 
-    void givenHttpServerWithAuthorization(
-        std::vector<AuthHttpServer::AuthHeader> authData);
-    void givenHttpServerWithProxyAuthentication(
-        std::vector<AuthHttpServer::AuthHeader> authData);
-    void whenClientSendHttpRequestAndIsRequiredToUse(AuthType auth, const char* username = nullptr);
+    void givenHttpServerWithAuthorization(std::vector<AuthHttpServer::AuthHeader> authData);
+    void givenHttpServerWithProxyAuthentication(std::vector<AuthHttpServer::AuthHeader> authData);
+    void whenClientSendHttpRequestAndIsRequiredToUse(
+        AuthType auth,
+        const char* username = nullptr);
     void whenClientSendsRequestThroughAuthenticatingProxy();
     void thenClientRequestContainsAuthAttrs(const char* exptectedHeaderResponse);
     void thenClientGotResponseWithCode(int expectedHttpCode);

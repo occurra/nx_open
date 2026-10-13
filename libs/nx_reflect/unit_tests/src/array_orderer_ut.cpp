@@ -61,24 +61,30 @@ TEST(ArrayOrderer, Reverse)
 TEST(ArrayOrderer, Nested)
 {
     std::vector<Model> list{
-        {.nested = {"name2", 1}}, {.nested = {"name1", 1}}, {.nested = {"name", 2}}};
+        {.nested = {"name2", 1}},
+        {.nested = {"name1", 1}},
+        {.nested = {"name", 2}}};
     std::vector<ArrayOrder> nestedFields{{"number", /*reverse*/ true}, {"name"}};
     std::vector<ArrayOrder> fields{{.name = "nested", .fields = nestedFields}};
     order(&list, {.fields = fields});
     std::vector<Model> expectedList{
-        {.nested = {"name", 2}}, {.nested = {"name1", 1}}, {.nested = {"name2", 1}}};
+        {.nested = {"name", 2}},
+        {.nested = {"name1", 1}},
+        {.nested = {"name2", 1}}};
     ASSERT_EQ(list, expectedList);
 }
 
 TEST(ArrayOrderer, NestedList)
 {
     std::vector<Model2> list{
-        {"name2", 1, std::vector<Nested>{{"name2", 1}, {"name1", 1}, {"name", 2}}}, {"name1", 1}};
+        {"name2", 1, std::vector<Nested>{{"name2", 1}, {"name1", 1}, {"name", 2}}},
+        {"name1", 1}};
     std::vector<ArrayOrder> nestedFields{{"number", /*reverse*/ true}, {"name"}};
     std::vector<ArrayOrder> fields{{"name2"}, {.name = "nestedList", .fields = nestedFields}};
     order(&list, {.fields = fields});
     std::vector<Model2> expectedList{
-        {"name1", 1}, {"name2", 1, std::vector<Nested>{{"name", 2}, {"name1", 1}, {"name2", 1}}}};
+        {"name1", 1},
+        {"name2", 1, std::vector<Nested>{{"name", 2}, {"name1", 1}, {"name2", 1}}}};
     ASSERT_EQ(list, expectedList);
 }
 

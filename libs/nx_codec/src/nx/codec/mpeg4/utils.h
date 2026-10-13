@@ -8,7 +8,6 @@
 
 namespace nx::media::mpeg4 {
 
-NX_CODEC_API std::optional<VideoObjectLayer> findAndParseVolHeader(
-    const uint8_t* data, int size);
+NX_CODEC_API std::optional<VideoObjectLayer> findAndParseVolHeader(const uint8_t* data, int size);
 
 } // namespace nx::media::mpeg4

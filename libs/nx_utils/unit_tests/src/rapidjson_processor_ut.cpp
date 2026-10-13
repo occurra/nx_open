@@ -2,9 +2,8 @@
 
 #include <gtest/gtest.h>
 
-#include <nx/utils/rapidjson/processor.h>
 #include <nx/reflect/instrument.h>
-
+#include <nx/utils/rapidjson/processor.h>
 #include <nx/utils/string.h>
 
 namespace {
@@ -34,13 +33,15 @@ const QString smallJson = R"(
 })";
 
 void insertAfterPeviousElement(
-    QString& jsonString, const QString& peviousElement, const QString& newElement)
+    QString& jsonString,
+    const QString& peviousElement,
+    const QString& newElement)
 {
     auto ind = jsonString.indexOf(peviousElement);
     jsonString.insert(ind + peviousElement.size(), newElement);
 }
 
-template <typename T>
+template<typename T>
 std::string documentToString(const T& doc)
 {
     ::rapidjson::StringBuffer buffer;
@@ -123,31 +124,29 @@ namespace nx::utils::rapidjson::test {
 
 TEST(Processor, IteratorHelperTest)
 {
-    auto pred =
-        [](auto& val)
-        {
-            using T = std::decay_t<decltype(val)>;
-            std::string name;
-            if constexpr (std::is_same_v<T, ::rapidjson::Value::MemberIterator>)
-                name = val->name.GetString();
-            else
-                name = val->GetString();
-            return name.starts_with("A");
-        };
+    auto pred = [](auto& val)
+    {
+        using T = std::decay_t<decltype(val)>;
+        std::string name;
+        if constexpr (std::is_same_v<T, ::rapidjson::Value::MemberIterator>)
+            name = val->name.GetString();
+        else
+            name = val->GetString();
+        return name.starts_with("A");
+    };
 
     details::Condition cond{pred};
 
-    auto pred2 =
-        [](auto& val)
-        {
-            using T = std::decay_t<decltype(val)>;
-            std::string name;
-            if constexpr (std::is_same_v<T, ::rapidjson::Value::MemberIterator>)
-                name = val->name.GetString();
-            else
-                name = val->GetString();
-            return name.find("1") != std::string::npos;
-        };
+    auto pred2 = [](auto& val)
+    {
+        using T = std::decay_t<decltype(val)>;
+        std::string name;
+        if constexpr (std::is_same_v<T, ::rapidjson::Value::MemberIterator>)
+            name = val->name.GetString();
+        else
+            name = val->GetString();
+        return name.find("1") != std::string::npos;
+    };
 
     details::Condition cond2{pred2};
 
@@ -253,7 +252,12 @@ TEST(Processor, PathTest)
     ASSERT_FALSE(invalidTokens3.isValid());
 
     details::Path tokensSartsWithCondition{
-        "/[?]/sections/[?]/sections/0/[?]/[?]/sections/0/name/[?]", cond, cond, cond, cond, cond};
+        "/[?]/sections/[?]/sections/0/[?]/[?]/sections/0/name/[?]",
+        cond,
+        cond,
+        cond,
+        cond,
+        cond};
     ASSERT_TRUE(tokensSartsWithCondition.isValid());
     ASSERT_EQ(tokensSartsWithCondition.tokenCount(), 8);
     ASSERT_EQ(tokensSartsWithCondition.conditionCount(), 5);
@@ -298,7 +302,9 @@ TEST(Processor, Find)
 
     // More complex cases.
     auto v5 = r.getAllValues<QString>(
-        "/sections/[?]/sections/[?]/name", Cont("name", QStringList{"B", "H"}), Comp("name", "C"));
+        "/sections/[?]/sections/[?]/name",
+        Cont("name", QStringList{"B", "H"}),
+        Comp("name", "C"));
     ASSERT_EQ(v5.size(), 1);
     ASSERT_EQ(v5[0], "C");
 
@@ -347,14 +353,15 @@ TEST(Processor, Find)
     ASSERT_EQ(res, rightResult2);
     res.clear();
     for (auto& v: v13)
-        if (auto returned = v.getValue<std::string>("/sections/[?]/name", Comp("name", "E")); returned.has_value())
+        if (auto returned = v.getValue<std::string>("/sections/[?]/name", Comp("name", "E"));
+            returned.has_value())
             res.push_back(returned.value());
     ASSERT_EQ(res.size(), 1);
     ASSERT_EQ(res[0], "E");
 
     auto v15 = r.getValue<SmallObject>("/sections/1/sections/1");
     ASSERT_TRUE(v15.has_value());
-    SmallObject rightResult3{.name="D", .sections={SmallObject{.name="E"}}};
+    SmallObject rightResult3{.name = "D", .sections = {SmallObject{.name = "E"}}};
     ASSERT_EQ(v15.value(), rightResult3);
 
     // Test search in objects.
@@ -370,7 +377,9 @@ TEST(Processor, Find)
     // Empty path.
     Processor rSmallObject{smallJson.toUtf8()};
     auto v18 = rSmallObject.getValue<SmallObject>("");
-    SmallObject rightResult6{.name = "smallObject", .sections={SmallObject{.name="S1"}, SmallObject{.name="S2"}}};
+    SmallObject rightResult6{
+        .name = "smallObject",
+        .sections = {SmallObject{.name = "S1"}, SmallObject{.name = "S2"}}};
     ASSERT_EQ(v18, rightResult6);
 
     // Return Processor.
@@ -400,15 +409,13 @@ TEST(Processor, Erase)
     ASSERT_EQ(r.toStdString(), jsonString.toStdString());
 
     jsonString.remove(R"(,"sections":[{"name":"E"}])");
-    auto s2 = r.eraseValue(
-        "/sections/[?]/sections/[?]/sections", Comp("name", "B"), Comp("name", "D"));
+    auto s2 =
+        r.eraseValue("/sections/[?]/sections/[?]/sections", Comp("name", "B"), Comp("name", "D"));
     ASSERT_TRUE(s2);
     ASSERT_EQ(r.toStdString(), jsonString.toStdString());
 
     jsonString.remove(R"({"name":"F"},)");
-    auto s3 =
-        r.eraseValue(
-        "/sections/[?]/sections/[?]", Comp("name", "B"), Comp("name", "F"));
+    auto s3 = r.eraseValue("/sections/[?]/sections/[?]", Comp("name", "B"), Comp("name", "F"));
     ASSERT_TRUE(s3);
     ASSERT_EQ(r.toStdString(), jsonString.toStdString());
 
@@ -418,7 +425,9 @@ TEST(Processor, Erase)
     jsonString2.remove(R"({"name":"D","sections":[{"name":"E"}]},)");
     jsonString2.remove(R"({"name":"F"},)");
     auto s4 = r2.eraseAllValues(
-        "/sections/[?]/sections/[?]", Comp("name", "B"), Cont("name", QStringList{"D", "F"}));
+        "/sections/[?]/sections/[?]",
+        Comp("name", "B"),
+        Cont("name", QStringList{"D", "F"}));
     ASSERT_EQ(s4, 2);
     ASSERT_EQ(r2.toStdString(), jsonString2.toStdString());
 }
@@ -441,14 +450,20 @@ TEST(Processor, Modify)
 
     jsonString.replace(R"("name":"D")", R"("name":"new name")");
     auto s2 = r.modifyValue(
-        "new name", "/sections/[?]/sections/[?]/name", Comp("name", "B"), Comp("name", "D"));
+        "new name",
+        "/sections/[?]/sections/[?]/name",
+        Comp("name", "B"),
+        Comp("name", "D"));
     ASSERT_TRUE(s2);
     ASSERT_EQ(r.toStdString(), jsonString.toStdString());
 
     jsonString.replace(R"("name":"C")", R"("name":"new name")");
     jsonString.replace(R"("name":"F")", R"("name":"new name")");
     auto s3 = r.modifyAllValues(
-        "new name", "/sections/[?]/sections/[?]/name", Comp("name", "B"), Cont("name", QStringList{"C", "F"}));
+        "new name",
+        "/sections/[?]/sections/[?]/name",
+        Comp("name", "B"),
+        Cont("name", QStringList{"C", "F"}));
     ASSERT_EQ(s3, 2);
     ASSERT_EQ(r.toStdString(), jsonString.toStdString());
 
@@ -456,7 +471,8 @@ TEST(Processor, Modify)
     QString jsonString2{json.simplified().remove(" ")};
     jsonString2.replace(R"({"name":"F"})", smallJsonString);
     jsonString2.replace(R"({"name":"I"})", smallJsonString);
-    auto s4 = r2.modifyAllValues(val,
+    auto s4 = r2.modifyAllValues(
+        val,
         "/sections/[?]/sections/[?]",
         Cont("name", QStringList{"B", "H"}),
         Cont("name", QStringList{"F", "I"}));
@@ -464,7 +480,8 @@ TEST(Processor, Modify)
     ASSERT_EQ(r2.toStdString(), jsonString2.toStdString());
 
     std::vector<QString> newSections{"S1", "S2", "S3"};
-    jsonString2.replace(R"("name":"H","sections":[)" + smallJsonString + "]",
+    jsonString2.replace(
+        R"("name":"H","sections":[)" + smallJsonString + "]",
         R"("name":"H","sections":["S1","S2","S3"])");
     auto s5 = r2.modifyValue(newSections, "/sections/[?]/sections", Comp("name", "H"));
     ASSERT_EQ(s5, 1);
@@ -486,7 +503,10 @@ TEST(Processor, AddToObject)
     Processor r{json.toUtf8()};
     QString jsonString{json.simplified().remove(" ")};
 
-    insertAfterPeviousElement(jsonString, R"("sections":[{"name":"I"}])", R"(,"new field name":"new field")");
+    insertAfterPeviousElement(
+        jsonString,
+        R"("sections":[{"name":"I"}])",
+        R"(,"new field name":"new field")");
     auto s = r.addValueToObject("new field name", "new field", "/sections/2");
     ASSERT_TRUE(s);
     ASSERT_EQ(r.toStdString(), jsonString.toStdString());
@@ -498,7 +518,8 @@ TEST(Processor, AddToObject)
 
     insertAfterPeviousElement(jsonString, R"("name":"C")", R"(,"sections":"new sections")");
     insertAfterPeviousElement(jsonString, R"("name":"F")", R"(,"sections":"new sections")");
-    auto s3 = r.addValueToObjectAll("sections",
+    auto s3 = r.addValueToObjectAll(
+        "sections",
         "new sections",
         "/sections/[?]/sections/[?]",
         Comp("name", "B"),
@@ -517,23 +538,28 @@ TEST(Processor, AddToObject)
     {
         // Replace element with existing name to new value
         Processor small{smallJson.toUtf8()};
-        auto res = small.addValueToObject<ElementWithExistingName::replace>("name", "new name", "");
+        auto res =
+            small.addValueToObject<ElementWithExistingName::replace>("name", "new name", "");
         ASSERT_TRUE(res);
         smallJsonString.replace("smallObject", "new name");
         ASSERT_EQ(small.toStdString(), smallJsonString.toStdString());
     }
     smallJsonString = smallJson.simplified().remove(" ");
     {
-        // Use default behavior of addMember: two fields in object with the same manes as a result of operation
+        // Use default behavior of addMember: two fields in object with the same manes as a result
+        // of operation
         Processor small{smallJson.toUtf8()};
         auto res = small.addValueToObject<ElementWithExistingName::add>("name", "new name", "");
         ASSERT_TRUE(res);
         insertAfterPeviousElement(
-            smallJsonString, R"("sections":[{"name":"S1"},{"name":"S2"}])", R"(,"name":"new name")");
+            smallJsonString,
+            R"("sections":[{"name":"S1"},{"name":"S2"}])",
+            R"(,"name":"new name")");
         ASSERT_EQ(small.toStdString(), smallJsonString.toStdString());
     }
 
-    // Two ways of getting values will give two different results when in object present two fields with same name
+    // Two ways of getting values will give two different results when in object present two fields
+    // with same name
     {
         Processor small{smallJson.toUtf8()};
         small.addValueToObject<ElementWithExistingName::add>("name", "new name", "");
@@ -559,8 +585,10 @@ TEST(Processor, AddToArray)
     Processor r{json.toUtf8()};
     QString jsonString{json.simplified().remove(" ")};
 
-    insertAfterPeviousElement(jsonString,
-        R"({"name":"H","sections":[{"name":"I"}]})", "," + smallJsonString);
+    insertAfterPeviousElement(
+        jsonString,
+        R"({"name":"H","sections":[{"name":"I"}]})",
+        "," + smallJsonString);
     auto s = r.addValueToArray(val, "/sections");
     ASSERT_TRUE(s);
     ASSERT_EQ(r.toStdString(), jsonString.toStdString());
@@ -581,22 +609,28 @@ TEST(Processor, AddToArray)
 
     // One of the found places is object instead of array.
     insertAfterPeviousElement(jsonString, R"({"name":"E"})", R"(,"new object3")");
-    auto s4 = r.addValueToArrayAll("new object3",
+    auto s4 = r.addValueToArrayAll(
+        "new object3",
         "/sections/[?]/sections/[?]/sections",
-        Comp("name", "B"), Cont("name", QStringList{"C", "D"}));
+        Comp("name", "B"),
+        Cont("name", QStringList{"C", "D"}));
     ASSERT_EQ(s4, 1);
     ASSERT_EQ(r.toStdString(), jsonString.toStdString());
 
-    SmallObject obj{.name="new name", .sections={SmallObject{.name="S1"}, SmallObject{.name="S2"}}};
+    SmallObject obj{
+        .name = "new name",
+        .sections = {SmallObject{.name = "S1"}, SmallObject{.name = "S2"}}};
     auto s5 = r.addValueToArray(obj, "/sections");
-    insertAfterPeviousElement(jsonString,
+    insertAfterPeviousElement(
+        jsonString,
         smallJsonString,
         R"(,{"name":"new name","sections":[{"name":"S1","sections":[]},{"name":"S2","sections":[]}]})");
     ASSERT_TRUE(s5);
     ASSERT_EQ(r.toStdString(), jsonString.toStdString());
 
     // Negative case.
-    auto s6 = r.addValueToArrayAll("new object4",
+    auto s6 = r.addValueToArrayAll(
+        "new object4",
         "/sections/[?]/sections/[?]",
         Comp("name", "B"),
         Cont("name", QStringList{"C", "D"}));
@@ -682,8 +716,8 @@ TEST(Processor, Negation)
     ASSERT_TRUE(notAll.empty());
 
     const auto v2 = rManyFields.getAllValues<std::string>("/[?]", NameCont("name"));
-    const auto v3 = rManyFields.getAllValues<std::string>("/[?]",
-        std::not_fn(std::not_fn(NameCont("name"))));
+    const auto v3 =
+        rManyFields.getAllValues<std::string>("/[?]", std::not_fn(std::not_fn(NameCont("name"))));
     ASSERT_EQ(v2, v3);
 }
 

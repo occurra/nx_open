@@ -6,8 +6,8 @@
 #include <nx/network/aio/pollset_wrapper.h>
 #include <nx/utils/test_support/utils.h>
 
-#include "pollset_test_common.h"
 #include "pollset_performance_tests.h"
+#include "pollset_test_common.h"
 
 namespace nx::network::aio::test {
 
@@ -33,10 +33,7 @@ public:
         return udpSocket;
     }
 
-    std::unique_ptr<Pollable> createSocketOfRandomType()
-    {
-        return createRegularSocket();
-    }
+    std::unique_ptr<Pollable> createSocketOfRandomType() { return createRegularSocket(); }
 
     std::vector<std::unique_ptr<Pollable>> createSocketOfAllSupportedTypes()
     {

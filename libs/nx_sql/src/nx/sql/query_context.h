@@ -11,9 +11,7 @@ namespace nx::sql {
 class NX_SQL_API QueryContext
 {
 public:
-    QueryContext(
-        AbstractDbConnection* const connection,
-        Transaction* const transaction);
+    QueryContext(AbstractDbConnection* const connection, Transaction* const transaction);
 
     AbstractDbConnection* connection();
     const AbstractDbConnection* connection() const;
@@ -25,7 +23,7 @@ public:
     const Transaction* transaction() const;
 
 private:
-    AbstractDbConnection * const m_connection;
+    AbstractDbConnection* const m_connection;
     Transaction* const m_transaction;
 };
 

@@ -38,7 +38,8 @@ void copyAndReplaceHeader(
     if (headerItr == srcHeaders->end())
         return;
     nx::network::http::insertOrReplaceHeader(
-        dstHeaders, nx::network::http::HttpHeader(headerName, headerItr->second));
+        dstHeaders,
+        nx::network::http::HttpHeader(headerName, headerItr->second));
 }
 
 } // namespace
@@ -49,8 +50,7 @@ QnTCPConnectionProcessor::QnTCPConnectionProcessor(
     nx::Uuid peerId,
     std::function<const nx::vms::common::SystemSettings*()> globalSettings,
     QnResourcePool* resourcePool,
-    int maxTcpRequestSize)
-    :
+    int maxTcpRequestSize):
     m_peerId(peerId),
     m_globalSettings(std::move(globalSettings)),
     m_resourcePool(resourcePool),
@@ -69,8 +69,7 @@ QnTCPConnectionProcessor::QnTCPConnectionProcessor(
     nx::Uuid peerId,
     std::function<const nx::vms::common::SystemSettings*()> globalSettings,
     QnResourcePool* resourcePool,
-    int maxTcpRequestSize)
-    :
+    int maxTcpRequestSize):
     m_peerId(peerId),
     m_globalSettings(std::move(globalSettings)),
     m_resourcePool(resourcePool),
@@ -88,8 +87,7 @@ QnTCPConnectionProcessor::QnTCPConnectionProcessor(
     nx::Uuid peerId,
     std::function<const nx::vms::common::SystemSettings*()> globalSettings,
     QnResourcePool* resourcePool,
-    int maxTcpRequestSize)
-    :
+    int maxTcpRequestSize):
     m_peerId(peerId),
     m_globalSettings(std::move(globalSettings)),
     m_resourcePool(resourcePool),
@@ -113,32 +111,32 @@ QnTCPConnectionProcessor::~QnTCPConnectionProcessor()
 
 int QnTCPConnectionProcessor::isFullMessage(
     const QByteArray& message,
-    std::optional<qint64>* const fullMessageSize )
+    std::optional<qint64>* const fullMessageSize)
 {
-    if( message.startsWith(nx_flash_sock::POLICY_FILE_REQUEST_NAME) )
+    if (message.startsWith(nx_flash_sock::POLICY_FILE_REQUEST_NAME))
         return message.size();
 
-    if( fullMessageSize && fullMessageSize->has_value() )
+    if (fullMessageSize && fullMessageSize->has_value())
         return fullMessageSize->value() > message.size()
             ? 0
-            : fullMessageSize->value();   //signalling that full message has been read
+            : fullMessageSize->value(); // signalling that full message has been read
 
     QByteArray delimiter = "\n";
     int pos = message.indexOf(delimiter);
     if (pos == -1)
         return 0;
-    if (pos > 0 && message[pos-1] == '\r')
+    if (pos > 0 && message[pos - 1] == '\r')
         delimiter = "\r\n";
     int contentLen = 0;
 
-    //retrieving content-length from message
+    // retrieving content-length from message
     QByteArray lRequest = message.toLower();
     int contentLenPos = lRequest.indexOf("content-length");
     if (contentLenPos >= 0)
     {
         int posStart = -1;
         int posEnd = -1;
-        for (int i = contentLenPos+1; i < lRequest.length(); ++i)
+        for (int i = contentLenPos + 1; i < lRequest.length(); ++i)
         {
             if (lRequest[i] >= '0' && lRequest[i] <= '9')
             {
@@ -152,7 +150,7 @@ int QnTCPConnectionProcessor::isFullMessage(
 
         bool isOk = false;
         if (posStart >= 0)
-            contentLen = lRequest.mid(posStart, posEnd - posStart+1).toInt(&isOk);
+            contentLen = lRequest.mid(posStart, posEnd - posStart + 1).toInt(&isOk);
 
         if (!isOk || contentLen < 0)
             return -1;
@@ -167,7 +165,7 @@ int QnTCPConnectionProcessor::isFullMessage(
     if (expectedSize < dblDelimPos + dblDelim.size())
         return -1;
 
-    if( fullMessageSize )
+    if (fullMessageSize)
         *fullMessageSize = expectedSize;
     if (expectedSize > message.size())
         return 0;
@@ -193,7 +191,7 @@ bool QnTCPConnectionProcessor::isLargeRequestAllowed(const QByteArray& message)
     int pos = message.indexOf('\n');
     if (pos == -1)
         return false;
-    if (pos > 0 && message[pos-1] == '\r')
+    if (pos > 0 && message[pos - 1] == '\r')
         pos--;
 
     nx::network::http::RequestLine line;
@@ -247,22 +245,26 @@ void QnTCPConnectionProcessor::parseRequest()
         logRequestOrResponse(
             "Received request from",
             d->socket->getForeignAddress(),
-            QByteArray::fromStdString(nx::network::http::getHeaderValue(d->request.headers, "Content-Type")),
-            QByteArray::fromStdString(nx::network::http::getHeaderValue(d->request.headers, "Content-Encoding")),
+            QByteArray::fromStdString(
+                nx::network::http::getHeaderValue(d->request.headers, "Content-Type")),
+            QByteArray::fromStdString(
+                nx::network::http::getHeaderValue(d->request.headers, "Content-Encoding")),
             d->clientRequest,
             d->request.messageBody);
     }
 }
 
 bool QnTCPConnectionProcessor::sendBuffer(
-    const QByteArray& sendBuffer, std::optional<int64_t> timestampForLogging)
+    const QByteArray& sendBuffer,
+    std::optional<int64_t> timestampForLogging)
 {
-    return sendBufferThreadSafe(
-        sendBuffer.constData(), sendBuffer.size(), timestampForLogging);
+    return sendBufferThreadSafe(sendBuffer.constData(), sendBuffer.size(), timestampForLogging);
 }
 
 bool QnTCPConnectionProcessor::sendBuffer(
-    const char* data, int size, std::optional<int64_t> timestampForLogging)
+    const char* data,
+    int size,
+    std::optional<int64_t> timestampForLogging)
 {
     return sendBufferThreadSafe(data, size, timestampForLogging);
 }
@@ -291,9 +293,9 @@ bool QnTCPConnectionProcessor::sendBufferThreadSafe(
             if (sendDataResult.errorCode == SystemError::interrupted)
                 continue; //< Retrying interrupted call.
 
-            if (d->socket->isConnected() &&
-                (sendDataResult.errorCode == SystemError::wouldBlock
-                || sendDataResult.errorCode == SystemError::again))
+            if (d->socket->isConnected()
+                && (sendDataResult.errorCode == SystemError::wouldBlock
+                    || sendDataResult.errorCode == SystemError::again))
             {
                 unsigned int sendTimeout = 0;
                 if (!d->socket->getSendTimeout(&sendTimeout))
@@ -317,8 +319,11 @@ bool QnTCPConnectionProcessor::sendBufferThreadSafe(
                 continue; //< socket in async mode
             }
 
-            NX_DEBUG(this, "Unable to send data to socket: %1 (OS code %2).",
-                SystemError::toString(sendDataResult.errorCode), sendDataResult.errorCode);
+            NX_DEBUG(
+                this,
+                "Unable to send data to socket: %1 (OS code %2).",
+                SystemError::toString(sendDataResult.errorCode),
+                sendDataResult.errorCode);
             return false;
         }
 
@@ -346,10 +351,10 @@ QString QnTCPConnectionProcessor::extractPath(const QString& fullUrl)
     int pos = fullUrl.indexOf(QLatin1String("://"));
     if (pos == -1)
         return fullUrl;
-    pos = fullUrl.indexOf(QLatin1Char('/'), pos+3);
+    pos = fullUrl.indexOf(QLatin1Char('/'), pos + 3);
     if (pos == -1)
         return QString();
-    return fullUrl.mid(pos+1);
+    return fullUrl.mid(pos + 1);
 }
 
 std::pair<nx::String, nx::String> QnTCPConnectionProcessor::generateErrorResponse(
@@ -359,29 +364,31 @@ std::pair<nx::String, nx::String> QnTCPConnectionProcessor::generateErrorRespons
 {
     Q_D(const QnTCPConnectionProcessor);
     using namespace nx::network::http;
-    const auto hasJsonInHeader =
-        [d](const auto& name)
-        {
-            const auto value = getHeaderValue(d->request.headers, name);
-            return nx::utils::contains(value, header::ContentType::kJson.value);
-        };
+    const auto hasJsonInHeader = [d](const auto& name)
+    {
+        const auto value = getHeaderValue(d->request.headers, name);
+        return nx::utils::contains(value, header::ContentType::kJson.value);
+    };
     if (hasJsonInHeader(header::kAccept) || hasJsonInHeader(header::kContentType))
     {
         return std::pair<nx::String, nx::String>(
             header::ContentType::kJson.toString(),
-            QJson::serialized(nx::network::rest::Result{
-                errorId.value_or(nx::network::rest::Result::errorFromHttpStatus(errorCode)),
-                details}));
+            QJson::serialized(
+                nx::network::rest::Result{
+                    errorId.value_or(nx::network::rest::Result::errorFromHttpStatus(errorCode)),
+                    details}));
     }
 
     static const nx::String kAuthEnumPrefix = "Auth_";
     return std::pair<nx::String, nx::String>(
         header::ContentType::kHtml.toString(),
-        NX_FMT(R"http(<HTML><HEAD><TITLE>%1</TITLE></HEAD><BODY><H1>%2 %3 -- %4</H1></BODY>)http",
-            errorCode, static_cast<int>(errorCode), errorCode,
-            details.startsWith(kAuthEnumPrefix)
-                ? details.mid(kAuthEnumPrefix.size())
-                : nx::String(details)));
+        NX_FMT(
+            R"http(<HTML><HEAD><TITLE>%1</TITLE></HEAD><BODY><H1>%2 %3 -- %4</H1></BODY>)http",
+            errorCode,
+            static_cast<int>(errorCode),
+            errorCode,
+            details.startsWith(kAuthEnumPrefix) ? details.mid(kAuthEnumPrefix.size())
+                                                : nx::String(details)));
 }
 
 void QnTCPConnectionProcessor::logRequestOrResponse(
@@ -395,13 +402,13 @@ void QnTCPConnectionProcessor::logRequestOrResponse(
     if (!nx::log::isToBeLogged(nx::log::Level::debug, nx::log::kHttpTag))
         return;
 
-    const auto uncompressDataIfNeeded =
-        [&]()
-        {
-            return !(contentEncoding.isEmpty() || contentEncoding == "identity")
-                ? nx::utils::bstream::gzip::Compressor::uncompressData(httpMessageBodyOnly).toByteArray()
-                : httpMessageBodyOnly.toByteArray();
-        };
+    const auto uncompressDataIfNeeded = [&]()
+    {
+        return !(contentEncoding.isEmpty() || contentEncoding == "identity")
+            ? nx::utils::bstream::gzip::Compressor::uncompressData(httpMessageBodyOnly)
+                  .toByteArray()
+            : httpMessageBodyOnly.toByteArray();
+    };
 
     QByteArray bodyToPrint;
     if (contentType.startsWith("image/") || contentType.startsWith("audio/")
@@ -409,7 +416,8 @@ void QnTCPConnectionProcessor::logRequestOrResponse(
     {
         // Do not print out media.
     }
-    else if (contentType == "application/octet-stream" || contentType == "application/ubjson"
+    else if (
+        contentType == "application/octet-stream" || contentType == "application/ubjson"
         || contentType == "application/x-periods")
     {
         bodyToPrint = uncompressDataIfNeeded().toHex();
@@ -423,11 +431,17 @@ void QnTCPConnectionProcessor::logRequestOrResponse(
         bodyToPrint.truncate(1024 * 5); //< Should be enough for 5 devices.
 
     const auto headers = QByteArray::fromRawData(
-        httpMessageFull.constData(), httpMessageFull.size() - httpMessageBodyOnly.size());
+        httpMessageFull.constData(),
+        httpMessageFull.size() - httpMessageBodyOnly.size());
 
-    NX_DEBUG(nx::log::kHttpTag, "%1 %2:\n%3%4%5",
-        logMessage, address, headers,
-        bodyToPrint, bodyToPrint.isEmpty() ? "" : "\n");
+    NX_DEBUG(
+        nx::log::kHttpTag,
+        "%1 %2:\n%3%4%5",
+        logMessage,
+        address,
+        headers,
+        bodyToPrint,
+        bodyToPrint.isEmpty() ? "" : "\n");
 }
 
 nx::String QnTCPConnectionProcessor::createResponse(
@@ -441,36 +455,45 @@ nx::String QnTCPConnectionProcessor::createResponse(
     d->response.statusLine.version = d->request.requestLine.version;
     d->response.statusLine.statusCode =
         static_cast<nx::network::http::StatusCode::Value>(httpStatusCode);
-    d->response.statusLine.reasonPhrase = nx::network::http::StatusCode::toString((nx::network::http::StatusCode::Value)httpStatusCode);
+    d->response.statusLine.reasonPhrase = nx::network::http::StatusCode::toString(
+        (nx::network::http::StatusCode::Value) httpStatusCode);
 
-    if (d->response.headers.find("Connection") == d->response.headers.end() &&  //response does not contain
+    if (d->response.headers.find("Connection") == d->response.headers.end()
+        && // response does not contain
         isConnectionCanBePersistent())
     {
         d->response.headers.insert(nx::network::http::HttpHeader("Connection", "Keep-Alive"));
         if (d->response.headers.find("Keep-Alive") == d->response.headers.end())
-            d->response.headers.insert(nx::network::http::HttpHeader("Keep-Alive", lit("timeout=%1").arg(KEEP_ALIVE_TIMEOUT/1000).toLatin1()) );
+            d->response.headers.insert(
+                nx::network::http::HttpHeader(
+                    "Keep-Alive",
+                    lit("timeout=%1").arg(KEEP_ALIVE_TIMEOUT / 1000).toLatin1()));
     }
 
     nx::network::http::insertOrReplaceHeader(
         &d->response.headers,
         nx::network::http::HttpHeader(
-            nx::network::http::header::Server::NAME, globalSettings()->makeServerHeader()));
+            nx::network::http::header::Server::NAME,
+            globalSettings()->makeServerHeader()));
     nx::network::http::insertOrReplaceHeader(
         &d->response.headers,
-        nx::network::http::HttpHeader("Date", nx::utils::formatDateTime(QDateTime::currentDateTime())));
+        nx::network::http::HttpHeader(
+            "Date",
+            nx::utils::formatDateTime(QDateTime::currentDateTime())));
 
     if (d->request.requestLine.url.scheme().startsWith("rtsp"))
         copyAndReplaceHeader(&d->request.headers, &d->response.headers, "CSeq");
 
-    // QnRestConnectionProcessor fills these headers itself with right value of Access-Control-Allow-Methods
-    // for preflight OPTIONS request. For preflight requests Access-Control-Allow-Headers is
-    // inserted but Access-Control-Allow-Origin can be missing when Origin doesn't match and server has
-    // list of supported origins: one set by a user and one for the cloud.
-    // So this code is generally used for non-rest handlers.
+    // QnRestConnectionProcessor fills these headers itself with right value of
+    // Access-Control-Allow-Methods for preflight OPTIONS request. For preflight requests
+    // Access-Control-Allow-Headers is inserted but Access-Control-Allow-Origin can be missing when
+    // Origin doesn't match and server has list of supported origins: one set by a user and one for
+    // the cloud. So this code is generally used for non-rest handlers.
     if (d->response.headers.find("Access-Control-Allow-Origin") == d->response.headers.end()
         && d->response.headers.find("Access-Control-Allow-Headers") == d->response.headers.end())
     {
-        nx::network::http::insertOrReplaceCorsHeaders(&d->response.headers,
+        nx::network::http::insertOrReplaceCorsHeaders(
+            &d->response.headers,
             d->request.requestLine.method,
             d->request.headers,
             globalSettings()->supportedOrigins().toStdString(),
@@ -479,21 +502,37 @@ nx::String QnTCPConnectionProcessor::createResponse(
     }
 
     if (d->chunkedMode)
-        nx::network::http::insertOrReplaceHeader( &d->response.headers, nx::network::http::HttpHeader( "Transfer-Encoding", "chunked" ) );
+        nx::network::http::insertOrReplaceHeader(
+            &d->response.headers,
+            nx::network::http::HttpHeader("Transfer-Encoding", "chunked"));
 
     if (!contentEncoding.isEmpty() && contentEncoding != "identity")
-        nx::network::http::insertOrReplaceHeader( &d->response.headers, nx::network::http::HttpHeader( "Content-Encoding", contentEncoding ) );
+        nx::network::http::insertOrReplaceHeader(
+            &d->response.headers,
+            nx::network::http::HttpHeader("Content-Encoding", contentEncoding));
     if (!contentType.isEmpty())
-        nx::network::http::insertOrReplaceHeader( &d->response.headers, nx::network::http::HttpHeader( "Content-Type", contentType ) );
-    if (!isUndefinedContentLength &&!d->chunkedMode /*&& !contentType.isEmpty()*/ && (contentType.indexOf("multipart") == -1))
-        nx::network::http::insertOrReplaceHeader( &d->response.headers, nx::network::http::HttpHeader( "Content-Length", nx::utils::to_string(d->response.messageBody.size()) ) );
+        nx::network::http::insertOrReplaceHeader(
+            &d->response.headers,
+            nx::network::http::HttpHeader("Content-Type", contentType));
+    if (!isUndefinedContentLength && !d->chunkedMode /*&& !contentType.isEmpty()*/
+        && (contentType.indexOf("multipart") == -1))
+        nx::network::http::insertOrReplaceHeader(
+            &d->response.headers,
+            nx::network::http::HttpHeader(
+                "Content-Length",
+                nx::utils::to_string(d->response.messageBody.size())));
 
     nx::String response = !multipartBoundary.isEmpty()
         ? d->response.toMultipartString(multipartBoundary)
         : d->response.toString();
 
-    logRequestOrResponse("Sending response to", d->socket->getForeignAddress(),
-        contentType, contentEncoding, response,d->response.messageBody);
+    logRequestOrResponse(
+        "Sending response to",
+        d->socket->getForeignAddress(),
+        contentType,
+        contentEncoding,
+        response,
+        d->response.messageBody);
 
     return response;
 }
@@ -513,9 +552,9 @@ void QnTCPConnectionProcessor::sendResponse(
         isUndefinedContentLength));
 }
 
-bool QnTCPConnectionProcessor::sendChunk( const QByteArray& chunk )
+bool QnTCPConnectionProcessor::sendChunk(const QByteArray& chunk)
 {
-    return sendChunk( chunk.data(), chunk.size() );
+    return sendChunk(chunk.data(), chunk.size());
 }
 
 bool QnTCPConnectionProcessor::sendChunk(const nx::Buffer& chunk)
@@ -523,11 +562,11 @@ bool QnTCPConnectionProcessor::sendChunk(const nx::Buffer& chunk)
     return sendChunk(chunk.data(), chunk.size());
 }
 
-bool QnTCPConnectionProcessor::sendChunk( const char* data, int size )
+bool QnTCPConnectionProcessor::sendChunk(const char* data, int size)
 {
-    QByteArray result = QByteArray::number(size,16);
+    QByteArray result = QByteArray::number(size, 16);
     result.append("\r\n");
-    result.append(data, size);  //TODO/IMPL avoid copying by implementing writev in socket
+    result.append(data, size); // TODO/IMPL avoid copying by implementing writev in socket
     result.append("\r\n");
 
     return sendBuffer(result);
@@ -555,7 +594,7 @@ QnTCPConnectionProcessor::ReadResult QnTCPConnectionProcessor::readRequest()
 {
     Q_D(QnTCPConnectionProcessor);
 
-    //QElapsedTimer globalTimeout;
+    // QElapsedTimer globalTimeout;
     d->request = nx::network::http::Request();
     d->response = nx::network::http::Response();
     d->clientRequest.clear();
@@ -569,12 +608,12 @@ QnTCPConnectionProcessor::ReadResult QnTCPConnectionProcessor::readRequest()
     {
         if (const auto bytes = d->socket->recv(d->tcpReadBuffer, TCP_READ_BUFFER_SIZE); bytes > 0)
         {
-            //globalTimeout.restart();
+            // globalTimeout.restart();
             d->clientRequest.append((const char*) d->tcpReadBuffer, bytes);
 
             int messageSize = checkForBinaryProtocol(d->clientRequest);
             if (messageSize < 0)
-               messageSize = isFullMessage(d->clientRequest, &fullHttpMessageSize);
+                messageSize = isFullMessage(d->clientRequest, &fullHttpMessageSize);
 
             if (messageSize < 0)
                 return ReadResult::incomplete;
@@ -592,8 +631,11 @@ QnTCPConnectionProcessor::ReadResult QnTCPConnectionProcessor::readRequest()
                 }
                 else
                 {
-                    NX_WARNING(this, "Too large HTTP client request (%1 bytes, %2 allowed). Ignoring...",
-                        d->clientRequest.size(), maxTcpRequestSize);
+                    NX_WARNING(
+                        this,
+                        "Too large HTTP client request (%1 bytes, %2 allowed). Ignoring...",
+                        d->clientRequest.size(),
+                        maxTcpRequestSize);
                     return ReadResult::error;
                 }
             }
@@ -627,7 +669,7 @@ bool QnTCPConnectionProcessor::readSingleRequest()
     {
         // Due to a bug in QnTCPConnectionProcessor::readRequest(), d->clientRequest can contain
         // multiple interleaved requests. We have to parse them.
-        NX_ASSERT (d->interleavedMessageData.isEmpty());
+        NX_ASSERT(d->interleavedMessageData.isEmpty());
         d->interleavedMessageData = d->clientRequest; //< No copying here.
         d->clientRequest.clear();
         d->interleavedMessageDataPos = 0;
@@ -643,8 +685,11 @@ bool QnTCPConnectionProcessor::readSingleRequest()
             if (bytesRead <= 0)
             {
                 d->prevSocketError = SystemError::getLastOSErrorCode();
-                NX_DEBUG(this, "Error reading request from %1: %2",
-                    d->socket->getForeignAddress(), SystemError::toString( d->prevSocketError ));
+                NX_DEBUG(
+                    this,
+                    "Error reading request from %1: %2",
+                    d->socket->getForeignAddress(),
+                    SystemError::toString(d->prevSocketError));
                 return false;
             }
             d->interleavedMessageData =
@@ -654,14 +699,14 @@ bool QnTCPConnectionProcessor::readSingleRequest()
 
         size_t bytesParsed = 0;
         if (!d->httpStreamReader.parseBytes(
-            nx::ConstBufferRefType(
-                d->interleavedMessageData.data() + d->interleavedMessageDataPos,
-                d->interleavedMessageData.size() - d->interleavedMessageDataPos),
-            &bytesParsed) ||
-            (d->httpStreamReader.state() ==
-                nx::network::http::HttpStreamReader::ReadState::parseError))
+                nx::ConstBufferRefType(
+                    d->interleavedMessageData.data() + d->interleavedMessageDataPos,
+                    d->interleavedMessageData.size() - d->interleavedMessageDataPos),
+                &bytesParsed)
+            || (d->httpStreamReader.state()
+                == nx::network::http::HttpStreamReader::ReadState::parseError))
         {
-            //parse error
+            // parse error
             return false;
         }
         d->currentRequestSize += bytesParsed;
@@ -677,14 +722,16 @@ bool QnTCPConnectionProcessor::readSingleRequest()
             }
             else
             {
-                qWarning() << "Too large HTTP client request (" << d->currentRequestSize << " bytes"
-                    ", " << maxTcpRequestSize << " allowed). Ignoring...";
+                qWarning() << "Too large HTTP client request (" << d->currentRequestSize
+                           << " bytes"
+                              ", "
+                           << maxTcpRequestSize << " allowed). Ignoring...";
                 return false;
             }
         }
 
-        if (d->httpStreamReader.state() ==
-            nx::network::http::HttpStreamReader::ReadState::messageDone)
+        if (d->httpStreamReader.state()
+            == nx::network::http::HttpStreamReader::ReadState::messageDone)
         {
             if (d->httpStreamReader.message().type != nx::network::http::MessageType::request)
                 return false;
@@ -753,7 +800,9 @@ std::unique_ptr<nx::network::AbstractStreamSocket> QnTCPConnectionProcessor::tak
 }
 
 int QnTCPConnectionProcessor::redirectTo(
-    const nx::network::http::Method& method, const QByteArray& page, QByteArray* contentType)
+    const nx::network::http::Method& method,
+    const QByteArray& page,
+    QByteArray* contentType)
 {
     // Moved Permanently for get and head only because of incompatibility of many clients:
     //     https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/301
@@ -761,8 +810,8 @@ int QnTCPConnectionProcessor::redirectTo(
     //     https://datatracker.ietf.org/doc/html/rfc7238
     const auto code =
         (method == nx::network::http::Method::get || method == nx::network::http::Method::head)
-            ? nx::network::http::StatusCode::movedPermanently
-            : nx::network::http::StatusCode::temporaryRedirect;
+        ? nx::network::http::StatusCode::movedPermanently
+        : nx::network::http::StatusCode::temporaryRedirect;
 
     Q_D(QnTCPConnectionProcessor);
     std::tie(*contentType, d->response.messageBody) = generateErrorResponse(code);
@@ -790,15 +839,19 @@ bool QnTCPConnectionProcessor::isConnectionCanBePersistent() const
 
     if (d->protocol.startsWith("RTSP"))
         return true;
-    else if( d->request.requestLine.version == nx::network::http::http_1_1 )
+    else if (d->request.requestLine.version == nx::network::http::http_1_1)
     {
         return nx::utils::stricmp(
-            nx::network::http::getHeaderValue(d->request.headers, "Connection"), "close") != 0;
+                   nx::network::http::getHeaderValue(d->request.headers, "Connection"),
+                   "close")
+            != 0;
     }
     else if (d->request.requestLine.version == nx::network::http::http_1_0)
     {
         return nx::utils::stricmp(
-            nx::network::http::getHeaderValue(d->request.headers, "Connection"), "keep-alive") == 0;
+                   nx::network::http::getHeaderValue(d->request.headers, "Connection"),
+                   "keep-alive")
+            == 0;
     }
     else
     {
@@ -827,12 +880,13 @@ nx::network::rest::AuthSession QnTCPConnectionProcessor::authSession(
 }
 
 void QnTCPConnectionProcessor::sendErrorResponse(
-    nx::network::http::StatusCode::Value httpResult, const nx::String& errorDetails)
+    nx::network::http::StatusCode::Value httpResult,
+    const nx::String& errorDetails)
 {
     Q_D(QnTCPConnectionProcessor);
     nx::String contentType;
-    std::tie(contentType, d->response.messageBody) = generateErrorResponse(
-        httpResult, errorDetails);
+    std::tie(contentType, d->response.messageBody) =
+        generateErrorResponse(httpResult, errorDetails);
     sendResponse(httpResult, contentType);
 }
 
@@ -844,14 +898,15 @@ void QnTCPConnectionProcessor::sendUnauthorizedResponse(
     Q_D(QnTCPConnectionProcessor);
 
     nx::String contentType = nx::network::http::header::ContentType::kHtml.toString();
-    if( d->request.requestLine.method == nx::network::http::Method::get ||
-        d->request.requestLine.method == nx::network::http::Method::head )
+    if (d->request.requestLine.method == nx::network::http::Method::get
+        || d->request.requestLine.method == nx::network::http::Method::head)
     {
         if (messageBody.isEmpty())
         {
-            std::tie(contentType, d->response.messageBody) =
-                generateErrorResponse(nx::network::http::StatusCode::unauthorized,
-                    result.errorString, result.errorId);
+            std::tie(contentType, d->response.messageBody) = generateErrorResponse(
+                nx::network::http::StatusCode::unauthorized,
+                result.errorString,
+                result.errorId);
         }
         else
         {
@@ -860,8 +915,11 @@ void QnTCPConnectionProcessor::sendUnauthorizedResponse(
     }
     else if (messageBody.isEmpty())
     {
-        if (nx::network::http::header::ContentType(nx::network::http::getHeaderValue(
-                d->request.headers, nx::network::http::header::kAccept)).value
+        if (nx::network::http::header::ContentType(
+                nx::network::http::getHeaderValue(
+                    d->request.headers,
+                    nx::network::http::header::kAccept))
+                .value
             == nx::network::http::header::ContentType::kJson.value)
         {
             contentType = nx::network::http::header::ContentType::kJson.toString();
@@ -869,37 +927,41 @@ void QnTCPConnectionProcessor::sendUnauthorizedResponse(
         }
     }
 
-    if (nx::network::http::getHeaderValue(d->response.headers, Qn::SERVER_GUID_HEADER_NAME).empty())
+    if (nx::network::http::getHeaderValue(d->response.headers, Qn::SERVER_GUID_HEADER_NAME)
+            .empty())
     {
-        d->response.headers.insert(nx::network::http::HttpHeader(
-            Qn::SERVER_GUID_HEADER_NAME,
-            peerId().toSimpleStdString()));
+        d->response.headers.insert(
+            nx::network::http::HttpHeader(
+                Qn::SERVER_GUID_HEADER_NAME,
+                peerId().toSimpleStdString()));
     }
 
-    auto acceptEncodingHeaderIter = d->request.headers.find( "Accept-Encoding" );
+    auto acceptEncodingHeaderIter = d->request.headers.find("Accept-Encoding");
     QByteArray contentEncoding;
-    if( acceptEncodingHeaderIter != d->request.headers.end() )
+    if (acceptEncodingHeaderIter != d->request.headers.end())
     {
-        nx::network::http::header::AcceptEncodingHeader acceptEncodingHeader( acceptEncodingHeaderIter->second );
-        if( acceptEncodingHeader.encodingIsAllowed( "identity" ) )
+        nx::network::http::header::AcceptEncodingHeader acceptEncodingHeader(
+            acceptEncodingHeaderIter->second);
+        if (acceptEncodingHeader.encodingIsAllowed("identity"))
         {
             contentEncoding = "identity";
         }
-        else if( acceptEncodingHeader.encodingIsAllowed( "gzip" ) )
+        else if (acceptEncodingHeader.encodingIsAllowed("gzip"))
         {
             contentEncoding = "gzip";
-            if( !d->response.messageBody.empty() )
-                d->response.messageBody = nx::utils::bstream::gzip::Compressor::compressData(d->response.messageBody);
+            if (!d->response.messageBody.empty())
+                d->response.messageBody =
+                    nx::utils::bstream::gzip::Compressor::compressData(d->response.messageBody);
         }
         else
         {
-            //TODO #akolesnikov not supported encoding requested
+            // TODO #akolesnikov not supported encoding requested
         }
     }
     sendResponse(
         httpResult,
         d->response.messageBody.empty() ? QByteArray() : contentType,
-        contentEncoding );
+        contentEncoding);
 }
 
 QnTcpListener* QnTCPConnectionProcessor::owner() const

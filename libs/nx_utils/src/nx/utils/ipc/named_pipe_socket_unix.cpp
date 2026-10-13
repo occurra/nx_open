@@ -1,17 +1,17 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include "named_pipe_socket.h"
-
-#include <poll.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
+#include "named_pipe_socket_unix.h"
 
 #include <chrono>
 
+#include <poll.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+
 #include <nx/utils/time.h>
 
-#include "named_pipe_socket_unix.h"
+#include "named_pipe_socket.h"
 
 namespace nx::utils {
 
@@ -49,7 +49,7 @@ SystemError::ErrorCode NamedPipeSocket::connectToServerSync(
     memset(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
     snprintf(addr.sun_path, sizeof(addr.sun_path), "/tmp/%s", pipeName.c_str());
-    if (connect(m_impl->hPipe, (sockaddr*)& addr, sizeof(addr)) != 0)
+    if (connect(m_impl->hPipe, (sockaddr*) &addr, sizeof(addr)) != 0)
     {
         const int connectErrorCode = errno;
         ::close(m_impl->hPipe);
@@ -70,7 +70,7 @@ SystemError::ErrorCode NamedPipeSocket::write(
     {
         ssize_t numberOfBytesWritten = ::write(
             m_impl->hPipe,
-            (const char*)buf + *bytesWritten,
+            (const char*) buf + *bytesWritten,
             bytesToWrite - *bytesWritten);
 
         if (numberOfBytesWritten < 0)
@@ -105,10 +105,10 @@ SystemError::ErrorCode NamedPipeSocket::read(
         if (timeoutMs >= 0)
         {
             const auto remainingMs = ceil<milliseconds>(deadline - monotonicTime()).count();
-            remainingTimeoutMs = remainingMs > 0 ? (int)remainingMs : 0;
+            remainingTimeoutMs = remainingMs > 0 ? (int) remainingMs : 0;
         }
 
-        struct pollfd pollDescriptor { m_impl->hPipe, POLLIN, 0 };
+        struct pollfd pollDescriptor{m_impl->hPipe, POLLIN, 0};
         ssize_t result = ::poll(&pollDescriptor, 1, remainingTimeoutMs);
 
         if (result == 0)
@@ -125,7 +125,7 @@ SystemError::ErrorCode NamedPipeSocket::read(
             return errCode;
         }
 
-        *bytesRead = (unsigned int)result;
+        *bytesRead = (unsigned int) result;
         return SystemError::noError;
     }
 }

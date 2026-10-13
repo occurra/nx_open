@@ -28,14 +28,12 @@ AddressResolver::AddressResolver()
     m_nonBlockingResolvers.push_back(std::move(cloudAddressResolver));
 }
 
-void AddressResolver::addFixedAddress(
-    const HostAddress& hostName, const HostAddress& target)
+void AddressResolver::addFixedAddress(const HostAddress& hostName, const HostAddress& target)
 {
     addFixedAddress(hostName, SocketAddress(target, /*no port*/ 0));
 }
 
-void AddressResolver::addFixedAddress(
-    const HostAddress& hostname, const SocketAddress& endpoint)
+void AddressResolver::addFixedAddress(const HostAddress& hostname, const SocketAddress& endpoint)
 {
     NX_ASSERT(!hostname.isIpAddress(), "Hostname should be unresolved");
     NX_ASSERT(endpoint.address.isIpAddress());
@@ -46,7 +44,8 @@ void AddressResolver::addFixedAddress(
 }
 
 void AddressResolver::removeFixedAddress(
-    const HostAddress& hostname, std::optional<SocketAddress> endpoint)
+    const HostAddress& hostname,
+    std::optional<SocketAddress> endpoint)
 {
     NX_VERBOSE(this, nx::format("Removed fixed address for %1: %2").args(hostname, endpoint));
 
@@ -84,9 +83,9 @@ void AddressResolver::resolveAsync(
 
     NX_MUTEX_LOCKER lk(&m_mutex);
 
-    auto info = m_dnsCache.emplace(
-        ResolveTaskKey{ipVersion, hostname},
-        HostAddressInfo(m_dnsCacheTimeout)).first;
+    auto info =
+        m_dnsCache.emplace(ResolveTaskKey{ipVersion, hostname}, HostAddressInfo(m_dnsCacheTimeout))
+            .first;
     info->second.checkExpirations();
     if (info->second.isResolved())
     {
@@ -100,13 +99,15 @@ void AddressResolver::resolveAsync(
     }
 
     info->second.pendingRequests.insert(requestId);
-    m_requests.emplace(
-        requestId,
-        RequestInfo(info->first.hostname, std::move(handler)));
+    m_requests.emplace(requestId, RequestInfo(info->first.hostname, std::move(handler)));
 
     if (info->second.dnsState() == HostAddressInfo::State::inProgress)
     {
-        NX_VERBOSE(this, "Hostname %1 (request %2) resolve is already in progress", hostname, requestId);
+        NX_VERBOSE(
+            this,
+            "Hostname %1 (request %2) resolve is already in progress",
+            hostname,
+            requestId);
         return;
     }
 
@@ -120,11 +121,10 @@ std::deque<AddressEntry> AddressResolver::resolveSync(
     int ipVersion)
 {
     std::promise<std::pair<SystemError::ErrorCode, std::deque<AddressEntry>>> promise;
-    auto handler =
-        [&](SystemError::ErrorCode code, std::deque<AddressEntry> entries)
-        {
-            promise.set_value({code, std::move(entries)});
-        };
+    auto handler = [&](SystemError::ErrorCode code, std::deque<AddressEntry> entries)
+    {
+        promise.set_value({code, std::move(entries)});
+    };
 
     resolveAsync(hostname, std::move(handler), natTraversalSupport, ipVersion);
     const auto result = promise.get_future().get();
@@ -132,15 +132,17 @@ std::deque<AddressEntry> AddressResolver::resolveSync(
     return result.second;
 }
 
-void AddressResolver::cancel(
-    void* requestId, nx::MoveOnlyFunc<void()> handler)
+void AddressResolver::cancel(void* requestId, nx::MoveOnlyFunc<void()> handler)
 {
     std::optional<std::promise<bool>> promise;
     if (!handler)
     {
         // no handler means we have to wait for complete
         promise = std::promise<bool>();
-        handler = [&](){ promise->set_value(true); };
+        handler = [&]()
+        {
+            promise->set_value(true);
+        };
     }
 
     {
@@ -195,15 +197,12 @@ void AddressResolver::setDnsCacheTimeout(std::chrono::milliseconds timeout)
 
 //-------------------------------------------------------------------------------------------------
 
-AddressResolver::HostAddressInfo::HostAddressInfo(
-    std::chrono::milliseconds dnsCacheTimeout)
-    :
+AddressResolver::HostAddressInfo::HostAddressInfo(std::chrono::milliseconds dnsCacheTimeout):
     m_dnsCacheTimeout(dnsCacheTimeout)
 {
 }
 
-void AddressResolver::HostAddressInfo::setDnsEntries(
-    std::deque<AddressEntry> entries)
+void AddressResolver::HostAddressInfo::setDnsEntries(std::deque<AddressEntry> entries)
 {
     m_dnsState = State::resolved;
     m_dnsResolveTime = std::chrono::steady_clock::now();
@@ -212,8 +211,8 @@ void AddressResolver::HostAddressInfo::setDnsEntries(
 
 void AddressResolver::HostAddressInfo::checkExpirations()
 {
-    if (m_dnsState == State::resolved &&
-        m_dnsResolveTime + m_dnsCacheTimeout < std::chrono::steady_clock::now())
+    if (m_dnsState == State::resolved
+        && m_dnsResolveTime + m_dnsCacheTimeout < std::chrono::steady_clock::now())
     {
         m_dnsState = State::unresolved;
         m_dnsEntries.reset();
@@ -244,10 +243,7 @@ bool AddressResolver::ResolveTaskKey::operator<(const ResolveTaskKey& rhs) const
 
 //-------------------------------------------------------------------------------------------------
 
-AddressResolver::RequestInfo::RequestInfo(
-    std::string hostname,
-    ResolveHandler handler)
-:
+AddressResolver::RequestInfo::RequestInfo(std::string hostname, ResolveHandler handler):
     hostname(std::move(hostname)),
     handler(std::move(handler))
 {
@@ -264,8 +260,8 @@ bool AddressResolver::resolveNonBlocking(
     for (const auto& nonBlockingResolver: m_nonBlockingResolvers)
     {
         // TODO: Remove following if.
-        if (natTraversalSupport == NatTraversalSupport::disabled &&
-            dynamic_cast<CloudAddressResolver*>(nonBlockingResolver.get()) != nullptr)
+        if (natTraversalSupport == NatTraversalSupport::disabled
+            && dynamic_cast<CloudAddressResolver*>(nonBlockingResolver.get()) != nullptr)
         {
             continue;
         }
@@ -279,8 +275,7 @@ bool AddressResolver::resolveNonBlocking(
     return false;
 }
 
-void AddressResolver::dnsResolve(
-    HaInfoIterator info, nx::Locker<nx::Mutex>* lk, int ipVersion)
+void AddressResolver::dnsResolve(HaInfoIterator info, nx::Locker<nx::Mutex>* lk, int ipVersion)
 {
     NX_VERBOSE(this, "Starting async DNS resolve for %1", info->first);
 
@@ -289,8 +284,7 @@ void AddressResolver::dnsResolve(
 
     m_dnsResolver.resolveAsync(
         info->first.hostname,
-        [this, info](
-            SystemError::ErrorCode code, std::deque<HostAddress> ips)
+        [this, info](SystemError::ErrorCode code, std::deque<HostAddress> ips)
         {
             NX_VERBOSE(this, "Async DNS resolve completed: %1. Found entries: %2", code, ips);
 
@@ -315,8 +309,12 @@ void AddressResolver::reportResult(
 
     info->second.setDnsEntries(entries);
 
-    NX_VERBOSE(this, "There is(are) %1 about to be notified: %2 is resolved to %3",
-        requestsToCompleteIters.size(), info->first, entries);
+    NX_VERBOSE(
+        this,
+        "There is(are) %1 about to be notified: %2 is resolved to %3",
+        requestsToCompleteIters.size(),
+        info->first,
+        entries);
 
     lk.unlock();
 
@@ -329,8 +327,12 @@ void AddressResolver::reportResult(
     std::vector<nx::utils::Guard> guards;
     for (const auto& it: requestsToCompleteIters)
     {
-        NX_VERBOSE(this, "Address %1 is resolved by request %2 to %3",
-            info->first, it->first, entries);
+        NX_VERBOSE(
+            this,
+            "Address %1 is resolved by request %2 to %3",
+            info->first,
+            it->first,
+            entries);
 
         guards.push_back(std::move(it->second.guard));
         m_requests.erase(it);
@@ -343,22 +345,19 @@ void AddressResolver::reportResult(
         guard.fire();
 }
 
-std::vector<std::multimap<void*, AddressResolver::RequestInfo>::iterator>
-    AddressResolver::selectRequestsToComplete(
-        const nx::Locker<nx::Mutex>&,
-        HaInfoIterator info)
+std::vector<std::multimap<void*, AddressResolver::RequestInfo>::iterator> AddressResolver::
+    selectRequestsToComplete(const nx::Locker<nx::Mutex>&, HaInfoIterator info)
 {
     std::vector<std::multimap<void*, AddressResolver::RequestInfo>::iterator> result;
 
     for (auto reqIt = info->second.pendingRequests.begin();
-        reqIt != info->second.pendingRequests.end();)
+         reqIt != info->second.pendingRequests.end();)
     {
         const auto range = m_requests.equal_range(*reqIt);
         bool noPending = (range.first == range.second);
         for (auto it = range.first; it != range.second; ++it)
         {
-            if (it->second.hostname != info->first.hostname ||
-                it->second.handlerAboutToBeInvoked)
+            if (it->second.hostname != info->first.hostname || it->second.handlerAboutToBeInvoked)
             {
                 noPending = false;
                 continue;

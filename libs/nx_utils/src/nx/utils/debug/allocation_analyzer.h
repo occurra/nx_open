@@ -4,10 +4,10 @@
 
 #ifndef __EMSCRIPTEN__
 
-#include <atomic>
-#include <memory>
-#include <optional>
-#include <string>
+    #include <atomic>
+    #include <memory>
+    #include <optional>
+    #include <string>
 
 namespace nx::utils::debug {
 

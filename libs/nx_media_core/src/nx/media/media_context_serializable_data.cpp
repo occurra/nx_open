@@ -7,13 +7,15 @@
 #include <nx/utils/log/assert.h>
 
 #define QnMediaContextSerializableData_Fields \
-    (codecId)(codecType)(extradata)(channels)(sampleRate)(sampleFmt)(bitsPerCodedSample)\
-    (width)(height)(bitRate)(channelLayout)(blockAlign)
+    (codecId)(codecType)( \
+        extradata) (channels) (sampleRate) (sampleFmt) (bitsPerCodedSample) (width) (height) (bitRate) (channelLayout) (blockAlign)
 
 QN_FUSION_DECLARE_FUNCTIONS(QnMediaContextSerializableData, (ubjson))
 
 QN_FUSION_ADAPT_STRUCT_FUNCTIONS(
-    QnMediaContextSerializableData, (ubjson), QnMediaContextSerializableData_Fields)
+    QnMediaContextSerializableData,
+    (ubjson),
+    QnMediaContextSerializableData_Fields)
 
 QByteArray QnMediaContextSerializableData::serialize() const
 {
@@ -34,15 +36,16 @@ void QnMediaContextSerializableData::initializeFrom(const AVCodecParameters* cod
     codecType = codecParams->codec_type;
     if (codecParams->extradata)
     {
-        extradata = QByteArray((const char*) codecParams->extradata,
-            codecParams->extradata_size);
+        extradata = QByteArray((const char*) codecParams->extradata, codecParams->extradata_size);
     }
     // TODO: support custom channel order.
-    NX_ASSERT(codecParams->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC || codecParams->ch_layout.order == AV_CHANNEL_ORDER_NATIVE);
+    NX_ASSERT(
+        codecParams->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC
+        || codecParams->ch_layout.order == AV_CHANNEL_ORDER_NATIVE);
     channels = codecParams->ch_layout.nb_channels;
     channelLayout = codecParams->ch_layout.u.mask;
     sampleRate = codecParams->sample_rate;
-    sampleFmt = (AVSampleFormat)codecParams->format;
+    sampleFmt = (AVSampleFormat) codecParams->format;
     bitsPerCodedSample = codecParams->bits_per_coded_sample;
     width = codecParams->width;
     height = codecParams->height;

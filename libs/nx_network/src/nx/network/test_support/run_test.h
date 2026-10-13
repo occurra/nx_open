@@ -17,14 +17,16 @@ namespace nx::network::test {
 
 // NOTE: Everything is implemented in the header file so that nx_network does not depend on gtest.
 
-class EventRecordingListener:
-    public ::testing::EmptyTestEventListener
+class EventRecordingListener: public ::testing::EmptyTestEventListener
 {
 protected:
     void OnTestStart(const ::testing::TestInfo& test_info) override
     {
-        NX_INFO(this, "======== Test %1.%2 =========",
-            test_info.test_suite_name(), test_info.name());
+        NX_INFO(
+            this,
+            "======== Test %1.%2 =========",
+            test_info.test_suite_name(),
+            test_info.name());
 
         nx::network::http::tunneling::detail::ClientFactory::instance().reset();
     }
@@ -34,7 +36,8 @@ protected:
  * Sets up environment and runs Google Tests. Should be used for all unit tests which use network.
  */
 inline int runTest(
-    int argc, const char* argv[],
+    int argc,
+    const char* argv[],
     nx::utils::test::InitFunction extraInit = nullptr,
     int socketGlobalsFlags = 0,
     int gtestRunFlags = 0)
@@ -46,22 +49,24 @@ inline int runTest(
     // a lot of CPU cores.
     static constexpr int kMaxAioThreads = 8;
     args.push_back("-aio-thread-count");
-    args.push_back(std::to_string(std::min<int>(std::thread::hardware_concurrency(), kMaxAioThreads)));
+    args.push_back(
+        std::to_string(std::min<int>(std::thread::hardware_concurrency(), kMaxAioThreads)));
 
     std::vector<const char*> newArgv;
     for (const auto& arg: args)
         newArgv.push_back(arg.c_str());
 
     return nx::utils::test::runTest(
-        newArgv.size(), newArgv.data(),
-        [extraInit = std::move(extraInit), socketGlobalsFlags](
-            const ArgumentParser& args)
+        newArgv.size(),
+        newArgv.data(),
+        [extraInit = std::move(extraInit), socketGlobalsFlags](const ArgumentParser& args)
         {
-            ::testing::UnitTest::GetInstance()->listeners().Append(
-                new EventRecordingListener());
+            ::testing::UnitTest::GetInstance()->listeners().Append(new EventRecordingListener());
 
             auto sgGuard = std::make_unique<SocketGlobalsHolder>(args, socketGlobalsFlags);
-            SocketGlobals::cloud().outgoingTunnelPool().assignOwnPeerId("ut", nx::Uuid::createUuid());
+            SocketGlobals::cloud().outgoingTunnelPool().assignOwnPeerId(
+                "ut",
+                nx::Uuid::createUuid());
             cloud::OutgoingTunnelPool::ignoreOwnPeerIdChange();
 
             nx::utils::test::DeinitFunctions deinitFunctions;
@@ -87,13 +92,15 @@ inline int runTest(
 }
 
 inline int runTest(
-    int argc, char* argv[],
+    int argc,
+    char* argv[],
     nx::utils::test::InitFunction extraInit = nullptr,
     int socketGlobalsFlags = 0,
     int gtestRunFlags = 0)
 {
     return runTest(
-        argc, (const char**)argv,
+        argc,
+        (const char**) argv,
         std::move(extraInit),
         socketGlobalsFlags,
         gtestRunFlags);

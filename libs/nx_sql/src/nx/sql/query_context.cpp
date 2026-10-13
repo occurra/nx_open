@@ -4,10 +4,7 @@
 
 namespace nx::sql {
 
-QueryContext::QueryContext(
-    AbstractDbConnection* const connection,
-    Transaction* const transaction)
-    :
+QueryContext::QueryContext(AbstractDbConnection* const connection, Transaction* const transaction):
     m_connection(connection),
     m_transaction(transaction)
 {

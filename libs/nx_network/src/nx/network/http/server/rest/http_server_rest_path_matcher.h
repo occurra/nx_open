@@ -42,16 +42,17 @@ public:
         matchContext.mapped = std::move(mapped);
 
         if (std::ranges::any_of(
-            m_restPathToMatchContext,
-            [&pathTemplate](const auto& elem) { return elem.first == pathTemplate; }))
+                m_restPathToMatchContext,
+                [&pathTemplate](const auto& elem)
+                {
+                    return elem.first == pathTemplate;
+                }))
         {
             // Duplicate entry.
             return false;
         }
 
-        m_restPathToMatchContext.emplace_back(
-            std::string(pathTemplate),
-            std::move(matchContext));
+        m_restPathToMatchContext.emplace_back(std::string(pathTemplate), std::move(matchContext));
         return true;
     }
 
@@ -110,15 +111,15 @@ private:
 
     std::regex convertToRegex(std::string_view pathTemplate)
     {
-        const std::regex replaceRestParams(
-            "{[0-9a-zA-Z_-]*}", std::regex_constants::basic);
+        const std::regex replaceRestParams("{[0-9a-zA-Z_-]*}", std::regex_constants::basic);
         const std::string replacement("\\([^/]*\\)");
 
         std::string restPathMatchRegex;
         restPathMatchRegex += "^";
         std::regex_replace(
             std::back_inserter(restPathMatchRegex),
-            pathTemplate.begin(), pathTemplate.end(),
+            pathTemplate.begin(),
+            pathTemplate.end(),
             replaceRestParams,
             replacement);
         restPathMatchRegex += "$";
@@ -134,7 +135,8 @@ private:
         std::set<std::string> uniqueNames;
 
         const std::regex findRestParamsRegex(
-            "{\\([0-9a-zA-Z_-]*\\)}", std::regex_constants::basic);
+            "{\\([0-9a-zA-Z_-]*\\)}",
+            std::regex_constants::basic);
 
         std::smatch matchResult;
         while (std::regex_search(pathTemplate, matchResult, findRestParamsRegex))

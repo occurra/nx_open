@@ -11,7 +11,7 @@ namespace nx {
 namespace utils {
 namespace math {
 
-template <typename Number>
+template<typename Number>
 class CycledRange
 {
 public:
@@ -20,9 +20,7 @@ public:
     CycledRange(Number position, Number lowerBound, Number upperBound):
         m_lowerBound(lowerBound),
         m_upperBound(upperBound),
-        m_currentPosition(normalize(position))
-    {
-    };
+        m_currentPosition(normalize(position)) {};
 
     CycledRange<Number> operator+(Number other) const
     {
@@ -54,10 +52,7 @@ public:
         return *this;
     };
 
-    std::optional<Number> position() const
-    {
-        return m_currentPosition;
-    }
+    std::optional<Number> position() const { return m_currentPosition; }
 
 private:
     std::optional<Number> add(Number other) const

@@ -64,14 +64,13 @@ TEST(ranges, unique_const_copy_then_move)
 
 TEST(ranges, unique_filtered_view_input)
 {
-    const std::vector out =
-        nx::actions::unique(
-            std::vector{1, 2, 2, 3, 4, 4, 5, 6, 6}
-            | std::views::filter(
-                [](int x)
-                {
-                    return (x % 2) == 0;
-                }))
+    const std::vector out = nx::actions::unique(
+                                std::vector{1, 2, 2, 3, 4, 4, 5, 6, 6}
+                                | std::views::filter(
+                                    [](int x)
+                                    {
+                                        return (x % 2) == 0;
+                                    }))
         | nx::ranges::to<std::vector>();
 
     EXPECT_EQ(out, (std::vector{2, 4, 6}));
@@ -92,8 +91,7 @@ TEST(ranges, unique_moveonly_erasable_projection)
         nx::make_vector<MoveOnly>(MoveOnly{1}, MoveOnly{1}, MoveOnly{2}, MoveOnly{2}, MoveOnly{3});
 
     const std::vector result = nx::actions::unique(std::move(input), {}, &MoveOnly::key)
-        | std::views::transform(&MoveOnly::key)
-        | nx::ranges::to<std::vector>();
+        | std::views::transform(&MoveOnly::key) | nx::ranges::to<std::vector>();
 
     EXPECT_EQ(result, (std::vector{1, 2, 3}));
 }
@@ -105,8 +103,7 @@ TEST(ranges, unique_moveonly_span_noerase_projection)
 
     const std::vector keys =
         nx::actions::unique(std::span{storage.data(), storage.size()}, {}, &MoveOnly::key)
-        | std::views::transform(&MoveOnly::key)
-        | nx::ranges::to<std::vector>();
+        | std::views::transform(&MoveOnly::key) | nx::ranges::to<std::vector>();
 
     EXPECT_EQ(keys, (std::vector{1, 2, 3}));
 }
@@ -124,8 +121,7 @@ TEST(ranges, unique_pipeline_by_name_to_vector)
             {.name = "Cora", .age = 9},
             {.name = "Cora", .age = 14},
         }
-        | nx::actions::unique({}, &Person::name)
-        | std::views::transform(&Person::name)
+        | nx::actions::unique({}, &Person::name) | std::views::transform(&Person::name)
         | nx::ranges::to<std::vector>();
 
     EXPECT_EQ(result, (std::vector{"Ana"s, "Bob"s, "Cora"s}));

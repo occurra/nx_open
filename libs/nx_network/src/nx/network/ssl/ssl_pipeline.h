@@ -25,14 +25,12 @@ class Pipeline;
  * @param chain The chain that must be verified.
  * @return true if the chain has been verified, false otherwise.
  */
-using VerifyCertificateChainCallback = nx::MoveOnlyFunc<
-    bool(CertificateChainView /*chain*/)>;
+using VerifyCertificateChainCallback = nx::MoveOnlyFunc<bool(CertificateChainView /*chain*/)>;
 
 /**
  * NOTE: Not thread-safe.
  */
-class NX_NETWORK_API Pipeline:
-    public nx::utils::bstream::Converter
+class NX_NETWORK_API Pipeline: public nx::utils::bstream::Converter
 {
 public:
     /**
@@ -40,9 +38,7 @@ public:
      * @param sslContext Caller may use different contexts on client & server sides.
      * TODO: #akolesnikov remove sslContext
      */
-    Pipeline(
-        Context* context,
-        std::shared_ptr<SSL_CTX> sslContext);
+    Pipeline(Context* context, std::shared_ptr<SSL_CTX> sslContext);
 
     ~Pipeline() = default;
 
@@ -146,8 +142,7 @@ private:
     static int verifyEarlyData(SSL* s, void* arg);
 };
 
-class NX_NETWORK_API ConnectingPipeline:
-    public Pipeline
+class NX_NETWORK_API ConnectingPipeline: public Pipeline
 {
 public:
     /**
@@ -156,8 +151,7 @@ public:
     ConnectingPipeline(Context* context = nullptr);
 };
 
-class NX_NETWORK_API AcceptingPipeline:
-    public Pipeline
+class NX_NETWORK_API AcceptingPipeline: public Pipeline
 {
 public:
     /**

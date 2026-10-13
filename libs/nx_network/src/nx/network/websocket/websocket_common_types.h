@@ -89,8 +89,7 @@ enum class ReceiveMode
 
 inline bool isDataFrame(FrameType frameType)
 {
-    return frameType == FrameType::binary
-        || frameType == FrameType::text
+    return frameType == FrameType::binary || frameType == FrameType::text
         || frameType == FrameType::continuation;
 }
 

@@ -19,7 +19,13 @@ public:
     FrameTypeExtractor(AVCodecID id, bool nalPrefixes = true);
     ~FrameTypeExtractor();
 
-    enum FrameType { UnknownFrameType, I_Frame, P_Frame, B_Frame };
+    enum FrameType
+    {
+        UnknownFrameType,
+        I_Frame,
+        P_Frame,
+        B_Frame
+    };
     FrameType getFrameType(const quint8* data, int dataLen);
 
     CodecParametersConstPtr getContext() const { return m_context; }

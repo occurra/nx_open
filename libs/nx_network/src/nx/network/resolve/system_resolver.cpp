@@ -4,8 +4,6 @@
 #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "system_resolver.h"
-
 #include <atomic>
 
 #include <nx/utils/app_info.h>
@@ -14,6 +12,8 @@
 #include <nx/utils/std/cppnx.h>
 #include <nx/utils/string.h>
 #include <nx/utils/system_error.h>
+
+#include "system_resolver.h"
 
 namespace nx::network {
 
@@ -28,13 +28,13 @@ static std::deque<HostAddress> convertAddrInfo(addrinfo* addressInfo)
         switch (info->ai_family)
         {
             case AF_INET:
-                newAddress = HostAddress(((sockaddr_in*)(info->ai_addr))->sin_addr);
+                newAddress = HostAddress(((sockaddr_in*) (info->ai_addr))->sin_addr);
                 break;
 
             case AF_INET6:
                 newAddress = HostAddress(
-                    ((sockaddr_in6*)(info->ai_addr))->sin6_addr,
-                    ((sockaddr_in6*)(info->ai_addr))->sin6_scope_id);
+                    ((sockaddr_in6*) (info->ai_addr))->sin6_addr,
+                    ((sockaddr_in6*) (info->ai_addr))->sin6_scope_id);
                 break;
 
             default:
@@ -53,16 +53,13 @@ static std::deque<HostAddress> convertAddrInfo(addrinfo* addressInfo)
     return ipAddresses;
 }
 
-static void convertAddrInfo(
-    addrinfo* addressInfo,
-    std::deque<AddressEntry>* resolvedEntries)
+static void convertAddrInfo(addrinfo* addressInfo, std::deque<AddressEntry>* resolvedEntries)
 {
     auto resolvedAddresses = convertAddrInfo(addressInfo);
 
     for (auto& address: resolvedAddresses)
     {
-        resolvedEntries->push_back(
-            AddressEntry(AddressType::direct, std::move(address)));
+        resolvedEntries->push_back(AddressEntry(AddressType::direct, std::move(address)));
     }
 }
 
@@ -84,22 +81,24 @@ SystemError::ErrorCode SystemResolver::resolve(
         {
             if (ipVersion == AF_INET)
             {
-                resolveResult->entries.push_back({{AddressEntry(
-                    AddressType::direct,
-                    *HostAddress::localhost.ipV4())}});
+                resolveResult->entries.push_back(
+                    {{AddressEntry(AddressType::direct, *HostAddress::localhost.ipV4())}});
             }
             else
             {
-                resolveResult->entries.push_back({{AddressEntry(
-                    AddressType::direct,
-                    *HostAddress::localhost.ipV6().first)}});
+                resolveResult->entries.push_back(
+                    {{AddressEntry(AddressType::direct, *HostAddress::localhost.ipV6().first)}});
             }
             return SystemError::noError;
         }
     }
 
     auto resultCode = SystemError::noError;
-    const auto guard = nx::utils::makeScopeGuard([&]() { SystemError::setLastErrorCode(resultCode); });
+    const auto guard = nx::utils::makeScopeGuard(
+        [&]()
+        {
+            SystemError::setLastErrorCode(resultCode);
+        });
     auto hostName = std::string(nx::utils::trim(hostNameOriginal));
     if (hostName.empty())
     {
@@ -125,7 +124,8 @@ SystemError::ErrorCode SystemResolver::resolve(
     // it is unsafe to call it for unsuccessful `getaddrinfo` calls
     // however Valgrind shows that some unsuccessful calls may also fill `addrinfo`
     // so we use a special unique_ptr deleter for all cases
-    auto addressInfoGuard = nx::wrapUnique(&addressInfo,
+    auto addressInfoGuard = nx::wrapUnique(
+        &addressInfo,
         [](addrinfo** ppAddressInfo)
         {
             if (*ppAddressInfo)
@@ -150,8 +150,11 @@ SystemError::ErrorCode SystemResolver::resolve(
     {
         resultCode = resolveStatusToErrno(status);
 
-        NX_VERBOSE(this, nx::format("Resolve of %1 on DNS failed with result %2")
-            .arg(hostName).arg(SystemError::toString(resultCode)));
+        NX_VERBOSE(
+            this,
+            nx::format("Resolve of %1 on DNS failed with result %2")
+                .arg(hostName)
+                .arg(SystemError::toString(resultCode)));
         return resultCode;
     }
 
@@ -159,16 +162,22 @@ SystemError::ErrorCode SystemResolver::resolve(
     if (resolveResult->entries.empty())
     {
         resultCode = SystemError::hostNotFound;
-        NX_VERBOSE(this, nx::format("Resolve of %1 on DNS failed with result %2. No suitable entries")
-            .arg(hostName).arg(SystemError::toString(resultCode)));
+        NX_VERBOSE(
+            this,
+            nx::format("Resolve of %1 on DNS failed with result %2. No suitable entries")
+                .arg(hostName)
+                .arg(SystemError::toString(resultCode)));
         return resultCode;
     }
 
     if (ipVersion == AF_INET6 && (nx::utils::stricmp(hostNameOriginal, "localhost") == 0))
         ensureLocalHostCompatibility(&resolveResult->entries);
 
-    NX_VERBOSE(this, "Resolve of %1 on DNS completed successfully. %2 entries found",
-        hostName, resolveResult->entries);
+    NX_VERBOSE(
+        this,
+        "Resolve of %1 on DNS completed successfully. %2 entries found",
+        hostName,
+        resolveResult->entries);
 
     resolveResult->ttl = kMaxCachePeriod;
 
@@ -196,34 +205,33 @@ SystemError::ErrorCode SystemResolver::resolveStatusToErrno(int status)
     };
 }
 
-void SystemResolver::ensureLocalHostCompatibility(
-    std::deque<AddressEntry>* resolvedAddresses)
+void SystemResolver::ensureLocalHostCompatibility(std::deque<AddressEntry>* resolvedAddresses)
 {
     // On Linux, localhost is resolved to 127.0.0.1 only, but ::1 can still be used to connect to.
     // On Windows, localhost is resolved to (127.0.01, ::1).
     // Making behavior consistent across different platforms.
 
-    auto ipv4ResolvedLocalhost =
-        std::find_if(
-            resolvedAddresses->begin(), resolvedAddresses->end(),
-            [](const AddressEntry& entry)
-            {
-                return entry.host.ipV4() && entry.host.ipV4()->s_addr == htonl(INADDR_LOOPBACK);
-            });
+    auto ipv4ResolvedLocalhost = std::find_if(
+        resolvedAddresses->begin(),
+        resolvedAddresses->end(),
+        [](const AddressEntry& entry)
+        {
+            return entry.host.ipV4() && entry.host.ipV4()->s_addr == htonl(INADDR_LOOPBACK);
+        });
 
-    auto ipv6ResolvedLocalhost =
-        std::find_if(
-            resolvedAddresses->begin(), resolvedAddresses->end(),
-            [](const AddressEntry& entry)
-            {
-                return entry.host.ipV6().first && *entry.host.ipV6().first == in6addr_loopback;
-            });
+    auto ipv6ResolvedLocalhost = std::find_if(
+        resolvedAddresses->begin(),
+        resolvedAddresses->end(),
+        [](const AddressEntry& entry)
+        {
+            return entry.host.ipV6().first && *entry.host.ipV6().first == in6addr_loopback;
+        });
 
-    if (ipv4ResolvedLocalhost != resolvedAddresses->end() &&
-        ipv6ResolvedLocalhost == resolvedAddresses->end())
+    if (ipv4ResolvedLocalhost != resolvedAddresses->end()
+        && ipv6ResolvedLocalhost == resolvedAddresses->end())
     {
-        resolvedAddresses->push_back(AddressEntry(
-            AddressType::direct, HostAddress(in6addr_loopback, 0)));
+        resolvedAddresses->push_back(
+            AddressEntry(AddressType::direct, HostAddress(in6addr_loopback, 0)));
     }
 }
 

@@ -7,10 +7,10 @@
 class SampleGen
 {
 public:
-    SampleGen(uint32_t sampleCount, uint32_t sampleSize, uint32_t planeCount)
-        : size(sampleCount * sampleSize)
-        , sampleSize(sampleSize)
-        , planeCount(planeCount)
+    SampleGen(uint32_t sampleCount, uint32_t sampleSize, uint32_t planeCount):
+        size(sampleCount * sampleSize),
+        sampleSize(sampleSize),
+        planeCount(planeCount)
     {
         data.resize(size);
         dataRef.resize(size);
@@ -51,7 +51,7 @@ private:
 void testReadWrite(int readCount, int writeCount, int sampleCount)
 {
     FfmpegAudioBuffer buffer;
-    FfmpegAudioBuffer::Config config {2, AV_SAMPLE_FMT_S16};
+    FfmpegAudioBuffer::Config config{2, AV_SAMPLE_FMT_S16};
     buffer.init(config);
     SampleGen samples(sampleCount, buffer.sampleSize(), buffer.planeCount());
 
@@ -61,7 +61,7 @@ void testReadWrite(int readCount, int writeCount, int sampleCount)
         buffers = buffer.startWriting(writeCount);
         ASSERT_TRUE(buffers != nullptr);
         buffer.finishWriting(samples.write(buffers, writeCount));
-        while((int) buffer.sampleCount() >= readCount)
+        while ((int) buffer.sampleCount() >= readCount)
         {
             ASSERT_TRUE(buffer.popData(readCount, buffers));
             samples.read(buffers, readCount);

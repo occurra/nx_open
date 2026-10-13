@@ -20,19 +20,22 @@ TEST(RetryTimer, tryCount)
         RetryTimer retryTimer(policy);
 
         for (unsigned int i = 0;
-            i < (retryCount == RetryPolicy::kInfiniteRetries ? 100 : retryCount);
-            ++i)
+             i < (retryCount == RetryPolicy::kInfiniteRetries ? 100 : retryCount);
+             ++i)
         {
             std::promise<void> doNextTryCalledPromise;
             ASSERT_TRUE(retryTimer.scheduleNextTry(
-                [&doNextTryCalledPromise] { doNextTryCalledPromise.set_value(); }));
+                [&doNextTryCalledPromise]
+                {
+                    doNextTryCalledPromise.set_value();
+                }));
             ASSERT_EQ(
                 std::future_status::ready,
                 doNextTryCalledPromise.get_future().wait_for(std::chrono::seconds(1)));
         }
         if (retryCount != RetryPolicy::kInfiniteRetries)
         {
-            ASSERT_FALSE(retryTimer.scheduleNextTry([]{}));
+            ASSERT_FALSE(retryTimer.scheduleNextTry([] {}));
         }
 
         retryTimer.pleaseStopSync();
@@ -41,9 +44,11 @@ TEST(RetryTimer, tryCount)
 
 TEST(RetryTimer, delayCalculation)
 {
-    const unsigned int delayMultiplierValues[] = { 0, 1, 2 };
-    const std::chrono::milliseconds maxDelayValues[] =
-        { std::chrono::milliseconds::zero(), std::chrono::milliseconds(350), std::chrono::seconds(10) };
+    const unsigned int delayMultiplierValues[] = {0, 1, 2};
+    const std::chrono::milliseconds maxDelayValues[] = {
+        std::chrono::milliseconds::zero(),
+        std::chrono::milliseconds(350),
+        std::chrono::seconds(10)};
     const std::chrono::milliseconds initialDelay(1);
     const int testLoopSize = 10;
 
@@ -63,7 +68,10 @@ TEST(RetryTimer, delayCalculation)
             {
                 std::promise<void> doNextTryCalledPromise;
                 ASSERT_TRUE(retryTimer.scheduleNextTry(
-                    [&doNextTryCalledPromise] { doNextTryCalledPromise.set_value(); }));
+                    [&doNextTryCalledPromise]
+                    {
+                        doNextTryCalledPromise.set_value();
+                    }));
                 delays.push_back(retryTimer.currentDelay());
                 doNextTryCalledPromise.get_future().wait();
             }
@@ -71,8 +79,7 @@ TEST(RetryTimer, delayCalculation)
             std::optional<std::chrono::milliseconds> prevDelay;
             for (const auto& delay: delays)
             {
-                std::chrono::milliseconds expectedDelay =
-                    prevDelay
+                std::chrono::milliseconds expectedDelay = prevDelay
                     ? (*prevDelay * (delayMultiplier == 0 ? 1 : delayMultiplier))
                     : initialDelay;
                 if ((maxDelay != RetryPolicy::kNoMaxDelay) && (expectedDelay > maxDelay))

@@ -2,9 +2,8 @@
 
 #include "app_info.h"
 
-#include <nx/utils/string.h>
-
 #include <nx/branding.h>
+#include <nx/utils/string.h>
 
 namespace nx::network {
 

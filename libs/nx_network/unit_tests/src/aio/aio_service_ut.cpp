@@ -14,8 +14,7 @@ namespace nx::network::aio::test {
 
 namespace {
 
-class TestTcpServer:
-    public network::test::SynchronousStreamSocketServer
+class TestTcpServer: public network::test::SynchronousStreamSocketServer
 {
 protected:
     virtual void processConnection(AbstractStreamSocket* connection) override
@@ -30,9 +29,7 @@ protected:
 
 } // namespace
 
-class AIOService:
-    public ::testing::Test,
-    public AIOEventHandler
+class AIOService: public ::testing::Test, public AIOEventHandler
 {
 public:
     ~AIOService()
@@ -44,17 +41,14 @@ public:
     }
 
 protected:
-    void givenSocket()
-    {
-        m_socket = std::make_unique<TCPSocket>(AF_INET);
-    }
+    void givenSocket() { m_socket = std::make_unique<TCPSocket>(AF_INET); }
 
     void givenConnectedSocket()
     {
         givenSocket();
 
-        ASSERT_TRUE(m_socket->connect(m_tcpServer.endpoint(), nx::network::kNoTimeout)) <<
-            SystemError::getLastOSErrorText();
+        ASSERT_TRUE(m_socket->connect(m_tcpServer.endpoint(), nx::network::kNoTimeout))
+            << SystemError::getLastOSErrorText();
     }
 
     void givenSocketBeingMonitored()
@@ -109,8 +103,7 @@ protected:
 
     void whenSocketMonitoringTimeoutIsChanged()
     {
-        ASSERT_TRUE(m_socket->setRecvTimeout(100))
-            << SystemError::getLastOSErrorText();
+        ASSERT_TRUE(m_socket->setRecvTimeout(100)) << SystemError::getLastOSErrorText();
 
         whenSocketMonitoringStarted();
     }
@@ -169,7 +162,7 @@ TEST_F(AIOService, socket_correctly_added_and_removed_multiple_times)
 {
     givenSocket();
     whenRandomlyAddedAndRemovedSocketMultipleTimes();
-    //thenProcessHasNotCrashed();
+    // thenProcessHasNotCrashed();
 }
 
 TEST_F(AIOService, changing_socket_operation_timeout)

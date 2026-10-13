@@ -24,6 +24,7 @@ struct NX_VMS_COMMON_API ImageCorrectionResult
         const nx::vms::api::ImageCorrectionData& data,
         const QRectF& srcRect = QRectF(0.0, 0.0, 1.0, 1.0));
     void update(const nx::vms::api::ImageCorrectionData& data);
+
 private:
     float calcGamma(int leftPos, int rightPos, int pixels) const;
 };

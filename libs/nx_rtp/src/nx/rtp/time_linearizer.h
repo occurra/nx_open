@@ -15,13 +15,9 @@ namespace nx::rtp {
 template<
     typename T,
     typename std::enable_if<
-        std::is_integral<T>::value
-        && !std::is_same<T, bool>::value
-        && std::is_unsigned<T>::value
-        && sizeof(T) < sizeof(int64_t),
-        T
-    >::type* = nullptr
->
+        std::is_integral<T>::value && !std::is_same<T, bool>::value && std::is_unsigned<T>::value
+            && sizeof(T) < sizeof(int64_t),
+        T>::type* = nullptr>
 struct TimeLinearizer
 {
     static constexpr int64_t kRange = 1 + (int64_t) std::numeric_limits<T>::max();

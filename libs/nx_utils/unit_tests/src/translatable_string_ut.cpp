@@ -32,7 +32,11 @@ NX_REFLECTION_INSTRUMENT(DataWithTranslatableString, (field))
 
 TEST(TranslatableString, createWithProvider)
 {
-    TranslatableString s([] { return kValueEn; });
+    TranslatableString s(
+        []
+        {
+            return kValueEn;
+        });
     ASSERT_EQ(s, kValueEn);
 }
 
@@ -83,12 +87,12 @@ TEST(TranslatableString, serializeToStringReflect)
 TEST(TranslatableString, checkCurrentLocaleWithExplicitValues)
 {
     static const QString currentLocale = nx::branding::defaultLocale();
-    TranslatableString s({
-        {TranslatableString::kDefaultValueKey, kValueFr},
-        {currentLocale, kValueEn},
-        {kLocaleEs, kValueEs}
-    });
-    NX_ASSERT(currentLocale != kLocaleFr && currentLocale != kLocaleEs,
+    TranslatableString s(
+        {{TranslatableString::kDefaultValueKey, kValueFr},
+         {currentLocale, kValueEn},
+         {kLocaleEs, kValueEs}});
+    NX_ASSERT(
+        currentLocale != kLocaleFr && currentLocale != kLocaleEs,
         "Test cannot be executed with this default locale");
 
     EXPECT_EQ(s, kValueEn);

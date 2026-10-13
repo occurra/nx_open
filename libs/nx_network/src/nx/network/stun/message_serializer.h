@@ -60,8 +60,7 @@ private:
     nx::network::server::SerializerState serializeMagicCookieAndTransactionID(
         MessageSerializerBuffer* buffer);
 
-    nx::network::server::SerializerState serializeAttributes(
-        MessageSerializerBuffer* buffer);
+    nx::network::server::SerializerState serializeAttributes(MessageSerializerBuffer* buffer);
 
     /**
      * @param lenPtr Assigned to the address where attribute length must be written.
@@ -99,8 +98,8 @@ private:
     /**
      * This helper function ensure that while we traveling the attributes of a message,
      * the MessageIntegrity and the FingerPrint will be ensured to exist at last.
-     * The RFC doesn't restrict the order of the attributes, but I guess the unorder_map is OK here,
-     * as long as we ensure the MessageIntegrity and FingerPrint message order.
+     * The RFC doesn't restrict the order of the attributes, but I guess the unorder_map is OK
+     * here, as long as we ensure the MessageIntegrity and FingerPrint message order.
      */
     bool travelAllAttributes(const std::function<bool(const attrs::Attribute*)>&);
 

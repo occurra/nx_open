@@ -4,17 +4,17 @@
 
 #ifdef ENABLE_SSL
 
-#include <memory>
-#include <mutex>
+    #include <memory>
+    #include <mutex>
 
-#include <openssl/ssl.h>
+    #include <openssl/ssl.h>
 
-#include <nx/network/nx_network_ini.h>
-#include <nx/utils/log/assert.h>
-#include <nx/utils/log/log.h>
-#include <nx/utils/std/algorithm.h>
-#include <nx/utils/std/cppnx.h>
-#include <nx/utils/string.h>
+    #include <nx/network/nx_network_ini.h>
+    #include <nx/utils/log/assert.h>
+    #include <nx/utils/log/log.h>
+    #include <nx/utils/std/algorithm.h>
+    #include <nx/utils/std/cppnx.h>
+    #include <nx/utils/string.h>
 
 namespace nx::network::ssl {
 
@@ -52,23 +52,23 @@ void sslKeyLogFileCallback(const SSL* /*ssl*/, const char* line)
 
     static FILE* file = //< Static local initialization is thread-safe.
         []()
+    {
+        const char* path = nx::network::ini().sslKeyLogFile;
+        if (strcmp(path, "") == 0)
+            return static_cast<FILE*>(nullptr);
+
+        FILE* file = std::fopen(path, "ab");
+        if (!file)
         {
-            const char* path = nx::network::ini().sslKeyLogFile;
-            if (strcmp(path, "") == 0)
-                return static_cast<FILE*>(nullptr);
+            static const auto error = SystemError::toString(errno);
+            NX_ERROR(NX_SCOPE_TAG, "Unable to open %1: %2", path, error);
+            return static_cast<FILE*>(nullptr);
+        }
 
-            FILE* file = std::fopen(path, "ab");
-            if (!file)
-            {
-                static const auto error = SystemError::toString(errno);
-                NX_ERROR(NX_SCOPE_TAG, "Unable to open %1: %2", path, error);
-                return static_cast<FILE*>(nullptr);
-            }
-
-            // Disable buffering: force OS-level write call each time.
-            std::setvbuf(file, nullptr, _IONBF, 0);
-            return file;
-        }();
+        // Disable buffering: force OS-level write call each time.
+        std::setvbuf(file, nullptr, _IONBF, 0);
+        return file;
+    }();
     if (!file)
         return;
 
@@ -90,9 +90,7 @@ Context::Context():
 
     m_defaultServerContext = createServerContext();
 
-    m_clientContext = std::shared_ptr<SSL_CTX>(
-        SSL_CTX_new(SSLv23_client_method()),
-        &SSL_CTX_free);
+    m_clientContext = std::shared_ptr<SSL_CTX>(SSL_CTX_new(SSLv23_client_method()), &SSL_CTX_free);
     SSL_CTX_set_options(m_clientContext.get(), 0);
     auto verifyParam = nx::wrapUnique(X509_VERIFY_PARAM_new(), &X509_VERIFY_PARAM_free);
     X509_VERIFY_PARAM_set_flags(verifyParam.get(), X509_V_FLAG_PARTIAL_CHAIN);
@@ -192,17 +190,20 @@ Context* Context::instance()
     return Context_instance();
 }
 
-static constexpr int kDisableAllSslVersions =
-    SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 |
-    SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3;
+static constexpr int kDisableAllSslVersions = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1
+    | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3;
 
 bool Context::setAllowedServerVersions(const std::string& versionsStr)
 {
     int disabledVersions = kDisableAllSslVersions;
     std::vector<std::string> versions;
     nx::utils::split(
-        versionsStr, '|',
-        [&versions](const auto& token) { versions.push_back(std::string(token)); });
+        versionsStr,
+        '|',
+        [&versions](const auto& token)
+        {
+            versions.push_back(std::string(token));
+        });
 
     for (auto& version: versions)
     {
@@ -291,9 +292,7 @@ std::shared_ptr<SSL_CTX> Context::createServerContext()
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
 
-    auto context = std::shared_ptr<SSL_CTX>(
-        SSL_CTX_new(SSLv23_server_method()),
-        &SSL_CTX_free);
+    auto context = std::shared_ptr<SSL_CTX>(SSL_CTX_new(SSLv23_server_method()), &SSL_CTX_free);
 
     SSL_CTX_set_options(context.get(), m_disabledServerVersions | SSL_OP_SINGLE_DH_USE);
     if (m_allowedServerCiphers != "-")
@@ -315,8 +314,7 @@ std::shared_ptr<SSL_CTX> Context::createServerContext()
     return context;
 }
 
-int Context::chooseSslContextForIncomingConnectionStatic(
-    SSL* s, int* al, void* arg)
+int Context::chooseSslContextForIncomingConnectionStatic(SSL* s, int* al, void* arg)
 {
     return static_cast<Context*>(arg)->chooseSslContextForIncomingConnection(s, al);
 }
@@ -346,17 +344,12 @@ int Context::chooseSslContextForIncomingConnection(SSL* s, int* /*al*/)
     return SSL_TLSEXT_ERR_OK;
 }
 
-bool Context::bindCertificateToSslContext(
-    SSL_CTX* sslContext,
-    const std::string& pem)
+bool Context::bindCertificateToSslContext(SSL_CTX* sslContext, const std::string& pem)
 {
-    return x509load(sslContext, pem)
-        && pKeyLoad(sslContext, pem);
+    return x509load(sslContext, pem) && pKeyLoad(sslContext, pem);
 }
 
-bool Context::x509load(
-    SSL_CTX* sslContext,
-    const std::string& pem)
+bool Context::x509load(SSL_CTX* sslContext, const std::string& pem)
 {
     X509Certificate x509;
     if (!x509.parsePem(pem, SSL_CTX_get_max_cert_list(sslContext)))
@@ -376,7 +369,7 @@ bool Context::x509load(
 bool Context::pKeyLoad(SSL_CTX* sslContext, const std::string& certBytes)
 {
     auto bio = nx::wrapUnique(
-        BIO_new_mem_buf(const_cast<void*>((const void*)certBytes.data()), certBytes.size()),
+        BIO_new_mem_buf(const_cast<void*>((const void*) certBytes.data()), certBytes.size()),
         &BIO_free);
 
     PKeyPtr privateKey(PEM_read_bio_PrivateKey(bio.get(), 0, 0, 0), &EVP_PKEY_free);

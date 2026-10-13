@@ -17,6 +17,7 @@ public:
     void pushPacket(const nx::utils::ByteArray& packet, uint16_t seq);
     void pushRtcpNack(const uint8_t* data, int size);
     bool getNextPacket(nx::utils::ByteArray& outputPacket);
+
 private:
     std::deque<nx::utils::ByteArray> m_packets;
     std::deque<uint16_t> m_reports;

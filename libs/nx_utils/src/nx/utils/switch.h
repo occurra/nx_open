@@ -6,7 +6,9 @@
 
 namespace nx::utils {
 
-static constexpr struct Default {} default_;
+static constexpr struct Default
+{
+} default_;
 
 template<typename Value, typename Action>
 auto switch_(const Value&, const Default&, const Action& defaultAction)
@@ -64,8 +66,8 @@ auto switch_(const Value&, const Default&, const Action& defaultAction)
  * Advantages here: supports switching by value of any type; run-time check for unmatched values.
  */
 template<typename Value, typename Match, typename Action, typename... Tail>
-auto switch_(const Value& value, const Match& match, const Action& action,
-    Tail... tail) -> decltype(action())
+auto switch_(const Value& value, const Match& match, const Action& action, Tail... tail)
+    -> decltype(action())
 {
     if (value == match)
         return action();

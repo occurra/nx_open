@@ -6,8 +6,7 @@
 
 namespace nx::network {
 
-class TextIpAddressResolver:
-    public AbstractResolver
+class TextIpAddressResolver: public AbstractResolver
 {
 public:
     virtual SystemError::ErrorCode resolve(

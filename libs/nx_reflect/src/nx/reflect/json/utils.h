@@ -5,9 +5,8 @@
 #include <string>
 #include <tuple>
 
-#include <rapidjson/document.h>
-
 #include <nx/reflect/serialization_utils.h>
+#include <rapidjson/document.h>
 
 namespace nx::reflect::json_detail {
 
@@ -23,7 +22,7 @@ namespace nx::reflect::json {
 /**
  * Deserializes JSON and serializes it back to omit extra spaces, tabs, line feeds.
  */
-NX_REFLECT_API std::tuple<std::string, DeserializationResult>
-    compactJson(const std::string_view json);
+NX_REFLECT_API std::tuple<std::string, DeserializationResult> compactJson(
+    const std::string_view json);
 
 } // namespace nx::reflect::json

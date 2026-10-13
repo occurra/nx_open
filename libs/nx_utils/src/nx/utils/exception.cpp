@@ -77,7 +77,7 @@ void ContextedException::addContext(const std::string& context)
 
 void ContextedException::addContext(const QString& context)
 {
-    m_message = NX_FMT("%1\ncaused by\n%2", context,  m_message);
+    m_message = NX_FMT("%1\ncaused by\n%2", context, m_message);
     clearWhatCache();
 }
 

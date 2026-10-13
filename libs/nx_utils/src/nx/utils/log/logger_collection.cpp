@@ -2,9 +2,8 @@
 
 #include "logger_collection.h"
 
-#include <cstdlib>
-
 #include <QTextCodec>
+#include <cstdlib>
 
 namespace nx::log {
 
@@ -16,7 +15,11 @@ static void stopArchivingInstance()
 LoggerCollection::LoggerCollection()
 {
     m_mainLogger = std::make_unique<Logger>(std::set<Filter>(), kDefaultLevel);
-    m_mainLogger->setOnLevelChanged([this]() { onLevelChanged(); });
+    m_mainLogger->setOnLevelChanged(
+        [this]()
+        {
+            onLevelChanged();
+        });
     updateMaxLevel();
 }
 
@@ -28,13 +31,13 @@ LoggerCollection::~LoggerCollection()
 LoggerCollection* LoggerCollection::instance()
 {
     static LoggerCollection collection;
-    static const auto atexitRegistration =
-        []()
-        {
-            NX_ASSERT(QTextCodec::codecForLocale()); //< Make sure QT static data is constructed before atexit()
-            std::atexit(stopArchivingInstance);
-            return 0;
-        }();
+    static const auto atexitRegistration = []()
+    {
+        NX_ASSERT(QTextCodec::codecForLocale()); //< Make sure QT static data is constructed before
+                                                 // atexit()
+        std::atexit(stopArchivingInstance);
+        return 0;
+    }();
     NX_ASSERT(atexitRegistration == 0);
     return &collection;
 }
@@ -59,7 +62,11 @@ void LoggerCollection::setMainLogger(std::shared_ptr<AbstractLogger> logger)
 
     NX_MUTEX_LOCKER lock(&m_mutex);
     m_mainLogger = std::move(logger);
-    m_mainLogger->setOnLevelChanged([this]() { onLevelChanged(); });
+    m_mainLogger->setOnLevelChanged(
+        [this]()
+        {
+            onLevelChanged();
+        });
 
     updateMaxLevel();
 }
@@ -71,7 +78,11 @@ int LoggerCollection::add(std::shared_ptr<AbstractLogger> logger)
 
     NX_MUTEX_LOCKER lock(&m_mutex);
 
-    logger->setOnLevelChanged([this]() { onLevelChanged(); });
+    logger->setOnLevelChanged(
+        [this]()
+        {
+            onLevelChanged();
+        });
 
     Context loggerContext(m_loggerId, logger);
 
@@ -88,8 +99,11 @@ int LoggerCollection::add(std::shared_ptr<AbstractLogger> logger)
             m_mainLogger->log(
                 Level::warning,
                 this,
-                NX_FMT("Filter %1 (logger %2) is already inserted as logger %3",
-                    filter, logger, result.first->second.logger));
+                NX_FMT(
+                    "Filter %1 (logger %2) is already inserted as logger %3",
+                    filter,
+                    logger,
+                    result.first->second.logger));
         }
     }
 
@@ -107,7 +121,9 @@ std::shared_ptr<AbstractLogger> LoggerCollection::get(const Tag& tag, bool exact
     {
         // Likely we are on the static deinitialization phase - log everything to stderr.
         return std::make_shared<Logger>(
-            std::set<Filter>(), Level::verbose, std::make_unique<StdOut>());
+            std::set<Filter>(),
+            Level::verbose,
+            std::make_unique<StdOut>());
     }
 
     NX_MUTEX_LOCKER lock(&m_mutex);
@@ -115,9 +131,7 @@ std::shared_ptr<AbstractLogger> LoggerCollection::get(const Tag& tag, bool exact
     {
         const Filter filter(tag);
         auto it = m_loggersByFilter.find(filter);
-        return it == m_loggersByFilter.cend()
-            ? m_mainLogger
-            : it->second.logger;
+        return it == m_loggersByFilter.cend() ? m_mainLogger : it->second.logger;
     }
 
     for (auto& it: m_loggersByFilter)
@@ -131,7 +145,7 @@ std::shared_ptr<AbstractLogger> LoggerCollection::get(const Tag& tag, bool exact
 std::shared_ptr<AbstractLogger> LoggerCollection::get(int loggerId) const
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
-    for (const auto& element : m_loggersByFilter)
+    for (const auto& element: m_loggersByFilter)
     {
         if (element.second.id == loggerId)
             return element.second.logger;

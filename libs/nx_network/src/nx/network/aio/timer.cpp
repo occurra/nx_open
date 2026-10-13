@@ -2,8 +2,8 @@
 
 #include "timer.h"
 
-#include "aio_service.h"
 #include "../socket_global.h"
+#include "aio_service.h"
 
 namespace nx::network::aio {
 
@@ -22,9 +22,7 @@ Timer::~Timer()
     NX_ASSERT(!m_aioService.isSocketBeingMonitored(&pollable()));
 }
 
-void Timer::start(
-    std::chrono::milliseconds timeout,
-    TimerEventHandler timerFunc)
+void Timer::start(std::chrono::milliseconds timeout, TimerEventHandler timerFunc)
 {
     NX_CRITICAL(timerFunc);
 
@@ -51,11 +49,14 @@ cf::future<cf::unit> Timer::start(std::chrono::milliseconds timeout)
     cf::promise<cf::unit> promise;
     auto future = promise.get_future();
 
-    start(timeout,
-        [promise = std::move(promise)]() mutable { promise.set_value(cf::unit()); });
+    start(
+        timeout,
+        [promise = std::move(promise)]() mutable
+        {
+            promise.set_value(cf::unit());
+        });
 
-    return future
-        .then(cf::translate_broken_promise_to_operation_canceled);
+    return future.then(cf::translate_broken_promise_to_operation_canceled);
 }
 
 std::optional<std::chrono::nanoseconds> Timer::timeToEvent() const
@@ -64,9 +65,7 @@ std::optional<std::chrono::nanoseconds> Timer::timeToEvent() const
         return std::nullopt;
 
     const auto elapsed = std::chrono::steady_clock::now() - *m_timerStartClock;
-    return elapsed >= m_timeout
-        ? std::chrono::nanoseconds::zero()
-        : m_timeout - elapsed;
+    return elapsed >= m_timeout ? std::chrono::nanoseconds::zero() : m_timeout - elapsed;
 }
 
 void Timer::cancelAsync(nx::MoveOnlyFunc<void()> completionHandler)
@@ -84,10 +83,13 @@ cf::future<cf::unit> Timer::cancel()
     cf::promise<cf::unit> promise;
     auto future = promise.get_future();
 
-    cancelAsync([promise = std::move(promise)]() mutable { promise.set_value(cf::unit()); });
+    cancelAsync(
+        [promise = std::move(promise)]() mutable
+        {
+            promise.set_value(cf::unit());
+        });
 
-    return future
-        .then(cf::translate_broken_promise_to_operation_canceled);
+    return future.then(cf::translate_broken_promise_to_operation_canceled);
 }
 
 void Timer::cancelSync()
@@ -99,7 +101,11 @@ void Timer::cancelSync()
     else
     {
         std::promise<void> cancelledPromise;
-        cancelAsync([&cancelledPromise]() { cancelledPromise.set_value(); });
+        cancelAsync(
+            [&cancelledPromise]()
+            {
+                cancelledPromise.set_value();
+            });
         cancelledPromise.get_future().wait();
     }
 }

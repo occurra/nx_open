@@ -5,23 +5,21 @@
 #include <nx/utils/log/log.h>
 #include <nx/utils/system_error.h>
 
-#include "aio_thread.h"
 #include "../common_socket_impl.h"
 #include "../socket_global.h"
+#include "aio_thread.h"
 
 namespace nx::network {
 
-Pollable::Pollable(
-    aio::AbstractAioThread* aioThread,
-    AbstractSocket::SOCKET_HANDLE fd): Pollable(aioThread, fd, nullptr)
+Pollable::Pollable(aio::AbstractAioThread* aioThread, AbstractSocket::SOCKET_HANDLE fd):
+    Pollable(aioThread, fd, nullptr)
 {
 }
 
 Pollable::Pollable(
     aio::AbstractAioThread* aioThread,
     AbstractSocket::SOCKET_HANDLE fd,
-    std::unique_ptr<CommonSocketImpl> impl)
-    :
+    std::unique_ptr<CommonSocketImpl> impl):
     m_fd(fd),
     m_impl(impl ? std::move(impl) : std::make_unique<CommonSocketImpl>())
 {
@@ -100,7 +98,8 @@ void Pollable::bindToAioThread(nx::network::aio::AbstractAioThread* aioThread)
 bool Pollable::isInSelfAioThread() const
 {
     return m_impl->aioThread->load() != nullptr
-        && m_impl->aioThread->load()->systemThreadId() == nx::utils::Thread::currentThreadSystemId();
+        && m_impl->aioThread->load()->systemThreadId()
+        == nx::utils::Thread::currentThreadSystemId();
 }
 
 } // namespace nx::network

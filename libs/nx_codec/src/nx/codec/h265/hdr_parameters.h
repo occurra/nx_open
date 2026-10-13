@@ -12,7 +12,10 @@ namespace nx::media::h265 {
 
 struct NX_CODEC_API HRDParameters
 {
-    bool read(nx::utils::BitStreamReader& reader, bool commonInfPresentFlag, uint8_t maxNumSubLayersMinus1);
+    bool read(
+        nx::utils::BitStreamReader& reader,
+        bool commonInfPresentFlag,
+        uint8_t maxNumSubLayersMinus1);
 
     struct SubLayerHRDParameters
     {
@@ -51,4 +54,4 @@ struct NX_CODEC_API HRDParameters
     std::vector<SubLayerHRDParameters> sub_layer_hrd_parameters;
 };
 
-} //namespace nx::media::h265
+} // namespace nx::media::h265

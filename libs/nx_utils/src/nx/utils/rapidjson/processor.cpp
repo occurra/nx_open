@@ -10,7 +10,8 @@ namespace nx::utils::rapidjson {
 namespace details {
 
 ValueHelper::ValueHelper(const QString& val, ::rapidjson::Document::AllocatorType& alloc):
-    allocator(alloc), value(val.toStdString(), allocator)
+    allocator(alloc),
+    value(val.toStdString(), allocator)
 {
 }
 
@@ -52,7 +53,12 @@ int Path::conditionCount() const
     if (isValid())
     {
         return std::count_if(
-            m_tokens->begin(), m_tokens->end(), [](const auto& t) { return t.isCondition(); });
+            m_tokens->begin(),
+            m_tokens->end(),
+            [](const auto& t)
+            {
+                return t.isCondition();
+            });
     }
     return 0;
 }
@@ -110,7 +116,8 @@ bool Processor::isValid() const
 
 QString Processor::getPrettyParseErrorString() const
 {
-    return NX_FMT("Error %1 at offset %2: `%3`",
+    return NX_FMT(
+        "Error %1 at offset %2: `%3`",
         m_data->GetParseError(),
         m_data->GetErrorOffset(),
         ::rapidjson::GetParseError_En(m_data->GetParseError()));

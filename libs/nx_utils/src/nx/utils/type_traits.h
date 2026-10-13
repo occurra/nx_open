@@ -54,7 +54,7 @@ using FunctionArgumentType = typename FunctionTraits<FunctionPtr>::template Argu
 template<auto>
 struct MemberPointerTraits;
 
-template<typename Field, typename Class, Field Class::*Member>
+template<typename Field, typename Class, Field Class::* Member>
 struct MemberPointerTraits<Member>
 {
     using ClassType = Class;
@@ -64,13 +64,19 @@ struct MemberPointerTraits<Member>
 struct AlwaysTrue
 {
     template<typename... T>
-    constexpr bool operator()(const T&...) const noexcept { return true; }
+    constexpr bool operator()(const T&...) const noexcept
+    {
+        return true;
+    }
 } constexpr alwaysTrue{};
 
 struct AlwaysFalse
 {
     template<typename... T>
-    constexpr bool operator()(const T&...) const noexcept { return false; }
+    constexpr bool operator()(const T&...) const noexcept
+    {
+        return false;
+    }
 } constexpr alwaysFalse{};
 
 } // namespace nx::traits

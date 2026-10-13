@@ -11,16 +11,16 @@ extern "C" {
 
 namespace {
 
-static qint32 ffmpegReadPacket(void *opaque, quint8* buf, int size)
+static qint32 ffmpegReadPacket(void* opaque, quint8* buf, int size)
 {
-    QIODevice* reader = reinterpret_cast<QIODevice*> (opaque);
+    QIODevice* reader = reinterpret_cast<QIODevice*>(opaque);
     auto bytesRead = reader->read((char*) buf, size);
     return bytesRead == 0 ? AVERROR_EOF : bytesRead;
 }
 
-static qint32 ffmpegWritePacket(void *opaque, const quint8* buf, int size)
+static qint32 ffmpegWritePacket(void* opaque, const quint8* buf, int size)
 {
-    QIODevice* reader = reinterpret_cast<QIODevice*> (opaque);
+    QIODevice* reader = reinterpret_cast<QIODevice*>(opaque);
     if (reader)
         return reader->write((char*) buf, size);
     else
@@ -29,23 +29,23 @@ static qint32 ffmpegWritePacket(void *opaque, const quint8* buf, int size)
 
 static int64_t ffmpegSeek(void* opaque, int64_t pos, int whence)
 {
-    QIODevice* reader = reinterpret_cast<QIODevice*> (opaque);
+    QIODevice* reader = reinterpret_cast<QIODevice*>(opaque);
 
     qint64 absolutePos = pos;
     switch (whence)
     {
-    case SEEK_SET:
-        break;
-    case SEEK_CUR:
-        absolutePos = reader->pos() + pos;
-        break;
-    case SEEK_END:
-        absolutePos = reader->size() + pos;
-        break;
-    case 65536:
-        return reader->size();
-    default:
-        return AVERROR(ENOENT);
+        case SEEK_SET:
+            break;
+        case SEEK_CUR:
+            absolutePos = reader->pos() + pos;
+            break;
+        case SEEK_END:
+            absolutePos = reader->size() + pos;
+            break;
+        case 65536:
+            return reader->size();
+        default:
+            return AVERROR(ENOENT);
     }
 
     return reader->seek(absolutePos);
@@ -110,7 +110,7 @@ void closeFfmpegIOContext(AVIOContext* ioContext)
         QIODevice* ioDevice = (QIODevice*) ioContext->opaque;
         delete ioDevice;
         ioContext->opaque = 0;
-        //avio_close2(ioContext);
+        // avio_close2(ioContext);
 
         av_freep(&ioContext->buffer);
         av_opt_free(ioContext);

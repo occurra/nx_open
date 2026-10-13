@@ -37,7 +37,8 @@ public:
 
     virtual bool tableExist(std::string_view tableName) = 0;
 
-    // TODO: #akolesnikov Remove this method. This requires switching every SqlQuery usage to createQuery().
+    // TODO: #akolesnikov Remove this method. This requires switching every SqlQuery usage to
+    // createQuery().
     virtual QSqlDatabase* qtSqlConnection() = 0;
 
     void setStatisticsCollector(StatisticsCollector* statisticsCollector);
@@ -48,9 +49,7 @@ public:
      * NOTE: Throws on failure.
      */
     template<typename... Args>
-    void executeQuery(
-        const std::string& sqlText,
-        Args&&... args)
+    void executeQuery(const std::string& sqlText, Args&&... args)
     {
         auto query = createQuery();
         query->prepare(sqlText);

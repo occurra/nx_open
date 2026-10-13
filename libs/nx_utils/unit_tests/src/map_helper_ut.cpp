@@ -1,9 +1,9 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <map>
 #include <string>
+
+#include <gtest/gtest.h>
 
 #include <nx/utils/data_structures/map_helper.h>
 
@@ -59,12 +59,8 @@ TEST_F(MapHelperTest, getOrThrow)
     ASSERT_THROW(
         MapHelper::getOrThrow(m_nestedMap, "getting", "some", "value"),
         std::out_of_range);
-    ASSERT_THROW(
-        MapHelper::getOrThrow(m_nestedMap, "getting", "some"),
-        std::out_of_range);
-    ASSERT_THROW(
-        MapHelper::getOrThrow(m_flatMap, "flatMapKey2"),
-        std::out_of_range);
+    ASSERT_THROW(MapHelper::getOrThrow(m_nestedMap, "getting", "some"), std::out_of_range);
+    ASSERT_THROW(MapHelper::getOrThrow(m_flatMap, "flatMapKey2"), std::out_of_range);
 }
 
 TEST_F(MapHelperTest, getPointer)
@@ -208,13 +204,12 @@ TEST_F(MapHelperTest, keys)
 TEST_F(MapHelperTest, forEach)
 {
     decltype(m_nestedMap) result;
-    auto func =
-        [&result](const auto& keys, const auto& value)
-        {
-            std::apply(
-                NX_WRAP_FUNC_TO_LAMBDA(MapHelper::set),
-                MapHelper::flatTuple(&result, keys, value));
-        };
+    auto func = [&result](const auto& keys, const auto& value)
+    {
+        std::apply(
+            NX_WRAP_FUNC_TO_LAMBDA(MapHelper::set),
+            MapHelper::flatTuple(&result, keys, value));
+    };
 
     MapHelper::forEach(m_nestedMap, func);
     ASSERT_EQ(result, m_nestedMap);

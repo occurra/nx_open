@@ -10,8 +10,7 @@
 
 namespace nx::network::ssl::test {
 
-class EnforcedSslOverTcpServerSocket:
-    public ssl::StreamServerSocket
+class EnforcedSslOverTcpServerSocket: public ssl::StreamServerSocket
 {
     using base_type = ssl::StreamServerSocket;
 
@@ -25,8 +24,7 @@ public:
     }
 };
 
-class AutoDetectedSslOverTcpServerSocket:
-    public ssl::StreamServerSocket
+class AutoDetectedSslOverTcpServerSocket: public ssl::StreamServerSocket
 {
     using base_type = ssl::StreamServerSocket;
 
@@ -40,14 +38,14 @@ public:
     }
 };
 
-class SslOverTcpStreamSocket:
-    public ssl::StreamSocket
+class SslOverTcpStreamSocket: public ssl::StreamSocket
 {
     using base_type = ssl::StreamSocket;
 
 public:
     SslOverTcpStreamSocket(int ipVersion = AF_INET):
-        base_type(Context::instance(),
+        base_type(
+            Context::instance(),
             std::make_unique<TCPSocket>(ipVersion),
             /*isServerSide*/ false,
             kAcceptAnyCertificateCallback)

@@ -4,18 +4,18 @@
 
 #ifdef ENABLE_SSL
 
-#include <atomic>
-#include <memory>
-#include <optional>
-#include <regex>
-#include <string_view>
+    #include <atomic>
+    #include <memory>
+    #include <optional>
+    #include <regex>
+    #include <string_view>
 
-#include <openssl/ssl.h>
+    #include <openssl/ssl.h>
 
-#include <nx/utils/buffer.h>
-#include <nx/utils/thread/mutex.h>
+    #include <nx/utils/buffer.h>
+    #include <nx/utils/thread/mutex.h>
 
-#include "certificate.h"
+    #include "certificate.h"
 
 namespace nx::network::ssl {
 
@@ -25,7 +25,8 @@ namespace nx::network::ssl {
  * algorithms/ciphers and other things.
  * It is also responsible for providing appropriate certificate depending on the SNI extension.
  * See Context::configureVirtualHost for more details.
- * Different SSL sockets can have different contexts associated. See nx::network::ssl::StreamSocket.
+ * Different SSL sockets can have different contexts associated. See
+ * nx::network::ssl::StreamSocket.
  */
 class NX_NETWORK_API Context
 {
@@ -49,11 +50,12 @@ public:
      * @return true If the certificate was parsed successfully. false if the certificate could not
      * be loaded. Nothing changes in case of an error, the object state is not altered in any way.
      *
-     * NOTE: If default certificate is not specified and no certificate set with configureVirtualHost
-     * was selected, TLS server rejects connections with SSL_TLSEXT_ERR_NOACK error code.
+     * NOTE: If default certificate is not specified and no certificate set with
+     * configureVirtualHost was selected, TLS server rejects connections with SSL_TLSEXT_ERR_NOACK
+     * error code.
      *
-     * NOTE: Default certificate may be changed. Connections accepted after this call will use the new
-     * certificate.
+     * NOTE: Default certificate may be changed. Connections accepted after this call will use the
+     * new certificate.
      */
     bool setDefaultCertificate(const std::string& pem);
 
@@ -113,9 +115,7 @@ private:
     static int chooseSslContextForIncomingConnectionStatic(SSL* s, int* al, void* arg);
     int chooseSslContextForIncomingConnection(SSL* s, int* al);
 
-    bool bindCertificateToSslContext(
-        SSL_CTX* sslContext,
-        const std::string& pem);
+    bool bindCertificateToSslContext(SSL_CTX* sslContext, const std::string& pem);
 
     bool x509load(SSL_CTX* sslContext, const std::string& pem);
     bool pKeyLoad(SSL_CTX* sslContext, const std::string& pem);
@@ -131,9 +131,7 @@ private:
     {
         bool operator()(const std::string& left, const std::string& right) const
         {
-            return left.size() != right.size()
-                ? left.size() > right.size()
-                : left < right;
+            return left.size() != right.size() ? left.size() > right.size() : left < right;
         }
     };
 
@@ -141,10 +139,8 @@ private:
     std::shared_ptr<SSL_CTX> m_clientContext;
     Pem m_defaultServerPem;
     mutable nx::Mutex m_mutex;
-    std::map<
-        std::string /*hostname regexp*/, VirtualHostContext,
-        HostnameRegexComparator
-    > m_virtualHosts;
+    std::map<std::string /*hostname regexp*/, VirtualHostContext, HostnameRegexComparator>
+        m_virtualHosts;
 
     std::atomic<int> m_disabledServerVersions = 0;
     std::string m_allowedServerCiphers;

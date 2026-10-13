@@ -16,24 +16,22 @@ class AsyncRunner
 public:
     AsyncRunner()
     {
-        m_thread = std::thread([this]()
-        {
-            while(1)
+        m_thread = std::thread(
+            [this]()
             {
-                if (const auto handler = m_tasks.pop())
-                    handler();
-                else
-                    return;
+                while (1)
+                {
+                    if (const auto handler = m_tasks.pop())
+                        handler();
+                    else
+                        return;
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
-        });
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
+            });
     }
 
-    void addTask(std::function<void()> task)
-    {
-        m_tasks.push(std::move(task));
-    }
+    void addTask(std::function<void()> task) { m_tasks.push(std::move(task)); }
 
     ~AsyncRunner()
     {
@@ -49,24 +47,23 @@ private:
 class AsyncOperationGuardTest
 {
 public:
-    AsyncOperationGuardTest(AsyncRunner* runner)
-        : m_runner(runner)
+    AsyncOperationGuardTest(AsyncRunner* runner):
+        m_runner(runner)
     {
     }
 
     void startOperation()
     {
         auto& sharedGuard = m_operationGuard.sharedGuard();
-        m_runner->addTask([sharedGuard, this](){
-            if (const auto lock = sharedGuard->lock())
-                m_completeQueue.push(true);
-        });
+        m_runner->addTask(
+            [sharedGuard, this]()
+            {
+                if (const auto lock = sharedGuard->lock())
+                    m_completeQueue.push(true);
+            });
     }
 
-    void waitOperationComplete()
-    {
-        m_completeQueue.pop();
-    }
+    void waitOperationComplete() { m_completeQueue.pop(); }
 
 private:
     AsyncRunner* m_runner;

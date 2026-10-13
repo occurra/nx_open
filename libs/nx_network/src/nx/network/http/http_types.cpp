@@ -43,20 +43,14 @@ int defaultPort(bool isSecure)
     return isSecure ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT;
 }
 
-std::string getHeaderValue(
-    const HttpHeaders& headers,
-    std::string_view headerName)
+std::string getHeaderValue(const HttpHeaders& headers, std::string_view headerName)
 {
     auto it = headers.lower_bound(headerName);
-    return it == headers.end() || nx::utils::stricmp(it->first, headerName) != 0
-        ? std::string()
-        : it->second;
+    return it == headers.end() || nx::utils::stricmp(it->first, headerName) != 0 ? std::string()
+                                                                                 : it->second;
 }
 
-bool readHeader(
-    const HttpHeaders& headers,
-    std::string_view headerName,
-    int* value)
+bool readHeader(const HttpHeaders& headers, std::string_view headerName, int* value)
 {
     auto it = headers.lower_bound(headerName);
     if (it == headers.end() || nx::utils::stricmp(it->first, headerName) != 0)
@@ -69,10 +63,10 @@ bool readHeader(
 HttpHeaders::iterator insertOrReplaceHeader(HttpHeaders* const headers, HttpHeader newHeader)
 {
     auto existingHeaderIter = headers->lower_bound(newHeader.first);
-    if ((existingHeaderIter != headers->end()) &&
-        (nx::utils::stricmp(existingHeaderIter->first, newHeader.first) == 0))
+    if ((existingHeaderIter != headers->end())
+        && (nx::utils::stricmp(existingHeaderIter->first, newHeader.first) == 0))
     {
-        existingHeaderIter->second = std::move(newHeader.second);  //replacing header
+        existingHeaderIter->second = std::move(newHeader.second); // replacing header
         return existingHeaderIter;
     }
     else
@@ -109,7 +103,8 @@ static bool hasOrigin(const std::string& origins, const std::string& origin)
     return std::find(tokens.begin(), tokens.end(), origin) != tokens.end();
 }
 
-void insertOrReplaceCorsHeaders(HttpHeaders* headers,
+void insertOrReplaceCorsHeaders(
+    HttpHeaders* headers,
     const Method& method,
     const HttpHeaders& requestHeaders,
     const std::string& supportedOrigins,
@@ -123,7 +118,8 @@ void insertOrReplaceCorsHeaders(HttpHeaders* headers,
     if (isOriginAllowed)
     {
         insertOrReplaceHeader(headers, {"Access-Control-Allow-Origin", std::move(origin)});
-        insertOrReplaceHeader(headers,
+        insertOrReplaceHeader(
+            headers,
             {"Access-Control-Allow-Credentials", supportedOriginCredentials ? "true" : "false"});
     }
     else if (!supportedOrigins.empty() && supportedOrigins.find(',') == std::string::npos)
@@ -145,10 +141,12 @@ void insertOrReplaceCorsHeaders(HttpHeaders* headers,
 
     insertOrReplaceHeader(headers, HttpHeader("Access-Control-Allow-Methods", std::move(methods)));
     insertOrReplaceHeader(
-        headers, HttpHeader("Access-Control-Allow-Headers", std::move(allowedHeaders)));
+        headers,
+        HttpHeader("Access-Control-Allow-Headers", std::move(allowedHeaders)));
     insertOrReplaceHeader(headers, HttpHeader("Access-Control-Max-Age", "600"));
     insertOrReplaceHeader(
-        headers, HttpHeader("Vary", "Accept-Encoding, Origin, Access-Control-Request-Headers"));
+        headers,
+        HttpHeader("Vary", "Accept-Encoding, Origin, Access-Control-Request-Headers"));
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -157,10 +155,7 @@ void insertOrReplaceCorsHeaders(HttpHeaders* headers,
 static size_t estimateSerializedDataSize(const HttpHeaders& headers)
 {
     size_t requiredSize = 0;
-    for (HttpHeaders::const_iterator
-        it = headers.begin();
-        it != headers.end();
-        ++it)
+    for (HttpHeaders::const_iterator it = headers.begin(); it != headers.end(); ++it)
     {
         requiredSize += it->first.size() + 1 + it->second.size() + 2;
     }
@@ -171,7 +166,8 @@ void serializeHeaders(const HttpHeaders& headers, nx::Buffer* dstBuffer)
 {
     nx::utils::join(
         dstBuffer,
-        headers.begin(), headers.end(),
+        headers.begin(),
+        headers.end(),
         "",
         [](auto* out, const auto& header)
         {
@@ -179,10 +175,7 @@ void serializeHeaders(const HttpHeaders& headers, nx::Buffer* dstBuffer)
         });
 }
 
-bool parseHeader(
-    const ConstBufferRefType& data,
-    std::string* const name,
-    std::string* const value)
+bool parseHeader(const ConstBufferRefType& data, std::string* const name, std::string* const value)
 {
     ConstBufferRefType nameRef;
     ConstBufferRefType valueRef;
@@ -205,7 +198,7 @@ bool parseHeader(
         return false;
 
     *name = nx::utils::trim(trimmedData.substr(0, separatorPos));
-    *value = nx::utils::trim(trimmedData.substr(separatorPos+1));
+    *value = nx::utils::trim(trimmedData.substr(separatorPos + 1));
 
     return true;
 }
@@ -276,16 +269,53 @@ const std::string& Method::toString() const
 
 bool Method::isKnown(std::string_view str)
 {
-    return nx::utils::switch_(str,
-        get, []() { return true; },
-        post, []() { return true; },
-        put, []() { return true; },
-        patch, []() { return true; },
-        delete_, []() { return true; },
-        connect, []() { return true; },
-        head, []() { return true; },
-        options, []() { return true; },
-        nx::utils::default_, []() { return false; });
+    return nx::utils::switch_(
+        str,
+        get,
+        []()
+        {
+            return true;
+        },
+        post,
+        []()
+        {
+            return true;
+        },
+        put,
+        []()
+        {
+            return true;
+        },
+        patch,
+        []()
+        {
+            return true;
+        },
+        delete_,
+        []()
+        {
+            return true;
+        },
+        connect,
+        []()
+        {
+            return true;
+        },
+        head,
+        []()
+        {
+            return true;
+        },
+        options,
+        []()
+        {
+            return true;
+        },
+        nx::utils::default_,
+        []()
+        {
+            return false;
+        });
 }
 
 bool Method::isMessageBodyAllowed(const Method& method)
@@ -293,13 +323,9 @@ bool Method::isMessageBodyAllowed(const Method& method)
     return method != get && method != head && method != delete_ && method != connect;
 }
 
-bool Method::isMessageBodyAllowedInResponse(
-    const Method& method,
-    StatusCode::Value statusCode)
+bool Method::isMessageBodyAllowedInResponse(const Method& method, StatusCode::Value statusCode)
 {
-    return method != connect
-        && method != head
-        && StatusCode::isMessageBodyAllowed(statusCode);
+    return method != connect && method != head && StatusCode::isMessageBodyAllowed(statusCode);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -336,7 +362,8 @@ void MimeProtoVersion::serialize(nx::Buffer* const dstBuffer) const
 
 static size_t estimateSerializedDataSize(const RequestLine& rl)
 {
-    return rl.method.toString().size() + 1 + rl.url.toString().size() + 1 + estimateSerializedDataSize(rl.version) + 2;
+    return rl.method.toString().size() + 1 + rl.url.toString().size() + 1
+        + estimateSerializedDataSize(rl.version) + 2;
 }
 
 bool RequestLine::parse(const ConstBufferRefType& data)
@@ -349,15 +376,14 @@ bool RequestLine::parse(const ConstBufferRefType& data)
         psUrl,
         psVersion,
         psDone
-    }
-    parsingState = psMethod;
+    } parsingState = psMethod;
 
-    #if defined(_WIN32)
-        // This function may crash in random places (like in VMS-18435). Copy request line to the
-        // stack so it is present in the mini-dump.
-        char urlOnStack[256] = {0};
-        snprintf(urlOnStack, sizeof(urlOnStack), "%s", std::string(data.data(), data.size()).c_str());
-    #endif
+#if defined(_WIN32)
+    // This function may crash in random places (like in VMS-18435). Copy request line to the
+    // stack so it is present in the mini-dump.
+    char urlOnStack[256] = {0};
+    snprintf(urlOnStack, sizeof(urlOnStack), "%s", std::string(data.data(), data.size()).c_str());
+#endif
 
     const char* str = data.data();
     const char* strEnd = str + data.size();
@@ -367,9 +393,9 @@ bool RequestLine::parse(const ConstBufferRefType& data)
     {
         if ((*str == ' ') || (str == strEnd))
         {
-            if (!waitingNextToken) //waiting end of token
+            if (!waitingNextToken) // waiting end of token
             {
-                //found new token [tokenStart, str)
+                // found new token [tokenStart, str)
                 switch (parsingState)
                 {
                     case psMethod:
@@ -407,7 +433,7 @@ bool RequestLine::parse(const ConstBufferRefType& data)
             if (waitingNextToken)
             {
                 tokenStart = str;
-                waitingNextToken = false;   //waiting token end
+                waitingNextToken = false; // waiting token end
             }
         }
     }
@@ -420,7 +446,8 @@ void RequestLine::serialize(nx::Buffer* const dstBuffer) const
     *dstBuffer += method.toString();
     *dstBuffer += " ";
     const auto path = encodeUrl(
-        url, (method == Method::connect) ? EncodeUrlParts::authority : EncodeUrlParts::all);
+        url,
+        (method == Method::connect) ? EncodeUrlParts::authority : EncodeUrlParts::all);
     *dstBuffer += path.empty() ? "/" : path;
     *dstBuffer += " ";
     version.serialize(dstBuffer);
@@ -461,12 +488,8 @@ std::string RequestLine::encodeUrl(const nx::Url& url, EncodeUrlParts parts) con
 static const int MAX_DIGITS_IN_STATUS_CODE = 5;
 static size_t estimateSerializedDataSize(const StatusLine& sl)
 {
-    return estimateSerializedDataSize(sl.version)
-        + 1
-        + MAX_DIGITS_IN_STATUS_CODE
-        + 1
-        + sl.reasonPhrase.size()
-        + 2;
+    return estimateSerializedDataSize(sl.version) + 1 + MAX_DIGITS_IN_STATUS_CODE + 1
+        + sl.reasonPhrase.size() + 2;
 }
 
 StatusLine::StatusLine():
@@ -491,9 +514,8 @@ bool StatusLine::parse(const ConstBufferRefType& data)
     const auto statusCodeEnd = data.find_first_of(" ", statusCodeStart);
     if (statusCodeEnd == ConstBufferRefType::npos)
         return false;
-    statusCode = static_cast<StatusCode::Value>(nx::utils::stoul(data.substr(
-        statusCodeStart,
-        statusCodeEnd - statusCodeStart)));
+    statusCode = static_cast<StatusCode::Value>(
+        nx::utils::stoul(data.substr(statusCodeStart, statusCodeEnd - statusCodeStart)));
 
     const auto reasonPhraseStart = data.find_first_not_of(" ", statusCodeEnd);
     if (reasonPhraseStart == ConstBufferRefType::npos)
@@ -501,9 +523,8 @@ bool StatusLine::parse(const ConstBufferRefType& data)
     const auto reasonPhraseEnd = data.find_first_of("\r\n", reasonPhraseStart);
     reasonPhrase = data.substr(
         reasonPhraseStart,
-        reasonPhraseEnd == ConstBufferRefType::npos
-            ? ConstBufferRefType::npos
-            : reasonPhraseEnd - reasonPhraseStart);
+        reasonPhraseEnd == ConstBufferRefType::npos ? ConstBufferRefType::npos
+                                                    : reasonPhraseEnd - reasonPhraseStart);
 
     return true;
 }
@@ -512,9 +533,7 @@ void StatusLine::serialize(nx::Buffer* dstBuffer) const
 {
     version.serialize(dstBuffer);
 
-    nx::utils::buildString(
-        dstBuffer,
-        " ", (int) statusCode, " ", reasonPhrase, "\r\n");
+    nx::utils::buildString(dstBuffer, " ", (int) statusCode, " ", reasonPhrase, "\r\n");
 }
 
 std::string StatusLine::toString() const
@@ -534,15 +553,12 @@ bool Request::parse(const ConstBufferRefType& data)
 
 void Request::serialize(nx::Buffer* dstBuffer) const
 {
-    //estimating required buffer size
+    // estimating required buffer size
     dstBuffer->reserve(
-        dstBuffer->size() +
-        estimateSerializedDataSize(requestLine) +
-        estimateSerializedDataSize(headers) +
-        2 +
-        messageBody.size());
+        dstBuffer->size() + estimateSerializedDataSize(requestLine)
+        + estimateSerializedDataSize(headers) + 2 + messageBody.size());
 
-    //serializing
+    // serializing
     requestLine.serialize(dstBuffer);
     serializeHeaders(headers, dstBuffer);
     dstBuffer->append("\r\n");
@@ -567,8 +583,8 @@ std::string getCookieValue(std::string_view name, const HttpHeaders& headers)
     if (cookieIter == headers.end())
         return std::string();
 
-    auto splitter = nx::utils::makeSplitter(
-        cookieIter->second, nx::utils::separator::isAnyOf(';'));
+    auto splitter =
+        nx::utils::makeSplitter(cookieIter->second, nx::utils::separator::isAnyOf(';'));
     while (splitter.next())
     {
         const auto [tokens, count] =
@@ -593,7 +609,10 @@ void Request::removeCookie(std::string_view name)
 
     nx::utils::erase_if(
         params,
-        [&name](const auto& nameValue) { return nameValue.first == name; });
+        [&name](const auto& nameValue)
+        {
+            return nameValue.first == name;
+        });
 
     std::string newCookie;
     newCookie.reserve(cookie.size());
@@ -623,15 +642,12 @@ bool Response::parse(const ConstBufferRefType& data)
 
 void Response::serialize(nx::Buffer* dstBuffer) const
 {
-    //estimating required buffer size
+    // estimating required buffer size
     dstBuffer->reserve(
-        dstBuffer->size() +
-        estimateSerializedDataSize(statusLine) +
-        estimateSerializedDataSize(headers) +
-        2 +
-        messageBody.size());
+        dstBuffer->size() + estimateSerializedDataSize(statusLine)
+        + estimateSerializedDataSize(headers) + 2 + messageBody.size());
 
-    //serializing
+    // serializing
     statusLine.serialize(dstBuffer);
     serializeHeaders(headers, dstBuffer);
     dstBuffer->append("\r\n");
@@ -642,17 +658,12 @@ void Response::serializeMultipartResponse(
     const ConstBufferRefType& boundary,
     nx::Buffer* dstBuffer) const
 {
-    //estimating required buffer size
+    // estimating required buffer size
     dstBuffer->reserve(
-        dstBuffer->size() +
-        boundary.size() +
-        2 +
-        estimateSerializedDataSize(headers) +
-        2 +
-        messageBody.size() +
-        2);
+        dstBuffer->size() + boundary.size() + 2 + estimateSerializedDataSize(headers) + 2
+        + messageBody.size() + 2);
 
-    //serializing
+    // serializing
     nx::utils::buildString(dstBuffer, boundary, "\r\n");
     serializeHeaders(headers, dstBuffer);
     nx::utils::buildString(dstBuffer, "\r\n", (std::string_view) messageBody, "\r\n");
@@ -676,12 +687,14 @@ static constexpr char kSetCookieHeaderName[] = "Set-Cookie";
 
 HttpHeader deletedCookieHeader(const std::string& name, const std::string& path)
 {
-    return {kSetCookieHeaderName,
+    return {
+        kSetCookieHeaderName,
         name + "=" + kDeletedCookieValue + "; Path=" + path
             + "; expires=Thu, 01 Jan 1970 00:00 : 00 GMT"};
 }
 
-HttpHeader cookieHeader(const std::string& name,
+HttpHeader cookieHeader(
+    const std::string& name,
     const std::string& value,
     const std::string& path,
     bool secure,
@@ -689,14 +702,17 @@ HttpHeader cookieHeader(const std::string& name,
 {
     // Using SameSite=None if cookie is secure to mimic old browser behavior, see:
     //     https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite
-    return {kSetCookieHeaderName,
+    return {
+        kSetCookieHeaderName,
         name + "=" + value + "; Path=" + path + (secure ? "; SameSite=None; Secure" : "")
-        + (httpOnly ? "; HttpOnly" : "")};
+            + (httpOnly ? "; HttpOnly" : "")};
 }
 
 void Response::setCookie(
-    const std::string& name, const std::string& value,
-    const std::string& path, bool secure)
+    const std::string& name,
+    const std::string& value,
+    const std::string& path,
+    bool secure)
 {
     insertHeader(&headers, cookieHeader(name, value, path, secure));
 }
@@ -722,9 +738,7 @@ std::map<std::string, std::string> Response::getCookies() const
         if (valueEnd == data.npos)
             valueEnd = data.size();
 
-        cookies.emplace(
-            data.substr(0, nameEnd),
-            data.substr(valueBegin, valueEnd - valueBegin));
+        cookies.emplace(data.substr(0, nameEnd), data.substr(valueBegin, valueEnd - valueBegin));
     }
 
     return cookies;
@@ -750,8 +764,7 @@ const char* toString(Value val)
 static bool isMessageBodyForbiddenByHeaders(const HttpHeaders& headers)
 {
     auto contentLengthIter = headers.find("Content-Length");
-    if (contentLengthIter != headers.end() &&
-        nx::utils::stoull(contentLengthIter->second) == 0)
+    if (contentLengthIter != headers.end() && nx::utils::stoull(contentLengthIter->second) == 0)
     {
         return true;
     }
@@ -873,9 +886,12 @@ bool Message::operator==(const Message& msg) const
 
     switch (type)
     {
-        case MessageType::request: return *request == *msg.request;
-        case MessageType::response: return *response == *msg.response;
-        default: return true;
+        case MessageType::request:
+            return *request == *msg.request;
+        case MessageType::response:
+            return *response == *msg.response;
+        default:
+            return true;
     }
 }
 
@@ -938,8 +954,7 @@ void BasicCredentials::serialize(nx::Buffer* dest) const
 
 bool DigestCredentials::parse(std::string_view str, char separator)
 {
-    nx::utils::splitNameValuePairs(
-        str, separator, '=', std::inserter(params, params.end()));
+    nx::utils::splitNameValuePairs(str, separator, '=', std::inserter(params, params.end()));
 
     auto usernameIter = params.find("username");
     if (usernameIter != params.cend())
@@ -949,22 +964,17 @@ bool DigestCredentials::parse(std::string_view str, char separator)
 
 void DigestCredentials::serialize(nx::Buffer* dest) const
 {
-    const static std::array<const char*, 5> predefinedOrder =
-    {{
-        "username",
-        "realm",
-        "nonce",
-        "uri",
-        "response"
-    }};
+    const static std::array<const char*, 5> predefinedOrder = {
+        {"username", "realm", "nonce", "uri", "response"}};
 
     // TODO: #akolesnikov Re-write this function using nx::utils::join.
 
     auto needQuoteForParam = [](const auto& value)
     {
-        // According to RFC ( https://httpwg.org/specs/rfc7616.html ) fields 'algorithm', 'qop', and 'nc' must not be quoted.
-        // But ffmpeg and others ignore RFC and use quotes for 'algorithm' and 'qop'
-        // Comment for ffmpeg: <we are violating the RFC and use "" because all others seem to do that too.>
+        // According to RFC ( https://httpwg.org/specs/rfc7616.html ) fields 'algorithm', 'qop',
+        // and 'nc' must not be quoted. But ffmpeg and others ignore RFC and use quotes for
+        // 'algorithm' and 'qop' Comment for ffmpeg: <we are violating the RFC and use "" because
+        // all others seem to do that too.>
         if (value == "nc")
             return false;
         return true;
@@ -973,13 +983,12 @@ void DigestCredentials::serialize(nx::Buffer* dest) const
     bool isFirst = true;
     auto serializeParam =
         [&isFirst, dest](const std::string& name, const std::string& value, bool isQuoted)
-        {
-            std::string piece = isQuoted
-                ? nx::utils::buildString(name, "=\"", value, "\"")
-                : nx::utils::buildString(name, '=', value);
-            nx::utils::buildString(dest, isFirst ? "" : ", ", std::move(piece));
-            isFirst = false;
-        };
+    {
+        std::string piece = isQuoted ? nx::utils::buildString(name, "=\"", value, "\"")
+                                     : nx::utils::buildString(name, '=', value);
+        nx::utils::buildString(dest, isFirst ? "" : ", ", std::move(piece));
+        isFirst = false;
+    };
 
     auto params = this->params;
     for (const char* name: predefinedOrder)
@@ -1211,8 +1220,7 @@ const std::string* Authorization::token() const
 
 BasicAuthorization::BasicAuthorization(
     const std::string& userName,
-    const std::string& userPassword)
-    :
+    const std::string& userPassword):
     Authorization(AuthScheme::basic)
 {
     basic->userid = userName;
@@ -1271,7 +1279,9 @@ bool WWWAuthenticate::parse(std::string_view str)
 
     if (authSchemeEndPos != std::string_view::npos && str.find('=') != std::string_view::npos)
         nx::utils::splitNameValuePairs(
-            str.substr(authSchemeEndPos + 1), ',', '=',
+            str.substr(authSchemeEndPos + 1),
+            ',',
+            '=',
             std::inserter(params, params.end()));
 
     return true;
@@ -1283,7 +1293,9 @@ void WWWAuthenticate::serialize(nx::Buffer* dest) const
 
     nx::utils::join(
         dest,
-        params.begin(), params.end(), ", ",
+        params.begin(),
+        params.end(),
+        ", ",
         [](auto* out, const auto& param)
         {
             nx::utils::buildString(out, param.first, "=\"", param.second, '"');
@@ -1316,7 +1328,8 @@ void AcceptEncodingHeader::parse(std::string_view str)
     m_anyCodingQValue.reset();
 
     nx::utils::split(
-        str, ',',
+        str,
+        ',',
         [this](std::string_view contentCodingStr)
         {
             const auto [tokens, count] = nx::utils::split_n<2>(contentCodingStr, ';');
@@ -1340,14 +1353,12 @@ void AcceptEncodingHeader::parse(std::string_view str)
         });
 }
 
-bool AcceptEncodingHeader::encodingIsAllowed(
-    const std::string& encodingName,
-    double* q) const
+bool AcceptEncodingHeader::encodingIsAllowed(const std::string& encodingName, double* q) const
 {
     auto codingIter = m_codings.find(encodingName);
     if (codingIter == m_codings.end())
     {
-        //encoding is not explicitly specified
+        // encoding is not explicitly specified
         if (m_anyCodingQValue)
         {
             if (q)
@@ -1376,12 +1387,16 @@ Range::Range() = default;
 bool Range::parse(std::string_view str)
 {
     nx::utils::split(
-        str, ',',
+        str,
+        ',',
         [this](std::string_view simpleRangeStr)
         {
             RangeSpec rangeSpec;
             const auto [tokens, count] = nx::utils::split_n<2>(
-                simpleRangeStr, '-', nx::utils::GroupToken::none, nx::utils::SplitterFlag::noFlags);
+                simpleRangeStr,
+                '-',
+                nx::utils::GroupToken::none,
+                nx::utils::SplitterFlag::noFlags);
             if (count == 0)
                 return;
 
@@ -1421,13 +1436,11 @@ bool Range::full(size_t contentSize) const
     if (contentSize == 0)
         return true;
 
-    //map<start, end>
+    // map<start, end>
     std::map<quint64, quint64> rangesSorted;
-    for (const RangeSpec& rangeSpec : rangeSpecList)
+    for (const RangeSpec& rangeSpec: rangeSpecList)
     {
-        rangesSorted.emplace(
-            rangeSpec.start,
-            rangeSpec.end ? *rangeSpec.end : contentSize);
+        rangesSorted.emplace(rangeSpec.start, rangeSpec.end ? *rangeSpec.end : contentSize);
     }
 
     quint64 curPos = 0;
@@ -1447,18 +1460,16 @@ quint64 Range::totalRangeLength(size_t contentSize) const
     if (contentSize == 0 || rangeSpecList.empty())
         return 0;
 
-    //map<start, end>
+    // map<start, end>
     std::map<quint64, quint64> rangesSorted;
-    for (const RangeSpec& rangeSpec : rangeSpecList)
+    for (const RangeSpec& rangeSpec: rangeSpecList)
     {
-        rangesSorted.emplace(
-            rangeSpec.start,
-            rangeSpec.end ? *rangeSpec.end : contentSize);
+        rangesSorted.emplace(rangeSpec.start, rangeSpec.end ? *rangeSpec.end : contentSize);
     }
 
     quint64 curPos = 0;
     quint64 totalLength = 0;
-    for (const auto& range : rangesSorted)
+    for (const auto& range: rangesSorted)
     {
         if (curPos < range.first)
             curPos = range.first;
@@ -1487,11 +1498,11 @@ quint64 ContentRange::rangeLength() const
     NX_ASSERT(!rangeSpec.end || (rangeSpec.end >= rangeSpec.start));
 
     if (rangeSpec.end)
-        return *rangeSpec.end - rangeSpec.start + 1;   //both boundaries are inclusive
+        return *rangeSpec.end - rangeSpec.start + 1; // both boundaries are inclusive
     else if (instanceLength)
         return *instanceLength - rangeSpec.start;
     else
-        return 1;   //since both boundaries are inclusive, 0-0 means 1 byte (the first one)
+        return 1; // since both boundaries are inclusive, 0-0 means 1 byte (the first one)
 }
 
 std::string ContentRange::toString() const
@@ -1506,14 +1517,9 @@ std::string ContentRange::toString() const
     else
         rangeEnd = rangeSpec.start;
 
-    std::string suffix = instanceLength
-        ? nx::utils::buildString('/', *instanceLength)
-        : "/*";
+    std::string suffix = instanceLength ? nx::utils::buildString('/', *instanceLength) : "/*";
 
-    return nx::utils::buildString(
-        unitName, ' ',
-        rangeSpec.start, '-', rangeEnd,
-        suffix);
+    return nx::utils::buildString(unitName, ' ', rangeSpec.start, '-', rangeEnd, suffix);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1526,31 +1532,33 @@ bool Via::parse(std::string_view strValue)
 
     // TODO: split
 
-    //introducing loop counter to guarantee method finiteness in case of bug in code
+    // introducing loop counter to guarantee method finiteness in case of bug in code
     for (size_t curEntryEnd = strValue.find_first_of(','), curEntryStart = 0, i = 0;
-        curEntryStart != std::string_view::npos && (i < 1000);
-        curEntryStart = (curEntryEnd == std::string_view::npos ? curEntryEnd : curEntryEnd + 1),
-            curEntryEnd = strValue.find_first_of(',', curEntryEnd + 1),
-            ++i)
+         curEntryStart != std::string_view::npos && (i < 1000);
+         curEntryStart = (curEntryEnd == std::string_view::npos ? curEntryEnd : curEntryEnd + 1),
+                curEntryEnd = strValue.find_first_of(',', curEntryEnd + 1),
+                ++i)
     {
         ProxyEntry entry;
 
-        //skipping spaces at the start of entry
-        while ((curEntryStart < (curEntryEnd == std::string_view::npos ? strValue.size() : curEntryEnd)) &&
-            (strValue.at(curEntryStart) == ' '))
+        // skipping spaces at the start of entry
+        while ((curEntryStart
+                < (curEntryEnd == std::string_view::npos ? strValue.size() : curEntryEnd))
+               && (strValue.at(curEntryStart) == ' '))
         {
             ++curEntryStart;
         }
 
-        //curEntryStart points first char after comma
+        // curEntryStart points first char after comma
         size_t receivedProtoEnd = strValue.find_first_of(' ', curEntryStart);
         if (receivedProtoEnd == std::string_view::npos)
             return false;
-        const auto protoNameVersion = strValue.substr(curEntryStart, receivedProtoEnd - curEntryStart);
+        const auto protoNameVersion =
+            strValue.substr(curEntryStart, receivedProtoEnd - curEntryStart);
         size_t nameVersionSep = protoNameVersion.find_first_of('/');
         if (nameVersionSep == std::string_view::npos)
         {
-            //only version present
+            // only version present
             entry.protoVersion = protoNameVersion;
         }
         else
@@ -1561,7 +1569,7 @@ bool Via::parse(std::string_view strValue)
 
         size_t receivedByStart = strValue.find_first_not_of(' ', receivedProtoEnd + 1);
         if (receivedByStart == std::string_view::npos || receivedByStart > curEntryEnd)
-            return false;   //no receivedBy field
+            return false; // no receivedBy field
 
         size_t receivedByEnd = strValue.find_first_of(' ', receivedByStart);
         if (receivedByEnd == std::string_view::npos || (receivedByEnd > curEntryEnd))
@@ -1570,10 +1578,14 @@ bool Via::parse(std::string_view strValue)
         }
         else
         {
-            //comment present
+            // comment present
             size_t commentStart = strValue.find_first_not_of(' ', receivedByEnd + 1);
             if (commentStart != std::string_view::npos && commentStart < curEntryEnd)
-                entry.comment = strValue.substr(commentStart, curEntryEnd == std::string_view::npos ? -1 : (curEntryEnd - commentStart)); //space are allowed in comment
+                entry.comment = strValue.substr(
+                    commentStart,
+                    curEntryEnd == std::string_view::npos
+                        ? -1
+                        : (curEntryEnd - commentStart)); // space are allowed in comment
         }
         entry.receivedBy = strValue.substr(receivedByStart, receivedByEnd - receivedByStart);
 
@@ -1586,23 +1598,27 @@ bool Via::parse(std::string_view strValue)
 std::string Via::toString() const
 {
     return nx::utils::join(
-        entries.begin(), entries.end(), ", ",
+        entries.begin(),
+        entries.end(),
+        ", ",
         [](auto* out, const auto& entry)
         {
-            nx::utils::buildString(out,
-                entry.protoName, entry.protoName ? "/" : "", entry.protoVersion,
-                ' ', entry.receivedBy,
-                !entry.comment.empty() ? " " : "", entry.comment);
+            nx::utils::buildString(
+                out,
+                entry.protoName,
+                entry.protoName ? "/" : "",
+                entry.protoVersion,
+                ' ',
+                entry.receivedBy,
+                !entry.comment.empty() ? " " : "",
+                entry.comment);
         });
 }
 
 //-------------------------------------------------------------------------------------------------
 // Keep-Alive.
 
-KeepAlive::KeepAlive(
-    std::chrono::seconds _timeout,
-    std::optional<int> _max)
-    :
+KeepAlive::KeepAlive(std::chrono::seconds _timeout, std::optional<int> _max):
     timeout(std::move(_timeout)),
     max(std::move(_max))
 {
@@ -1614,7 +1630,8 @@ bool KeepAlive::parse(std::string_view str)
 
     bool timeoutFound = false;
     nx::utils::split(
-        str, ',',
+        str,
+        ',',
         [this, &timeoutFound](std::string_view param)
         {
             param = nx::utils::trim(param);
@@ -1638,10 +1655,7 @@ bool KeepAlive::parse(std::string_view str)
 
 std::string KeepAlive::toString() const
 {
-    return nx::utils::buildString(
-        "timeout=", timeout.count(),
-        max ? ", max=" : "",
-        max);
+    return nx::utils::buildString("timeout=", timeout.count(), max ? ", max=" : "", max);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1650,31 +1664,31 @@ std::string KeepAlive::toString() const
 // TODO: #akolesnikov Better replace following macro with constants.
 
 #if defined(_WIN32)
-#   define COMPATIBILITY_SERVER_STRING "Apache/2.4.16 (MSWin)"
-#   if defined(_WIN64)
-#       define COMMON_USER_AGENT "Mozilla/5.0 (Windows NT 6.1; WOW64)"
-#   else
-#       define COMMON_USER_AGENT "Mozilla/5.0 (Windows NT 6.1; Win32)"
-#   endif
+    #define COMPATIBILITY_SERVER_STRING "Apache/2.4.16 (MSWin)"
+    #if defined(_WIN64)
+        #define COMMON_USER_AGENT "Mozilla/5.0 (Windows NT 6.1; WOW64)"
+    #else
+        #define COMMON_USER_AGENT "Mozilla/5.0 (Windows NT 6.1; Win32)"
+    #endif
 #elif defined(__linux__)
-#   define COMPATIBILITY_SERVER_STRING "Apache/2.4.16 (Unix)"
-#   ifdef __LP64__
-#       define COMMON_USER_AGENT "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0)"
-#   else
-#       define COMMON_USER_AGENT "Mozilla/5.0 (X11; Ubuntu; Linux x86; rv:36.0)"
-#   endif
+    #define COMPATIBILITY_SERVER_STRING "Apache/2.4.16 (Unix)"
+    #ifdef __LP64__
+        #define COMMON_USER_AGENT "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0)"
+    #else
+        #define COMMON_USER_AGENT "Mozilla/5.0 (X11; Ubuntu; Linux x86; rv:36.0)"
+    #endif
 #elif defined(__APPLE__)
-#   define COMPATIBILITY_SERVER_STRING "Apache/2.4.16 (Unix)"
-#   define COMMON_USER_AGENT "Mozilla/5.0 (Macosx x86_64)"
-#else   //some other unix (e.g., FreeBSD)
-#   define COMPATIBILITY_SERVER_STRING "Apache/2.4.16 (Unix)"
-#   define COMMON_USER_AGENT "Mozilla/5.0"
+    #define COMPATIBILITY_SERVER_STRING "Apache/2.4.16 (Unix)"
+    #define COMMON_USER_AGENT "Mozilla/5.0 (Macosx x86_64)"
+#else // some other unix (e.g., FreeBSD)
+    #define COMPATIBILITY_SERVER_STRING "Apache/2.4.16 (Unix)"
+    #define COMMON_USER_AGENT "Mozilla/5.0"
 #endif
 
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
-#   define PRODUCT_NAME_SUFFIX " Mobile"
+    #define PRODUCT_NAME_SUFFIX " Mobile"
 #else
-#   define PRODUCT_NAME_SUFFIX ""
+    #define PRODUCT_NAME_SUFFIX ""
 #endif
 
 //-------------------------------------------------------------------------------------------------
@@ -1693,9 +1707,7 @@ std::string Server::Product::toString() const
 
 bool Server::Product::operator==(const Server::Product& right) const
 {
-    return name == right.name
-        && version == right.version
-        && comment == right.comment;
+    return name == right.name && version == right.version && comment == right.comment;
 }
 
 Server::Product Server::Product::fromString(std::string_view str)
@@ -1703,7 +1715,10 @@ Server::Product Server::Product::fromString(std::string_view str)
     Product product;
 
     const auto [tokens, tokenCount] = nx::utils::split_n<2>(
-        str, ' ', nx::utils::GroupToken::roundBrackets, nx::utils::skipEmpty);
+        str,
+        ' ',
+        nx::utils::GroupToken::roundBrackets,
+        nx::utils::skipEmpty);
     if (tokenCount >= 1)
     {
         // token ["/" product-version]
@@ -1725,10 +1740,11 @@ Server::Product Server::Product::fromString(std::string_view str)
 
 Server::Server()
 {
-    products.push_back(Product{
-        nx::branding::brand().toStdString(),
-        nx::build_info::vmsVersion().toStdString(),
-        nx::branding::company().toStdString()});
+    products.push_back(
+        Product{
+            nx::branding::brand().toStdString(),
+            nx::build_info::vmsVersion().toStdString(),
+            nx::branding::company().toStdString()});
 }
 
 bool Server::operator==(const Server& right) const
@@ -1744,7 +1760,8 @@ bool Server::parse(std::string_view serverString)
 
     bool ok = true;
     nx::utils::split(
-        serverString, ' ',
+        serverString,
+        ' ',
         [this, &ok](std::string_view token)
         {
             if (token.starts_with('(') && token.ends_with(')')) // comment?
@@ -1759,7 +1776,8 @@ bool Server::parse(std::string_view serverString)
                 ok = ok && !products.back().name.empty();
             }
         },
-        nx::utils::GroupToken::roundBrackets, nx::utils::skipEmpty);
+        nx::utils::GroupToken::roundBrackets,
+        nx::utils::skipEmpty);
 
     return !products.empty() && ok;
 }
@@ -1779,8 +1797,7 @@ std::string Server::toString() const
 
 bool StrictTransportSecurity::operator==(const StrictTransportSecurity& rhs) const
 {
-    return maxAge == rhs.maxAge
-        && includeSubDomains == rhs.includeSubDomains
+    return maxAge == rhs.maxAge && includeSubDomains == rhs.includeSubDomains
         && preload == rhs.preload;
 }
 
@@ -1790,7 +1807,9 @@ bool StrictTransportSecurity::parse(std::string_view str)
     preload = false;
 
     nx::utils::splitNameValuePairs(
-        str, ';', '=',
+        str,
+        ';',
+        '=',
         [this](std::string_view name, std::string_view value)
         {
             if (name == "max-age")
@@ -1807,7 +1826,8 @@ bool StrictTransportSecurity::parse(std::string_view str)
 std::string StrictTransportSecurity::toString() const
 {
     return nx::utils::buildString(
-        "max-age=", maxAge.count(),
+        "max-age=",
+        maxAge.count(),
         includeSubDomains ? ";includeSubDomains" : "",
         preload ? ";preload" : "");
 }
@@ -1818,10 +1838,10 @@ bool XForwardedFor::parse(std::string_view str)
 {
     std::size_t count = 0;
     nx::utils::split(
-        str, ',',
+        str,
+        ',',
         [this, &count](std::string_view token)
         {
-
             const auto trimmedToken = nx::utils::trim(token);
             if (count == 0)
                 client = trimmedToken;
@@ -1847,7 +1867,9 @@ bool ForwardedElement::parse(std::string_view str)
 {
     int count = 0;
     nx::utils::splitNameValuePairs(
-        str, ';', '=',
+        str,
+        ';',
+        '=',
         [this, &count](std::string_view name, std::string_view value)
         {
             ++count;
@@ -1903,18 +1925,13 @@ std::string ForwardedElement::toString() const
     if (!proto.empty())
         tokens[tokenCount++] = nx::utils::buildString("proto=", quoteIfNeeded(proto));
 
-    return nx::utils::join(
-        tokens.begin(), tokens.begin() + tokenCount,
-        ';');
+    return nx::utils::join(tokens.begin(), tokens.begin() + tokenCount, ';');
 #endif
 }
 
 bool ForwardedElement::operator==(const ForwardedElement& right) const
 {
-    return by == right.by
-        && for_ == right.for_
-        && host == right.host
-        && proto == right.proto;
+    return by == right.by && for_ == right.for_ && host == right.host && proto == right.proto;
 }
 
 std::string ForwardedElement::quoteIfNeeded(std::string_view str) const
@@ -1933,7 +1950,8 @@ Forwarded::Forwarded(std::vector<ForwardedElement> elements):
 bool Forwarded::parse(std::string_view str)
 {
     nx::utils::split(
-        str, ',',
+        str,
+        ',',
         [this](std::string_view token)
         {
             const auto trimmedToken = nx::utils::trim(token);
@@ -2009,8 +2027,10 @@ std::string ContentType::toString() const
 {
     return nx::utils::buildString(
         value,
-        !charset.empty() ? "; charset=" : "", charset,
-        !boundary.empty() ? "; boundary=" : "", boundary);
+        !charset.empty() ? "; charset=" : "",
+        charset,
+        !boundary.empty() ? "; boundary=" : "",
+        boundary);
 }
 
 bool ContentType::operator==(const std::string& rhs) const
@@ -2056,8 +2076,7 @@ int ChunkHeader::parse(const ConstBufferRefType& buf)
         readingExtName,
         readingExtVal,
         readingCRLF
-    }
-    state = readingChunkSize;
+    } state = readingChunkSize;
     chunkSize = 0;
     const char* extNameStart = 0;
     const char* extSepPos = 0;
@@ -2072,15 +2091,16 @@ int ChunkHeader::parse(const ConstBufferRefType& buf)
                 if (state == readingExtName)
                 {
                     if (curPos == extNameStart)
-                        return -1;  //empty extension
-                    extensions.push_back(std::make_pair(
-                        std::string(extNameStart, curPos - extNameStart),
-                        std::string()));
+                        return -1; // empty extension
+                    extensions.push_back(
+                        std::make_pair(
+                            std::string(extNameStart, curPos - extNameStart),
+                            std::string()));
                 }
                 else if (state == readingExtVal)
                 {
                     if (extSepPos == extNameStart)
-                        return -1;  //empty extension
+                        return -1; // empty extension
 
                     if (*extValStart == '"')
                         ++extValStart;
@@ -2088,9 +2108,10 @@ int ChunkHeader::parse(const ConstBufferRefType& buf)
                     if (extValSize > 0 && *(extValStart + extValSize - 1) == '"')
                         --extValSize;
 
-                    extensions.push_back(std::make_pair(
-                        std::string(extNameStart, extSepPos - extNameStart),
-                        std::string(extValStart, extValSize)));
+                    extensions.push_back(
+                        std::make_pair(
+                            std::string(extNameStart, extSepPos - extNameStart),
+                            std::string(extValStart, extValSize)));
                 }
 
                 state = readingExtName;
@@ -2106,7 +2127,7 @@ int ChunkHeader::parse(const ConstBufferRefType& buf)
                 }
                 else
                 {
-                    //unexpected token
+                    // unexpected token
                     return -1;
                 }
                 break;
@@ -2115,15 +2136,16 @@ int ChunkHeader::parse(const ConstBufferRefType& buf)
                 if (state == readingExtName)
                 {
                     if (curPos == extNameStart)
-                        return -1;  //empty extension
-                    extensions.push_back(std::make_pair(
-                        std::string(extNameStart, curPos - extNameStart),
-                        std::string()));
+                        return -1; // empty extension
+                    extensions.push_back(
+                        std::make_pair(
+                            std::string(extNameStart, curPos - extNameStart),
+                            std::string()));
                 }
                 else if (state == readingExtVal)
                 {
                     if (extSepPos == extNameStart)
-                        return -1;  //empty extension
+                        return -1; // empty extension
 
                     if (*extValStart == '"')
                         ++extValStart;
@@ -2131,9 +2153,10 @@ int ChunkHeader::parse(const ConstBufferRefType& buf)
                     if (extValSize > 0 && *(extValStart + extValSize - 1) == '"')
                         --extValSize;
 
-                    extensions.push_back(std::make_pair(
-                        std::string(extNameStart, extSepPos - extNameStart),
-                        std::string(extValStart, extValSize)));
+                    extensions.push_back(
+                        std::make_pair(
+                            std::string(extNameStart, extSepPos - extNameStart),
+                            std::string(extValStart, extValSize)));
                 }
 
                 if ((dataEnd - curPos < 2) || *(curPos + 1) != '\n')
@@ -2150,7 +2173,7 @@ int ChunkHeader::parse(const ConstBufferRefType& buf)
                     else if (ch >= 'A' && ch <= 'F')
                         chunkSize = (chunkSize << 4) | (ch - 'A' + 10);
                     else
-                        return -1;  //unexpected token
+                        return -1; // unexpected token
                 }
                 break;
         }
@@ -2172,7 +2195,9 @@ std::string userAgentString()
         PRODUCT_NAME_SUFFIX,
         '/',
         nx::build_info::vmsVersion().toStdString(),
-        " (", nx::branding::company().toStdString(), ") ",
+        " (",
+        nx::branding::company().toStdString(),
+        ") ",
         COMMON_USER_AGENT);
 
     return defaultUserAgentString;
@@ -2186,8 +2211,7 @@ header::UserAgent defaultUserAgent()
     // Can't just do header::UserAgent::parse(userAgentString()) since some VMS names
     // contain spaces which violate User-Agent format making it impossible to parse properly.
 
-    userAgent.products.push_back(
-        header::UserAgent::Product::fromString(COMMON_USER_AGENT));
+    userAgent.products.push_back(header::UserAgent::Product::fromString(COMMON_USER_AGENT));
 
     return userAgent;
 }
@@ -2198,7 +2222,9 @@ std::string serverString()
         nx::branding::vmsName().toStdString(),
         '/',
         nx::build_info::vmsVersion().toStdString(),
-        " (", nx::branding::company().toStdString(), ") ",
+        " (",
+        nx::branding::company().toStdString(),
+        ") ",
         COMPATIBILITY_SERVER_STRING);
 
     return defaultServerString;

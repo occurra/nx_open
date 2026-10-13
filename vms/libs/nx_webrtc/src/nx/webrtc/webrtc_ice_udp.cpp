@@ -14,8 +14,7 @@ constexpr int kBindingCountLimit = 100; // Send binding for first 5 seconds.
 
 using namespace nx::network;
 
-IceUdp::IceUdp(SessionPool* sessionPool, const SessionConfig& config)
-    :
+IceUdp::IceUdp(SessionPool* sessionPool, const SessionConfig& config):
     Ice(sessionPool, config)
 {
     m_readBuffer.reserve(kRawReadBufferSize);
@@ -110,8 +109,8 @@ void IceUdp::sendBinding(
             m_firstPacket = false;
             m_socket->setDestAddr(iceCandidate.address);
 
-            stun::Message request(stun::Header(
-                stun::MessageClass::request, stun::MethodType::bindingMethod));
+            stun::Message request(
+                stun::Header(stun::MessageClass::request, stun::MethodType::bindingMethod));
             request.newAttribute<stun::attrs::Priority>(iceCandidate.priority);
             std::string stunUsername(sessionDescription.remoteUfrag + ":" + sessionDescription.id);
             /* Actually, valid integrity should be signed with remote pwd.
@@ -151,12 +150,13 @@ void IceUdp::onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTran
             if (m_firstPacket)
             {
                 // NOTE: for host candidate, we can receive packet only from remote host candidate.
-                // For srflx candidate, we can receive packet from remote srflx or from STUN server.
-                // We set right address for srflx in sendBinding().
+                // For srflx candidate, we can receive packet from remote srflx or from STUN
+                // server. We set right address for srflx in sendBinding().
                 m_socket->setDestAddr(m_socket->lastDatagramSourceAddress());
             }
 
-            bool result = processIncomingPacket((uint8_t*) m_readBuffer.data(), m_readBuffer.size());
+            bool result =
+                processIncomingPacket((uint8_t*) m_readBuffer.data(), m_readBuffer.size());
             if (m_needStop) // processIncomingPacket can call stopUnsafe on write data.
                 return;
             m_readBuffer.resize(0);

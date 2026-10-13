@@ -22,7 +22,7 @@ void write_byte_align_bits(nx::utils::BitStreamWriter& writer)
         return;
     writer.putBit(1);
     if (rest > 1)
-        writer.putBits(rest-1, 0);
+        writer.putBits(rest - 1, 0);
 }
 
 const uint8_t* findNextNAL(const uint8_t* buffer, const uint8_t* end)
@@ -32,11 +32,11 @@ const uint8_t* findNextNAL(const uint8_t* buffer, const uint8_t* end)
         if (*buffer > 1)
             buffer += 3;
         else if (*buffer == 0)
-            buffer ++;
-        else if (buffer[-2] == 0 && buffer[-1] == 0)    //*buffer == 1
-            return buffer+1;
+            buffer++;
+        else if (buffer[-2] == 0 && buffer[-1] == 0) //*buffer == 1
+            return buffer + 1;
         else
-            buffer+=3;
+            buffer += 3;
     }
     return end;
 }
@@ -49,20 +49,25 @@ const uint8_t* findNALWithStartCode(const uint8_t* buffer, const uint8_t* end)
         if (*buffer > 1)
             buffer += 3;
         else if (*buffer == 0)
-            buffer ++;
-        else if (buffer[-2] == 0 && buffer[-1] == 0) {
-            if (buffer-3 >= bufStart && buffer[-3] == 0)
+            buffer++;
+        else if (buffer[-2] == 0 && buffer[-1] == 0)
+        {
+            if (buffer - 3 >= bufStart && buffer[-3] == 0)
                 return buffer - 3;
             else
-                return buffer-2;
+                return buffer - 2;
         }
         else
-            buffer+=3;
+            buffer += 3;
     }
     return end;
 }
 
-int encodeEpb(const uint8_t* srcBuffer, const uint8_t* srcEnd, uint8_t* dstBuffer, size_t dstBufferSize)
+int encodeEpb(
+    const uint8_t* srcBuffer,
+    const uint8_t* srcEnd,
+    uint8_t* dstBuffer,
+    size_t dstBufferSize)
 {
     const uint8_t* srcStart = srcBuffer;
     uint8_t* initDstBuffer = dstBuffer;
@@ -70,7 +75,8 @@ int encodeEpb(const uint8_t* srcBuffer, const uint8_t* srcEnd, uint8_t* dstBuffe
     {
         if (*srcBuffer > 3)
             srcBuffer += 3;
-        else if (srcBuffer[-2] == 0 && srcBuffer[-1] == 0) {
+        else if (srcBuffer[-2] == 0 && srcBuffer[-1] == 0)
+        {
             if (dstBufferSize < (size_t) (srcBuffer - srcStart + 2))
                 return -1;
             memcpy(dstBuffer, srcStart, srcBuffer - srcStart);
@@ -79,7 +85,8 @@ int encodeEpb(const uint8_t* srcBuffer, const uint8_t* srcEnd, uint8_t* dstBuffe
             *dstBuffer++ = 3;
             *dstBuffer++ = *srcBuffer++;
             for (int k = 0; k < 1; k++)
-                if (srcBuffer < srcEnd) {
+                if (srcBuffer < srcEnd)
+                {
                     if (dstBufferSize < 1)
                         return -1;
                     *dstBuffer++ = *srcBuffer++;
@@ -92,7 +99,7 @@ int encodeEpb(const uint8_t* srcBuffer, const uint8_t* srcEnd, uint8_t* dstBuffe
     }
 
     NX_ASSERT(srcEnd >= srcStart);
-    //conversion to uint possible cause srcEnd should always be greater then srcStart
+    // conversion to uint possible cause srcEnd should always be greater then srcStart
     if (dstBufferSize < uint(srcEnd - srcStart))
         return -1;
     memcpy(dstBuffer, srcStart, srcEnd - srcStart);
@@ -100,7 +107,11 @@ int encodeEpb(const uint8_t* srcBuffer, const uint8_t* srcEnd, uint8_t* dstBuffe
     return dstBuffer - initDstBuffer;
 }
 
-int decodeEpb(const uint8_t* srcBuffer, const uint8_t* srcEnd, uint8_t* dstBuffer, size_t dstBufferSize)
+int decodeEpb(
+    const uint8_t* srcBuffer,
+    const uint8_t* srcEnd,
+    uint8_t* dstBuffer,
+    size_t dstBufferSize)
 {
     uint8_t* initDstBuffer = dstBuffer;
     const uint8_t* srcStart = srcBuffer;
@@ -110,7 +121,7 @@ int decodeEpb(const uint8_t* srcBuffer, const uint8_t* srcEnd, uint8_t* dstBuffe
         {
             srcBuffer += 4;
         }
-        else if (srcBuffer[-3] == 0 && srcBuffer[-2] == 0  && srcBuffer[-1] == 3)
+        else if (srcBuffer[-3] == 0 && srcBuffer[-2] == 0 && srcBuffer[-1] == 3)
         {
             if (dstBufferSize < (size_t) (srcBuffer - srcStart))
                 return -1;
@@ -157,20 +168,21 @@ std::vector<NalUnitInfo> findNalUnitsMp4(const uint8_t* data, int32_t size)
     const uint8_t* current = data;
     while (current + 4 < data + size)
     {
-        uint32_t naluSize = ntohl(*(uint32_t*)current);
+        uint32_t naluSize = ntohl(*(uint32_t*) current);
         if (naluSize > uint32_t(data + size - current))
         {
             NX_WARNING(NX_SCOPE_TAG, "Invalid NAL unit size: %1", naluSize);
             break;
         }
-        result.emplace_back(NalUnitInfo{current + kNalUnitSizeLength, (int)naluSize});
+        result.emplace_back(NalUnitInfo{current + kNalUnitSizeLength, (int) naluSize});
         current += kNalUnitSizeLength + naluSize;
     }
     return result;
 }
 
 std::vector<NalUnitInfo> findNalUnitsAnnexB(
-    const uint8_t* data, int32_t size,
+    const uint8_t* data,
+    int32_t size,
     bool droppedFirstStartcode,
     bool removeFinalTrailing)
 {
@@ -181,7 +193,7 @@ std::vector<NalUnitInfo> findNalUnitsAnnexB(
     while (naluStart < dataEnd)
     {
         nextNaluStart = findNextNAL(naluStart, dataEnd);
-        const uint8_t *naluEnd = nextNaluStart == dataEnd ? dataEnd : nextNaluStart - 3;
+        const uint8_t* naluEnd = nextNaluStart == dataEnd ? dataEnd : nextNaluStart - 3;
         if (removeFinalTrailing || nextNaluStart != dataEnd)
         {
             // skipping leading_zero_8bits and trailing_zero_8bits
@@ -213,7 +225,7 @@ std::vector<uint8_t> convertStartCodesToSizes(const uint8_t* data, int32_t size,
     uint8_t* resultData = result.data();
     for (const auto& nalu: nalUnits)
     {
-        uint32_t* ptr = (uint32_t*)resultData;
+        uint32_t* ptr = (uint32_t*) resultData;
         *ptr = htonl(nalu.size);
         memcpy(resultData + kNaluSizeLenght, nalu.data, nalu.size);
         resultData += nalu.size + kNaluSizeLenght;
@@ -223,7 +235,7 @@ std::vector<uint8_t> convertStartCodesToSizes(const uint8_t* data, int32_t size,
 
 int isStartCode(const void* _data, size_t size)
 {
-    const uint8_t* data = (const uint8_t*)_data;
+    const uint8_t* data = (const uint8_t*) _data;
     if (size >= 3 && data[0] == 0 && data[1] == 0)
     {
         if (data[2] == 1)
@@ -240,11 +252,8 @@ void convertToStartCodes(uint8_t* const data, const size_t size)
     const uint8_t* end = data + size;
     while (end - offset >= 4)
     {
-        uint32_t naluSize =
-            (uint32_t(offset[0]) << 24) |
-            (uint32_t(offset[1]) << 16) |
-            (uint32_t(offset[2]) << 8)  |
-            (uint32_t(offset[3]));
+        uint32_t naluSize = (uint32_t(offset[0]) << 24) | (uint32_t(offset[1]) << 16)
+            | (uint32_t(offset[2]) << 8) | (uint32_t(offset[3]));
         if (end - offset < int64_t(kStartCode.size()) + naluSize)
             break;
 

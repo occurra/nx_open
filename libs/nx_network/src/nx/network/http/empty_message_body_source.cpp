@@ -6,8 +6,7 @@ namespace nx::network::http {
 
 EmptyMessageBodySource::EmptyMessageBodySource(
     std::string contentType,
-    const std::optional<uint64_t>& contentLength)
-    :
+    const std::optional<uint64_t>& contentLength):
     m_contentType(std::move(contentType)),
     m_contentLength(contentLength)
 {
@@ -24,8 +23,7 @@ std::optional<uint64_t> EmptyMessageBodySource::contentLength() const
 }
 
 void EmptyMessageBodySource::readAsync(
-    nx::MoveOnlyFunc<
-        void(SystemError::ErrorCode, nx::Buffer)> completionHandler)
+    nx::MoveOnlyFunc<void(SystemError::ErrorCode, nx::Buffer)> completionHandler)
 {
     post(
         [completionHandler = std::move(completionHandler)]()

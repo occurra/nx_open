@@ -6,18 +6,13 @@
 
 #include "translation_manager.h"
 
-namespace {
-
-const QString kDefaultAppLanguage = "default app language";
-
-} // namespace
+namespace { const QString kDefaultAppLanguage = "default app language"; } // namespace
 
 namespace nx::i18n {
 
 ScopedLocale::ScopedLocale(
     const PreloadedTranslationReference& translation,
-    std::chrono::milliseconds maxWaitTime)
-    :
+    std::chrono::milliseconds maxWaitTime):
     m_translationRef(translation),
     m_newLocale(translation.locale())
 {
@@ -55,7 +50,8 @@ void ScopedLocale::reset()
 }
 
 ScopedLocale ScopedLocale::install(
-    TranslationManager* manager, const std::vector<QString>& preferredLocales)
+    TranslationManager* manager,
+    const std::vector<QString>& preferredLocales)
 {
     return manager ? manager->installScopedLocale(preferredLocales) : ScopedLocale{};
 }

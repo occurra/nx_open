@@ -10,11 +10,7 @@ namespace nx {
 namespace core {
 namespace transcoding {
 
-namespace detail {
-
-class ImageToFramePainter;
-
-} // namespace detail
+namespace detail { class ImageToFramePainter; } // namespace detail
 
 class PaintImageFilter: public QnAbstractImageFilter
 {

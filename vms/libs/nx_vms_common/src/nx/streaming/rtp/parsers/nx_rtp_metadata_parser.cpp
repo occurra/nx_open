@@ -32,7 +32,7 @@ QnAbstractMediaDataPtr NxRtpMetadataParser::nextData()
     if (!m_rangeHeader.isEmpty())
     {
         result = QnCompressedMetadata::createMediaEventPacket(
-            /*timestamp*/0,
+            /*timestamp*/ 0,
             nx::media::StreamEvent::archiveRangeChanged,
             m_rangeHeader);
         m_rangeHeader.clear();

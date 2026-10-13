@@ -1,7 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
 #include <array>
+
+#include <gtest/gtest.h>
 
 #include <nx/utils/byte_stream/custom_output_stream.h>
 #include <nx/utils/gzip/gzip_compressor.h>
@@ -34,11 +35,12 @@ TEST(Gzip, DecompressGzip)
 TEST(Gzip, DecompressZip)
 {
     const QByteArray origin = "test";
-    const std::array<char, 12> compressed = {
-        0x78, '\x9c', 0x2b, 0x49, 0x2d, 0x2e, 0x01, 0x00, 0x04, 0x5d, 0x01, '\xc1'};
+    const std::array<char, 12> compressed =
+        {0x78, '\x9c', 0x2b, 0x49, 0x2d, 0x2e, 0x01, 0x00, 0x04, 0x5d, 0x01, '\xc1'};
     ASSERT_TRUE(isZipCompressed(compressed));
     ASSERT_EQ(
-        Compressor::uncompressData(QByteArray(compressed.data(), compressed.size())), origin);
+        Compressor::uncompressData(QByteArray(compressed.data(), compressed.size())),
+        origin);
 }
 
 TEST(Gzip, DecompressRaw)
@@ -48,7 +50,8 @@ TEST(Gzip, DecompressRaw)
     ASSERT_FALSE(isGzipCompressed(compressed));
     ASSERT_FALSE(isZipCompressed(compressed));
     ASSERT_EQ(
-        Compressor::uncompressData(QByteArray(compressed.data(), compressed.size())), origin);
+        Compressor::uncompressData(QByteArray(compressed.data(), compressed.size())),
+        origin);
 }
 
 TEST(Gzip, UncompressorRejectsDecompressionBomb)
@@ -60,7 +63,10 @@ TEST(Gzip, UncompressorRejectsDecompressionBomb)
 
     nx::Buffer decompressed;
     auto sink = nx::utils::bstream::makeCustomOutputStream(
-        [&decompressed](const nx::ConstBufferRefType& data) { decompressed.append(data); });
+        [&decompressed](const nx::ConstBufferRefType& data)
+        {
+            decompressed.append(data);
+        });
 
     Uncompressor uncompressor(sink);
     static constexpr std::uint64_t kCap = 64 * 1024;
@@ -81,7 +87,10 @@ TEST(Gzip, UncompressorAllowsDataBelowLimit)
 
     nx::Buffer decompressed;
     auto sink = nx::utils::bstream::makeCustomOutputStream(
-        [&decompressed](const nx::ConstBufferRefType& data) { decompressed.append(data); });
+        [&decompressed](const nx::ConstBufferRefType& data)
+        {
+            decompressed.append(data);
+        });
 
     Uncompressor uncompressor(sink);
     uncompressor.setMaxOutputSize(1024);

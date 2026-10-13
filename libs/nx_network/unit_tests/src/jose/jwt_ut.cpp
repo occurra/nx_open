@@ -6,8 +6,7 @@
 
 namespace nx::network::jwt::test {
 
-class JoseJwt:
-    public ::testing::Test
+class JoseJwt: public ::testing::Test
 {
 protected:
     virtual void SetUp() override
@@ -57,15 +56,15 @@ protected:
         nx::reflect::DeserializationResult result;
 
         jws::Header header;
-        std::tie(header, result) = nx::reflect::json::deserialize<jws::Header>(
-            nx::utils::fromBase64Url(parts[0]));
+        std::tie(header, result) =
+            nx::reflect::json::deserialize<jws::Header>(nx::utils::fromBase64Url(parts[0]));
         ASSERT_TRUE(result.success);
         ASSERT_EQ(kJwtTokenType, header.typ);
         ASSERT_EQ(m_keyPair.priv.alg(), header.alg);
 
         ClaimSet claims;
-        std::tie(claims, result) = nx::reflect::json::deserialize<ClaimSet>(
-            nx::utils::fromBase64Url(parts[1]));
+        std::tie(claims, result) =
+            nx::reflect::json::deserialize<ClaimSet>(nx::utils::fromBase64Url(parts[1]));
         ASSERT_TRUE(result.success);
         ASSERT_TRUE(claims.contains("iss"));
         ASSERT_TRUE(claims.contains("sub"));
@@ -118,8 +117,7 @@ TEST_F(JoseJwt, custom_token_claims_are_preserved_between_encode_decode)
 {
     const std::map<std::string, std::string> customClaims = {
         {"custom1", "value1"},
-        {"http://example.com/custom2", "value2"}
-    };
+        {"http://example.com/custom2", "value2"}};
 
     auto claimSet = givenRandomClaimSet();
     for (const auto& [k, v]: customClaims)

@@ -21,24 +21,22 @@ void async_handler_executor_detail::DeferredImpl::submit(MoveOnlyFunc<void()>&& 
 
 namespace {
 
-class ImmediateImpl:
-    public AsyncHandlerExecutor::Impl
+class ImmediateImpl: public AsyncHandlerExecutor::Impl
 {
 public:
-    void submit(MoveOnlyFunc<void()>&& handler) override
-    {
-        handler();
-    }
+    void submit(MoveOnlyFunc<void()>&& handler) override { handler(); }
 };
 
-class ObjectImpl:
-    public async_handler_executor_detail::DeferredImpl
+class ObjectImpl: public async_handler_executor_detail::DeferredImpl
 {
 public:
     explicit ObjectImpl(QObject* object)
     {
         moveToThread(object->thread());
-        connect(this, &DeferredImpl::execute, object,
+        connect(
+            this,
+            &DeferredImpl::execute,
+            object,
             [](auto arg)
             {
                 (*arg.handler)();
@@ -47,14 +45,16 @@ public:
     }
 };
 
-class ThreadImpl:
-    public async_handler_executor_detail::DeferredImpl
+class ThreadImpl: public async_handler_executor_detail::DeferredImpl
 {
 public:
     explicit ThreadImpl(QThread* thread)
     {
         moveToThread(thread);
-        connect(this, &DeferredImpl::execute, this,
+        connect(
+            this,
+            &DeferredImpl::execute,
+            this,
             [](auto arg)
             {
                 (*arg.handler)();

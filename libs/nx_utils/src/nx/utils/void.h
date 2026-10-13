@@ -22,7 +22,12 @@ struct Void
 
 NX_REFLECTION_INSTRUMENT(Void, )
 
-inline void serialize(QnJsonContext*, const Void&, QJsonValue*) {}
-inline bool deserialize(QnJsonContext*, QnConversionWrapper<QJsonValue>, Void*) { return true; }
+inline void serialize(QnJsonContext*, const Void&, QJsonValue*)
+{
+}
+inline bool deserialize(QnJsonContext*, QnConversionWrapper<QJsonValue>, Void*)
+{
+    return true;
+}
 
 } // namespace nx::utils

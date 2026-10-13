@@ -107,8 +107,12 @@ private:
         state = TaskState::inProgress;
         try
         {
-            return std::async(std::launch::async,
-                [this, task = std::move(task), key]() { runTaskLoop(task, key); });
+            return std::async(
+                std::launch::async,
+                [this, task = std::move(task), key]()
+                {
+                    runTaskLoop(task, key);
+                });
         }
         catch (const std::exception& e)
         {

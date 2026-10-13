@@ -26,8 +26,7 @@ public:
     }
 };
 #else
-class NamedMutexImpl:
-    public QSystemSemaphore
+class NamedMutexImpl: public QSystemSemaphore
 {
 public:
     NamedMutexImpl(const QString& name, int initialCount = 0):
@@ -45,8 +44,7 @@ NamedMutex::NamedMutex(const QString& name):
 #endif
 {
 #ifdef _WIN32
-    m_impl->mutexHandle =
-        CreateMutex(NULL, FALSE, reinterpret_cast<const wchar_t*>(name.utf16()));
+    m_impl->mutexHandle = CreateMutex(NULL, FALSE, reinterpret_cast<const wchar_t*>(name.utf16()));
     if (m_impl->mutexHandle == NULL)
         m_impl->prevErrorCode = GetLastError();
 #endif
@@ -77,9 +75,8 @@ bool NamedMutex::isValid() const
 bool NamedMutex::lock()
 {
 #ifdef _WIN32
-    m_impl->prevErrorCode = WaitForSingleObject(m_impl->mutexHandle, INFINITE) == WAIT_OBJECT_0
-        ? 0
-        : GetLastError();
+    m_impl->prevErrorCode =
+        WaitForSingleObject(m_impl->mutexHandle, INFINITE) == WAIT_OBJECT_0 ? 0 : GetLastError();
     return m_impl->prevErrorCode == 0;
 #else
     return m_impl->acquire();
@@ -89,9 +86,7 @@ bool NamedMutex::lock()
 bool NamedMutex::unlock()
 {
 #ifdef _WIN32
-    m_impl->prevErrorCode = ReleaseMutex(m_impl->mutexHandle)
-        ? 0
-        : GetLastError();
+    m_impl->prevErrorCode = ReleaseMutex(m_impl->mutexHandle) ? 0 : GetLastError();
     return m_impl->prevErrorCode == 0;
 #else
     return m_impl->release();

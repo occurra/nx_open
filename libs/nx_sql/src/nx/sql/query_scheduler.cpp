@@ -9,8 +9,7 @@ namespace nx::sql {
 
 QueryScheduler::QueryScheduler(
     nx::sql::AbstractAsyncSqlQueryExecutor* queryExecutor,
-    nx::MoveOnlyFunc<void(nx::sql::QueryContext*)> func)
-    :
+    nx::MoveOnlyFunc<void(nx::sql::QueryContext*)> func):
     m_queryExecutor(queryExecutor),
     m_func(std::move(func))
 {
@@ -25,14 +24,21 @@ void QueryScheduler::start(
     std::chrono::milliseconds periodicDelay,
     std::chrono::milliseconds firstRunDelay)
 {
-    NX_VERBOSE(this, "Starting query scheduler with periodic delay %1 and initial delay %2",
-        periodicDelay, firstRunDelay);
+    NX_VERBOSE(
+        this,
+        "Starting query scheduler with periodic delay %1 and initial delay %2",
+        periodicDelay,
+        firstRunDelay);
 
     m_stopped = false;
     m_periodicDelay = periodicDelay;
     m_nextShotDelay = firstRunDelay;
 
-    m_thread = std::thread([this]() { threadMain(); });
+    m_thread = std::thread(
+        [this]()
+        {
+            threadMain();
+        });
 }
 
 void QueryScheduler::stop()
@@ -78,12 +84,11 @@ void QueryScheduler::threadMain()
 
         // Waiting.
         for (auto nextQueryTime = nx::utils::monotonicTime() + delay;
-            !m_stopped && !m_nextShotDelay;
-            )
+             !m_stopped && !m_nextShotDelay;)
         {
             auto curTime = nx::utils::monotonicTime();
             if (nextQueryTime <= curTime)
-                break;  // Time to run the query.
+                break; // Time to run the query.
 
             if (nextQueryTime - curTime > delay) // clock skew?
                 nextQueryTime = curTime + delay;
@@ -108,7 +113,10 @@ void QueryScheduler::runQuery()
     try
     {
         m_queryExecutor->executeUpdateSync(
-            [this](nx::sql::QueryContext* ctx) { m_func(ctx); });
+            [this](nx::sql::QueryContext* ctx)
+            {
+                m_func(ctx);
+            });
 
         NX_VERBOSE(this, "Query succeeded");
     }

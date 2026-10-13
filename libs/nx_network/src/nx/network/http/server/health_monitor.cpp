@@ -63,9 +63,9 @@ void HealthMonitor::setLivenessTarget(const SocketAddress& endpoint, bool isSecu
     }
 
     m_livenessUrl = url::Builder()
-        .setScheme(isSecure ? kSecureUrlSchemeName : kUrlSchemeName)
-        .setEndpoint(target)
-        .setPath(kLivenessSelfRequestPath);
+                        .setScheme(isSecure ? kSecureUrlSchemeName : kUrlSchemeName)
+                        .setEndpoint(target)
+                        .setPath(kLivenessSelfRequestPath);
 }
 
 void HealthMonitor::setCheckPeriod(std::chrono::milliseconds period)
@@ -73,8 +73,11 @@ void HealthMonitor::setCheckPeriod(std::chrono::milliseconds period)
     if (!NX_ASSERT(!m_isStarted, "The check period is set after the start"))
         return;
 
-    if (!NX_ASSERT(period >= kMinCheckPeriod,
-        "The check period %1 is shorter than the %2 minimum", period, kMinCheckPeriod))
+    if (!NX_ASSERT(
+            period >= kMinCheckPeriod,
+            "The check period %1 is shorter than the %2 minimum",
+            period,
+            kMinCheckPeriod))
     {
         return;
     }
@@ -95,12 +98,17 @@ void HealthMonitor::start()
     if (!NX_ASSERT(!m_livenessUrl.isEmpty(), "No liveness target is set"))
         return;
 
-    m_timer.post([this]() { runChecks(); });
+    m_timer.post(
+        [this]()
+        {
+            runChecks();
+        });
 }
 
 void HealthMonitor::stop()
 {
-    NX_ASSERT(!m_timer.isInSelfAioThread(),
+    NX_ASSERT(
+        !m_timer.isInSelfAioThread(),
         "stop() must not be called from the thread running the checks");
 
     // Stopping the timer first: after it, no cycle is running, so m_livenessClient is not being
@@ -155,7 +163,12 @@ void HealthMonitor::runChecks()
     checkLiveness();
     checkReadiness();
 
-    m_timer.start(m_checkPeriod, [this]() { runChecks(); });
+    m_timer.start(
+        m_checkPeriod,
+        [this]()
+        {
+            runChecks();
+        });
 }
 
 void HealthMonitor::checkLiveness()
@@ -182,7 +195,8 @@ void HealthMonitor::checkLiveness()
     // mean no timeout at all for the client.
     m_livenessClient->setAllTimeouts(m_checkPeriod / 2);
 
-    m_livenessClient->doGet(m_livenessUrl,
+    m_livenessClient->doGet(
+        m_livenessUrl,
         [this]()
         {
             // The client is stopped before this object is destroyed, so `this` is alive here.
@@ -247,9 +261,8 @@ void HealthMonitor::ProbeCall::operator()(std::optional<std::string> error)
         return;
 
     NX_MUTEX_LOCKER lock(&state->mutex);
-    state->readiness[m_name] = CheckResult{
-        .error = std::move(error),
-        .completedAt = std::chrono::steady_clock::now()};
+    state->readiness[m_name] =
+        CheckResult{.error = std::move(error), .completedAt = std::chrono::steady_clock::now()};
     state->readinessChecksInFlight.erase(m_name);
 }
 
@@ -259,10 +272,8 @@ bool HealthMonitor::isStale(const CheckResult& result) const
         > m_checkPeriod * kStalePeriodCount;
 }
 
-void HealthMonitor::addFailure(
-    Status* status,
-    const std::string& name,
-    const std::string& error) const
+void HealthMonitor::addFailure(Status* status, const std::string& name, const std::string& error)
+    const
 {
     status->ok = false;
     status->failed[name] = error;

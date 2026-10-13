@@ -27,10 +27,7 @@ public:
 class ConnectionCache::Private
 {
 public:
-    Private(
-        std::chrono::milliseconds expirationPeriod,
-        std::size_t maxSize)
-        :
+    Private(std::chrono::milliseconds expirationPeriod, std::size_t maxSize):
         cache(expirationPeriod, maxSize),
         size(0),
         pollableContext(cache, size)
@@ -42,8 +39,7 @@ public:
     public:
         PollableContext(
             nx::utils::TimeOutCache<ConnectionInfo, std::unique_ptr<AbstractStreamSocket>>& cache,
-            std::atomic<size_t>& size)
-            :
+            std::atomic<size_t>& size):
             m_cache(cache),
             m_size(size)
         {
@@ -75,8 +71,7 @@ size_t std::hash<nx::network::ConnectionCache::ConnectionInfo>::operator()(
 }
 
 ConnectionCache::ConnectionCache(
-    std::chrono::milliseconds expirationPeriod /*= kDefaultExpirationPeriod*/)
-    :
+    std::chrono::milliseconds expirationPeriod /*= kDefaultExpirationPeriod*/):
     d(std::make_unique<Private>(expirationPeriod, std::numeric_limits<size_t>::max()))
 {
 }
@@ -152,8 +147,7 @@ void ConnectionCache::startMonitoringConnection(
 
     conn->readSomeAsync(
         bufPtr,
-        [this, buf = std::move(buf), addr](
-            SystemError::ErrorCode result, std::size_t bytesRead)
+        [this, buf = std::move(buf), addr](SystemError::ErrorCode result, std::size_t bytesRead)
         {
             // Unexpected read or connection closed. Remove connection from the cache.
             if (result != SystemError::noError)

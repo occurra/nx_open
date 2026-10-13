@@ -11,24 +11,28 @@ namespace {
 
 static constexpr int kAspectRatioExtended = 15;
 
-struct Ratio { int w; int h; };
+struct Ratio
+{
+    int w;
+    int h;
+};
 static constexpr Ratio kh263PixelAspect[16] = {
-    {  0,  1 },
-    {  1,  1 },
-    { 12, 11 },
-    { 10, 11 },
-    { 16, 11 },
-    { 40, 33 },
-    {  0,  1 },
-    {  0,  1 },
-    {  0,  1 },
-    {  0,  1 },
-    {  0,  1 },
-    {  0,  1 },
-    {  0,  1 },
-    {  0,  1 },
-    {  0,  1 },
-    {  0,  1 },
+    {0, 1},
+    {1, 1},
+    {12, 11},
+    {10, 11},
+    {16, 11},
+    {40, 33},
+    {0, 1},
+    {0, 1},
+    {0, 1},
+    {0, 1},
+    {0, 1},
+    {0, 1},
+    {0, 1},
+    {0, 1},
+    {0, 1},
+    {0, 1},
 };
 
 enum class Shape
@@ -101,7 +105,7 @@ bool VideoObjectLayer::read(const uint8_t* data, int size)
             }
         }
         video_object_layer_shape = reader.getBits(2);
-        if (video_object_layer_shape != (int)Shape::Rect)
+        if (video_object_layer_shape != (int) Shape::Rect)
         {
             NX_DEBUG(this, "Shape not supported: %1", video_object_layer_shape);
             return false;

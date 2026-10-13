@@ -18,9 +18,9 @@
 #include <utility>
 
 #if defined(_WIN32)
-#include <boost/interprocess/managed_windows_shared_memory.hpp>
+    #include <boost/interprocess/managed_windows_shared_memory.hpp>
 #else
-#include <boost/interprocess/managed_shared_memory.hpp>
+    #include <boost/interprocess/managed_shared_memory.hpp>
 #endif
 
 extern "C" {
@@ -74,10 +74,7 @@ std::size_t sharedMemoryAlignment()
 
 struct AvFrameDeleter
 {
-    void operator()(AVFrame* frame) const
-    {
-        av_frame_free(&frame);
-    }
+    void operator()(AVFrame* frame) const { av_frame_free(&frame); }
 };
 
 class FfmpegSharedMemoryAllocatorImpl final: public FfmpegSharedMemoryAllocator
@@ -85,10 +82,11 @@ class FfmpegSharedMemoryAllocatorImpl final: public FfmpegSharedMemoryAllocator
 public:
     FfmpegSharedMemoryAllocatorImpl(std::string segmentName, std::size_t segmentSizeBytes):
         m_segmentName(std::move(segmentName)),
-        m_segment(std::make_unique<SharedMemorySegment>(
-            boost::interprocess::create_only,
-            m_segmentName.c_str(),
-            segmentSizeBytes))
+        m_segment(
+            std::make_unique<SharedMemorySegment>(
+                boost::interprocess::create_only,
+                m_segmentName.c_str(),
+                segmentSizeBytes))
     {
     }
 
@@ -106,10 +104,7 @@ public:
 #endif
     }
 
-    std::string_view segmentName() const override
-    {
-        return m_segmentName;
-    }
+    std::string_view segmentName() const override { return m_segmentName; }
 
     void* allocate(std::size_t size) override
     {
@@ -202,11 +197,10 @@ private:
         if (!nx::log::isToBeLogged(nx::log::Level::verbose))
             return;
 
-        const std::size_t totalAllocatedSize =
-            nx::ranges::fold_left(
-                m_allocations | std::views::values | std::views::transform(&Allocation::size),
-                std::size_t{0},
-                std::plus<>{});
+        const std::size_t totalAllocatedSize = nx::ranges::fold_left(
+            m_allocations | std::views::values | std::views::transform(&Allocation::size),
+            std::size_t{0},
+            std::plus<>{});
 
         NX_VERBOSE(
             NX_SCOPE_TAG,
@@ -262,12 +256,8 @@ AVBufferRef* createSharedMemoryBufferRef(
     auto lifetime = std::make_unique<SharedMemoryBufferOpaque>();
     lifetime->allocator = allocator;
 
-    AVBufferRef* bufferRef = av_buffer_create(
-        data,
-        size,
-        releaseSharedMemoryBuffer,
-        lifetime.get(),
-        0);
+    AVBufferRef* bufferRef =
+        av_buffer_create(data, size, releaseSharedMemoryBuffer, lifetime.get(), 0);
 
     if (!bufferRef)
         return nullptr;
@@ -281,8 +271,8 @@ FfmpegSharedMemoryAllocatorPtr allocatorFromBufferRef(const AVBufferRef* bufferR
     if (!bufferRef || !bufferRef->data)
         return {};
 
-    const auto* const opaque = static_cast<const SharedMemoryBufferOpaque*>(
-        av_buffer_get_opaque(bufferRef));
+    const auto* const opaque =
+        static_cast<const SharedMemoryBufferOpaque*>(av_buffer_get_opaque(bufferRef));
     if (!opaque || opaque->magic != SharedMemoryBufferOpaque::kMagic || !opaque->allocator)
         return {};
 
@@ -292,7 +282,8 @@ FfmpegSharedMemoryAllocatorPtr allocatorFromBufferRef(const AVBufferRef* bufferR
     return opaque->allocator;
 }
 
-const FfmpegSharedMemoryBufferContext* bufferContextFromCodecContext(const AVCodecContext* codecCtx)
+const FfmpegSharedMemoryBufferContext* bufferContextFromCodecContext(
+    const AVCodecContext* codecCtx)
 {
     if (!codecCtx || !codecCtx->opaque)
         return nullptr;
@@ -310,14 +301,16 @@ FfmpegSharedMemoryAllocatorPtr allocatorFromCodecContext(const AVCodecContext* c
     if (const auto* const context = bufferContextFromCodecContext(codecCtx))
         return context->allocator;
 
-    std::call_once(gMissingBufferContextWarningOnce, [codecCtx]()
-    {
-        NX_WARNING(
-            NX_SCOPE_TAG,
-            "Missing/invalid SHM buffer context in AVCodecContext::opaque (codecCtx=%1). "
-            "Cannot allocate SHM frame without explicit allocator",
-            codecCtx);
-    });
+    std::call_once(
+        gMissingBufferContextWarningOnce,
+        [codecCtx]()
+        {
+            NX_WARNING(
+                NX_SCOPE_TAG,
+                "Missing/invalid SHM buffer context in AVCodecContext::opaque (codecCtx=%1). "
+                "Cannot allocate SHM frame without explicit allocator",
+                codecCtx);
+        });
 
     return {};
 }
@@ -349,11 +342,12 @@ int allocateSharedMemoryFrameFromLayout(
     std::array<int, AV_NUM_DATA_POINTERS> linesize = {};
     std::array<AVBufferRef*, AV_NUM_DATA_POINTERS> buffers = {};
 
-    auto releaseBuffersGuard = nx::utils::makeScopeGuard([&buffers]()
-    {
-        for (auto& bufferRef: buffers)
-            av_buffer_unref(&bufferRef);
-    });
+    auto releaseBuffersGuard = nx::utils::makeScopeGuard(
+        [&buffers]()
+        {
+            for (auto& bufferRef: buffers)
+                av_buffer_unref(&bufferRef);
+        });
 
     // For each source AVBufferRef from the layout frame, allocate an equivalent SHM block and
     // wrap it into AVBufferRef so FFmpeg can own/release it normally.
@@ -496,9 +490,8 @@ FfmpegSharedMemoryAllocatorPtr createFfmpegSharedMemoryAllocator(
 
 int getFfmpegSharedMemoryBuffer(AVCodecContext* codecCtx, AVFrame* frame, int flags)
 {
-    auto defaultFrame = std::unique_ptr<AVFrame, AvFrameDeleter>(
-        av_frame_alloc(),
-        AvFrameDeleter{});
+    auto defaultFrame =
+        std::unique_ptr<AVFrame, AvFrameDeleter>(av_frame_alloc(), AvFrameDeleter{});
     if (!defaultFrame)
         return AVERROR(ENOMEM);
 
@@ -507,13 +500,17 @@ int getFfmpegSharedMemoryBuffer(AVCodecContext* codecCtx, AVFrame* frame, int fl
     defaultFrame->height = frame->height > 0 ? frame->height : codecCtx->height;
 
     // Ask FFmpeg for canonical plane layout, offsets and alignment for this codec context.
-    const int defaultBufferResult = avcodec_default_get_buffer2(codecCtx, defaultFrame.get(), flags);
+    const int defaultBufferResult =
+        avcodec_default_get_buffer2(codecCtx, defaultFrame.get(), flags);
     if (defaultBufferResult < 0)
         return defaultBufferResult;
 
     // Keep this layout-based path: FFmpeg may choose codec-specific plane offsets/buffers here,
     // and we must mirror that exact AVFrame memory shape in shared memory.
-    return allocateSharedMemoryFrameFromLayout(defaultFrame.get(), frame, allocatorFromCodecContext(codecCtx));
+    return allocateSharedMemoryFrameFromLayout(
+        defaultFrame.get(),
+        frame,
+        allocatorFromCodecContext(codecCtx));
 }
 
 CLVideoDecoderOutputPtr allocateSystemFrameInSharedMemory(
@@ -530,11 +527,8 @@ CLVideoDecoderOutputPtr allocateSystemFrameInSharedMemory(
     result->height = height;
     result->format = pixelFormat;
 
-    const int bufferSize = av_image_get_buffer_size(
-        pixelFormat,
-        width,
-        height,
-        CL_MEDIA_ALIGNMENT);
+    const int bufferSize =
+        av_image_get_buffer_size(pixelFormat, width, height, CL_MEDIA_ALIGNMENT);
     if (bufferSize < 0)
         return nullptr;
 
@@ -657,10 +651,7 @@ std::optional<nx::utils::ShmByteArray> allocateShmByteArrayInSharedMemory(
 
     if (trailingZeroPadding > 0)
     {
-        std::memset(
-            static_cast<char*>(shmBuffer->data) + size,
-            0,
-            trailingZeroPadding);
+        std::memset(static_cast<char*>(shmBuffer->data) + size, 0, trailingZeroPadding);
     }
 
     std::string segmentName(allocator->segmentName());

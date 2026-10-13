@@ -63,9 +63,8 @@ DBResult BaseExecutor::execute(AbstractDbConnection* const connection)
         duration_cast<milliseconds>(nx::utils::monotonicTime() - executionStartTime);
 
     m_telemetrySpan.setStatus(
-        m_queryStatistics.result->ok()
-            ? nx::telemetry::Span::Status::ok
-            : nx::telemetry::Span::Status::error,
+        m_queryStatistics.result->ok() ? nx::telemetry::Span::Status::ok
+                                       : nx::telemetry::Span::Status::error,
         m_queryStatistics.result->toString());
 
     m_telemetrySpan.end();
@@ -99,11 +98,8 @@ void BaseExecutor::setStatisticsCollector(StatisticsCollector* statisticsCollect
 UpdateWithoutAnyDataExecutor::UpdateWithoutAnyDataExecutor(
     nx::MoveOnlyFunc<DBResult(QueryContext* const)> dbUpdateFunc,
     nx::MoveOnlyFunc<void(DBResult)> completionHandler,
-    const std::string& queryAggregationKey)
-    :
-    base_type(
-        std::move(completionHandler),
-        queryAggregationKey),
+    const std::string& queryAggregationKey):
+    base_type(std::move(completionHandler), queryAggregationKey),
     m_dbUpdateFunc(std::move(dbUpdateFunc))
 {
 }
@@ -124,8 +120,7 @@ void UpdateWithoutAnyDataExecutor::reportSuccess()
 SelectExecutor::SelectExecutor(
     nx::MoveOnlyFunc<DBResult(QueryContext*)> dbSelectFunc,
     nx::MoveOnlyFunc<void(DBResult)> completionHandler,
-    const std::string& queryAggregationKey)
-    :
+    const std::string& queryAggregationKey):
     base_type(QueryType::lookup, queryAggregationKey),
     m_dbSelectFunc(std::move(dbSelectFunc)),
     m_completionHandler(std::move(completionHandler))

@@ -5,7 +5,8 @@
 namespace nx::network::utils {
 
 std::optional<std::string> getHostName(
-    const http::RequestContext& request, const std::string& hostHeader /* = "Host" */)
+    const http::RequestContext& request,
+    const std::string& hostHeader /* = "Host" */)
 {
     auto headerIt = request.request.headers.find(hostHeader);
     if (headerIt == request.request.headers.end())

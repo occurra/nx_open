@@ -44,7 +44,8 @@ public:
      * If metricsRegistry is not null, Prometheus series are emitted in addition to the
      * aggregated statistics: per task while recording, and queue gauges at scrape time.
      */
-    StatisticsCollector(std::chrono::milliseconds period,
+    StatisticsCollector(
+        std::chrono::milliseconds period,
         const detail::QueryQueue& queryQueue,
         std::atomic<std::size_t>* dbThreadPoolSize,
         nx::prometheus::Registry* metricsRegistry = nullptr);

@@ -17,25 +17,78 @@ static const uint8_t kPayloadHeaderNalUnitTypeMask = 0x7e;
 
 enum class NalUnitType
 {
-    trailN = 0, trailR, // Trailing pictures
+    trailN = 0,
+    trailR, // Trailing pictures
 
-    tsaN, tsaR, stsaN, stsaR, // Temporal sublayer access
+    tsaN,
+    tsaR,
+    stsaN,
+    stsaR, // Temporal sublayer access
 
-    radlN, radlR, raslN, raslR, // Leading pictures
+    radlN,
+    radlR,
+    raslN,
+    raslR, // Leading pictures
 
-    rsvVclN10, rsvVclR11, rsvVclN12, rsvVclR13, rsvVclN14, rsvVclR15,
+    rsvVclN10,
+    rsvVclR11,
+    rsvVclN12,
+    rsvVclR13,
+    rsvVclN14,
+    rsvVclR15,
 
-    blaWLp, blaWRadl, blaNlp, idrWRadl, idrNLp, craNut, // IRAPs
+    blaWLp,
+    blaWRadl,
+    blaNlp,
+    idrWRadl,
+    idrNLp,
+    craNut, // IRAPs
 
-    rsvIrapVcl22, rsvIrapVcl23,
-    rsvVcl24, rsvVcl25, rsvVcl26, rsvVcl27, rsvVcl28, rsvVcl29, rsvVcl30, rsvVcl31,
+    rsvIrapVcl22,
+    rsvIrapVcl23,
+    rsvVcl24,
+    rsvVcl25,
+    rsvVcl26,
+    rsvVcl27,
+    rsvVcl28,
+    rsvVcl29,
+    rsvVcl30,
+    rsvVcl31,
 
     // Different stuff
-    vpsNut, spsNut, ppsNut, audNut, eosNut, eobNut, fdNut, prefixSeiNut, suffixSeiNut,
+    vpsNut,
+    spsNut,
+    ppsNut,
+    audNut,
+    eosNut,
+    eobNut,
+    fdNut,
+    prefixSeiNut,
+    suffixSeiNut,
 
-    rsvNvcl41, rsvNvcl42, rsvNvcl43, rsvNvcl44, rsvNvcl45, rsvNvcl46, rsvNvcl47,
-    unspec48, unspec49, unspec50, unspec51, unspec52, unspec53, unspec54, unspec55,
-    unspec56, unspec57, unspec58, unspec59, unspec60, unspec61, unspec62, unspec63,
+    rsvNvcl41,
+    rsvNvcl42,
+    rsvNvcl43,
+    rsvNvcl44,
+    rsvNvcl45,
+    rsvNvcl46,
+    rsvNvcl47,
+    unspec48,
+    unspec49,
+    unspec50,
+    unspec51,
+    unspec52,
+    unspec53,
+    unspec54,
+    unspec55,
+    unspec56,
+    unspec57,
+    unspec58,
+    unspec59,
+    unspec60,
+    unspec61,
+    unspec62,
+    unspec63,
 };
 
 enum class PacketType
@@ -76,7 +129,10 @@ struct NX_CODEC_API NalUnitHeader
     static const int kTotalLengthBit = 16;
     static const int kTotalLength = 2;
 
-    bool decode(const uint8_t* const payload, int payloadLength, QString* outErrorString = nullptr);
+    bool decode(
+        const uint8_t* const payload,
+        int payloadLength,
+        QString* outErrorString = nullptr);
 };
 
 template<typename NalUnitType>

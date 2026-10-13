@@ -27,8 +27,11 @@ public:
         {
             return nx::format(
                 "%1, id: %2, functionType: %3, currentExecutionTime: %4,"
-                    " averageExecutionTime: %5",
-                aioThread, aioThread->systemThreadId(), functionType, currentExecutionTime,
+                " averageExecutionTime: %5",
+                aioThread,
+                aioThread->systemThreadId(),
+                functionType,
+                currentExecutionTime,
                 averageExecutionTime);
         }
     };

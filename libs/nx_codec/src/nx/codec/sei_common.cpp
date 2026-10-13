@@ -10,11 +10,7 @@
 
 namespace nx::media::sei {
 
-namespace {
-
-constexpr int kUserDataUnregisteredType = 5;
-
-} // namespace
+namespace { constexpr int kUserDataUnregisteredType = 5; } // namespace
 
 std::expected<SeiUserData, std::string> extractUserData(std::span<const uint8_t> ebsp)
 {
@@ -22,7 +18,10 @@ std::expected<SeiUserData, std::string> extractUserData(std::span<const uint8_t>
     SeiUserData result;
     result.rbsp.resize(ebsp.size());
     const int rbspSize = nx::media::nal::decodeEpb(
-        ebsp.data(), ebsp.data() + ebsp.size(), result.rbsp.data(), result.rbsp.size());
+        ebsp.data(),
+        ebsp.data() + ebsp.size(),
+        result.rbsp.data(),
+        result.rbsp.size());
     if (rbspSize <= 0)
         return std::unexpected("Bad SEI detected. Failed to decode RBSP");
     result.rbsp.resize(rbspSize);

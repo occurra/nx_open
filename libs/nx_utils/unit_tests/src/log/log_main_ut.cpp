@@ -2,10 +2,10 @@
 
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include <QtCore/QRegularExpression>
 #include <QtCore/QSize>
-
-#include <gtest/gtest.h>
 
 #include <nx/utils/log/log_initializer.h>
 #include <nx/utils/log/log_main.h>
@@ -37,7 +37,8 @@ public:
         settings.loggers.front().level.primary = levelFromString("INFO");
         settings.loggers.front().level.filters = LevelFilters{{kNamespaceFilter, Level::trace}};
 
-        if (!logWriter)        {
+        if (!logWriter)
+        {
             logWriter = std::make_unique<Buffer>();
             buffer = static_cast<Buffer*>(logWriter.get());
         }
@@ -93,25 +94,20 @@ TEST_F(LogMainTest, ExplicitTag)
     NX_DEBUG(kTestTag, "Debug");
     NX_VERBOSE(kTestTag, "Verbose");
     NX_TRACE(kTestTag, "Trace");
-    expectMessages({
-        "* ERROR TestTag: Error",
-        "* WARNING TestTag: Warning",
-        "* INFO TestTag: Info"});
+    expectMessages(
+        {"* ERROR TestTag: Error", "* WARNING TestTag: Warning", "* INFO TestTag: Info"});
 
     const int kSeven = 7;
     NX_ERROR(kTestTag) << "Error" << kSeven;
     NX_INFO(kTestTag) << "Info" << kSeven;
     NX_VERBOSE(kTestTag) << "Verbose" << kSeven;
-    expectMessages({
-        "* ERROR TestTag: Error 7",
-        "* INFO TestTag: Info 7"});
+    expectMessages({"* ERROR TestTag: Error 7", "* INFO TestTag: Info 7"});
 
     NX_ERROR(kTestTag, "Value %1 = %2", "error_count", 1);
     NX_WARNING(kTestTag, "Value %1 = %2", "error_count", 2);
     NX_DEBUG(kTestTag, "Value %1 = %2", "error_count", 3);
-    expectMessages({
-        "* ERROR TestTag: Value error_count = 1",
-        "* WARNING TestTag: Value error_count = 2"});
+    expectMessages(
+        {"* ERROR TestTag: Value error_count = 1", "* WARNING TestTag: Value error_count = 2"});
 }
 
 TEST_F(LogMainTest, This)
@@ -122,44 +118,56 @@ TEST_F(LogMainTest, This)
     NX_DEBUG(this, "Debug");
     NX_VERBOSE(this, "Verbose");
     NX_TRACE(this, "Trace");
-    expectMessages({
-        "* ERROR nx::log::test::*LogMain*(0x*): Error",
-        "* WARNING nx::log::test::*LogMain*(0x*): Warning",
-        "* INFO nx::log::test::*LogMain*(0x*): Info",
-        "* DEBUG nx::log::test::*LogMain*(0x*): Debug",
-        "* VERBOSE nx::log::test::*LogMain*(0x*): Verbose",
-        "* TRACE nx::log::test::*LogMain*(0x*): Trace"});
+    expectMessages(
+        {"* ERROR nx::log::test::*LogMain*(0x*): Error",
+         "* WARNING nx::log::test::*LogMain*(0x*): Warning",
+         "* INFO nx::log::test::*LogMain*(0x*): Info",
+         "* DEBUG nx::log::test::*LogMain*(0x*): Debug",
+         "* VERBOSE nx::log::test::*LogMain*(0x*): Verbose",
+         "* TRACE nx::log::test::*LogMain*(0x*): Trace"});
 
     const QSize kSize(2, 3);
     NX_ERROR(this) << "Error" << kSize;
     NX_INFO(this) << "Info" << kSize;
     NX_VERBOSE(this) << "Verbose" << kSize;
     NX_TRACE(this) << "Trace" << kSize;
-    expectMessages({
-        "* ERROR nx::log::test::*LogMain*(0x*): Error QSize(2, 3)",
-        "* INFO nx::log::test::*LogMain*(0x*): Info QSize(2, 3)",
-        "* VERBOSE nx::log::test::*LogMain*(0x*): Verbose QSize(2, 3)",
-        "* TRACE nx::log::test::*LogMain*(0x*): Trace QSize(2, 3)"});
+    expectMessages(
+        {"* ERROR nx::log::test::*LogMain*(0x*): Error QSize(2, 3)",
+         "* INFO nx::log::test::*LogMain*(0x*): Info QSize(2, 3)",
+         "* VERBOSE nx::log::test::*LogMain*(0x*): Verbose QSize(2, 3)",
+         "* TRACE nx::log::test::*LogMain*(0x*): Trace QSize(2, 3)"});
 
     NX_ERROR(this, "Value %1 = %2", "error_count", 1);
     NX_WARNING(this, "Value %1 = %2", "error_count", 2);
     NX_DEBUG(this, "Value %1 = %2", "error_count", 3);
     NX_TRACE(this, "Value %1 = %2", "error_count", 4);
-    expectMessages({
-        "* ERROR nx::log::test::*LogMain*(0x*): Value error_count = 1",
-        "* WARNING nx::log::test::*LogMain*(0x*): Value error_count = 2",
-        "* DEBUG nx::log::test::*LogMain*(0x*): Value error_count = 3",
-        "* TRACE nx::log::test::*LogMain*(0x*): Value error_count = 4"});
+    expectMessages(
+        {"* ERROR nx::log::test::*LogMain*(0x*): Value error_count = 1",
+         "* WARNING nx::log::test::*LogMain*(0x*): Value error_count = 2",
+         "* DEBUG nx::log::test::*LogMain*(0x*): Value error_count = 3",
+         "* TRACE nx::log::test::*LogMain*(0x*): Value error_count = 4"});
 }
 
 TEST_F(LogMainTest, LevelReducer)
 {
     nx::utils::test::ScopedTimeShift timeShift(nx::utils::test::ClockType::steady);
 
-    const auto logError = [this]() { NX_ERROR(this, "Error"); };
-    const auto logWarning = [this]() { NX_WARNING(this, "Warning"); };
-    const auto logInfo = [this]() { NX_INFO(this, "Info"); };
-    const auto logDebug = [this]() { NX_DEBUG(this, "Debug"); };
+    const auto logError = [this]()
+    {
+        NX_ERROR(this, "Error");
+    };
+    const auto logWarning = [this]()
+    {
+        NX_WARNING(this, "Warning");
+    };
+    const auto logInfo = [this]()
+    {
+        NX_INFO(this, "Info");
+    };
+    const auto logDebug = [this]()
+    {
+        NX_DEBUG(this, "Debug");
+    };
 
     iniTweaks.set(&nx::utils::ini().logLevelReducerPassLimit, 2);
     iniTweaks.set(&nx::utils::ini().logLevelReducerWindowSizeS, 60);
@@ -167,12 +175,11 @@ TEST_F(LogMainTest, LevelReducer)
     for (int i = 0; i != 4; ++i)
         logWarning();
 
-    expectMessages({
-        "* WARNING *: Warning",
-        "* WARNING *: TOO MANY SIMILAR MESSAGES: Warning",
-        "* DEBUG *: Warning",
-        "* DEBUG *: Warning"
-    });
+    expectMessages(
+        {"* WARNING *: Warning",
+         "* WARNING *: TOO MANY SIMILAR MESSAGES: Warning",
+         "* DEBUG *: Warning",
+         "* DEBUG *: Warning"});
 
     logWarning();
     timeShift.applyRelativeShift(std::chrono::minutes(1));
@@ -206,7 +213,10 @@ TEST_F(LogMainTest, LevelReducer)
 TEST_F(LogMainTest, LevelReducerWithStream)
 {
     nx::utils::test::ScopedTimeShift timeShift(nx::utils::test::ClockType::steady);
-    const auto logWarning = [this]() { NX_WARNING(this) << "Warn"; };
+    const auto logWarning = [this]()
+    {
+        NX_WARNING(this) << "Warn";
+    };
 
     iniTweaks.set(&nx::utils::ini().logLevelReducerPassLimit, 1);
     iniTweaks.set(&nx::utils::ini().logLevelReducerWindowSizeS, 60);
@@ -232,19 +242,23 @@ TEST_F(LogMainTest, LevelReducerWithStream)
 //-------------------------------------------------------------------------------------------------
 // NX_SCOPE_TAG tests.
 
-#define TEST_NX_SCOPE_TAG(NAME) do \
-{ \
+#define TEST_NX_SCOPE_TAG(NAME) \
+    do \
     { \
-        struct ScopeTag{}; /*< Needed for NX_SCOPE_TAG macro used in NX_OUTPUT. */ \
-        NX_OUTPUT << "NX_SCOPE_TAG " << NAME << ": " \
-            << nx::kit::utils::toString(NX_SCOPE_TAG.toString()); \
-    } \
-    NX_VERBOSE(NX_SCOPE_TAG, NAME); /*< Perform the tested action. */ \
-} while (0)
+        { \
+            struct ScopeTag \
+            { \
+            }; /*< Needed for NX_SCOPE_TAG macro used in NX_OUTPUT. */ \
+            NX_OUTPUT << "NX_SCOPE_TAG " << NAME << ": " \
+                      << nx::kit::utils::toString(NX_SCOPE_TAG.toString()); \
+        } \
+        NX_VERBOSE(NX_SCOPE_TAG, NAME); /*< Perform the tested action. */ \
+    } while (0)
 
 /** Used to test logging from a global function. */
 static /*dummyValue*/ std::string* globalFunction(
-    [[maybe_unused]] int dummyInt, [[maybe_unused]] char dummyChar)
+    [[maybe_unused]] int dummyInt,
+    [[maybe_unused]] char dummyChar)
 {
     TEST_NX_SCOPE_TAG("globalFunction");
     return nullptr;
@@ -254,8 +268,7 @@ static /*dummyValue*/ std::string* globalFunction(
 template<typename T, char c>
 struct StructTemplate
 {
-    static T staticFunction(
-        [[maybe_unused]] T dummyT, [[maybe_unused]] char dummyChar = c)
+    static T staticFunction([[maybe_unused]] T dummyT, [[maybe_unused]] char dummyChar = c)
     {
         TEST_NX_SCOPE_TAG("StructTemplate::staticFunction");
         return []()
@@ -301,7 +314,8 @@ TEST_F(LogMainTest, Scope)
     expectMessages({"* VERBOSE nx::log::test: globalFunction"});
 
     StructTemplate</*T*/ std::string*, /*c*/ '@'>::staticFunction(
-        /*dummyT*/ nullptr, /*dummyChar*/ 'X');
+        /*dummyT*/ nullptr,
+        /*dummyChar*/ 'X');
     expectMessages({
         "* VERBOSE nx::log::test::StructTemplate<*>: StructTemplate::staticFunction",
         "* VERBOSE nx::log::test::StructTemplate<*>: lambda in StructTemplate::staticFunction",
@@ -309,7 +323,8 @@ TEST_F(LogMainTest, Scope)
     });
 
     functionTemplate</*T*/ std::string*, /*c*/ &DummyStruct::memberFunction>(
-        /*dummyT*/ nullptr, /*dummyChar*/ 'X');
+        /*dummyT*/ nullptr,
+        /*dummyChar*/ 'X');
     expectMessages({
         "* VERBOSE nx::log::test: functionTemplate",
         "* VERBOSE nx::log::test: lambda in functionTemplate",
@@ -340,8 +355,8 @@ public:
             action();
 
         const auto duration = std::chrono::steady_clock::now() - startTime;
-        std::cout << "Run time: " << duration.count() << " " <<
-            nx::toString(typeid(duration)).toStdString() << std::endl;
+        std::cout << "Run time: " << duration.count() << " "
+                  << nx::toString(typeid(duration)).toStdString() << std::endl;
     }
 
     template<template<int> class Tag>
@@ -350,24 +365,68 @@ public:
         measureTime(
             []()
             {
-                { static const Tag<0> t{0}; NX_DEBUG(&t, "Test message"); }
-                { static const Tag<1> t{0}; NX_DEBUG(&t, "Test message"); }
-                { static const Tag<2> t{0}; NX_DEBUG(&t, "Test message"); }
-                { static const Tag<3> t{0}; NX_DEBUG(&t, "Test message"); }
-                { static const Tag<4> t{0}; NX_DEBUG(&t, "Test message"); }
-                { static const Tag<5> t{0}; NX_DEBUG(&t, "Test message"); }
-                { static const Tag<6> t{0}; NX_DEBUG(&t, "Test message"); }
-                { static const Tag<7> t{0}; NX_DEBUG(&t, "Test message"); }
-                { static const Tag<8> t{0}; NX_DEBUG(&t, "Test message"); }
-                { static const Tag<9> t{0}; NX_DEBUG(&t, "Test message"); }
+                {
+                    static const Tag<0> t{0};
+                    NX_DEBUG(&t, "Test message");
+                }
+                {
+                    static const Tag<1> t{0};
+                    NX_DEBUG(&t, "Test message");
+                }
+                {
+                    static const Tag<2> t{0};
+                    NX_DEBUG(&t, "Test message");
+                }
+                {
+                    static const Tag<3> t{0};
+                    NX_DEBUG(&t, "Test message");
+                }
+                {
+                    static const Tag<4> t{0};
+                    NX_DEBUG(&t, "Test message");
+                }
+                {
+                    static const Tag<5> t{0};
+                    NX_DEBUG(&t, "Test message");
+                }
+                {
+                    static const Tag<6> t{0};
+                    NX_DEBUG(&t, "Test message");
+                }
+                {
+                    static const Tag<7> t{0};
+                    NX_DEBUG(&t, "Test message");
+                }
+                {
+                    static const Tag<8> t{0};
+                    NX_DEBUG(&t, "Test message");
+                }
+                {
+                    static const Tag<9> t{0};
+                    NX_DEBUG(&t, "Test message");
+                }
             });
     }
 };
 
-template<int Id> struct EnabledTag { int i; };
-template<int Id> struct DisabledTag { int i; };
+template<int Id>
+struct EnabledTag
+{
+    int i;
+};
+template<int Id>
+struct DisabledTag
+{
+    int i;
+};
 
-TEST_F(LogMainPerformanceTest, EnabledTag) { measureTimeForTags<EnabledTag>(); }
-TEST_F(LogMainPerformanceTest, DisabledTag) { measureTimeForTags<DisabledTag>(); }
+TEST_F(LogMainPerformanceTest, EnabledTag)
+{
+    measureTimeForTags<EnabledTag>();
+}
+TEST_F(LogMainPerformanceTest, DisabledTag)
+{
+    measureTimeForTags<DisabledTag>();
+}
 
 } // namespace nx::log::test

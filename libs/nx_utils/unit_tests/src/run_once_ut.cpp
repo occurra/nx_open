@@ -1,12 +1,12 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <condition_variable>
 #include <future>
 #include <mutex>
 #include <stdexcept>
 #include <thread>
+
+#include <gtest/gtest.h>
 
 #include <nx/utils/run_once.h>
 
@@ -16,7 +16,6 @@
 
 namespace nx::utils::test {
 
-
 TEST(RunOnce, withoutKey)
 {
     RunOnce<void> runOnce;
@@ -24,12 +23,11 @@ TEST(RunOnce, withoutKey)
     nx::Mutex mutex;
     std::atomic<int> counter = 0;
 
-    auto worker =
-        [&]()
-        {
-            NX_MUTEX_LOCKER lock(&mutex);
-            ++counter;
-        };
+    auto worker = [&]()
+    {
+        NX_MUTEX_LOCKER lock(&mutex);
+        ++counter;
+    };
 
     auto task = *runOnce.startOnceAsync(worker);
     task.wait();
@@ -196,7 +194,11 @@ public:
         if (!m_passThrough)
         {
             m_copyResumed.wait(
-                lock, [this, index]() { return m_passThrough || m_resumedUpTo >= index; });
+                lock,
+                [this, index]()
+                {
+                    return m_passThrough || m_resumedUpTo >= index;
+                });
         }
     }
 
@@ -204,7 +206,12 @@ public:
     void waitForCopy(int index)
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        m_copyReported.wait(lock, [this, index]() { return m_copyCount >= index; });
+        m_copyReported.wait(
+            lock,
+            [this, index]()
+            {
+                return m_copyCount >= index;
+            });
     }
 
     void resumeCopy(int index)
@@ -246,9 +253,18 @@ private:
 class GatedKey
 {
 public:
-    GatedKey(int id, CopyGate* gate): m_id(id), m_gate(gate) {}
+    GatedKey(int id, CopyGate* gate):
+        m_id(id),
+        m_gate(gate)
+    {
+    }
 
-    GatedKey(const GatedKey& other): m_id(other.m_id), m_gate(other.m_gate) { m_gate->onCopy(); }
+    GatedKey(const GatedKey& other):
+        m_id(other.m_id),
+        m_gate(other.m_gate)
+    {
+        m_gate->onCopy();
+    }
 
     GatedKey& operator=(const GatedKey&) = delete; //< std::map never assigns its keys.
 
@@ -270,10 +286,17 @@ static constexpr int kTaskLambdaCopy = 2;
  * own thread because parking blocks the caller.
  */
 std::optional<RunOnceFuture> startWithFailingLaunch(
-    RunOnce<GatedKey>& runOnce, const std::function<void()>& task, int id, CopyGate* gate)
+    RunOnce<GatedKey>& runOnce,
+    const std::function<void()>& task,
+    int id,
+    CopyGate* gate)
 {
     std::optional<RunOnceFuture> result;
-    std::thread starter([&]() { result = runOnce.startOnceAsync(task, GatedKey(id, gate)); });
+    std::thread starter(
+        [&]()
+        {
+            result = runOnce.startOnceAsync(task, GatedKey(id, gate));
+        });
 
     gate->waitForCopy(kStateMapCopy);
     gate->resumeCopy(kStateMapCopy);
@@ -304,7 +327,10 @@ TEST(RunOnceLaunchFailure, coalescesAConcurrentRestart)
 
     std::optional<RunOnceFuture> startResult;
     std::thread starter(
-        [&]() { startResult = runOnce.startOnceAsync(worker, GatedKey(1, &gate)); });
+        [&]()
+        {
+            startResult = runOnce.startOnceAsync(worker, GatedKey(1, &gate));
+        });
 
     gate.waitForCopy(kStateMapCopy);
     gate.resumeCopy(kStateMapCopy);
@@ -361,7 +387,10 @@ TEST(RunOnceLaunchFailure, doesNotDiscardAConcurrentRestart)
 
     std::optional<RunOnceFuture> startResult;
     std::thread starter(
-        [&]() { startResult = runOnce.startOnceAsync(worker, GatedKey(1, &gate)); });
+        [&]()
+        {
+            startResult = runOnce.startOnceAsync(worker, GatedKey(1, &gate));
+        });
 
     gate.waitForCopy(kStateMapCopy);
     gate.resumeCopy(kStateMapCopy);
@@ -448,7 +477,12 @@ TEST(RunOnceTaskFailure, doesNotStallTheState)
     ASSERT_EQ(1, counter);
     ASSERT_THROW(failed->get(), std::runtime_error); //< Still reported to whoever asks.
 
-    auto task = runOnce.startOnceAsync([&counter]() { ++counter; }, GatedKey(1, &gate));
+    auto task = runOnce.startOnceAsync(
+        [&counter]()
+        {
+            ++counter;
+        },
+        GatedKey(1, &gate));
     ASSERT_TRUE(task) << "the state is still claimed by the task that has thrown";
     task->wait();
     ASSERT_EQ(2, counter);
@@ -469,7 +503,11 @@ TEST(RunOnceTaskFailure, doesNotStallTheStateWithoutKey)
     failed->wait();
     ASSERT_THROW(failed->get(), std::runtime_error);
 
-    auto task = runOnce.startOnceAsync([&counter]() { ++counter; });
+    auto task = runOnce.startOnceAsync(
+        [&counter]()
+        {
+            ++counter;
+        });
     ASSERT_TRUE(task) << "the state is still claimed by the task that has thrown";
     task->wait();
     ASSERT_EQ(2, counter);
@@ -491,7 +529,11 @@ TEST(RunOnceTaskFailure, handlesANonStandardException)
     failed->wait();
     ASSERT_THROW(failed->get(), int); //< Still reported to whoever asks.
 
-    auto task = runOnce.startOnceAsync([&counter]() { ++counter; });
+    auto task = runOnce.startOnceAsync(
+        [&counter]()
+        {
+            ++counter;
+        });
     ASSERT_TRUE(task) << "the state is still claimed by the task that has thrown";
     task->wait();
     ASSERT_EQ(2, counter);

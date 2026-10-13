@@ -125,22 +125,16 @@ class TestHasher
 public:
     TestHasher() = default;
 
-    explicit TestHasher(const std::string& str): m_str(str) {}
-
-    TestHasher add(const char* str) const
+    explicit TestHasher(const std::string& str):
+        m_str(str)
     {
-        return TestHasher(m_str + str);
     }
 
-    std::string finalize() const
-    {
-        return m_str;
-    }
+    TestHasher add(const char* str) const { return TestHasher(m_str + str); }
 
-    static std::string toStdString(std::string str)
-    {
-        return str;
-    }
+    std::string finalize() const { return m_str; }
+
+    static std::string toStdString(std::string str) { return str; }
 
 private:
     const std::string m_str;
@@ -157,117 +151,113 @@ std::string hashWithTestHasher()
 
 TEST(Hash, different_structures_have_expected_serialization)
 {
-    const char* serializedSimpleStructure =
-        "{"
-        "b:int64,"
-        "i8:int64,"
-        "u8:int64,"
-        "i16:int64,"
-        "u16:int64,"
-        "i32:int64,"
-        "u32:int64,"
-        "i64:int64,"
-        "u64:int64,"
-        "f:double,"
-        "d:double,"
-        "s:string,"
-        "sv:string,"
-        "ms:int64,"
-        "vec:[int64],"
-        "vecOfVec:[[string]],"
-        "m:[int64,string],"
-        "um:[string,int64],"
-        "st:[int64],"
-        "uset:[int64],"
-        "e:string,"
-        "ec:string,"
-        "eic:string,"
-        "ecic:string,"
-        "nie:int64,"
-        "niec:int64,"
-        "}";
+    const char* serializedSimpleStructure = "{"
+                                            "b:int64,"
+                                            "i8:int64,"
+                                            "u8:int64,"
+                                            "i16:int64,"
+                                            "u16:int64,"
+                                            "i32:int64,"
+                                            "u32:int64,"
+                                            "i64:int64,"
+                                            "u64:int64,"
+                                            "f:double,"
+                                            "d:double,"
+                                            "s:string,"
+                                            "sv:string,"
+                                            "ms:int64,"
+                                            "vec:[int64],"
+                                            "vecOfVec:[[string]],"
+                                            "m:[int64,string],"
+                                            "um:[string,int64],"
+                                            "st:[int64],"
+                                            "uset:[int64],"
+                                            "e:string,"
+                                            "ec:string,"
+                                            "eic:string,"
+                                            "ecic:string,"
+                                            "nie:int64,"
+                                            "niec:int64,"
+                                            "}";
     EXPECT_EQ(serializedSimpleStructure, hashWithTestHasher<SimpleStructure>());
 
-    const char* serializedEncapsulatedStructure =
-        "{"
-        "x:int64,"
-        "s:{"
-            "b:int64,"
-            "i8:int64,"
-            "u8:int64,"
-            "i16:int64,"
-            "u16:int64,"
-            "i32:int64,"
-            "u32:int64,"
-            "i64:int64,"
-            "u64:int64,"
-            "f:double,"
-            "d:double,"
-            "s:string,"
-            "sv:string,"
-            "ms:int64,"
-            "vec:[int64],"
-            "vecOfVec:[[string]],"
-            "m:[int64,string],"
-            "um:[string,int64],"
-            "st:[int64],"
-            "uset:[int64],"
-            "e:string,"
-            "ec:string,"
-            "eic:string,"
-            "ecic:string,"
-            "nie:int64,"
-            "niec:int64,"
-        "},"
-        "vecOfS:["
-            "{"
-                "b:int64,"
-                "i8:int64,"
-                "u8:int64,"
-                "i16:int64,"
-                "u16:int64,"
-                "i32:int64,"
-                "u32:int64,"
-                "i64:int64,"
-                "u64:int64,"
-                "f:double,"
-                "d:double,"
-                "s:string,"
-                "sv:string,"
-                "ms:int64,"
-                "vec:[int64],"
-                "vecOfVec:[[string]],"
-                "m:[int64,string],"
-                "um:[string,int64],"
-                "st:[int64],"
-                "uset:[int64],"
-                "e:string,"
-                "ec:string,"
-                "eic:string,"
-                "ecic:string,"
-                "nie:int64,"
-                "niec:int64,"
-            "}"
-        "],"
-        "}";
+    const char* serializedEncapsulatedStructure = "{"
+                                                  "x:int64,"
+                                                  "s:{"
+                                                  "b:int64,"
+                                                  "i8:int64,"
+                                                  "u8:int64,"
+                                                  "i16:int64,"
+                                                  "u16:int64,"
+                                                  "i32:int64,"
+                                                  "u32:int64,"
+                                                  "i64:int64,"
+                                                  "u64:int64,"
+                                                  "f:double,"
+                                                  "d:double,"
+                                                  "s:string,"
+                                                  "sv:string,"
+                                                  "ms:int64,"
+                                                  "vec:[int64],"
+                                                  "vecOfVec:[[string]],"
+                                                  "m:[int64,string],"
+                                                  "um:[string,int64],"
+                                                  "st:[int64],"
+                                                  "uset:[int64],"
+                                                  "e:string,"
+                                                  "ec:string,"
+                                                  "eic:string,"
+                                                  "ecic:string,"
+                                                  "nie:int64,"
+                                                  "niec:int64,"
+                                                  "},"
+                                                  "vecOfS:["
+                                                  "{"
+                                                  "b:int64,"
+                                                  "i8:int64,"
+                                                  "u8:int64,"
+                                                  "i16:int64,"
+                                                  "u16:int64,"
+                                                  "i32:int64,"
+                                                  "u32:int64,"
+                                                  "i64:int64,"
+                                                  "u64:int64,"
+                                                  "f:double,"
+                                                  "d:double,"
+                                                  "s:string,"
+                                                  "sv:string,"
+                                                  "ms:int64,"
+                                                  "vec:[int64],"
+                                                  "vecOfVec:[[string]],"
+                                                  "m:[int64,string],"
+                                                  "um:[string,int64],"
+                                                  "st:[int64],"
+                                                  "uset:[int64],"
+                                                  "e:string,"
+                                                  "ec:string,"
+                                                  "eic:string,"
+                                                  "ecic:string,"
+                                                  "nie:int64,"
+                                                  "niec:int64,"
+                                                  "}"
+                                                  "],"
+                                                  "}";
     EXPECT_EQ(serializedEncapsulatedStructure, hashWithTestHasher<EncapsulatedStructure>());
 
-    const char* serializedExtendedStructure =
-        "{"
-        "b:int64,"
-        "s:string,"
-        "n:int64,"
-        "}";
+    const char* serializedExtendedStructure = "{"
+                                              "b:int64,"
+                                              "s:string,"
+                                              "n:int64,"
+                                              "}";
     EXPECT_EQ(serializedExtendedStructure, hashWithTestHasher<ExtendedStructure>());
 
     const char* serializedSimpleType = "int64";
     EXPECT_EQ(serializedSimpleType, hashWithTestHasher<SimpleType>());
 
-    const char* serializedSimpleContainer =
-        "["
-        "int64,"
-        "string"
-        "]";
+    const char* serializedSimpleContainer = "["
+                                            "int64,"
+                                            "string"
+                                            "]";
     EXPECT_EQ(serializedSimpleContainer, hashWithTestHasher<SimpleContainer>());
 }
 
@@ -285,16 +275,16 @@ TEST(Hash, crc_hash_is_correct)
     EXPECT_EQ("ea6939e68ade7f25", detail::Hasher::toStdString(hash));
 
     hash = detail::Hasher()
-        .add("The ")
-        .add("quick ")
-        .add("brown ")
-        .add("fox ")
-        .add("jumps ")
-        .add("over ")
-        .add("the ")
-        .add("lazy ")
-        .add("dog.")
-        .finalize();
+               .add("The ")
+               .add("quick ")
+               .add("brown ")
+               .add("fox ")
+               .add("jumps ")
+               .add("over ")
+               .add("the ")
+               .add("lazy ")
+               .add("dog.")
+               .finalize();
     EXPECT_EQ("ea6939e68ade7f25", detail::Hasher::toStdString(hash));
 }
 

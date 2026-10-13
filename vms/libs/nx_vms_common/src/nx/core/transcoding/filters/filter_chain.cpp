@@ -93,7 +93,8 @@ void FilterChain::prepareForImage(const QSize& fullImageResolution)
     m_ready = true;
 }
 
-bool FilterChain::isImageTranscodingRequired(const QSize& fullImageResolution,
+bool FilterChain::isImageTranscodingRequired(
+    const QSize& fullImageResolution,
     const QSize& resolutionLimit) const
 {
     return m_settings.isTranscodingRequired(/*concernTiling*/ false)
@@ -106,8 +107,8 @@ bool FilterChain::isDownscaleRequired(const QSize& srcResolution) const
     NX_ASSERT(isReady());
 
     const auto resultResolution = apply(srcResolution);
-    return resultResolution.width() > kDefaultResolutionLimit.width() ||
-        resultResolution.height() > kDefaultResolutionLimit.height();
+    return resultResolution.width() > kDefaultResolutionLimit.width()
+        || resultResolution.height() > kDefaultResolutionLimit.height();
 }
 
 bool FilterChain::isReady() const
@@ -166,8 +167,7 @@ CLVideoDecoderOutputPtr FilterChain::apply(const CLVideoDecoderOutputPtr& source
         // Force color scheme to translate colors used to draw metadata precisely.
         // Otherwise, them are changed into blurred and unclear colors with incorrect opacity
         // level.
-        result = CLVideoDecoderOutputPtr(new CLVideoDecoderOutput(
-            image, SWS_CS_ITU601));
+        result = CLVideoDecoderOutputPtr(new CLVideoDecoderOutput(image, SWS_CS_ITU601));
         result->assignMiscData(source.get());
     }
     else
@@ -203,8 +203,8 @@ void FilterChain::prepareVideoArFilter(const QSize& srcFrameResolution)
         newSize.setWidth(srcFrameResolution.height() * m_settings.aspectRatio.toFloat() + 0.5);
         if (newSize != srcFrameResolution)
         {
-            m_filters.push_back(QnAbstractImageFilterPtr(new QnScaleImageFilter(
-                nx::transcoding::roundSize(newSize))));
+            m_filters.push_back(QnAbstractImageFilterPtr(
+                new QnScaleImageFilter(nx::transcoding::roundSize(newSize))));
         }
     }
 }
@@ -224,8 +224,8 @@ void FilterChain::prepareImageArFilter(const QSize& fullImageResolution)
 
         if (newSize != fullImageResolution)
         {
-            m_filters.push_back(QnAbstractImageFilterPtr(new QnScaleImageFilter(
-                nx::transcoding::roundSize(newSize))));
+            m_filters.push_back(QnAbstractImageFilterPtr(
+                new QnScaleImageFilter(nx::transcoding::roundSize(newSize))));
         }
     }
 }
@@ -234,8 +234,8 @@ void FilterChain::prepareDewarpingFilter()
 {
     if (m_settings.dewarping.enabled)
     {
-        m_filters.push_back(QnAbstractImageFilterPtr(new QnDewarpingImageFilter(
-            m_settings.dewarpingMedia, m_settings.dewarping)));
+        m_filters.push_back(QnAbstractImageFilterPtr(
+            new QnDewarpingImageFilter(m_settings.dewarpingMedia, m_settings.dewarping)));
     }
 }
 
@@ -251,33 +251,38 @@ void FilterChain::prepareZoomWindowFilter()
 void FilterChain::prepareImageEnhancementFilter()
 {
     if (m_settings.enhancement.enabled)
-        m_filters.push_back(QnAbstractImageFilterPtr(new QnContrastImageFilter(m_settings.enhancement)));
+        m_filters.push_back(
+            QnAbstractImageFilterPtr(new QnContrastImageFilter(m_settings.enhancement)));
 }
 
 void FilterChain::prepareRotationFilter()
 {
     if (m_settings.rotation != 0)
-        m_filters.push_back(QnAbstractImageFilterPtr(new QnRotateImageFilter(m_settings.rotation)));
+        m_filters.push_back(
+            QnAbstractImageFilterPtr(new QnRotateImageFilter(m_settings.rotation)));
 }
 
 void FilterChain::prepareOverlaysFilters()
 {
     for (const auto& overlaySettings: m_settings.overlays)
     {
-        if (const auto imageFilterSetting = dynamic_cast<ImageOverlaySettings*>(
-            overlaySettings.data()))
+        if (const auto imageFilterSetting =
+                dynamic_cast<ImageOverlaySettings*>(overlaySettings.data()))
         {
             const auto paintFilter = new PaintImageFilter();
-            paintFilter->setImage(imageFilterSetting->image,
+            paintFilter->setImage(
+                imageFilterSetting->image,
                 imageFilterSetting->offset,
                 imageFilterSetting->alignment);
 
             m_filters.push_back(QnAbstractImageFilterPtr(paintFilter));
         }
-        else if (const auto timestampFilterSettings = dynamic_cast<TimestampOverlaySettings*>(
-            overlaySettings.data()))
+        else if (
+            const auto timestampFilterSettings =
+                dynamic_cast<TimestampOverlaySettings*>(overlaySettings.data()))
         {
-            m_filters.push_back(QnAbstractImageFilterPtr(new TimestampFilter(*timestampFilterSettings)));
+            m_filters.push_back(
+                QnAbstractImageFilterPtr(new TimestampFilter(*timestampFilterSettings)));
         }
     }
 
@@ -288,14 +293,14 @@ void FilterChain::prepareOverlaysFilters()
 void FilterChain::prepareWatermarkFilter()
 {
     if (m_settings.watermark.visible())
-        m_filters.push_back(QnAbstractImageFilterPtr(new WatermarkImageFilter(m_settings.watermark)));
+        m_filters.push_back(
+            QnAbstractImageFilterPtr(new WatermarkImageFilter(m_settings.watermark)));
 }
 
 void FilterChain::createScaleImageFilter(const QSize& dstSize)
 {
-    auto scaleFilter = !m_filters.empty()
-        ? m_filters.front().dynamicCast<QnScaleImageFilter>()
-        : QSharedPointer<QnScaleImageFilter>();
+    auto scaleFilter = !m_filters.empty() ? m_filters.front().dynamicCast<QnScaleImageFilter>()
+                                          : QSharedPointer<QnScaleImageFilter>();
 
     if (!scaleFilter)
     {
@@ -313,8 +318,8 @@ void FilterChain::createPixelationImageFilter()
 {
     if (m_settings.pixelationSettings)
     {
-        m_filters.push_front(QnAbstractImageFilterPtr(
-            new PixelationImageFilter(*m_settings.pixelationSettings)));
+        m_filters.push_front(
+            QnAbstractImageFilterPtr(new PixelationImageFilter(*m_settings.pixelationSettings)));
     }
 }
 
@@ -331,44 +336,44 @@ void FilterChain::createObjectInfoFilter()
     if (!oESettings || !oESettings->taxonomyState || oESettings->typeSettings.empty())
         return;
 
-    m_metadataFilters.push_back(AbstractMetadataFilterPtr(new ObjectInfoFilter(*oESettings, m_settings)));
+    m_metadataFilters.push_back(
+        AbstractMetadataFilterPtr(new ObjectInfoFilter(*oESettings, m_settings)));
 }
 
-void FilterChain::prepareDownscaleFilter(const QSize& srcFrameResolution,
+void FilterChain::prepareDownscaleFilter(
+    const QSize& srcFrameResolution,
     const QSize& resolutionLimit)
 {
     // Verifying that output resolution is supported by codec. Adjusting if needed.
-    for (auto prevResizeRatio = 1.0; prevResizeRatio > 0.07; )
+    for (auto prevResizeRatio = 1.0; prevResizeRatio > 0.07;)
     {
         // We can't be sure the way input image scale affects output, so adding a loop...
         const QSize resultResolution = nx::transcoding::roundSize(apply(srcFrameResolution));
-        if (resultResolution.width() <= resolutionLimit.width() &&
-            resultResolution.height() <= resolutionLimit.height())
+        if (resultResolution.width() <= resolutionLimit.width()
+            && resultResolution.height() <= resolutionLimit.height())
         {
             if (resultResolution != srcFrameResolution && m_filters.empty())
                 createScaleImageFilter(resultResolution);
-            return;  //resolution is OK
+            return; // resolution is OK
         }
 
         auto resizeRatio = 1.0;
 
         NX_ASSERT(resultResolution.width() > 0 && resultResolution.height() > 0);
 
-        if (resultResolution.width() > resolutionLimit.width() &&
-            resultResolution.width() > 0)
+        if (resultResolution.width() > resolutionLimit.width() && resultResolution.width() > 0)
         {
-            resizeRatio = (qreal)resolutionLimit.width() / resultResolution.width();
+            resizeRatio = (qreal) resolutionLimit.width() / resultResolution.width();
         }
-        if (resultResolution.height() > resolutionLimit.height() &&
-            resultResolution.height() > 0)
+        if (resultResolution.height() > resolutionLimit.height() && resultResolution.height() > 0)
         {
             resizeRatio = std::min<qreal>(
                 resizeRatio,
-                (qreal)resolutionLimit.height() / resultResolution.height());
+                (qreal) resolutionLimit.height() / resultResolution.height());
         }
 
         if (resizeRatio >= 1.0)
-            break;  //done. resolution is OK
+            break; // done. resolution is OK
 
         // This is needed for the loop to be finite.
         if (resizeRatio >= prevResizeRatio - kAspectRatioComparisionPrecision)
@@ -377,11 +382,11 @@ void FilterChain::prepareDownscaleFilter(const QSize& srcFrameResolution,
 
         // Adjusting scale filter.
         // Due to size ceiled, some more iteration can be needed.
-        // TODO refactor this -> use floor instead ceil or select new one by subtracting of alignment
-        // value?
-        const auto resizeToSize = nx::transcoding::roundSize(
-            QSize(srcFrameResolution.width() * resizeRatio,
-                srcFrameResolution.height() * resizeRatio));
+        // TODO refactor this -> use floor instead ceil or select new one by subtracting of
+        // alignment value?
+        const auto resizeToSize = nx::transcoding::roundSize(QSize(
+            srcFrameResolution.width() * resizeRatio,
+            srcFrameResolution.height() * resizeRatio));
 
         createScaleImageFilter(resizeToSize);
     }

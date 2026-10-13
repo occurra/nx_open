@@ -28,7 +28,11 @@ cf::future<T> returnAsync(T value)
 
 cf::future<cf::unit> initiate()
 {
-    return cf::initiate([]() -> cf::unit { throw std::runtime_error("error"); });
+    return cf::initiate(
+        []() -> cf::unit
+        {
+            throw std::runtime_error("error");
+        });
 }
 
 } // namespace
@@ -47,8 +51,18 @@ TEST(CFuture, Async)
     std::atomic<int> value1(0);
     std::atomic<int> value2(0);
 
-    returnAsync(1).then([&value1](auto i) { value1 = i.get(); return cf::unit(); });
-    returnAsync(2).then([&value2](auto i) { value2 = i.get(); return cf::unit(); });
+    returnAsync(1).then(
+        [&value1](auto i)
+        {
+            value1 = i.get();
+            return cf::unit();
+        });
+    returnAsync(2).then(
+        [&value2](auto i)
+        {
+            value2 = i.get();
+            return cf::unit();
+        });
 
     while (!value1 || !value2)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -63,49 +77,81 @@ TEST(CFuture, CatchException)
 
     // .then(...)
     {
-        auto future = initiate().then([](auto&&) { return cf::unit{}; });
+        auto future = initiate().then(
+            [](auto&&)
+            {
+                return cf::unit{};
+            });
         EXPECT_NO_THROW(future.get());
     }
     {
-        auto future = initiate().then([](auto&&) { return cf::make_ready_future(cf::unit{}); });
+        auto future = initiate().then(
+            [](auto&&)
+            {
+                return cf::make_ready_future(cf::unit{});
+            });
         EXPECT_NO_THROW(future.get());
     }
     {
-        auto future = initiate().then(exec, [](auto&&) { return cf::unit{}; });
+        auto future = initiate().then(
+            exec,
+            [](auto&&)
+            {
+                return cf::unit{};
+            });
         EXPECT_NO_THROW(future.get());
     }
     {
-        auto future =
-            initiate().then(exec, [](auto&&) { return cf::make_ready_future(cf::unit{}); });
+        auto future = initiate().then(
+            exec,
+            [](auto&&)
+            {
+                return cf::make_ready_future(cf::unit{});
+            });
         EXPECT_NO_THROW(future.get());
     }
 
     // .catch_(...)
     {
-        auto future = initiate().catch_([](const std::exception&) { return cf::unit{}; });
+        auto future = initiate().catch_(
+            [](const std::exception&)
+            {
+                return cf::unit{};
+            });
         EXPECT_NO_THROW(future.get());
     }
     {
         auto future = initiate().catch_(
-            [](const std::exception&) { return cf::make_ready_future(cf::unit{}); });
-        EXPECT_NO_THROW(future.get());
-    }
-    {
-        auto future = initiate().catch_(exec, [](const std::exception&) { return cf::unit{}; });
+            [](const std::exception&)
+            {
+                return cf::make_ready_future(cf::unit{});
+            });
         EXPECT_NO_THROW(future.get());
     }
     {
         auto future = initiate().catch_(
-            exec, [](const std::exception&) { return cf::make_ready_future(cf::unit{}); });
+            exec,
+            [](const std::exception&)
+            {
+                return cf::unit{};
+            });
+        EXPECT_NO_THROW(future.get());
+    }
+    {
+        auto future = initiate().catch_(
+            exec,
+            [](const std::exception&)
+            {
+                return cf::make_ready_future(cf::unit{});
+            });
         EXPECT_NO_THROW(future.get());
     }
 }
 
 TEST(CFuture, WhenAll)
 {
-    cf::future<std::tuple<
-        cf::future<int>, cf::future<int>, cf::future<int>>> fut =
-            cf::when_all(returnAsync(1), returnAsync(2), returnAsync(3));
+    cf::future<std::tuple<cf::future<int>, cf::future<int>, cf::future<int>>> fut =
+        cf::when_all(returnAsync(1), returnAsync(2), returnAsync(3));
 
     auto [fut1, fut2, fut3] = fut.get();
 

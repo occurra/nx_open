@@ -26,9 +26,8 @@ RequestResult toRequestResult(const HealthMonitor::Status& status)
         reply.failed = status.failed;
 
     RequestResult result(status.ok ? StatusCode::ok : StatusCode::serviceUnavailable);
-    result.body = std::make_unique<BufferSource>(
-        "application/json",
-        nx::reflect::json::serialize(reply));
+    result.body =
+        std::make_unique<BufferSource>("application/json", nx::reflect::json::serialize(reply));
 
     return result;
 }

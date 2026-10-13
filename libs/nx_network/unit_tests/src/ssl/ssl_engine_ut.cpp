@@ -9,8 +9,7 @@
 
 namespace nx::network::ssl::test {
 
-class SslEngine:
-    public network::test::StreamSocketAcceptance<SslSocketBothEndsEncryptedTypeSet>
+class SslEngine: public network::test::StreamSocketAcceptance<SslSocketBothEndsEncryptedTypeSet>
 {
     using base_type = network::test::StreamSocketAcceptance<SslSocketBothEndsEncryptedTypeSet>;
 
@@ -22,20 +21,11 @@ protected:
         base_type::SetUp();
     }
 
-    void givenWorkingSslServer()
-    {
-        givenSynchronousPingPongServer();
-    }
+    void givenWorkingSslServer() { givenSynchronousPingPongServer(); }
 
-    void whenReplaceCertificate()
-    {
-        installRandomCertificate();
-    }
+    void whenReplaceCertificate() { installRandomCertificate(); }
 
-    void whenReinstantiateSslServer()
-    {
-        givenSynchronousPingPongServer();
-    }
+    void whenReinstantiateSslServer() { givenSynchronousPingPongServer(); }
 
     void thenSslServerUsesTheNewCertificate()
     {
@@ -65,7 +55,9 @@ private:
     void installRandomCertificate()
     {
         m_certificate = ssl::makeCertificateAndKey(
-            {"nx_network_ut", "US", "Organization"}, "localhost", ++m_serialNumber);
+            {"nx_network_ut", "US", "Organization"},
+            "localhost",
+            ++m_serialNumber);
 
         ssl::Context::instance()->setDefaultCertificate(m_certificate);
     }

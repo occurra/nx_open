@@ -9,8 +9,15 @@ namespace nx::rtp {
 struct NX_RTP_API Result
 {
     Result() = default;
-    Result(bool success) : success(success) {}
-    Result(bool success, QString message) : success(success), message(message) {}
+    Result(bool success):
+        success(success)
+    {
+    }
+    Result(bool success, QString message):
+        success(success),
+        message(message)
+    {
+    }
 
     operator bool() { return success; }
 

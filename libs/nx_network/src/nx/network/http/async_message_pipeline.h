@@ -41,11 +41,10 @@ class NX_NETWORK_API AsyncMessagePipeline:
         nx::network::http::MessageParser,
         nx::network::http::MessageSerializer>
 {
-    using base_type =
-        nx::network::server::StreamProtocolConnection<
-            nx::network::http::Message,
-            nx::network::http::MessageParser,
-            nx::network::http::MessageSerializer>;
+    using base_type = nx::network::server::StreamProtocolConnection<
+        nx::network::http::Message,
+        nx::network::http::MessageParser,
+        nx::network::http::MessageSerializer>;
 
 public:
     using base_type::base_type;

@@ -35,7 +35,7 @@ public:
 
     CharCategoryLookup(const QByteArray& specialSymbols);
 
-    Category operator[] (short index) const;
+    Category operator[](short index) const;
 
 private:
     std::array<Category, 256> m_table;
@@ -47,7 +47,7 @@ public:
     CommonPasswordsDictionary(
         const QString& dictionaryPath = QLatin1String(":/common_passwords.txt"));
 
-    bool operator () (const QString& password) const;
+    bool operator()(const QString& password) const;
 
 private:
     QSet<QString> m_dictionary;
@@ -70,15 +70,15 @@ CharCategoryLookup::CharCategoryLookup(const QByteArray& specialSymbols)
 
     m_table[' '] = Space;
 
-    for (char ch : specialSymbols)
+    for (char ch: specialSymbols)
     {
         m_table[static_cast<unsigned char>(ch)] = Symbol;
     }
 }
 
-CharCategoryLookup::Category CharCategoryLookup::operator[] (short index) const
+CharCategoryLookup::Category CharCategoryLookup::operator[](short index) const
 {
-    return (index >= 0 && (size_t)index < m_table.size()) ? m_table[index] : Invalid;
+    return (index >= 0 && (size_t) index < m_table.size()) ? m_table[index] : Invalid;
 }
 
 CommonPasswordsDictionary::CommonPasswordsDictionary(const QString& dictionaryPath)
@@ -96,7 +96,7 @@ CommonPasswordsDictionary::CommonPasswordsDictionary(const QString& dictionaryPa
         m_dictionary.insert(reader.readLine().trimmed());
 }
 
-bool CommonPasswordsDictionary::operator () (const QString& password) const
+bool CommonPasswordsDictionary::operator()(const QString& password) const
 {
     return m_dictionary.contains(password);
 }

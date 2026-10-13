@@ -98,7 +98,9 @@ NX_UTILS_API std::chrono::milliseconds parseDurationOr(
 namespace detail {
 
 template<typename D>
-struct DurationTraits {};
+struct DurationTraits
+{
+};
 
 template<typename D>
 struct DurationTraitsHelper
@@ -106,23 +108,43 @@ struct DurationTraitsHelper
     using HigherOrderDurationType = D;
 };
 
-template<> struct DurationTraits<std::chrono::nanoseconds>:
-    public DurationTraitsHelper<std::chrono::microseconds> { static constexpr char kSuffix[] = "ns"; };
+template<>
+struct DurationTraits<std::chrono::nanoseconds>:
+    public DurationTraitsHelper<std::chrono::microseconds>
+{
+    static constexpr char kSuffix[] = "ns";
+};
 
-template<> struct DurationTraits<std::chrono::microseconds>:
-    public DurationTraitsHelper<std::chrono::milliseconds> { static constexpr char kSuffix[] = "us"; };
+template<>
+struct DurationTraits<std::chrono::microseconds>:
+    public DurationTraitsHelper<std::chrono::milliseconds>
+{
+    static constexpr char kSuffix[] = "us";
+};
 
-template<> struct DurationTraits<std::chrono::milliseconds>:
-    public DurationTraitsHelper<std::chrono::seconds> { static constexpr char kSuffix[] = "ms"; };
+template<>
+struct DurationTraits<std::chrono::milliseconds>: public DurationTraitsHelper<std::chrono::seconds>
+{
+    static constexpr char kSuffix[] = "ms";
+};
 
-template<> struct DurationTraits<std::chrono::seconds>:
-    public DurationTraitsHelper<std::chrono::minutes> { static constexpr char kSuffix[] = "s"; };
+template<>
+struct DurationTraits<std::chrono::seconds>: public DurationTraitsHelper<std::chrono::minutes>
+{
+    static constexpr char kSuffix[] = "s";
+};
 
-template<> struct DurationTraits<std::chrono::minutes>:
-    public DurationTraitsHelper<std::chrono::hours> { static constexpr char kSuffix[] = "m"; };
+template<>
+struct DurationTraits<std::chrono::minutes>: public DurationTraitsHelper<std::chrono::hours>
+{
+    static constexpr char kSuffix[] = "m";
+};
 
-template<> struct DurationTraits<std::chrono::hours>:
-    public DurationTraitsHelper<void> { static constexpr char kSuffix[] = "h"; };
+template<>
+struct DurationTraits<std::chrono::hours>: public DurationTraitsHelper<void>
+{
+    static constexpr char kSuffix[] = "h";
+};
 
 } // namespace detail
 
@@ -156,8 +178,7 @@ std::string durationToString(const std::chrono::duration<Rep, Period>& d)
  * Rounds timePoint down to DurationTypeToRoundTo type.
  */
 template<typename DurationTypeToRoundTo>
-std::chrono::system_clock::time_point floor(
-    std::chrono::system_clock::time_point timePoint)
+std::chrono::system_clock::time_point floor(std::chrono::system_clock::time_point timePoint)
 {
     using namespace std::chrono;
     return system_clock::time_point(
@@ -175,8 +196,8 @@ enum class ClockType
 };
 
 /**
- * Provides a way to shift the result of utcTime() or monotonicTime() relative to the system values.
- * Test-only!
+ * Provides a way to shift the result of utcTime() or monotonicTime() relative to the system
+ * values. Test-only!
  */
 class ScopedTimeShift
 {
@@ -241,9 +262,7 @@ private:
      * Test-only function!
      * After this call utcTime() will add diff to return value.
      */
-    NX_UTILS_API static void shiftCurrentTime(
-        ClockType clockType,
-        std::chrono::milliseconds diff);
+    NX_UTILS_API static void shiftCurrentTime(ClockType clockType, std::chrono::milliseconds diff);
 };
 
 /**
@@ -258,8 +277,8 @@ struct NX_UTILS_API ScopedUtcTimeFix
 };
 
 /**
- * Provides a way to shift the result of monotonicTime() and make it independent of the system time.
- * Test-only!
+ * Provides a way to shift the result of monotonicTime() and make it independent of the system
+ * time. Test-only!
  */
 class NX_UTILS_API ScopedSyntheticMonotonicTime
 {

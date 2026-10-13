@@ -6,8 +6,7 @@
 
 namespace nx::network::http::test {
 
-class NX_NETWORK_API CustomLengthBody:
-    public BufferSource
+class NX_NETWORK_API CustomLengthBody: public BufferSource
 {
     using base_type = BufferSource;
 

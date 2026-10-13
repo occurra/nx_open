@@ -60,7 +60,10 @@ private:
 
     void parse(char* data, int len);
     void processPart(
-        char* data, int len, int neededLen, ParseState (Parser::*processFunc)(char* data));
+        char* data,
+        int len,
+        int neededLen,
+        ParseState (Parser::*processFunc)(char* data));
     ParseState processPayload(char* data, int len);
     void reset();
     ParseState readHeaderFixed(char* data);

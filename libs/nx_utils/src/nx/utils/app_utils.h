@@ -37,7 +37,7 @@ protected:
     bool m_enabled;
 };
 
-template <typename Object>
+template<typename Object>
 class Option
 {
 public:
@@ -66,7 +66,7 @@ protected:
  * The same as Option<> but each call to the set() method saves options to the container that
  * supports push_back(). That is the Object type must support the push_back() operation.
  */
-template <typename Object>
+template<typename Object>
 class OptionsSet: public Option<Object>
 {
 public:
@@ -102,8 +102,11 @@ public:
 
     explicit Args(int command_count = 0);
 
-    template <typename Option>
-    void add(const OptionCont& cont, Option& opt, const char* comment = 0,
+    template<typename Option>
+    void add(
+        const OptionCont& cont,
+        Option& opt,
+        const char* comment = 0,
         const char* arg_name = 0);
 
     void parse(int argc, const char* const argv[]);
@@ -116,8 +119,7 @@ protected:
     struct ParseState
     {
     public:
-        ParseState(int argcval, const char* const* argvval, const char* argPosval)
-            noexcept;
+        ParseState(int argcval, const char* const* argvval, const char* argPosval) noexcept;
 
         bool nextWord() noexcept;
 
@@ -153,11 +155,13 @@ protected:
 
     bool parseShortOpt(ParseState& parse_state);
 
-    void parseShortOpValue(OptionSetterMap::iterator it, const char* optName,
+    void parseShortOpValue(
+        OptionSetterMap::iterator it,
+        const char* optName,
         ParseState& parse_state);
 
 private:
-    template <typename Option>
+    template<typename Option>
     class OptionSetterImpl: public OptionSetter
     {
     public:
@@ -173,7 +177,10 @@ private:
         Option& m_opt;
     };
 
-    static void appendFlag(const std::string& flag, bool short_opt, std::string& flags,
+    static void appendFlag(
+        const std::string& flag,
+        bool short_opt,
+        std::string& flags,
         std::string& usage);
 
     typedef std::map<std::string, std::string> Usage;
@@ -225,65 +232,69 @@ inline void CheckOption::set(const char* /*optName*/, const char* /*val*/) noexc
 //-------------------------------------------------------------------------------------------------
 // Option class inline methods implementation.
 
-template <typename Object>
+template<typename Object>
 Option<Object>::Option() noexcept:
     m_installed(false)
 {
 }
 
-template <typename Object>
+template<typename Object>
 Option<Object>::Option(const Object& val) noexcept:
-    m_val(val), m_installed(false)
+    m_val(val),
+    m_installed(false)
 {
 }
 
-template <typename Object>
+template<typename Object>
 const Object& Option<Object>::operator*() const noexcept
 {
     return m_val;
 }
 
-template <typename Object>
+template<typename Object>
 const Object* Option<Object>::operator->() const noexcept
 {
     return &m_val;
 }
 
-template <typename Object>
+template<typename Object>
 bool Option<Object>::requireValue() const noexcept
 {
     return true;
 }
 
-template <typename Object>
+template<typename Object>
 bool Option<Object>::installed() const noexcept
 {
     return m_installed;
 }
 
-template <typename Object>
+template<typename Object>
 void Option<Object>::set(const char* /*optName*/, const char* val)
 {
     static const char* const kFunctionName = "AppUtils::String<>::set()";
 
     if (installed())
     {
-        throw std::runtime_error(nx::format("%1: Second time defined value '%2'").arg(
-            kFunctionName).arg(val).toStdString());
+        throw std::runtime_error(
+            nx::format("%1: Second time defined value '%2'")
+                .arg(kFunctionName)
+                .arg(val)
+                .toStdString());
     }
 
     std::istringstream inputStream{std::string(val)};
     inputStream >> m_val;
     if (inputStream.bad() || (inputStream.peek(), !inputStream.eof()))
     {
-        throw std::runtime_error(nx::format("%1: Bad value '%2'").arg(kFunctionName).arg(
-            val).toStdString());
+        throw std::runtime_error(
+            nx::format("%1: Bad value '%2'").arg(kFunctionName).arg(val).toStdString());
     }
 
     m_installed = true;
 }
 
-template <typename Object>
+template<typename Object>
 void Option<Object>::setValue(const Object& val) noexcept
 {
     m_val = val;
@@ -293,18 +304,18 @@ void Option<Object>::setValue(const Object& val) noexcept
 //-------------------------------------------------------------------------------------------------
 // OptionsSet class inline methods implementation.
 
-template <typename Object>
+template<typename Object>
 OptionsSet<Object>::OptionsSet() noexcept
 {
 }
 
-template <typename Object>
+template<typename Object>
 OptionsSet<Object>::OptionsSet(const Object& val) noexcept:
     Option<Object>(val)
 {
 }
 
-template <typename Object>
+template<typename Object>
 void OptionsSet<Object>::set(const char* /*optName*/, const char* val)
 {
     static const char* const kFunctionName = "AppUtils::OptionsSet<>::set()";
@@ -314,8 +325,8 @@ void OptionsSet<Object>::set(const char* /*optName*/, const char* val)
     inputStream >> value;
     if (inputStream.bad() || !inputStream.eof())
     {
-        throw std::runtime_error(nx::format("%1: Bad value '%2'").arg(
-            kFunctionName).arg(val).toStdString());
+        throw std::runtime_error(
+            nx::format("%1: Bad value '%2'").arg(kFunctionName).arg(val).toStdString());
     }
 
     Option<Object>::m_val.push_back(value);
@@ -340,8 +351,11 @@ inline void StringOption::set(const char* /*optName*/, const char* val)
 
     if (installed())
     {
-        throw std::runtime_error(nx::format("%1: Second time defined value '%2'").arg(
-            kFunctionName).arg(val).toStdString());
+        throw std::runtime_error(
+            nx::format("%1: Second time defined value '%2'")
+                .arg(kFunctionName)
+                .arg(val)
+                .toStdString());
     }
 
     m_val = val;
@@ -358,24 +372,24 @@ inline Args::OptionSetter::~OptionSetter() noexcept
 //-------------------------------------------------------------------------------------------------
 // Args::OptionSetterImpl class inline methods implementation.
 
-template <typename Option>
+template<typename Option>
 Args::OptionSetterImpl<Option>::OptionSetterImpl(Option& opt) noexcept:
     m_opt(opt)
 {
 }
 
-template <typename Option>
+template<typename Option>
 Args::OptionSetterImpl<Option>::~OptionSetterImpl() noexcept
 {
 }
 
-template <typename Option>
+template<typename Option>
 void Args::OptionSetterImpl<Option>::set(const char* optName, const char* val)
 {
     m_opt.set(optName, val);
 }
 
-template <typename Option>
+template<typename Option>
 bool Args::OptionSetterImpl<Option>::requireValue() const noexcept
 {
     return m_opt.requireValue();
@@ -394,7 +408,10 @@ inline const Args::CommandList& Args::commands() const noexcept
     return m_commands;
 }
 
-inline void Args::appendFlag(const std::string& flag, bool short_opt, std::string& flags,
+inline void Args::appendFlag(
+    const std::string& flag,
+    bool short_opt,
+    std::string& flags,
     std::string& usage)
 {
     flags.append(flag);
@@ -404,25 +421,26 @@ inline void Args::appendFlag(const std::string& flag, bool short_opt, std::strin
     usage.append(flag);
 }
 
-template <typename Option>
+template<typename Option>
 void Args::add(const OptionCont& cont, Option& opt, const char* comment, const char* arg_name)
 {
     std::string flags, usage;
 
     for (OptionCont::StringList::const_iterator it = cont.shortOptions.begin();
-        it != cont.shortOptions.end(); ++it)
+         it != cont.shortOptions.end();
+         ++it)
     {
-        m_shortOptions.insert(OptionSetterMap::value_type(
-            *it,
-            OptionSetter_var(new OptionSetterImpl<Option>(opt))));
+        m_shortOptions.insert(
+            OptionSetterMap::value_type(*it, OptionSetter_var(new OptionSetterImpl<Option>(opt))));
         appendFlag(*it, true, flags, usage);
     }
 
     for (OptionCont::StringList::const_iterator it = cont.equalOptions.begin();
-         it != cont.equalOptions.end(); ++it)
+         it != cont.equalOptions.end();
+         ++it)
     {
-        m_equalOptions.insert(OptionSetterMap::value_type(*it,
-            OptionSetter_var(new OptionSetterImpl<Option>(opt))));
+        m_equalOptions.insert(
+            OptionSetterMap::value_type(*it, OptionSetter_var(new OptionSetterImpl<Option>(opt))));
         appendFlag(*it, false, flags, usage);
     }
 
@@ -448,4 +466,4 @@ void Args::add(const OptionCont& cont, Option& opt, const char* comment, const c
     m_usage[flags].swap(usage);
 }
 
-} // namespace nx::analytics
+} // namespace nx::analytics::app_utils

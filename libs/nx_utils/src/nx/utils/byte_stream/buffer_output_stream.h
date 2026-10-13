@@ -13,8 +13,7 @@ namespace bstream {
 /**
  * Saves all incoming data to internal buffer.
  */
-class NX_UTILS_API BufferOutputStream:
-    public AbstractByteStreamFilter
+class NX_UTILS_API BufferOutputStream: public AbstractByteStreamFilter
 {
 public:
     BufferOutputStream();

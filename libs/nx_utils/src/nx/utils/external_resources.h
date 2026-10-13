@@ -10,10 +10,12 @@ namespace nx::utils {
 NX_UTILS_API QDir externalResourcesDirectory();
 
 NX_UTILS_API bool registerExternalResource(
-    const QString& filename, const QString& mapRoot = QString());
+    const QString& filename,
+    const QString& mapRoot = QString());
 
 NX_UTILS_API bool unregisterExternalResource(
-    const QString& filename, const QString& mapRoot = QString());
+    const QString& filename,
+    const QString& mapRoot = QString());
 
 /**
  * Registers all files in the given directory.

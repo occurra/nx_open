@@ -27,11 +27,14 @@ struct QtDirectConnectScope
  */
 template<typename Object, typename Signal, typename Handler>
 [[nodiscard]] nx::utils::SharedGuardPtr qtDirectConnect(
-    const Object& object, Signal signal, Handler handler)
+    const Object& object,
+    Signal signal,
+    Handler handler)
 {
     const auto scope = std::make_shared<detail::QtDirectConnectScope>();
     const auto connection = QObject::connect(
-        object, signal,
+        object,
+        signal,
         [scope, handler = std::move(handler)](auto... args) mutable
         {
             NX_MUTEX_LOCKER lock(&scope->mutex);

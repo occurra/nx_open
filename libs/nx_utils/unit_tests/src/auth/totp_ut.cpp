@@ -125,8 +125,7 @@ TEST_F(TotpGenerator, base32Decode)
         {"LBMQ====", "XY"},
         {"MZSXEVDSPFYVA===", "ferTryqP"},
         {"GIZTSOBUGA2UWTY=", "2398405KO"},
-        {"", ""}
-    };
+        {"", ""}};
 
     for (const auto& i: base32Utf8Pairs)
     {

@@ -139,14 +139,14 @@ DBResult InstanceController::configureSqliteInstance(QueryContext* queryContext)
         return e.dbResult();
     }
 
-    //QSqlQuery setLockingModeQuery(*connection);
-    //setLockingModeQuery.prepare("PRAGMA locking_mode = NORMAL");
-    //if (!setLockingModeQuery.exec())
+    // QSqlQuery setLockingModeQuery(*connection);
+    // setLockingModeQuery.prepare("PRAGMA locking_mode = NORMAL");
+    // if (!setLockingModeQuery.exec())
     //{
-    //    NX_WARNING(this, nx::format("sqlite configure. Failed to set locking mode. %1")
-    //        .arg(setLockingModeQuery.lastError().text()));
-    //    return DBResultCode::ioError;
-    //}
+    //     NX_WARNING(this, nx::format("sqlite configure. Failed to set locking mode. %1")
+    //         .arg(setLockingModeQuery.lastError().text()));
+    //     return DBResultCode::ioError;
+    // }
 
     return DBResultCode::ok;
 }

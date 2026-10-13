@@ -13,8 +13,7 @@
 
 namespace nx::network::server {
 
-class NX_NETWORK_API SimpleMessageServerConnection:
-    public network::aio::BasicPollable
+class NX_NETWORK_API SimpleMessageServerConnection: public network::aio::BasicPollable
 {
 public:
     detail::ConnectionStatistics connectionStatistics;
@@ -24,8 +23,7 @@ public:
         nx::Buffer request,
         nx::Buffer response);
 
-    void startReadingConnection(
-        std::optional<std::chrono::milliseconds> /*inactivityTimeout*/);
+    void startReadingConnection(std::optional<std::chrono::milliseconds> /*inactivityTimeout*/);
 
     [[nodiscard]] CloseHandlerSubscription registerCloseHandler(OnConnectionClosedHandler handler)
     {
@@ -48,9 +46,7 @@ private:
     CloseHandlerRegistry m_closeHandlers;
     nx::utils::InterruptionFlag m_connectionFreedFlag;
 
-    void onDataRead(
-        SystemError::ErrorCode errorCode,
-        size_t bytesRead);
+    void onDataRead(SystemError::ErrorCode errorCode, size_t bytesRead);
 
     void scheduleMessageSend();
 
@@ -78,20 +74,11 @@ public:
     {
     }
 
-    void setRequest(nx::Buffer message)
-    {
-        m_request.swap(message);
-    }
+    void setRequest(nx::Buffer message) { m_request.swap(message); }
 
-    void setResponse(nx::Buffer message)
-    {
-        m_response.swap(message);
-    }
+    void setResponse(nx::Buffer message) { m_response.swap(message); }
 
-    void setKeepConnection(bool val)
-    {
-        m_keepConnection = val;
-    }
+    void setKeepConnection(bool val) { m_keepConnection = val; }
 
 protected:
     virtual std::shared_ptr<SimpleMessageServerConnection> createConnection(

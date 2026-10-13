@@ -62,7 +62,7 @@ struct AppendClosure
     template<typename C>
     constexpr std::remove_reference_t<C> operator()(C&& c) &&
         requires(!std::is_lvalue_reference_v<C>)
-        && (nx::ranges::CanAppendOne<std::remove_reference_t<C>, Elements &&> && ...)
+        && (nx::ranges::CanAppendOne<std::remove_reference_t<C>, Elements&&> && ...)
     {
         using R = std::remove_reference_t<C>;
         auto* containerPtr = &c;
@@ -70,8 +70,7 @@ struct AppendClosure
         std::apply(
             [&](auto&&... xs)
             {
-                (nx::appendOne(
-                    containerPtr, std::forward<decltype(xs)>(xs)), ...);
+                (nx::appendOne(containerPtr, std::forward<decltype(xs)>(xs)), ...);
             },
             std::move(elements));
 
@@ -114,7 +113,7 @@ Move/copy explicitly:
 template<typename C, typename... Elements>
 constexpr std::remove_reference_t<C> append(C&& c, Elements&&... xs)
     requires(!std::is_lvalue_reference_v<C>) && (0 != sizeof...(Elements))
-    && (nx::ranges::CanAppendOne<std::remove_reference_t<C>, Elements &&> && ...)
+    && (nx::ranges::CanAppendOne<std::remove_reference_t<C>, Elements&&> && ...)
 {
     (nx::appendOne(&c, std::forward<Elements>(xs)), ...);
     return std::forward<C>(c);

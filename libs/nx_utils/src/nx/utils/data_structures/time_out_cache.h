@@ -12,7 +12,7 @@ namespace nx::utils {
 
 namespace detail {
 
-template <class Value>
+template<class Value>
 struct Item
 {
     Value value;
@@ -38,13 +38,13 @@ struct Item<void>
  * usage or may not.
  * If the user chooses to update element's timestamp on each access, then the expirationPeriod
  * is effectively an element idle timeout.
- * If the user does not choose to update element's timestamp on each access, then the expirationPeriod
- * effectively becomes an element lifetime.
+ * If the user does not choose to update element's timestamp on each access, then the
+ * expirationPeriod effectively becomes an element lifetime.
  */
 template<
-    typename Key, typename Value = void,
-    template<typename...> class Dict = std::unordered_map
->
+    typename Key,
+    typename Value = void,
+    template<typename...> class Dict = std::unordered_map>
 class TimeOutCache
 {
     static constexpr int kMaxExpiredElementsToRemoveAtOnce = 10;
@@ -57,8 +57,7 @@ public:
     TimeOutCache(
         std::chrono::milliseconds expirationPeriod,
         std::size_t maxSize,
-        bool updateElementTimestampOnAccess = true)
-        :
+        bool updateElementTimestampOnAccess = true):
         m_expirationPeriod(expirationPeriod),
         m_lruCache(maxSize),
         m_updateElementTimestampOnAccess(updateElementTimestampOnAccess)
@@ -68,9 +67,10 @@ public:
     /**
      * Updates last access time of the element.
      */
-    template <class V = Value>
+    template<class V = Value>
     std::optional<std::reference_wrapper<V>> getValue(
-        const Key& key, typename std::enable_if_t<!std::is_same_v<V, void>>* = nullptr)
+        const Key& key,
+        typename std::enable_if_t<!std::is_same_v<V, void>>* = nullptr)
     {
         removeExpiredItems();
 
@@ -90,14 +90,15 @@ public:
         return std::reference_wrapper<V>(((Item&) *item).value);
     }
 
-    template <class V = Value>
+    template<class V = Value>
     std::optional<std::reference_wrapper<const V>> peekValue(
-        const Key& key, typename std::enable_if_t<!std::is_same_v<V, void>>* = nullptr) const
+        const Key& key,
+        typename std::enable_if_t<!std::is_same_v<V, void>>* = nullptr) const
     {
         auto item = m_lruCache.peekValue(key);
         if (!item || isExpired(*item))
             return std::nullopt;
-        return std::reference_wrapper<const V>(((const Item&)*item).value);
+        return std::reference_wrapper<const V>(((const Item&) *item).value);
     }
 
     template<class K, class V>
@@ -109,7 +110,6 @@ public:
 
         m_lruCache.put(std::forward<K>(key), std::move(item));
     }
-
 
     template<class K, class V = Value>
     void put(K&& key, typename std::enable_if_t<std::is_same_v<V, void>>* = nullptr)
@@ -140,27 +140,15 @@ public:
         m_lruCache.erase(key);
     }
 
-    void clear() noexcept
-    {
-        m_lruCache.clear();
-    }
+    void clear() noexcept { m_lruCache.clear(); }
 
     // @return a non invasive iterator that does not update the LRU cache.
-    const_iterator begin() const
-    {
-        return m_lruCache.begin();
-    }
+    const_iterator begin() const { return m_lruCache.begin(); }
 
     // @return the end iterator complement to begin().
-    const_iterator end() const
-    {
-        return m_lruCache.end();
-    }
+    const_iterator end() const { return m_lruCache.end(); }
 
-    int size() const
-    {
-        return m_lruCache.size();
-    }
+    int size() const { return m_lruCache.size(); }
 
 private:
     bool isExpired(const Item& item) const
@@ -170,10 +158,9 @@ private:
 
     void removeExpiredItems()
     {
-        for (int i = 0;
-            i < kMaxExpiredElementsToRemoveAtOnce &&
-                !m_lruCache.empty() && isExpired(m_lruCache.peekLru().second);
-            ++i)
+        for (int i = 0; i < kMaxExpiredElementsToRemoveAtOnce && !m_lruCache.empty()
+             && isExpired(m_lruCache.peekLru().second);
+             ++i)
         {
             m_lruCache.erase(m_lruCache.peekLru().first);
         }

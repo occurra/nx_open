@@ -34,7 +34,9 @@ public:
 
     PendingOperation(QObject* parent = nullptr);
     PendingOperation(const Callback& callback, int intervalMs, QObject* parent = nullptr);
-    PendingOperation(const Callback& callback, std::chrono::milliseconds interval,
+    PendingOperation(
+        const Callback& callback,
+        std::chrono::milliseconds interval,
         QObject* parent = nullptr);
 
     void requestOperation();

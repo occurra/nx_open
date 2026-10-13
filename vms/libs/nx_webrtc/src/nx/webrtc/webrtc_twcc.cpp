@@ -42,9 +42,18 @@ void writeUint(uint8_t*& p, uint32_t v, int bytes)
         *p++ = uint8_t(v >> shift);
 }
 
-void writeUint16(uint8_t*& p, uint16_t v) { writeUint(p, v, 2); }
-void writeUint24(uint8_t*& p, uint32_t v) { writeUint(p, v, 3); }
-void writeUint32(uint8_t*& p, uint32_t v) { writeUint(p, v, 4); }
+void writeUint16(uint8_t*& p, uint16_t v)
+{
+    writeUint(p, v, 2);
+}
+void writeUint24(uint8_t*& p, uint32_t v)
+{
+    writeUint(p, v, 3);
+}
+void writeUint32(uint8_t*& p, uint32_t v)
+{
+    writeUint(p, v, 4);
+}
 
 // Treat 16-bit transport seq as monotonically increasing with wraparound when
 // the forward jump is small.
@@ -113,14 +122,19 @@ void TwccFeedbackBuilder::onPacket(uint16_t transportSeq, microseconds arrival)
 }
 
 int TwccFeedbackBuilder::build(
-    uint8_t* dst, int dstSize, uint32_t senderSsrc, uint32_t mediaSourceSsrc)
+    uint8_t* dst,
+    int dstSize,
+    uint32_t senderSsrc,
+    uint32_t mediaSourceSsrc)
 {
     if (m_packets.empty() || dstSize < 20)
         return 0;
 
     // Sort by sequence, accounting for 16-bit wraparound by comparing signed
     // differences (valid because a 100 ms window spans far fewer than 2^15 seqs).
-    std::sort(m_packets.begin(), m_packets.end(),
+    std::sort(
+        m_packets.begin(),
+        m_packets.end(),
         [](const Entry& a, const Entry& b)
         {
             return seqDiff(a.seq, b.seq) < 0;
@@ -153,7 +167,12 @@ int TwccFeedbackBuilder::build(
     int32_t refTime24 = int32_t(refUs / kTwccTimeBaseUs) & 0x00ffffff;
 
     // Build per-packet symbols (00=missing, 01=8-bit delta, 10=16-bit delta).
-    enum Symbol : uint8_t { kMissing = 0, kSmall = 1, kLarge = 2 };
+    enum Symbol : uint8_t
+    {
+        kMissing = 0,
+        kSmall = 1,
+        kLarge = 2
+    };
     std::vector<uint8_t> symbols(statusCount, kMissing);
     std::vector<int16_t> deltas; //< In units of 250 us, one per received packet.
 
@@ -209,16 +228,17 @@ int TwccFeedbackBuilder::build(
     int deltaBytes = 0;
     for (uint8_t s: symbols)
     {
-        if (s == kSmall) deltaBytes += 1;
-        else if (s == kLarge) deltaBytes += 2;
+        if (s == kSmall)
+            deltaBytes += 1;
+        else if (s == kLarge)
+            deltaBytes += 2;
     }
     int rawSize = 20 + int(chunks.size()) * 2 + deltaBytes;
     int padding = (4 - (rawSize % 4)) % 4;
     int totalSize = rawSize + padding;
     if (totalSize > dstSize)
     {
-        NX_VERBOSE(this, "TWCC packet too large for dst buffer (%1 > %2)",
-            totalSize, dstSize);
+        NX_VERBOSE(this, "TWCC packet too large for dst buffer (%1 > %2)", totalSize, dstSize);
         m_packets.clear();
         return 0;
     }
@@ -277,8 +297,7 @@ void TwccController::onRtpPacket(uint16_t transportSeq, microseconds arrival)
     m_twcc.onPacket(transportSeq, arrival);
 }
 
-void TwccController::maybeBuildFeedback(
-    microseconds now, std::vector<nx::Buffer>& out)
+void TwccController::maybeBuildFeedback(microseconds now, std::vector<nx::Buffer>& out)
 {
     if (m_mediaSourceSsrc == 0 || m_senderSsrc == 0)
         return;
@@ -286,9 +305,8 @@ void TwccController::maybeBuildFeedback(
     if (m_twcc.hasPending() && (now - m_lastTwccTime) >= kTwccInterval)
     {
         nx::Buffer buf(1500, 0);
-        int written = m_twcc.build(
-            (uint8_t*) buf.data(), (int) buf.size(),
-            m_senderSsrc, m_mediaSourceSsrc);
+        int written =
+            m_twcc.build((uint8_t*) buf.data(), (int) buf.size(), m_senderSsrc, m_mediaSourceSsrc);
         if (written > 0)
         {
             buf.resize(written);

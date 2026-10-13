@@ -22,7 +22,9 @@ class NX_UTILS_API ScopedLocale final
     friend TranslationManager;
 
 public:
-    ScopedLocale(const PreloadedTranslationReference& translation, std::chrono::milliseconds maxWaitTime);
+    ScopedLocale(
+        const PreloadedTranslationReference& translation,
+        std::chrono::milliseconds maxWaitTime);
     ~ScopedLocale();
 
     ScopedLocale() = default;
@@ -35,7 +37,8 @@ public:
 
     [[nodiscard]]
     static ScopedLocale install(
-        TranslationManager* manager, const std::vector<QString>& preferredLocales);
+        TranslationManager* manager,
+        const std::vector<QString>& preferredLocales);
 
 private:
     PreloadedTranslationReference m_translationRef;

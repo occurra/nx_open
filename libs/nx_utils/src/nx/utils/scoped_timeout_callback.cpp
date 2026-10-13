@@ -6,11 +6,14 @@ namespace nx::utils {
 
 ScopedTimeoutCallback::ScopedTimeoutCallback(
     std::function<void()> onTimeout,
-    std::chrono::milliseconds timeout)
-    :
+    std::chrono::milliseconds timeout):
     m_onTimeout(std::move(onTimeout)),
     m_timeout(timeout),
-    m_thread([this]() { run(); })
+    m_thread(
+        [this]()
+        {
+            run();
+        })
 {
 }
 
@@ -27,7 +30,13 @@ ScopedTimeoutCallback::~ScopedTimeoutCallback()
 void ScopedTimeoutCallback::run()
 {
     std::unique_lock lock(m_mutex);
-    if (!m_cv.wait_for(lock, m_timeout, [this]() { return m_done; }))
+    if (!m_cv.wait_for(
+            lock,
+            m_timeout,
+            [this]()
+            {
+                return m_done;
+            }))
         m_onTimeout();
 }
 

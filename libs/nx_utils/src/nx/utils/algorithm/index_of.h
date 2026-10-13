@@ -9,8 +9,8 @@ namespace utils {
 namespace algorithm {
 
 /** Return index of an element in range. */
-template<class Iterator, class Predicate> inline
-int index_of(Iterator first, Iterator last, Predicate pred)
+template<class Iterator, class Predicate>
+inline int index_of(Iterator first, Iterator last, Predicate pred)
 {
     for (auto iter = first; iter != last; ++iter)
     {
@@ -20,8 +20,8 @@ int index_of(Iterator first, Iterator last, Predicate pred)
     return -1;
 }
 
-template<class Range, class Predicate> inline
-int index_of(Range range, Predicate pred)
+template<class Range, class Predicate>
+inline int index_of(Range range, Predicate pred)
 {
     return index_of(std::begin(range), std::end(range), pred);
 }

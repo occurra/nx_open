@@ -37,7 +37,8 @@ struct IndexedClosure
                     if constexpr (std::ranges::viewable_range<R>)
                         return std::views::all(std::forward<R>(r));
                     else
-                        return std::ranges::owning_view<std::remove_cvref_t<R>>(std::forward<R>(r));
+                        return std::ranges::owning_view<std::remove_cvref_t<R>>(
+                            std::forward<R>(r));
                 }),
             std::views::iota(from));
     }
@@ -90,6 +91,5 @@ constexpr auto indexed(R&& r, Index from = Index{})
 {
     return IndexedClosure<Index>{.from = from}(std::forward<R>(r));
 }
-
 
 } // namespace nx::views

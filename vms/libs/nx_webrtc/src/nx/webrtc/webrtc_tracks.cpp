@@ -4,8 +4,8 @@
 
 #include <core/resource/camera_resource.h>
 #include <nx/sdk/helpers/uuid_helper.h>
-#include <nx/utils/random.h>
 #include <nx/utils/log/log.h>
+#include <nx/utils/random.h>
 
 #include "webrtc_session.h"
 #include "webrtc_twcc.h"
@@ -39,7 +39,9 @@ struct OfferedCodec
 // -- Safari/iOS enforce this strictly, Chrome is lenient -- and a bundled session
 // must not mix AVP and SAVPF across its m-lines.
 std::string makeMediaLines(
-    const std::string& mediaType, uint16_t port, const std::vector<OfferedCodec>& codecs)
+    const std::string& mediaType,
+    uint16_t port,
+    const std::vector<OfferedCodec>& codecs)
 {
     auto mlines = "m=" + mediaType + " " + std::to_string(port) + " UDP/TLS/RTP/SAVPF";
     for (const auto& codec: codecs)
@@ -70,19 +72,19 @@ const std::string& toSdpAttribute(Purpose purpose)
 {
     switch (purpose)
     {
-    case Purpose::send:
-        return kSendOnlyAttr;
-    case Purpose::recv:
-        return kRecvOnlyAttr;
-    case Purpose::sendrecv:
-    default:
-        return kSendRecvAttr;
+        case Purpose::send:
+            return kSendOnlyAttr;
+        case Purpose::recv:
+            return kRecvOnlyAttr;
+        case Purpose::sendrecv:
+        default:
+            return kSendRecvAttr;
     }
 }
 
 Track* Tracks::videoTrack(nx::Uuid deviceId) const
 {
-    for (const auto& [_,track]: m_tracks)
+    for (const auto& [_, track]: m_tracks)
     {
         if (track->deviceId == deviceId && track->trackType == TrackType::video)
             return track.get();
@@ -148,14 +150,15 @@ uint32_t Tracks::updateSsrc(Track* track, std::optional<uint32_t> newSsrc)
     return *newSsrc;
 }
 
-Tracks::Tracks(Session* session)
-    : m_session(session)
+Tracks::Tracks(Session* session):
+    m_session(session)
 {
 }
 
 void Tracks::addTrack(std::unique_ptr<Track> track)
 {
-    do {
+    do
+    {
         track->ssrc = nx::utils::random::number<uint32_t>();
     } while (m_tracks.find(track->ssrc) != m_tracks.end());
     track->purpose = m_session->purpose();
@@ -253,8 +256,8 @@ std::string Tracks::getSdpForTrack(const Track* track, uint16_t /*port*/) const
     }
     // Mux rtcp and rtp stream.
     sdp += "a=rtcp-mux" ENDL;
-    /* 'actpass' due to bug in old Chromium. Actually, for incoming connection, should be 'passive':
-     * https://datatracker.ietf.org/doc/html/rfc4145#section-4 */
+    /* 'actpass' due to bug in old Chromium. Actually, for incoming connection, should be
+     * 'passive': https://datatracker.ietf.org/doc/html/rfc4145#section-4 */
     sdp += "a=setup:actpass" ENDL;
     // 'ssrc' of track used by Chromium's demuxer. Not sure about 'cname'.
     sdp += "a=ssrc:" + std::to_string(track->ssrc) + " cname:" + track->cname + ENDL;
@@ -262,26 +265,28 @@ std::string Tracks::getSdpForTrack(const Track* track, uint16_t /*port*/) const
     sdp += "a=rtcp-fb:" + std::to_string(track->payloadType) + " nack" ENDL;
 
     // Mid in RTP extension is not used now.
-    //sdp += "a=extmap:1 urn:ietf:params:rtp-hdrext:sdes:mid" ENDL;
+    // sdp += "a=extmap:1 urn:ietf:params:rtp-hdrext:sdes:mid" ENDL;
     return sdp;
 }
 
 std::string TracksForSend::getSdpForTrack(const Track* track, uint16_t port) const
 {
     bool isVideo = track->trackType == TrackType::video;
-    auto encoder = isVideo
-        ? m_session->muxer()->videoEncoder(track->deviceId)
-        : m_session->muxer()->audioEncoder(track->deviceId);
+    auto encoder = isVideo ? m_session->muxer()->videoEncoder(track->deviceId)
+                           : m_session->muxer()->audioEncoder(track->deviceId);
 
     if (!encoder)
     {
-        NX_DEBUG(this, "Encoder is not initialized for track %1:%2, type: %3",
-            track->deviceId, track->ssrc, (int)track->trackType);
+        NX_DEBUG(
+            this,
+            "Encoder is not initialized for track %1:%2, type: %3",
+            track->deviceId,
+            track->ssrc,
+            (int) track->trackType);
         return {};
     }
 
-    return encoder->getSdpMedia(
-        isVideo, track->mid, port, /*ssl*/ true).toStdString()
+    return encoder->getSdpMedia(isVideo, track->mid, port, /*ssl*/ true).toStdString()
         + base_type::getSdpForTrack(track, port);
 }
 
@@ -290,7 +295,8 @@ std::string TracksForRecv::getSdpForTrack(const Track* track, uint16_t port) con
     std::string sdp;
     if (track->trackType == TrackType::video)
     {
-        sdp = makeMediaLines("video",
+        sdp = makeMediaLines(
+            "video",
             port,
             {{
                 .payloadType = track->payloadType,
@@ -307,8 +313,8 @@ std::string TracksForRecv::getSdpForTrack(const Track* track, uint16_t port) con
         // back to the publisher so its send-side estimator can raise the send
         // bitrate. Advertising only transport-cc (not goog-remb) makes the
         // publisher select send-side BWE deterministically. See VMS-62147.
-        sdp += "a=rtcp-fb:" + std::to_string(track->payloadType) + " transport-cc\r\n" +
-            "a=extmap:" + std::to_string(kTransportCcExtId) + " " + kTransportCcUri + "\r\n";
+        sdp += "a=rtcp-fb:" + std::to_string(track->payloadType) + " transport-cc\r\n"
+            + "a=extmap:" + std::to_string(kTransportCcExtId) + " " + kTransportCcUri + "\r\n";
     }
     else if (track->trackType == TrackType::audio)
     {
@@ -322,7 +328,8 @@ std::string TracksForRecv::getSdpForTrack(const Track* track, uint16_t port) con
         // examineSdp() rejects the whole session when the publisher answers with no audio, so
         // offering Opus alone would cost such a publisher its video too, not just its audio. Any
         // browser prefers Opus over G.711, so this costs nothing in practice.
-        sdp = makeMediaLines("audio",
+        sdp = makeMediaLines(
+            "audio",
             port,
             {
                 {
@@ -347,11 +354,13 @@ std::string TracksForRecv::getSdpForTrack(const Track* track, uint16_t port) con
     return sdp + base_type::getSdpForTrack(track, port);
 }
 
-TracksForSend::TracksForSend(Session* session) : Tracks(session)
+TracksForSend::TracksForSend(Session* session):
+    Tracks(session)
 {
 }
 
-TracksForRecv::TracksForRecv(Session* session) : Tracks(session)
+TracksForRecv::TracksForRecv(Session* session):
+    Tracks(session)
 {
 }
 

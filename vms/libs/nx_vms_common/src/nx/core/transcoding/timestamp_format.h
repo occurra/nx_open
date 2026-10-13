@@ -23,8 +23,7 @@ constexpr auto nxReflectVisitAllEnumItems(TimestampFormat*, Visitor&& visitor)
         Item{TimestampFormat::longDate, "DefaultLocaleLongDate"},
         Item{TimestampFormat::shortDate, "DefaultLocaleShortDate"},
         Item{TimestampFormat::RFC2822Date, "RFC2822Date"},
-        Item{TimestampFormat::ISODate, "ISODate"}
-    );
+        Item{TimestampFormat::ISODate, "ISODate"});
 }
 
 } // namespace nx::core::transcoding

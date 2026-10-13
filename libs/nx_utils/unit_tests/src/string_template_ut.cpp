@@ -8,7 +8,10 @@ namespace nx::utils::test {
 
 void testUpperTemplate(const QString& template_, const QString& expectedResult)
 {
-    static const auto resolve = [](const auto& n) { return n.toUpper() + "_24h"; };
+    static const auto resolve = [](const auto& n)
+    {
+        return n.toUpper() + "_24h";
+    };
     ASSERT_EQ(expectedResult, stringTemplate(template_, "$", resolve));
 }
 

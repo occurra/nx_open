@@ -9,18 +9,20 @@
 #include <gtest/gtest.h>
 
 #include <nx/prometheus/registry.h>
-#include <nx/utils/random.h>
-#include <nx/utils/time.h>
-
 #include <nx/sql/db_statistics_collector.h>
 #include <nx/sql/detail/query_queue.h>
+#include <nx/utils/random.h>
+#include <nx/utils/time.h>
 
 namespace nx::sql::test {
 
 class DbStatisticsCollector: public ::testing::Test
 {
 public:
-    DbStatisticsCollector(): m_statisticsCollector(m_period, m_queryQueue, &m_threadPoolSize) {}
+    DbStatisticsCollector():
+        m_statisticsCollector(m_period, m_queryQueue, &m_threadPoolSize)
+    {
+    }
 
 protected:
     std::chrono::milliseconds statisticsAggregationPeriod() const { return m_period; }
@@ -45,7 +47,8 @@ protected:
     }
 
     void addRandomRecord(
-        QueryType queryType = QueryType::lookup, std::optional<DBResult> result = DBResultCode::ok)
+        QueryType queryType = QueryType::lookup,
+        std::optional<DBResult> result = DBResultCode::ok)
     {
         using namespace std::chrono;
 
@@ -104,12 +107,14 @@ protected:
 
             if (record.executionDuration)
             {
-                calcTime(&queryStatistics.requestExecutionTimes,
+                calcTime(
+                    &queryStatistics.requestExecutionTimes,
                     *record.executionDuration,
                     &requestExecutionTimeTotal,
                     m_records.size());
             }
-            calcTime(&queryStatistics.waitingForExecutionTimes,
+            calcTime(
+                &queryStatistics.waitingForExecutionTimes,
                 record.waitForExecutionDuration,
                 &executionWaitTimeTotal,
                 m_records.size());
@@ -123,7 +128,8 @@ protected:
         return m_statisticsCollector.getStatistics().totalModificationRequests;
     }
 
-    void assertWaitForExecutionTimeMinMaxAverageEqualTo(std::chrono::milliseconds expectedMin,
+    void assertWaitForExecutionTimeMinMaxAverageEqualTo(
+        std::chrono::milliseconds expectedMin,
         std::chrono::milliseconds expectedMax,
         std::chrono::milliseconds expectedAverage)
     {
@@ -134,11 +140,13 @@ protected:
             expectedAverage);
     }
 
-    void assertExecutionTimeMinMaxAverageEqualTo(std::chrono::milliseconds expectedMin,
+    void assertExecutionTimeMinMaxAverageEqualTo(
+        std::chrono::milliseconds expectedMin,
         std::chrono::milliseconds expectedMax,
         std::chrono::milliseconds expectedAverage)
     {
-        assertTimeMinMaxAverageEqualTo(m_statisticsCollector.getStatistics().requestExecutionTimes,
+        assertTimeMinMaxAverageEqualTo(
+            m_statisticsCollector.getStatistics().requestExecutionTimes,
             expectedMin,
             expectedMax,
             expectedAverage);
@@ -155,7 +163,8 @@ protected:
 
             ASSERT_EQ(expectedStatistics.count, actualStatistics.count);
             assertEqual(
-                expectedStatistics.requestExecutionTimes, actualStatistics.requestExecutionTimes);
+                expectedStatistics.requestExecutionTimes,
+                actualStatistics.requestExecutionTimes);
         }
     }
 
@@ -167,7 +176,8 @@ private:
     nx::utils::test::ScopedTimeShift m_timeShift{nx::utils::test::ClockType::steady};
     std::deque<QueryExecutionTaskRecord> m_records;
 
-    void assertTimeMinMaxAverageEqualTo(DurationStatistics statistics,
+    void assertTimeMinMaxAverageEqualTo(
+        DurationStatistics statistics,
         std::chrono::milliseconds expectedMin,
         std::chrono::milliseconds expectedMax,
         std::chrono::milliseconds expectedAverage)
@@ -177,7 +187,8 @@ private:
         ASSERT_EQ(expectedAverage, statistics.average);
     }
 
-    void calcTime(DurationStatistics* stats,
+    void calcTime(
+        DurationStatistics* stats,
         std::chrono::milliseconds value,
         std::chrono::milliseconds* total,
         std::size_t count)
@@ -220,7 +231,9 @@ TEST_F(DbStatisticsCollector, wait_for_execution_time_min_max_average)
     recordQueryExecutionTaskWithWaitForExecutionTime(two);
 
     assertWaitForExecutionTimeMinMaxAverageEqualTo(
-        std::min(one, two), std::max(one, two), (one + two) / 2);
+        std::min(one, two),
+        std::max(one, two),
+        (one + two) / 2);
 }
 
 TEST_F(DbStatisticsCollector, execution_time_min_max_average)
@@ -232,7 +245,9 @@ TEST_F(DbStatisticsCollector, execution_time_min_max_average)
     recordQueryExecutionTaskWithExecutionTime(two);
 
     assertExecutionTimeMinMaxAverageEqualTo(
-        std::min(one, two), std::max(one, two), (one + two) / 2);
+        std::min(one, two),
+        std::max(one, two),
+        (one + two) / 2);
 }
 
 TEST_F(DbStatisticsCollector, expired_elements_are_removed)
@@ -271,13 +286,13 @@ TEST_F(DbStatisticsCollector, queries_statistics)
 
     QueryStatistics expectedQueryStatistics{
         .count = 2,
-        .requestExecutionTimes = {.min = std::min(one, two),
-            .max = std::max(one, two),
-            .average = (one + two) / 2},
+        .requestExecutionTimes =
+            {.min = std::min(one, two), .max = std::max(one, two), .average = (one + two) / 2},
     };
 
     std::map<std::string, QueryStatistics> expected = {
-        {queryOne, expectedQueryStatistics}, {queryTwo, expectedQueryStatistics}};
+        {queryOne, expectedQueryStatistics},
+        {queryTwo, expectedQueryStatistics}};
 
     assertQueryStatisticsEqual(expected);
 }
@@ -321,9 +336,8 @@ TEST_F(DbStatisticsCollector, queries_partially_expired_values_one)
 
     QueryStatistics expectedQueryStatistics{
         .count = 2,
-        .requestExecutionTimes = {.min = std::min(one, two),
-            .max = std::max(one, two),
-            .average = (one + two) / 2},
+        .requestExecutionTimes =
+            {.min = std::min(one, two), .max = std::max(one, two), .average = (one + two) / 2},
     };
 
     assertQueryStatisticsEqual({{queryTwo, expectedQueryStatistics}});
@@ -377,7 +391,8 @@ constexpr char kThreadPoolSize[] = "nx_sql_thread_pool_size";
  * fragment, or nullopt if no such sample was exposed. Matching by fragment keeps the tests
  * independent of the order the serializer prints labels in.
  */
-std::optional<double> sampleValue(const std::string& serialized,
+std::optional<double> sampleValue(
+    const std::string& serialized,
     const std::string& name,
     const std::vector<std::string>& labels = {})
 {
@@ -391,9 +406,13 @@ std::optional<double> sampleValue(const std::string& serialized,
         if (afterName != '{' && afterName != ' ')
             continue;
 
-        if (std::any_of(labels.begin(),
+        if (std::any_of(
+                labels.begin(),
                 labels.end(),
-                [&line](const auto& label) { return line.find(label) == std::string::npos; }))
+                [&line](const auto& label)
+                {
+                    return line.find(label) == std::string::npos;
+                }))
         {
             continue;
         }
@@ -430,13 +449,15 @@ class DbStatisticsCollectorMetrics: public ::testing::Test
 protected:
     static constexpr std::chrono::milliseconds kPeriod = std::chrono::milliseconds(100);
 
-    void recordTask(QueryType queryType,
+    void recordTask(
+        QueryType queryType,
         std::optional<DBResult> result,
         std::chrono::milliseconds waitForExecution = std::chrono::milliseconds::zero(),
         std::optional<std::chrono::milliseconds> execution = std::nullopt)
     {
         m_statisticsCollector.recordQueryExecutionTask(
-            QueryExecutionTaskRecord{.queryType = queryType,
+            QueryExecutionTaskRecord{
+                .queryType = queryType,
                 .result = result,
                 .waitForExecutionDuration = waitForExecution,
                 .executionDuration = execution});
@@ -446,7 +467,10 @@ protected:
     detail::QueryQueue m_queryQueue;
     std::atomic<std::size_t> m_threadPoolSize{0};
     StatisticsCollector m_statisticsCollector{
-        kPeriod, m_queryQueue, &m_threadPoolSize, &m_registry};
+        kPeriod,
+        m_queryQueue,
+        &m_threadPoolSize,
+        &m_registry};
 };
 
 TEST_F(DbStatisticsCollectorMetrics, no_registry_means_no_series)
@@ -456,10 +480,12 @@ TEST_F(DbStatisticsCollectorMetrics, no_registry_means_no_series)
     std::atomic<std::size_t> threadPoolSize{0};
     StatisticsCollector collector(kPeriod, queryQueue, &threadPoolSize);
 
-    collector.recordQueryExecutionTask(QueryExecutionTaskRecord{.queryType = QueryType::lookup,
-        .result = DBResultCode::ok,
-        .waitForExecutionDuration = std::chrono::milliseconds(1),
-        .executionDuration = std::chrono::milliseconds(2)});
+    collector.recordQueryExecutionTask(
+        QueryExecutionTaskRecord{
+            .queryType = QueryType::lookup,
+            .result = DBResultCode::ok,
+            .waitForExecutionDuration = std::chrono::milliseconds(1),
+            .executionDuration = std::chrono::milliseconds(2)});
 
     EXPECT_EQ(registry.serialize().find("nx_sql_"), std::string::npos);
     EXPECT_EQ(collector.getStatistics().requestsSucceeded, 1);
@@ -474,13 +500,16 @@ TEST_F(DbStatisticsCollectorMetrics, task_counter_is_labelled_by_query_type_and_
 
     const std::string serialized = m_registry.serialize();
     EXPECT_EQ(
-        sampleValue(serialized, kQueryTasks, {"query_type=\"lookup\"", "outcome=\"ok\""}), 2.0);
+        sampleValue(serialized, kQueryTasks, {"query_type=\"lookup\"", "outcome=\"ok\""}),
+        2.0);
     EXPECT_EQ(
         sampleValue(serialized, kQueryTasks, {"query_type=\"lookup\"", "outcome=\"failed\""}),
         1.0);
     EXPECT_EQ(
         sampleValue(
-            serialized, kQueryTasks, {"query_type=\"modification\"", "outcome=\"cancelled\""}),
+            serialized,
+            kQueryTasks,
+            {"query_type=\"modification\"", "outcome=\"cancelled\""}),
         1.0);
     // Pre-resolved in the constructor, so an outcome that never happened reads as zero.
     EXPECT_EQ(
@@ -490,7 +519,8 @@ TEST_F(DbStatisticsCollectorMetrics, task_counter_is_labelled_by_query_type_and_
 
 TEST_F(DbStatisticsCollectorMetrics, durations_are_observed_in_seconds)
 {
-    recordTask(QueryType::modification,
+    recordTask(
+        QueryType::modification,
         DBResultCode::ok,
         std::chrono::milliseconds(20),
         std::chrono::milliseconds(10));

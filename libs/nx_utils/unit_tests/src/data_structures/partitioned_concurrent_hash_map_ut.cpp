@@ -8,8 +8,7 @@ namespace nx::utils::test {
 
 TEST(PartitionedConcurrentHashMap, main)
 {
-    std::vector<std::pair<int, std::string>> vals{
-        {1, {"1"}}, {2, {"2"}}, {3, {"3"}}};
+    std::vector<std::pair<int, std::string>> vals{{1, {"1"}}, {2, {"2"}}, {3, {"3"}}};
 
     PartitionedConcurrentHashMap<int, std::string> dict;
     ASSERT_TRUE(dict.empty());
@@ -45,10 +44,20 @@ TEST(PartitionedConcurrentHashMap, modify)
     PartitionedConcurrentHashMap<int, std::string> dict;
     dict.emplace(1, "1");
 
-    dict.modify(1, [](auto& val) { val = "11"; });
+    dict.modify(
+        1,
+        [](auto& val)
+        {
+            val = "11";
+        });
     ASSERT_EQ("11", *dict.find(1));
 
-    dict.modify(2, [](auto& val) { val = "22"; });
+    dict.modify(
+        2,
+        [](auto& val)
+        {
+            val = "22";
+        });
     ASSERT_EQ("22", *dict.find(2));
 }
 

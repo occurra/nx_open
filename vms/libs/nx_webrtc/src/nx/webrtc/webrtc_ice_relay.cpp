@@ -20,8 +20,7 @@ IceRelay::IceRelay(
     SessionPool* sessionPool,
     const SessionConfig& config,
     const std::string& sessionId,
-    const CandidateHandler& handler)
-    :
+    const CandidateHandler& handler):
     Ice(sessionPool, config),
     m_sessionId(sessionId),
     m_onCandidateReadyHandler(handler)
@@ -114,7 +113,8 @@ void IceRelay::setOauthInfo(const OauthInfo& oauth)
 
 void IceRelay::bindToRelay()
 {
-    stun::Message request(stun::Header(stun::MessageClass::request, stun::MethodType::bindingMethod));
+    stun::Message request(
+        stun::Header(stun::MessageClass::request, stun::MethodType::bindingMethod));
 
     stun::MessageSerializer stunSerializer;
     stunSerializer.setAlwaysAddFingerprint(false);
@@ -140,7 +140,8 @@ nx::Buffer IceRelay::toSendBuffer(const char* data, int dataSize) const
     }
 
     NX_CRITICAL(m_remoteSrflx);
-    stun::Message response(stun::Header(stun::MessageClass::indication, stun::MethodType::sendMethod));
+    stun::Message response(
+        stun::Header(stun::MessageClass::indication, stun::MethodType::sendMethod));
     // m_peerAddress and m_remoteSrflx::address should match, but sometimes they don't.
     // Probably the reason is that external port of sender is unexpectedly changed.
     if (m_peerAddress)
@@ -170,7 +171,7 @@ void IceRelay::fillAuthorizationAndIntegrity(stun::Message& message)
             NX_CRITICAL(m_oauthInfo);
             message.newAttribute<stun::attrs::Realm>(m_realm);
             message.newAttribute<stun::attrs::Nonce>(m_nonce);
-//            message.newAttribute<stun::attrs::Lifetime>(m_oauthInfo->lifetime);
+            //            message.newAttribute<stun::attrs::Lifetime>(m_oauthInfo->lifetime);
             message.newAttribute<stun::attrs::AccessToken>(m_oauthInfo->accessToken);
             // Use first 16 bytes of key, see https://github.com/coturn/coturn/issues/189.
             message.insertIntegrity(
@@ -211,17 +212,13 @@ void IceRelay::sendRefresh()
 void IceRelay::scheduleRefresh()
 {
     auto refreshLifetime = std::chrono::seconds(std::max(m_refreshLifetimeSeconds - 5, 5));
-    NX_VERBOSE(this, "TURN schedule refresh (lifetime=%1) for %2",
-        refreshLifetime, m_sessionId);
+    NX_VERBOSE(this, "TURN schedule refresh (lifetime=%1) for %2", refreshLifetime, m_sessionId);
 
     m_refreshTimer.start(
         refreshLifetime,
         [this]()
         {
-            NX_VERBOSE(
-                this,
-                "Renew allocation for %1",
-                m_sessionId);
+            NX_VERBOSE(this, "Renew allocation for %1", m_sessionId);
             sendRefresh();
         });
 }
@@ -231,8 +228,12 @@ bool IceRelay::handleRefresh(const stun::Message& message)
     if (message.header.method != stun::MethodType::refreshMethod
         || message.header.messageClass != stun::MessageClass::successResponse)
     {
-        NX_WARNING(this, "TURN unexpected message for Refresh stage: %1/%2 for %3",
-            message.header.messageClass, message.header.method, m_sessionId);
+        NX_WARNING(
+            this,
+            "TURN unexpected message for Refresh stage: %1/%2 for %3",
+            message.header.messageClass,
+            message.header.method,
+            m_sessionId);
         return false;
     }
     stun::MessageSerializer stunSerializer;
@@ -252,14 +253,19 @@ bool IceRelay::handleBinding(const stun::Message& message)
     if (message.header.messageClass != stun::MessageClass::successResponse
         || message.header.method != stun::MethodType::bindingMethod)
     {
-        NX_WARNING(this, "TURN unexpected message for Binding stage: %1/%2 for %3",
-            message.header.messageClass, message.header.method, m_sessionId);
+        NX_WARNING(
+            this,
+            "TURN unexpected message for Binding stage: %1/%2 for %3",
+            message.header.messageClass,
+            message.header.method,
+            m_sessionId);
         return false;
     }
     stun::MessageSerializer stunSerializer;
     stunSerializer.setAlwaysAddFingerprint(false);
 
-    stun::Message request(stun::Header(stun::MessageClass::request, stun::MethodType::allocateMethod));
+    stun::Message request(
+        stun::Header(stun::MessageClass::request, stun::MethodType::allocateMethod));
     request.newAttribute<stun::attrs::RequestedTransport>();
 
     nx::Buffer sendBuffer = stunSerializer.serialized(request);
@@ -286,13 +292,9 @@ bool IceRelay::handleLongTermAuthorization(const stun::Message& message)
     if (m_turnServer.longTermAuth)
     {
         m_password = nx::utils::md5(
-            QByteArray::fromStdString(
-                m_turnServer.user +
-                ":" +
-                m_realm +
-                ":" +
-                m_turnServer.password))
-            .toStdString();
+                         QByteArray::fromStdString(
+                             m_turnServer.user + ":" + m_realm + ":" + m_turnServer.password))
+                         .toStdString();
     }
     else
     {
@@ -318,13 +320,15 @@ bool IceRelay::handleThirdPartyAuthorization(const stun::Message& message)
     m_turnAuth = AuthorizationType::Oauth;
     if (!m_oauthInfo)
     {
-        auto thirdPartyAuthorization = message.getAttribute<stun::attrs::ThirdPartyAuthorization>();
+        auto thirdPartyAuthorization =
+            message.getAttribute<stun::attrs::ThirdPartyAuthorization>();
         NX_CRITICAL(thirdPartyAuthorization);
 
         m_sessionPool->turnInfoFetcher().fetchThirdPartyAuthorization(
             m_sessionId,
             thirdPartyAuthorization->getString(),
-            [this](const OauthInfo& info) {
+            [this](const OauthInfo& info)
+            {
                 setOauthInfo(info);
             });
         return false;
@@ -337,7 +341,8 @@ void IceRelay::sendAllocate()
     stun::MessageSerializer stunSerializer;
     stunSerializer.setAlwaysAddFingerprint(false);
 
-    stun::Message request(stun::Header(stun::MessageClass::request, stun::MethodType::allocateMethod));
+    stun::Message request(
+        stun::Header(stun::MessageClass::request, stun::MethodType::allocateMethod));
     request.newAttribute<stun::attrs::RequestedTransport>();
     fillAuthorizationAndIntegrity(request);
 
@@ -349,8 +354,12 @@ bool IceRelay::handleAllocateNoAuth(const stun::Message& message)
 {
     if (message.header.method != stun::MethodType::allocateMethod)
     {
-        NX_WARNING(this, "TURN unexpected message for AllocateNoAuth stage: %1/%2 for %3",
-            message.header.messageClass, message.header.method, m_sessionId);
+        NX_WARNING(
+            this,
+            "TURN unexpected message for AllocateNoAuth stage: %1/%2 for %3",
+            message.header.messageClass,
+            message.header.method,
+            m_sessionId);
         return false;
     }
 
@@ -358,11 +367,12 @@ bool IceRelay::handleAllocateNoAuth(const stun::Message& message)
 
     if (message.header.messageClass == stun::MessageClass::errorResponse)
     {
-        auto thirdPartyAuthorization = message.getAttribute<stun::attrs::ThirdPartyAuthorization>();
+        auto thirdPartyAuthorization =
+            message.getAttribute<stun::attrs::ThirdPartyAuthorization>();
 
         // Once fill authorization info.
-        if ((thirdPartyAuthorization && !handleThirdPartyAuthorization(message)) ||
-            (!thirdPartyAuthorization && !handleLongTermAuthorization(message)))
+        if ((thirdPartyAuthorization && !handleThirdPartyAuthorization(message))
+            || (!thirdPartyAuthorization && !handleLongTermAuthorization(message)))
             return true;
 
         sendAllocate();
@@ -379,8 +389,12 @@ bool IceRelay::handleAllocate(const stun::Message& message)
     if (message.header.method != stun::MethodType::allocateMethod
         || message.header.messageClass != stun::MessageClass::successResponse)
     {
-        NX_WARNING(this, "TURN unexpected message for Allocate stage: %1/%2 for %3",
-            message.header.messageClass, message.header.method, m_sessionId);
+        NX_WARNING(
+            this,
+            "TURN unexpected message for Allocate stage: %1/%2 for %3",
+            message.header.messageClass,
+            message.header.method,
+            m_sessionId);
         return false;
     }
     stun::MessageSerializer stunSerializer;
@@ -402,8 +416,7 @@ bool IceRelay::handleAllocate(const stun::Message& message)
         .protocol = IceCandidate::Protocol::UDP,
         .address = xorRelayedAddress->addr(),
         .type = IceCandidate::Type::Relay,
-        .relatedAddress = xorMappedAddress->addr()
-    };
+        .relatedAddress = xorMappedAddress->addr()};
 
     m_relayStage = RelayStage::CreatePermission;
     if (!m_remoteSrflx)
@@ -423,36 +436,49 @@ bool IceRelay::handleCreatePermission(const stun::Message& message)
 {
     if (!m_remoteSrflx)
     {
-        NX_WARNING(this, "TURN unexpected message while waiting for remote srflx: %1/%2 for %3",
-            message.header.messageClass, message.header.method, m_sessionId);
+        NX_WARNING(
+            this,
+            "TURN unexpected message while waiting for remote srflx: %1/%2 for %3",
+            message.header.messageClass,
+            message.header.method,
+            m_sessionId);
         return false;
     }
 
     if (message.header.method != stun::MethodType::createPermissionMethod
         || message.header.messageClass != stun::MessageClass::successResponse)
     {
-        NX_WARNING(this, "TURN unexpected message for CreatePermission stage: %1/%2 for %3",
-            message.header.messageClass, message.header.method, m_sessionId);
+        NX_WARNING(
+            this,
+            "TURN unexpected message for CreatePermission stage: %1/%2 for %3",
+            message.header.messageClass,
+            message.header.method,
+            m_sessionId);
         return false;
     }
     if (m_relayStage != RelayStage::Indication)
     {
-        NX_DEBUG(this, "Got ice candidate from manager: %1 -> %2", m_sessionId, m_localRelay->serialize());
+        NX_DEBUG(
+            this,
+            "Got ice candidate from manager: %1 -> %2",
+            m_sessionId,
+            m_localRelay->serialize());
         m_onCandidateReadyHandler(*m_localRelay);
-        m_relayStage = RelayStage::Indication; //< Ready to send and receive packets to/from remote peer.
+        m_relayStage =
+            RelayStage::Indication; //< Ready to send and receive packets to/from remote peer.
     }
 
-    NX_VERBOSE(this, "TURN schedule renew permissions (lifetime=%1) for %2",
-        kPermissionsLifetime, m_sessionId);
+    NX_VERBOSE(
+        this,
+        "TURN schedule renew permissions (lifetime=%1) for %2",
+        kPermissionsLifetime,
+        m_sessionId);
 
     m_createPermissionTimer.start(
         kPermissionsLifetime,
         [this]()
         {
-            NX_VERBOSE(
-                this,
-                "Renew permissions for %1",
-                m_sessionId);
+            NX_VERBOSE(this, "Renew permissions for %1", m_sessionId);
             createPermission();
         });
 
@@ -474,8 +500,12 @@ bool IceRelay::handleIndication(const stun::Message& message)
     if (message.header.messageClass != stun::MessageClass::indication
         || message.header.method != stun::MethodType::dataMethod)
     {
-        NX_DEBUG(this, "TURN unexpected message in Indication stage: %1/%2 for %3",
-            message.header.messageClass, message.header.method, m_sessionId);
+        NX_DEBUG(
+            this,
+            "TURN unexpected message in Indication stage: %1/%2 for %3",
+            message.header.messageClass,
+            message.header.method,
+            m_sessionId);
         return true; //< Not a fatal error.
     }
     if (auto peerAddress = message.getAttribute<stun::attrs::XorPeerAddress>())
@@ -540,7 +570,11 @@ bool IceRelay::processRelayPackets()
             }
             default:
             {
-                NX_ASSERT(false, "Unexpected state: %1 for %2", static_cast<int>(m_relayStage), m_sessionId);
+                NX_ASSERT(
+                    false,
+                    "Unexpected state: %1 for %2",
+                    static_cast<int>(m_relayStage),
+                    m_sessionId);
                 return false;
             }
         }

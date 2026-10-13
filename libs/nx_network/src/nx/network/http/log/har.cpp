@@ -4,8 +4,6 @@
 
 #include <chrono>
 
-#include <cpptrace/cpptrace.hpp>
-
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDateTime>
 #include <QtCore/QDir>
@@ -13,6 +11,7 @@
 #include <QtCore/QJsonDocument>
 #include <QtCore/QString>
 
+#include <cpptrace/cpptrace.hpp>
 #include <nx/kit/ini_config.h>
 #include <nx/utils/log/log.h>
 #include <nx/utils/thread/mutex.h>
@@ -35,12 +34,10 @@ QVariantList getFrameList(const cpptrace::raw_trace& rawTrace)
         frameInfo["_address"] = QString("0x%1").arg((quintptr) (frame.raw_address), 0, 16);
         frameInfo["functionName"] = QString::fromStdString(frame.symbol);
         frameInfo["url"] = "file://" + QString::fromStdString(frame.filename);
-        frameInfo["lineNumber"] = frame.line.has_value()
-            ? static_cast<int>(frame.line.value())
-            : -1;
-        frameInfo["columnNumber"] = frame.column.has_value()
-            ? static_cast<int>(frame.column.value())
-            : -1;
+        frameInfo["lineNumber"] =
+            frame.line.has_value() ? static_cast<int>(frame.line.value()) : -1;
+        frameInfo["columnNumber"] =
+            frame.column.has_value() ? static_cast<int>(frame.column.value()) : -1;
         stacktraceList.append(frameInfo);
     }
 
@@ -105,9 +102,7 @@ public:
         m_requestHeaders = headers;
     }
 
-    void setResponseHeaders(
-        const StatusLine& statusLine,
-        const HttpHeaders& headers) override
+    void setResponseHeaders(const StatusLine& statusLine, const HttpHeaders& headers) override
     {
         m_statusLine = statusLine;
         m_responseHeaders = headers;
@@ -115,15 +110,9 @@ public:
         m_responseReceivedTime = steady_clock::now();
     }
 
-    void setError(const std::string& text) override
-    {
-        m_errorText = text;
-    }
+    void setError(const std::string& text) override { m_errorText = text; }
 
-    void setRequestBody(const nx::Buffer& body) override
-    {
-        m_requestBody = body;
-    }
+    void setRequestBody(const nx::Buffer& body) override { m_requestBody = body; }
 
     void setResponseBody(const nx::Buffer& body) override
     {
@@ -131,20 +120,11 @@ public:
         m_endTime = steady_clock::now();
     }
 
-    void markConnectStart() override
-    {
-        m_connectStartTime = steady_clock::now();
-    }
+    void markConnectStart() override { m_connectStartTime = steady_clock::now(); }
 
-    void markConnectDone() override
-    {
-        m_connectDoneTime = steady_clock::now();
-    }
+    void markConnectDone() override { m_connectDoneTime = steady_clock::now(); }
 
-    void markRequestSent() override
-    {
-        m_requestSentTime = steady_clock::now();
-    }
+    void markRequestSent() override { m_requestSentTime = steady_clock::now(); }
 
     int getBlockedTime() const
     {
@@ -197,10 +177,7 @@ public:
         return duration_cast<milliseconds>(m_endTime - m_startTime).count();
     }
 
-    bool hasAnyResponse() const
-    {
-        return m_statusLine.statusCode != 0 || !m_errorText.empty();
-    }
+    bool hasAnyResponse() const { return m_statusLine.statusCode != 0 || !m_errorText.empty(); }
 
     void write();
 
@@ -232,7 +209,8 @@ public:
     std::string m_errorText;
 };
 
-Har::Har(): d(new Private())
+Har::Har():
+    d(new Private())
 {
 }
 
@@ -276,20 +254,14 @@ void Har::setFileName(const QString& fileName)
 
     QVariantMap creatorInfo = {
         {"name", qApp->applicationName()},
-        {"version", qApp->applicationVersion()}
-    };
+        {"version", qApp->applicationVersion()}};
 
-    QVariantList pagesInfo = {
-        QVariantMap{
-            {"startedDateTime", currentDateTimeAsString()},
-            {"id", "page_0"},
-            {"pageTimings", QVariantMap{
-                {"onContentLoad", -1},
-                {"onLoad", -1}
-            }},
-            {"title", qApp->applicationName()},
-        }
-    };
+    QVariantList pagesInfo = {QVariantMap{
+        {"startedDateTime", currentDateTimeAsString()},
+        {"id", "page_0"},
+        {"pageTimings", QVariantMap{{"onContentLoad", -1}, {"onLoad", -1}}},
+        {"title", qApp->applicationName()},
+    }};
 
     d->harFile.write("{"); // Start the HAR JSON object.
     d->harFile.write(R"json(
@@ -346,10 +318,10 @@ void EntryImpl::write()
     QVariantList requestHeaders;
     for (const auto& header: m_requestHeaders)
     {
-        requestHeaders.append(QVariantMap{
-            {"name", QString::fromStdString(header.first)},
-            {"value", QString::fromStdString(header.second)}
-        });
+        requestHeaders.append(
+            QVariantMap{
+                {"name", QString::fromStdString(header.first)},
+                {"value", QString::fromStdString(header.second)}});
     }
 
     entryInfo["startedDateTime"] = currentDateTimeAsString();
@@ -370,8 +342,7 @@ void EntryImpl::write()
         {"queryString", QVariantList{}},
         {"cookies", QVariantList{}},
         {"headersSize", -1},
-        {"bodySize", 0}
-    };
+        {"bodySize", 0}};
 
     if ((m_method == nx::network::http::Method::post || m_method == nx::network::http::Method::put)
         && !m_requestBody.empty())
@@ -384,8 +355,7 @@ void EntryImpl::write()
             requestInfo["bodySize"] = QVariant((int) m_requestBody.size());
             requestInfo["postData"] = QVariantMap{
                 {"mimeType", "application/json"}, // Placeholder for content type.
-                {"text", QString::fromUtf8(m_requestBody)}
-            };
+                {"text", QString::fromUtf8(m_requestBody)}};
         }
     }
 
@@ -398,18 +368,17 @@ void EntryImpl::write()
         {"send", getSendTime()},
         {"wait", getWaitTime()},
         {"receive", getReceiveTime()},
-        {"ssl", -1}
-    };
+        {"ssl", -1}};
 
     if (m_statusLine.statusCode != 0)
     {
         QVariantList responseHeaders;
         for (const auto& header: m_responseHeaders)
         {
-            responseHeaders.append(QVariantMap{
-                {"name", QString::fromStdString(header.first)},
-                {"value", QString::fromStdString(header.second)}
-            });
+            responseHeaders.append(
+                QVariantMap{
+                    {"name", QString::fromStdString(header.first)},
+                    {"value", QString::fromStdString(header.second)}});
         }
 
         QVariantMap responseInfo = {
@@ -418,31 +387,24 @@ void EntryImpl::write()
             {"httpVersion", "HTTP/1.1"},
             {"headers", responseHeaders},
             {"cookies", QVariantList{}},
-            {"content", QVariantMap{
-                {"size", 0},
-                {"mimeType", "application/json"},
-                {"text", ""}
-            }},
+            {"content", QVariantMap{{"size", 0}, {"mimeType", "application/json"}, {"text", ""}}},
             {"redirectURL", ""},
             {"headersSize", -1},
             {"bodySize", 0},
-            {"_error", QString::fromStdString(m_errorText)}
-        };
+            {"_error", QString::fromStdString(m_errorText)}};
 
         if (!m_responseBody.empty())
         {
             if (const auto it = m_responseHeaders.find("Content-Type");
                 it != m_responseHeaders.end())
             {
-                if (it->second == "application/json"
-                    || it->second.starts_with("application/xml")
+                if (it->second == "application/json" || it->second.starts_with("application/xml")
                     || it->second.starts_with("text/"))
                 {
                     responseInfo["content"] = QVariantMap{
                         {"size", (int) m_responseBody.size()},
                         {"mimeType", QString::fromStdString(it->second)},
-                        {"text", QString::fromUtf8(m_responseBody)}
-                    };
+                        {"text", QString::fromUtf8(m_responseBody)}};
                 }
                 else if (it->second.starts_with("image/"))
                 {
@@ -450,8 +412,7 @@ void EntryImpl::write()
                         {"size", (int) m_responseBody.size()},
                         {"mimeType", QString::fromStdString(it->second)},
                         {"text", m_responseBody.toBase64().c_str()},
-                        {"encoding", "base64"}
-                    };
+                        {"encoding", "base64"}};
                 }
             }
         }
@@ -466,25 +427,25 @@ void EntryImpl::write()
             {"httpVersion", ""},
             {"headers", QVariantList{}},
             {"cookies", QVariantList{}},
-            {"content", QVariantMap{
-                {"size", 0},
-                {"mimeType", "x-unknown"},
-            }},
+            {"content",
+             QVariantMap{
+                 {"size", 0},
+                 {"mimeType", "x-unknown"},
+             }},
             {"redirectURL", ""},
             {"headersSize", -1},
             {"bodySize", 0},
-            {"_error", QString::fromStdString(m_errorText)}
-        };
+            {"_error", QString::fromStdString(m_errorText)}};
     }
 
     if (!m_stackTrace.empty())
     {
         entryInfo["_initiator"] = QVariantMap{
             {"type", "script"},
-            {"stack", QVariantMap{
-                {"callFrames", getFrameList(m_stackTrace)},
-            }}
-        };
+            {"stack",
+             QVariantMap{
+                 {"callFrames", getFrameList(m_stackTrace)},
+             }}};
     }
 
     d->harFile.write(QJsonDocument::fromVariant(entryInfo).toJson(QJsonDocument::Indented));

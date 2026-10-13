@@ -35,15 +35,9 @@ private:
         time_point timePoint;
         Value value;
 
-        bool operator>(const ValueCompContext& other) const
-        {
-            return value > other.value;
-        }
+        bool operator>(const ValueCompContext& other) const { return value > other.value; }
 
-        bool operator<(const ValueCompContext& other) const
-        {
-            return value < other.value;
-        }
+        bool operator<(const ValueCompContext& other) const { return value < other.value; }
     };
 
     const std::chrono::milliseconds m_period;
@@ -67,7 +61,6 @@ void Extreme<Value, Comp>::add(const Value& value)
 template<typename Value, template<typename> typename Comp>
 void Extreme<Value, Comp>::reset()
 {
-
 }
 
 template<typename Value, template<typename> typename Comp>
@@ -90,20 +83,18 @@ template<typename Value>
 class MaxPerPeriod: public detail::Extreme<Value, std::greater>
 {
     using base_type = detail::Extreme<Value, std::greater>;
+
 public:
     using base_type::base_type;
 
-    Value getMaxPerLastPeriod() const
-    {
-        return this->getExtremePerLastPeriod();
-    }
+    Value getMaxPerLastPeriod() const { return this->getExtremePerLastPeriod(); }
 };
-
 
 template<typename Value>
 class MaxPerMinute: public MaxPerPeriod<Value>
 {
     using base_type = MaxPerPeriod<Value>;
+
 public:
     MaxPerMinute():
         base_type(std::chrono::minutes(1))
@@ -111,33 +102,29 @@ public:
     }
 };
 
-
 //-------------------------------------------------------------------------------------------------
-
 
 template<typename Value>
 class MinPerPeriod: public detail::Extreme<Value, std::less>
 {
     using base_type = detail::Extreme<Value, std::less>;
+
 public:
     using base_type::base_type;
 
-    Value getMinPerLastPeriod() const
-    {
-        return this->getExtremePerLastPeriod();
-    }
+    Value getMinPerLastPeriod() const { return this->getExtremePerLastPeriod(); }
 };
 
 template<typename Value>
 class MinPerMinute: public MaxPerPeriod<Value>
 {
     using base_type = MinPerPeriod<Value>;
+
 public:
     MinPerMinute():
         base_type(std::chrono::minutes(1))
     {
     }
 };
-
 
 } // namespace nx::utils::math

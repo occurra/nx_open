@@ -14,8 +14,10 @@ extern "C" {
 }
 
 namespace nx::media::ffmpeg {
+
 class FfmpegSharedMemoryAllocator;
 using FfmpegSharedMemoryAllocatorPtr = std::shared_ptr<FfmpegSharedMemoryAllocator>;
+
 } // namespace nx::media::ffmpeg
 
 static constexpr int kMaxDecodeThread = 4;
@@ -25,13 +27,15 @@ class QGLContext;
 struct DecoderConfig
 {
     MultiThreadDecodePolicy mtDecodePolicy = MultiThreadDecodePolicy::autoDetect;
-    bool forceGrayscaleDecoding = false; //< Force grayscale decoding if true. Don't change current value if false.
+    bool forceGrayscaleDecoding =
+        false; //< Force grayscale decoding if true. Don't change current value if false.
     bool forceRgbaFormat = false; //< Forces YUV -> RGB conversion on decoder thread.
     bool useSharedMemory = false; //< Use shared memory for decoded frames.
-    nx::media::ffmpeg::FfmpegSharedMemoryAllocatorPtr sharedMemoryAllocator; //< Optional explicit SHM allocator.
+    nx::media::ffmpeg::FfmpegSharedMemoryAllocatorPtr
+        sharedMemoryAllocator; //< Optional explicit SHM allocator.
 };
 
-//!Abstract interface. Every video decoder MUST implement this interface.
+//! Abstract interface. Every video decoder MUST implement this interface.
 /*!
     Implementation of this class does not have to be thread-safe.
 
@@ -42,7 +46,8 @@ class QnAbstractVideoDecoder
 {
 public:
     // for movies: full = IPB, fast == IP only, fastest = I only
-    enum DecodeMode {
+    enum DecodeMode
+    {
         DecodeMode_NotDefined,
         DecodeMode_Full,
         DecodeMode_Fast,
@@ -50,32 +55,36 @@ public:
     };
 
     virtual ~QnAbstractVideoDecoder() {}
-    //!Returns video decoder type, GPU or CPU.
+    //! Returns video decoder type, GPU or CPU.
     virtual bool hardwareDecoder() const = 0;
 
     /**
-      * Decode video frame.
-      * Set hardwareAccelerationEnabled flag if hardware acceleration was used
-      * \param outFrame Made a pointer to pointer to allow in future return internal object to increase performance
-      * \return true If \a outFrame is filled, false if no output frame
-      * \note No error information is returned!
-      */
-    virtual bool decode( const QnConstCompressedVideoDataPtr& data, QSharedPointer<CLVideoDecoderOutput>* const outFrame ) = 0;
+     * Decode video frame.
+     * Set hardwareAccelerationEnabled flag if hardware acceleration was used
+     * \param outFrame Made a pointer to pointer to allow in future return internal object to
+     * increase performance
+     * \return true If \a outFrame is filled, false if no output frame
+     * \note No error information is returned!
+     */
+    virtual bool decode(
+        const QnConstCompressedVideoDataPtr& data,
+        QSharedPointer<CLVideoDecoderOutput>* const outFrame) = 0;
 
-    virtual void setLightCpuMode( DecodeMode val ) = 0;
+    virtual void setLightCpuMode(DecodeMode val) = 0;
 
-    //!Use multi-threaded decoding (if supported by implementation)
+    //! Use multi-threaded decoding (if supported by implementation)
     virtual void setMultiThreadDecodePolicy(MultiThreadDecodePolicy mtDecodingPolicy) = 0;
 
-    //!Returns output picture size in pixels (after scaling if it is present)
-    virtual int getWidth() const  { return 0; }
-    //!Returns output picture height in pixels (after scaling if it is present)
+    //! Returns output picture size in pixels (after scaling if it is present)
+    virtual int getWidth() const { return 0; }
+    //! Returns output picture height in pixels (after scaling if it is present)
     virtual int getHeight() const { return 0; }
     virtual AVCodecID codec() const = 0;
     virtual double getSampleAspectRatio() const { return 1; };
-    //!Reset decoder state (e.g. to reposition source stream)
+    //! Reset decoder state (e.g. to reposition source stream)
     /*!
-        \param data First encoded frame of new stream. It is recommended that this frame be IDR and contain sequence header
+        \param data First encoded frame of new stream. It is recommended that this frame be IDR and
+       contain sequence header
     */
     virtual bool resetDecoder(const QnConstCompressedVideoDataPtr& data) = 0;
 

@@ -71,9 +71,8 @@ public:
     {
         NX_MUTEX_LOCKER lk(&m_mutex);
 
-        const auto iteratorAndInsertionFlag = m_data.emplace(
-            std::forward<KeyType>(key),
-            std::forward<ValueType>(value));
+        const auto iteratorAndInsertionFlag =
+            m_data.emplace(std::forward<KeyType>(key), std::forward<ValueType>(value));
         if (iteratorAndInsertionFlag.second)
             onNewElementFunc(iteratorAndInsertionFlag.first);
         return iteratorAndInsertionFlag;
@@ -91,5 +90,5 @@ private:
     std::map<Key, Mapped, Comp> m_data;
 };
 
-} // namespace nx
 } // namespace utils
+} // namespace nx

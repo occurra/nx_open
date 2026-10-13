@@ -124,7 +124,8 @@ TEST_F(PrivateHttpServerTest, scrape_exposes_public_server_request_count)
     ASSERT_TRUE(publicServer->listen());
 
     m_privateServer.healthMonitor().setLivenessTarget(
-        publicServer->endpoints().front(), /*isSecure*/ false);
+        publicServer->endpoints().front(),
+        /*isSecure*/ false);
     ASSERT_TRUE(m_privateServer.listen());
 
     // A single request to the public server.
@@ -173,11 +174,7 @@ TEST_F(PrivateHttpServerTest, diagnostic_endpoints_are_served)
 //-------------------------------------------------------------------------------------------------
 // Health endpoints.
 
-namespace {
-
-static constexpr char kProbeName[] = "dependency";
-
-} // namespace
+namespace { static constexpr char kProbeName[] = "dependency"; } // namespace
 
 class PrivateHttpServerHealthTest: public ::testing::Test
 {
@@ -326,9 +323,11 @@ TEST_F(PrivateHttpServerHealthTest, health_endpoints_are_served_with_no_probes_r
 {
     whenStartPrivateServer();
 
-    EXPECT_EQ(HealthReply::Status::ok,
+    EXPECT_EQ(
+        HealthReply::Status::ok,
         thenHealthIs(PrivateHttpServer::kReadinessPath, StatusCode::ok).status);
-    EXPECT_EQ(HealthReply::Status::ok,
+    EXPECT_EQ(
+        HealthReply::Status::ok,
         thenHealthIs(PrivateHttpServer::kLivenessPath, StatusCode::ok).status);
     EXPECT_EQ(R"({"status":"ok"})", doGet(PrivateHttpServer::kReadinessPath).second);
 }
@@ -339,12 +338,13 @@ TEST_F(PrivateHttpServerHealthTest, readiness_reports_the_failing_probe)
     whenProbeReports("the database is unreachable");
     whenStartPrivateServer();
 
-    const auto reply = thenHealthIs(
-        PrivateHttpServer::kReadinessPath, StatusCode::serviceUnavailable);
+    const auto reply =
+        thenHealthIs(PrivateHttpServer::kReadinessPath, StatusCode::serviceUnavailable);
     EXPECT_EQ(HealthReply::Status::unavailable, reply.status);
     EXPECT_EQ("the database is unreachable", failureReason(reply, kProbeName));
 
-    EXPECT_EQ(HealthReply::Status::ok,
+    EXPECT_EQ(
+        HealthReply::Status::ok,
         thenHealthIs(PrivateHttpServer::kLivenessPath, StatusCode::ok).status);
 }
 
@@ -357,7 +357,8 @@ TEST_F(PrivateHttpServerHealthTest, readiness_recovers_once_the_probe_passes)
 
     whenProbeReports(std::nullopt);
 
-    EXPECT_EQ(HealthReply::Status::ok,
+    EXPECT_EQ(
+        HealthReply::Status::ok,
         thenHealthIs(PrivateHttpServer::kReadinessPath, StatusCode::ok).status);
 }
 
@@ -367,8 +368,8 @@ TEST_F(PrivateHttpServerHealthTest, readiness_reports_a_probe_that_has_not_answe
     whenProbeStopsAnswering();
     whenStartPrivateServer();
 
-    const auto reply = thenHealthIs(
-        PrivateHttpServer::kReadinessPath, StatusCode::serviceUnavailable);
+    const auto reply =
+        thenHealthIs(PrivateHttpServer::kReadinessPath, StatusCode::serviceUnavailable);
     EXPECT_EQ("not checked yet", failureReason(reply, kProbeName));
 }
 
@@ -383,7 +384,8 @@ TEST_F(PrivateHttpServerHealthTest, readiness_recovers_from_a_probe_that_dropped
 
     // A dropped check is made again by the next cycle. Were it left counted as running, this
     // dependency would never be looked at again and the service would stay unready for good.
-    EXPECT_EQ(HealthReply::Status::ok,
+    EXPECT_EQ(
+        HealthReply::Status::ok,
         thenHealthIs(PrivateHttpServer::kReadinessPath, StatusCode::ok).status);
 }
 
@@ -397,8 +399,8 @@ TEST_F(PrivateHttpServerHealthTest, readiness_reports_a_stuck_probe_as_stale)
     // The probe stops reporting, so nothing refreshes its result, and it should become stale.
     whenProbeStopsAnswering();
 
-    const auto reply = thenHealthIs(
-        PrivateHttpServer::kReadinessPath, StatusCode::serviceUnavailable);
+    const auto reply =
+        thenHealthIs(PrivateHttpServer::kReadinessPath, StatusCode::serviceUnavailable);
     EXPECT_EQ("the check result is stale", failureReason(reply, kProbeName));
 }
 
@@ -412,8 +414,8 @@ TEST_F(PrivateHttpServerHealthTest, liveness_follows_the_application_listener)
 
     stopApplicationServer();
 
-    const auto reply = thenHealthIs(
-        PrivateHttpServer::kLivenessPath, StatusCode::serviceUnavailable);
+    const auto reply =
+        thenHealthIs(PrivateHttpServer::kLivenessPath, StatusCode::serviceUnavailable);
     EXPECT_EQ(HealthReply::Status::unavailable, reply.status);
     ASSERT_TRUE(reply.failed.has_value()) << "the reply names no failing check";
     EXPECT_TRUE(reply.failed->contains(HealthMonitor::kLivenessCheckName));

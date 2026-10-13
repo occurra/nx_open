@@ -24,20 +24,19 @@ struct CachedResponseTimeouts
 namespace detail {
 
 template<typename Generator, typename Result, typename... CallArgs>
-concept CompatibleArgs =
-    std::invocable<Generator&, CallArgs...>&&
-    std::same_as<std::invoke_result_t<Generator&, CallArgs...>, Result>;
+concept CompatibleArgs = std::invocable<Generator&, CallArgs...>
+    && std::same_as<std::invoke_result_t<Generator&, CallArgs...>, Result>;
 
 template<typename T>
 concept CacheableValue =
-    std::default_initializable<T> &&
-    std::copy_constructible<T> &&
-    requires(const T& value) { { static_cast<bool>(value) } -> std::same_as<bool>; };
+    std::default_initializable<T> && std::copy_constructible<T> && requires(const T& value) {
+        { static_cast<bool>(value) } -> std::same_as<bool>;
+    };
 
 template<typename T>
-concept CacheKey =
-    std::copy_constructible<T> &&
-    requires(const T& a, const T& b) { { a < b } -> std::convertible_to<bool>; };
+concept CacheKey = std::copy_constructible<T> && requires(const T& a, const T& b) {
+    { a < b } -> std::convertible_to<bool>;
+};
 
 } // namespace detail
 
@@ -51,8 +50,9 @@ public:
     using ValueGenerator = nx::MoveOnlyFunc<CachedValue(Args...)>;
 
 public:
-    explicit CachedResponse(ValueGenerator getter, CachedResponseTimeouts timeouts = CachedResponseTimeouts{})
-        :
+    explicit CachedResponse(
+        ValueGenerator getter,
+        CachedResponseTimeouts timeouts = CachedResponseTimeouts{}):
         m_getter(std::move(getter)),
         m_timeouts(timeouts)
     {
@@ -111,8 +111,7 @@ public:
     explicit ParameterizedCachedResponse(
         ValueGenerator getter,
         KeyGenerator keyGenerator,
-        CachedResponseTimeouts timeouts = CachedResponseTimeouts{})
-        :
+        CachedResponseTimeouts timeouts = CachedResponseTimeouts{}):
         m_getter(std::make_shared<ValueGenerator>(std::move(getter))),
         m_keyGenerator(std::move(keyGenerator)),
         m_timeouts(timeouts)

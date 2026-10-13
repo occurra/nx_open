@@ -19,4 +19,4 @@ struct NX_VMS_COMMON_API UdpSocketPair
     std::unique_ptr<nx::network::AbstractDatagramSocket> rtcpSocket;
 };
 
-}
+} // namespace nx::streaming::rtsp

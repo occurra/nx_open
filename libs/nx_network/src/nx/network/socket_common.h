@@ -57,7 +57,7 @@ enum class IpVersion
 
 static const size_t kUDPHeaderSize = 8;
 static const size_t kIPHeaderSize = 20;
-static const size_t kMaxUDPDatagramSize = 64*1024 - kUDPHeaderSize - kIPHeaderSize;
+static const size_t kMaxUDPDatagramSize = 64 * 1024 - kUDPHeaderSize - kIPHeaderSize;
 static const size_t kTypicalMtuSize = 1500;
 
 enum InitializationFlags
@@ -88,7 +88,8 @@ public:
 
     // Construct from string literal
     template<size_t N>
-    HostAddress(const char (&addrStr)[N]): HostAddress(std::string_view(addrStr))
+    HostAddress(const char (&addrStr)[N]):
+        HostAddress(std::string_view(addrStr))
     {
     }
 
@@ -101,8 +102,7 @@ public:
      * E.g., QByteArray.
      */
     template<nx::ToStringViewConvertible String>
-    HostAddress(const String& str)
-        :
+    HostAddress(const String& str):
         HostAddress(std::string_view(str.data(), (std::size_t) str.size()))
     {
     }
@@ -181,26 +181,32 @@ private:
     // Type-erasing adapter with the same size and alignment as `in_addr`
     using InAddr = std::uint32_t;
 
-    #ifdef _MSC_VER
-        #pragma warning(push)
-        #pragma warning(disable:4324) //< 'structure was padded due to alignment specifier'
-    #endif
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable : 4324) //< 'structure was padded due to alignment specifier'
+#endif
 
-    // `in6_addr` differs in alignment between Windows and POSIX
-    #if defined(_WIN32)
-        struct alignas(2) In6Addr { std::uint8_t value[16]; };
-    #else
-        struct alignas(4) In6Addr { std::uint8_t value[16]; };
-    #endif
+// `in6_addr` differs in alignment between Windows and POSIX
+#if defined(_WIN32)
+    struct alignas(2) In6Addr
+    {
+        std::uint8_t value[16];
+    };
+#else
+    struct alignas(4) In6Addr
+    {
+        std::uint8_t value[16];
+    };
+#endif
 
     mutable std::optional<std::string> m_string;
     std::optional<InAddr> m_ipV4;
     std::optional<In6Addr> m_ipV6;
     std::optional<uint32_t> m_scopeId;
 
-    #ifdef _MSC_VER
-        #pragma warning(pop)
-    #endif
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
 
     HostAddress(
         std::optional<std::string_view> addressString,
@@ -246,8 +252,7 @@ public:
      * E.g., QByteArray.
      */
     template<nx::ToStringViewConvertible String>
-    SocketAddress(const String& endpointStr)
-        :
+    SocketAddress(const String& endpointStr):
         SocketAddress(std::string_view(endpointStr.data(), (std::size_t) endpointStr.size()))
     {
     }
@@ -292,7 +297,10 @@ NX_NETWORK_API void PrintTo(const SocketAddress& val, ::std::ostream* os);
 
 NX_REFLECTION_INSTRUMENT(SocketAddress, (address)(port))
 
-NX_NETWORK_API void serialize(QnJsonContext*, const nx::network::SocketAddress& value, QJsonValue* target);
+NX_NETWORK_API void serialize(
+    QnJsonContext*,
+    const nx::network::SocketAddress& value,
+    QJsonValue* target);
 NX_NETWORK_API bool deserialize(QnJsonContext*, const QJsonValue& source, SocketAddress* value);
 
 //-------------------------------------------------------------------------------------------------
@@ -311,7 +319,8 @@ struct NX_NETWORK_API KeepAliveOptions
     int probeCount = 0;
 
     KeepAliveOptions(
-        std::chrono::milliseconds inactivityPeriodBeforeFirstProbe = std::chrono::milliseconds::zero(),
+        std::chrono::milliseconds inactivityPeriodBeforeFirstProbe =
+            std::chrono::milliseconds::zero(),
         std::chrono::milliseconds probeSendPeriod = std::chrono::milliseconds::zero(),
         int probeCount = 0);
 

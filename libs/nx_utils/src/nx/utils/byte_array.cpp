@@ -112,7 +112,8 @@ void ByteArray::finishWriting(size_t size)
     // The data has already been written through the pointer from startWriting(), so a size over
     // the capacity means the caller has overrun the buffer. Keeping m_size inside the buffer at
     // least leaves zeroPadding() below and the next reallocate() in bounds.
-    NX_ASSERT(newSize <= m_capacity,
+    NX_ASSERT(
+        newSize <= m_capacity,
         "Reported %1 bytes written over the capacity %2.",
         newSize,
         m_capacity);
