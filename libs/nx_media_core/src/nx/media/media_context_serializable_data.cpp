@@ -2,38 +2,25 @@
 
 #include "media_context_serializable_data.h"
 
-#include <nx/fusion/model_functions.h>
 #include <nx/media/av_codec_helper.h>
+#include <nx/reflect/json.h>
 #include <nx/utils/log/assert.h>
-
-#define QnMediaContextSerializableData_Fields \
-    (codecId)(codecType)( \
-        extradata) (channels) (sampleRate) (sampleFmt) (bitsPerCodedSample) (width) (height) (bitRate) (channelLayout) (blockAlign)
-
-QN_FUSION_DECLARE_FUNCTIONS(QnMediaContextSerializableData, (ubjson))
-
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(
-    QnMediaContextSerializableData,
-    (ubjson),
-    QnMediaContextSerializableData_Fields)
 
 QByteArray QnMediaContextSerializableData::serialize() const
 {
-    QByteArray result;
-    QnUbjson::serialize(*this, &result);
-    return result;
+    return QByteArray::fromStdString(nx::reflect::json::serialize(*this));
 }
 
 bool QnMediaContextSerializableData::deserialize(const QByteArray& data)
 {
-    QnUbjsonReader<QByteArray> stream(&data);
-    return QnUbjson::deserialize(&stream, this);
+    return nx::reflect::json::deserialize(std::string_view(data.constData(), data.size()), this)
+        .success;
 }
 
 void QnMediaContextSerializableData::initializeFrom(const AVCodecParameters* codecParams)
 {
-    codecId = codecParams->codec_id;
-    codecType = codecParams->codec_type;
+    codecId = (int) codecParams->codec_id;
+    codecType = (int) codecParams->codec_type;
     if (codecParams->extradata)
     {
         extradata = QByteArray((const char*) codecParams->extradata, codecParams->extradata_size);
@@ -45,7 +32,7 @@ void QnMediaContextSerializableData::initializeFrom(const AVCodecParameters* cod
     channels = codecParams->ch_layout.nb_channels;
     channelLayout = codecParams->ch_layout.u.mask;
     sampleRate = codecParams->sample_rate;
-    sampleFmt = (AVSampleFormat) codecParams->format;
+    sampleFmt = (int) codecParams->format;
     bitsPerCodedSample = codecParams->bits_per_coded_sample;
     width = codecParams->width;
     height = codecParams->height;

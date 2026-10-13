@@ -3,7 +3,6 @@
 #include "media_data_packet.h"
 
 #include <nx/media/config.h>
-#include <nx/media/motion_detection.h>
 #include <nx/utils/bit_stream.h>
 #include <nx/utils/log/format.h>
 
@@ -44,11 +43,9 @@ AVMediaType toAvMediaType(QnAbstractMediaData::DataType dataType)
     {
         case QnAbstractMediaData::DataType::AUDIO:
             return AVMEDIA_TYPE_AUDIO;
-        case QnAbstractMediaData::DataType::CONTAINER:
         case QnAbstractMediaData::DataType::EMPTY_DATA:
-        case QnAbstractMediaData::DataType::META_V1: //< Because it's deprecated.
             return AVMEDIA_TYPE_UNKNOWN;
-        case QnAbstractMediaData::GENERIC_METADATA:
+        case QnAbstractMediaData::METADATA:
             return AVMEDIA_TYPE_SUBTITLE;
         case QnAbstractMediaData::DataType::VIDEO:
             return AVMEDIA_TYPE_VIDEO;

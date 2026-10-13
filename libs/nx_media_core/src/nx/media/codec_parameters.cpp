@@ -4,7 +4,6 @@
 
 #include <nx/media/av_codec_helper.h>
 #include <nx/media/media_context_serializable_data.h>
-#include <nx/media/media_context_serializable_data_4_2.h>
 #include <nx/utils/log/assert.h>
 #include <nx/utils/log/log.h>
 
@@ -12,28 +11,15 @@ namespace {
 
 constexpr char kCodecContextVersion = 2;
 
-AVCodecID convertCodecIdFromFfmpeg3_1(AVCodecID id)
-{
-    if ((id > AV_CODEC_ID_MPEG2VIDEO && id < AV_CODEC_ID_Y41P)
-        || (id > AV_CODEC_ID_ATRAC3 && id < AV_CODEC_ID_FFWAVESYNTH))
-    {
-        return (AVCodecID) ((int) id - 1);
-    }
-    return id;
-}
-
 template<typename T>
 bool deserializeCodecParameters(CodecParameters& codecParameters, const char* data, int size)
 {
-    if (size < 4 || data[0] != '[' || data[1] != 'l') //< Ubjson starts with CodecID ('l').
-        return false;
-
     auto codecParams = codecParameters.getAvCodecParameters();
     T deserializedData;
     if (!deserializedData.deserialize(QByteArray((const char*) data, size)))
         return false;
 
-    codecParams->codec_type = deserializedData.codecType;
+    codecParams->codec_type = (AVMediaType) deserializedData.codecType;
     codecParams->sample_rate = deserializedData.sampleRate;
     codecParams->format = deserializedData.sampleFmt;
     codecParams->bits_per_coded_sample = deserializedData.bitsPerCodedSample;
@@ -47,7 +33,7 @@ bool deserializeCodecParameters(CodecParameters& codecParameters, const char* da
     codecParams->ch_layout.nb_channels = deserializedData.channels;
 
     codecParams->block_align = deserializedData.blockAlign;
-    codecParams->codec_id = deserializedData.codecId;
+    codecParams->codec_id = (AVCodecID) deserializedData.codecId;
     codecParameters.setExtradata(
         (uint8_t*) deserializedData.extradata.data(),
         deserializedData.extradata.size());
@@ -97,59 +83,33 @@ QByteArray CodecParameters::serialize() const
     return result;
 }
 
-QByteArray CodecParameters::serializeInDeprecatedFormat42() const
+bool CodecParameters::deserialize(const char* data, int size)
 {
-    QnMediaContextSerializableData_4_2 data;
-    data.initializeFrom(m_codecParams);
-    auto result = data.serialize();
-    return result;
-}
-
-bool CodecParameters::deserialize(const char* data, int size, int version)
-{
-    m_version = version;
-    if (size > 0 && data[0] != '[') //< vms_4.2 format starts from ubjson without version
+    if (size <= 0)
     {
-        m_version = data[0];
-        ++data;
-        --size;
+        NX_WARNING(this, "Failed to deserialize codec parameters data: empty payload");
+        return false;
     }
 
-    if (m_version == 0)
-    {
-        // TODO #lbusygin: get rid of this version when the mobile client stops supporting servers
-        // < 5.0
-        if (!::deserializeCodecParameters<QnMediaContextSerializableData_4_2>(*this, data, size))
-        {
-            NX_WARNING(this, "Failed to deserialize codec parameters data(version 4.2)");
-            return false;
-        }
-        m_codecParams->codec_id = convertCodecIdFromFfmpeg3_1(m_codecParams->codec_id);
-    }
-    else if (m_version == 1)
-    {
-        if (!::deserializeCodecParameters<QnMediaContextSerializableData_4_2>(*this, data, size))
-        {
-            NX_WARNING(this, "Failed to deserialize codec parameters data");
-            return false;
-        }
-    }
-    else if (m_version >= 2)
-    {
-        if (m_version > 2)
-            NX_DEBUG(this, "Try to deserialize data from the future version");
-        if (!::deserializeCodecParameters<QnMediaContextSerializableData>(*this, data, size))
-        {
-            NX_WARNING(this, "Failed to deserialize codec parameters data");
-            return false;
-        }
-    }
-    else
+    m_version = data[0];
+    ++data;
+    --size;
+
+    if (m_version < 2)
     {
         NX_WARNING(
             this,
             "Failed to deserialize codec parameters data, version not supported: %1",
             m_version);
+        return false;
+    }
+
+    if (m_version > 2)
+        NX_DEBUG(this, "Try to deserialize data from the future version");
+
+    if (!::deserializeCodecParameters<QnMediaContextSerializableData>(*this, data, size))
+    {
+        NX_WARNING(this, "Failed to deserialize codec parameters data");
         return false;
     }
     return true;

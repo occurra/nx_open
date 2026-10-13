@@ -60,7 +60,7 @@ TEST(AvPacket, paddedDataIsUsedInPlace)
     AvPacket packet(&data);
     ASSERT_EQ(data.data(), (const char*) packet.get()->data);
     ASSERT_EQ((int) kPayloadSize, packet.get()->size);
-    ASSERT_EQ(42, packet.get()->pts);
+    ASSERT_EQ(42, packet.get()->dts);
     ASSERT_EQ(AV_PKT_FLAG_KEY, packet.get()->flags & AV_PKT_FLAG_KEY);
 
     for (int i = 0; i < AV_INPUT_BUFFER_PADDING_SIZE; ++i)
@@ -78,7 +78,7 @@ TEST(AvPacket, unpaddedDataIsCopied)
     AvPacket packet(&data);
     ASSERT_NE(data.data(), (const char*) packet.get()->data);
     ASSERT_EQ((int) kPayloadSize, packet.get()->size);
-    ASSERT_EQ(42, packet.get()->pts);
+    ASSERT_EQ(42, packet.get()->dts);
     ASSERT_EQ(0, memcmp(packet.get()->data, data.data(), kPayloadSize));
 
     for (size_t i = kPayloadSize; i < data.buffer().size(); ++i)

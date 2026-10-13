@@ -27,6 +27,18 @@ public:
         InitFunc initFunc = {},
         FfmpegSharedMemoryAllocatorPtr sharedMemoryAllocator = {},
         bool useSharedMemoryForSoftwareFallback = false);
+
+    /**
+     * Construct sharing a pre-created AVHWDeviceContext (e.g. from a
+     * process-wide cache). The decoder takes its own av_buffer_ref of
+     * @a sharedDeviceContext; ownership stays with the caller.
+     * Skips the internal av_hwdevice_ctx_create call on initialize().
+     */
+    HwVideoDecoder(
+        AVHWDeviceType type,
+        nx::metric::Storage* metrics,
+        AVBufferRef* sharedDeviceContext);
+
     virtual ~HwVideoDecoder();
 
     static bool isCompatible(
@@ -37,7 +49,7 @@ public:
     static QSize maxResolution(const AVCodecID codec);
 
     // QnAbstractVideoDecoder impl
-    bool decode(const QnConstCompressedVideoDataPtr& data, CLVideoDecoderOutputPtr* const outFrame)
+    bool decode(const QnConstCompressedVideoDataPtr& data, CLVideoDecoderOutput* outFrame)
         override;
 
     bool hardwareDecoder() const override { return m_hardwareMode; }
@@ -47,6 +59,7 @@ public:
     int getHeight() const override;
     AVCodecID codec() const override;
     bool resetDecoder(const QnConstCompressedVideoDataPtr& data) override;
+    void flushBuffers() override;
     int getLastDecodeResult() const override;
     void setGreyOnlyMode(bool value) override;
 
@@ -54,7 +67,7 @@ public:
 
     // To support AbstractVideoDecoder impl
     bool sendPacket(const QnConstCompressedVideoDataPtr& packet);
-    bool receiveFrame(CLVideoDecoderOutputPtr* const outFrame);
+    bool receiveFrame(CLVideoDecoderOutput* outFrame);
     int currentFrameNumber() const;
 
     // Returns true and clears the flag when a hardware decoder was found for the codec but could
@@ -75,6 +88,7 @@ private:
     bool m_hardwareResourceFailed = false;
     AVCodecContext* m_decoderContext = nullptr;
     AVBufferRef* m_hwDeviceContext = nullptr;
+    AVBufferRef* m_externalDeviceContext = nullptr; ///< Borrowed ref from a shared cache.
     AVPixelFormat m_targetPixelFormat = AV_PIX_FMT_NONE;
     int m_lastDecodeResult = 0;
     std::string m_device;
