@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <nx/fusion/model_functions_fwd.h>
 #include <nx/reflect/instrument.h>
 
 namespace nx::vms::api {
@@ -18,11 +17,9 @@ struct NX_VMS_API WatermarkSettings
     double opacity = 0.3;
 
     bool operator==(const WatermarkSettings& other) const;
-    QByteArray toString() const;
 };
 
 #define WatermarkSettings_Fields (useWatermark)(frequency)(opacity)
 NX_REFLECTION_INSTRUMENT(WatermarkSettings, WatermarkSettings_Fields)
-QN_FUSION_DECLARE_FUNCTIONS(WatermarkSettings, (json), NX_VMS_API)
 
 } // namespace nx::vms::api

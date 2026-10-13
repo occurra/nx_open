@@ -6,7 +6,6 @@
 
 #include <QtCore/QSize>
 
-#include <nx/fusion/model_functions_fwd.h>
 #include <nx/reflect/instrument.h>
 
 namespace nx::vms::api {
@@ -46,9 +45,6 @@ struct NX_VMS_API ResolutionData
     /**%apidoc[unused] */
     QSize size;
 };
-
-bool NX_VMS_API deserialize(QnJsonContext* ctx, const QJsonValue& value, ResolutionData* target);
-void NX_VMS_API serialize(QnJsonContext* ctx, const ResolutionData& value, QJsonValue* target);
 
 bool NX_VMS_API fromString(std::string_view str, ResolutionData* target);
 
