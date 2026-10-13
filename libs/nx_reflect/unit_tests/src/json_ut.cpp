@@ -13,6 +13,7 @@
 
 #include <gtest/gtest.h>
 
+#include <nx/reflect/instrument.h>
 #include <nx/reflect/json/deserializer.h>
 #include <nx/reflect/json/object.h>
 #include <nx/reflect/json/raw_json_text.h>
@@ -271,6 +272,15 @@ TEST_F(Json, std_optional_is_supported)
     testSerialization(
         R"(["Hello, world"])",
         std::make_optional(std::vector<std::string>{{"Hello, world"}}));
+}
+
+TEST_F(Json, null_deserializes_into_empty_std_optional)
+{
+    const auto [value, result] =
+        json::deserialize<FooOptionalWithCustomDefault>(R"({"num":12,"t":null})");
+    ASSERT_TRUE(result.success) << result.errorDescription;
+    EXPECT_EQ(12, value.num);
+    EXPECT_FALSE(value.t.has_value());
 }
 
 TEST_F(Json, stringizable_type_is_supported)

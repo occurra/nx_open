@@ -513,7 +513,9 @@ private:
     {
         DeserializationResult deserializationResult(true);
         auto valueIter = ctx.value.FindMember(field.name());
-        if (valueIter != ctx.value.MemberEnd())
+        // Serializers that keep every key, Go's encoding/json among them, write an empty optional
+        // as null rather than leaving it out.
+        if (valueIter != ctx.value.MemberEnd() && !valueIter->value.IsNull())
         {
             if ((ctx.flags & ((int) json::DeserializationFlag::fields))
                 && m_deserializationResult.hasField(field.name()))

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <charconv>
+#include <exception>
 #include <string>
 #include <type_traits>
 
@@ -70,10 +72,40 @@ bool fromString(const String& str, T* result)
         }
         return true;
     }
+    else if constexpr (std::is_same_v<T, bool>)
+    {
+        if (str == "true" || str == "True" || str == "1")
+        {
+            *result = true;
+            return true;
+        }
+        if (str == "false" || str == "False" || str == "0")
+        {
+            *result = false;
+            return true;
+        }
+        return false;
+    }
     else if constexpr (std::is_integral_v<T>)
     {
         const auto fromCharsResult = std::from_chars(str.data(), str.data() + str.size(), *result);
         return fromCharsResult.ptr != str.data();
+    }
+    else if constexpr (std::is_floating_point_v<T>)
+    {
+        // std::stod, not std::from_chars: floating-point from_chars is still
+        // missing on some supported standard libraries (libc++). Mirrors the
+        // string branch of the floating-point JSON deserializer.
+        try
+        {
+            std::size_t pos = 0;
+            *result = (T) std::stod(std::string(str), &pos);
+            return pos > 0;
+        }
+        catch (const std::exception&)
+        {
+            return false;
+        }
     }
     else if constexpr (detail::HasFromBase64V<T>)
     {
@@ -98,7 +130,14 @@ bool fromString(const String& str, T* result)
     }
     else if constexpr (nx::reflect::IsStdChronoDurationV<T>)
     {
-        *result = T(std::stoll(std::string(str)));
+        // Non-throwing, full-match parse: std::stoll would throw on malformed
+        // input (nothing in typical deserialization stacks catches) and would
+        // silently accept trailing garbage like "123abc".
+        int64_t count = 0;
+        const auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), count);
+        if (ec != std::errc() || ptr != str.data() + str.size())
+            return false;
+        *result = T(count);
         return true;
     }
     else
