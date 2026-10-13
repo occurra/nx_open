@@ -9,7 +9,6 @@ extern "C" {
 }
 
 #include <decoders/video/ffmpeg_video_decoder.h>
-#include <export/signer.h>
 #include <nx/media/audio_data_packet.h>
 #include <nx/media/ffmpeg/frame_info.h>
 #include <nx/utils/cryptographic_hash.h>
@@ -77,7 +76,7 @@ public:
     bool setVideoCodec(
         AVCodecID codec,
         TranscodeMethod method,
-        Qn::StreamQuality quality,
+        nx::vms::api::StreamQuality quality,
         const QSize& sourceResolition,
         const QSize& resolution = QSize(),
         int bitrate = -1,

@@ -4,7 +4,6 @@
 
 #include <array>
 
-#include <core/resource/resource_property_key.h>
 #include <media/filters/h2645_prepend_parameter_sets.h>
 #include <media/filters/remove_aud_delimiter.h>
 #include <nx/media/utils.h>
@@ -92,6 +91,14 @@ quint8 getPayloadType(AVCodecID codec, bool isVideo)
     }
     // dynamic payload type
     return isVideo ? kVideoPayloadType : kAudioPayloadType;
+}
+
+// The two G.711 variants: 8-bit 8 kHz mono, identical RTP packetization, differing only by
+// companding law and payload type (PCMU/0, PCMA/8). A camera that switches between them can keep
+// one RTP stream if both types are offered.
+bool isG711(AVCodecID codec)
+{
+    return codec == AV_CODEC_ID_PCM_MULAW || codec == AV_CODEC_ID_PCM_ALAW;
 }
 
 bool isCodecSupported(AVCodecID codecId)
@@ -317,6 +324,7 @@ bool QnUniversalRtpEncoder::open(
     m_sourceCodec = media->compressionType;
     AVCodecID codec = m_transcodingEnabled ? dstCodec : media->compressionType;
     m_payloadType = getPayloadType(codec, m_isVideo);
+    m_g711DualPayload = !m_isVideo && !m_transcodingEnabled && isG711(codec);
     QnFfmpegTranscoder::TranscodeMethod method = m_transcodingEnabled
         ? QnFfmpegTranscoder::TM_FfmpegTranscode
         : QnFfmpegTranscoder::TM_DirectStreamCopy;
@@ -342,8 +350,12 @@ bool QnUniversalRtpEncoder::open(
                 NX_DEBUG(this, "Failed to get frame size, codec: %1", media->compressionType);
         }
         m_transcoder.setTranscodingSettings(extraTranscodeParams);
-        m_transcoder
-            .setVideoCodec(codec, method, Qn::StreamQuality::normal, sourceSize, videoSize);
+        m_transcoder.setVideoCodec(
+            codec,
+            method,
+            nx::vms::api::StreamQuality::normal,
+            sourceSize,
+            videoSize);
         status = m_transcoder.open(
             std::dynamic_pointer_cast<const QnCompressedVideoData>(media),
             QnConstCompressedAudioDataPtr());
@@ -390,6 +402,7 @@ bool QnUniversalRtpEncoder::open(const AVCodecParameters* codecParameters)
     m_payloadType = getPayloadType(codecParameters->codec_id, m_isVideo);
     m_sdpAttributes =
         getSdpAttributesFromCodecpar(codecParameters, m_payloadType, m_config.webRtcMode);
+    m_g711DualPayload = !m_isVideo && isG711(codecParameters->codec_id);
     return true;
 }
 
@@ -407,11 +420,21 @@ QString QnUniversalRtpEncoder::getSdpMedia(bool isVideo, int trackId, int port, 
            << (ssl ? " UDP/TLS/RTP/SAVPF " : " RTP/AVP ") << m_payloadType;
     if (m_useSecondaryPayloadType)
         stream << ' ' << kSecondaryStreamPayloadType;
+    // Offer the other G.711 variant alongside, so a switch between mulaw and alaw only relabels
+    // the payload type on the wire and never has to renegotiate.
+    const int otherG711Pt = m_payloadType == 0 ? 8 : 0;
+    if (m_g711DualPayload)
+        stream << ' ' << otherG711Pt;
     stream << kEndl;
     stream << "a=control:trackID=" << trackId << kEndl;
     stream << m_sdpAttributes.join(kEndl);
     if (!m_sdpAttributes.empty())
         stream << kEndl;
+    if (m_g711DualPayload)
+    {
+        stream << "a=rtpmap:" << otherG711Pt << (otherG711Pt == 8 ? " PCMA/8000" : " PCMU/8000")
+               << kEndl;
+    }
 
     return sdpMedia;
 }
@@ -449,15 +472,34 @@ void QnUniversalRtpEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
     // Do not continue rtsp stream if codec changed.
     if (!m_transcodingEnabled && media && m_sourceCodec != media->compressionType)
     {
-        NX_DEBUG(
-            this,
-            "Codec changed from %1 to %2, close rtsp session",
-            m_sourceCodec,
-            media->compressionType);
-        m_eof = true;
+        if (m_g711DualPayload && isG711(media->compressionType))
+        {
+            // A mulaw<->alaw switch keeps the same RTP stream: both types are already offered, so
+            // carry on with the new source codec (getNextPacket relabels the wire PT from it)
+            // instead of tearing the session down.
+            m_sourceCodec = media->compressionType;
+        }
+        else
+        {
+            NX_DEBUG(
+                this,
+                "Codec changed from %1 to %2, close rtsp session",
+                m_sourceCodec,
+                media->compressionType);
+            m_eof = true;
+        }
     }
     if (m_eof)
         return;
+
+    // Stamp the playout-delay extension only on seek-delivered frames: precise
+    // seeks tag every frame from the key frame through the target with
+    // MediaFlags_PreRoll, keyframe-only (rough) seeks tag the landing key frame
+    // with MediaFlags_BOF. Steady-state playback frames carry neither and thus
+    // keep Chrome's normal jitter buffer.
+    m_useZeroPlayoutDelay = m_config.addPlayoutDelay && media
+        && (media->flags.testFlag(QnAbstractMediaData::MediaFlags_PreRoll)
+            || media->flags.testFlag(QnAbstractMediaData::MediaFlags_BOF));
 
     m_outputBuffer.clear();
     m_outputPos = 0;
@@ -471,55 +513,88 @@ void QnUniversalRtpEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
 //  16-bit profile: 0xBEDE
 //  16-bit length: number of 32-bit words following
 //  extensions: [ (id<<4 | (len-1)) + data... ] + padding to 32-bit
-static int writeMidExtensionBlock(
-    uint8_t* out,
-    int outCap,
-    uint8_t midExtId,
-    const std::string& mid)
+//
+// Multiple extension elements can be packed into a single 0xBEDE block.
+
+static constexpr uint8_t kMidExtId = 1;
+static constexpr uint8_t kAbsCaptureTimeExtId = 2;
+static constexpr uint8_t kPlayoutDelayExtId = 3;
+static constexpr uint64_t kNtpEpochOffsetSeconds = 2208988800ULL; // 1900 → 1970
+
+static uint64_t unixUsToNtp64(int64_t unixUs)
 {
-    // MID in RFC8285 is the ASCII string (e.g. "0", "1", "128" etc).
-    // One-byte header len field supports 1..16 bytes.
-    const int midLen = (int) mid.size();
-    if (midLen <= 0 || midLen > 16)
-        return 0;
-
-    // Header is 4 bytes + 1 byte ext header + data + padding
-    const int maxNeeded = 4 + 1 + midLen + 3;
-    if (outCap < maxNeeded)
-        return 0;
-
-    int pos = 0;
-
-    // 0xBEDE
-    out[pos++] = 0xBE;
-    out[pos++] = 0xDE;
-
-    // We'll fill length later
-    out[pos++] = 0x00;
-    out[pos++] = 0x00;
-
-    // One-byte extension element header:
-    //  4 bits id (1..14), 4 bits lenMinus1 (0..15 -> 1..16 bytes)
-    if (midExtId == 0 || midExtId > 14)
-        return 0;
-
-    out[pos++] = uint8_t((midExtId << 4) | uint8_t(midLen - 1));
-
-    // MID data
-    memcpy(out + pos, mid.data(), midLen);
-    pos += midLen;
-
-    // Pad to 32-bit boundary with 0x00 bytes
-    while (pos % 4 != 0)
-        out[pos++] = 0x00;
-
-    // Set length in 32-bit words after the 4-byte header
-    const int words = (pos - 4) / 4;
-    out[2] = uint8_t((words >> 8) & 0xFF);
-    out[3] = uint8_t(words & 0xFF);
-
-    return pos; // total bytes written
+    const uint64_t ntpSeconds = static_cast<uint64_t>(unixUs / 1000000) + kNtpEpochOffsetSeconds;
+    const uint64_t ntpFraction = (static_cast<uint64_t>(unixUs % 1000000) << 32) / 1000000;
+    return (ntpSeconds << 32) | ntpFraction;
 }
+
+struct Rfc8285ExtensionBlock
+{
+    uint8_t buf[64];
+    int pos = 4; // skip the 4-byte header, filled at the end
+
+    Rfc8285ExtensionBlock()
+    {
+        buf[0] = 0xBE;
+        buf[1] = 0xDE;
+        buf[2] = 0;
+        buf[3] = 0;
+    }
+
+    bool addMid(const std::string& mid)
+    {
+        const int midLen = static_cast<int>(mid.size());
+        if (midLen <= 0 || midLen > 16)
+            return false;
+        if (pos + 1 + midLen > static_cast<int>(sizeof(buf)))
+            return false;
+
+        buf[pos++] = uint8_t((kMidExtId << 4) | uint8_t(midLen - 1));
+        memcpy(buf + pos, mid.data(), midLen);
+        pos += midLen;
+        return true;
+    }
+
+    bool addAbsCaptureTime(int64_t ntpTimestampUs)
+    {
+        // 8 bytes of NTP64 timestamp.
+        if (pos + 1 + 8 > static_cast<int>(sizeof(buf)))
+            return false;
+
+        const uint64_t ntp64 = unixUsToNtp64(ntpTimestampUs);
+        buf[pos++] = uint8_t((kAbsCaptureTimeExtId << 4) | 7); // 7 = len-1 for 8 bytes
+        for (int i = 7; i >= 0; --i)
+            buf[pos++] = uint8_t((ntp64 >> (i * 8)) & 0xFF);
+        return true;
+    }
+
+    bool addPlayoutDelay(uint16_t minDelay10ms, uint16_t maxDelay10ms)
+    {
+        // 3 bytes: 12-bit min + 12-bit max playout delay, each in units of 10 ms
+        // (http://www.webrtc.org/experiments/rtp-hdrext/playout-delay). min=max=0
+        // selects Chrome's low-latency render path.
+        if (pos + 1 + 3 > static_cast<int>(sizeof(buf)))
+            return false;
+
+        buf[pos++] = uint8_t((kPlayoutDelayExtId << 4) | 2); // 2 = len-1 for 3 bytes
+        buf[pos++] = uint8_t((minDelay10ms >> 4) & 0xFF);
+        buf[pos++] = uint8_t(((minDelay10ms & 0x0F) << 4) | ((maxDelay10ms >> 8) & 0x0F));
+        buf[pos++] = uint8_t(maxDelay10ms & 0xFF);
+        return true;
+    }
+
+    int finalize()
+    {
+        // Pad to 32-bit boundary.
+        while (pos % 4 != 0)
+            buf[pos++] = 0x00;
+
+        const int words = (pos - 4) / 4;
+        buf[2] = uint8_t((words >> 8) & 0xFF);
+        buf[3] = uint8_t(words & 0xFF);
+        return pos;
+    }
+};
 
 bool QnUniversalRtpEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
 {
@@ -538,13 +613,25 @@ bool QnUniversalRtpEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
 
     if (m_isCurrentPacketSecondaryStream)
         rtpHeader->payloadType = kSecondaryStreamPayloadType;
+    else if (m_g711DualPayload)
+        rtpHeader->payloadType =
+            getPayloadType(m_sourceCodec, /*isVideo*/ false); //< PCMU 0 / PCMA 8.
     if (m_ssrc)
         rtpHeader->ssrc = qToBigEndian(m_ssrc.value());
+    // Overwrite the muxer's sequence with our own monotonic counter. Set (not advanced)
+    // here so the RTCP early-return below can re-enter on the same packet idempotently;
+    // the counter is stepped only once the packet is committed further down.
+    if (m_nextSequence)
+        rtpHeader->sequence = qToBigEndian(*m_nextSequence);
 
     if (m_config.absoluteRtcpTimestamps)
     {
-        if (m_rtcpReporter.needReport(timestamps.ntpTimestamp, timestamps.rtpTimestamp))
+        // needReport() must run unconditionally - it stores the timestamp pair
+        // the report is built from.
+        if (m_rtcpReporter.needReport(timestamps.ntpTimestamp, timestamps.rtpTimestamp)
+            || m_forceRtcpReport)
         {
+            m_forceRtcpReport = false;
             using namespace nx::rtp;
             uint8_t buffer[256];
             if (m_ssrc)
@@ -567,39 +654,53 @@ bool QnUniversalRtpEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
 
     const char* packetOffset = m_outputBuffer.data() + m_outputPos;
     uint32_t packetSize = packets[m_packetIndex];
-    bool hasExtraHeaders = m_config.addOnvifHeaderExtension || !m_mid.empty();
 
-    if (hasExtraHeaders)
+    // RTP allows only one extension header per packet. ONVIF uses its own profile (0xabac);
+    // everything else (MID, abs-capture-time) uses the RFC 8285 one-byte format (0xBEDE).
+    // These are mutually exclusive — never enable both.
+    const bool hasRfc8285 = !m_mid.empty() || m_config.addAbsCaptureTime || m_useZeroPlayoutDelay;
+    NX_ASSERT(
+        !(m_config.addOnvifHeaderExtension && hasRfc8285),
+        "ONVIF and RFC 8285 extensions cannot coexist in one RTP packet");
+    const bool hasExtension = m_config.addOnvifHeaderExtension || hasRfc8285;
+
+    if (hasExtension)
     {
         rtpHeader->extension = 1;
         sendBuffer.write(packetOffset, nx::rtp::RtpHeader::kSize);
         packetOffset += nx::rtp::RtpHeader::kSize;
         packetSize -= nx::rtp::RtpHeader::kSize;
-    }
 
-    if (m_config.addOnvifHeaderExtension)
-    {
-        uint8_t buffer[nx::rtp::OnvifHeaderExtension::kSize];
-        nx::rtp::OnvifHeaderExtension onvifExtension;
-        onvifExtension.ntp = std::chrono::microseconds(timestamps.ntpTimestamp);
-        uint32_t size = onvifExtension.write(buffer, sizeof(buffer));
-        sendBuffer.write((char*) buffer, size);
-    }
-
-    if (!m_mid.empty())
-    {
-        // Write MID extension block (example: ID=1, mid="0"/"1")
-        uint8_t extBuf[64];
-        const int extSize =
-            writeMidExtensionBlock(extBuf, (int) sizeof(extBuf), /*midExtId*/ 1, m_mid);
-        if (extSize > 0)
-            sendBuffer.write((char*) extBuf, extSize);
+        if (m_config.addOnvifHeaderExtension)
+        {
+            uint8_t buffer[nx::rtp::OnvifHeaderExtension::kSize];
+            nx::rtp::OnvifHeaderExtension onvifExtension;
+            onvifExtension.ntp = std::chrono::microseconds(timestamps.ntpTimestamp);
+            uint32_t size = onvifExtension.write(buffer, sizeof(buffer));
+            sendBuffer.write((char*) buffer, size);
+        }
+        else
+        {
+            Rfc8285ExtensionBlock ext;
+            if (!m_mid.empty())
+                ext.addMid(m_mid);
+            if (m_config.addAbsCaptureTime)
+                ext.addAbsCaptureTime(timestamps.ntpTimestamp);
+            if (m_useZeroPlayoutDelay)
+                ext.addPlayoutDelay(0, 0);
+            const int extSize = ext.finalize();
+            sendBuffer.write((char*) ext.buf, extSize);
+        }
     }
 
     sendBuffer.write(packetOffset, packetSize);
 
     m_outputPos += packets[m_packetIndex];
     m_packetIndex++;
+    // Advance only now that the packet is committed - the sequence in the header (set above),
+    // the SRTP encryption IV, and the NACK cache below all read the pre-increment value.
+    if (m_nextSequence)
+        m_nextSequence = uint16_t(*m_nextSequence + 1);
 
     if (m_encryptor && !m_encryptor->encryptPacket(&sendBuffer, dataStartIndex))
         return false;
@@ -632,6 +733,12 @@ void QnUniversalRtpEncoder::setSrtpEncryptionData(const EncryptionData& data)
 FfmpegMuxer::PacketTimestamp QnUniversalRtpEncoder::getLastTimestamps() const
 {
     return m_transcoder.muxer().getLastPacketTimestamp();
+}
+
+void QnUniversalRtpEncoder::rebaseOutputTimestamps(std::chrono::microseconds baseUs)
+{
+    m_transcoder.muxer().rebaseOutputTimestamps(baseUs);
+    m_forceRtcpReport = true;
 }
 
 nx::rtsp::SrtpEncryptor* QnUniversalRtpEncoder::encryptor() const

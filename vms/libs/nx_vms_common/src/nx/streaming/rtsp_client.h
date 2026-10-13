@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <vector>
 
 #include <QtNetwork/QAuthenticator>
@@ -346,7 +347,9 @@ public:
      */
     int readBinaryResponse(std::vector<nx::utils::ByteArray*>& demuxedData, int& channelNumber);
 
-    void sendBinaryResponse(const quint8* buffer, int size);
+    /** Returns whether the bytes were sent (false on a closed socket or a send failure/timeout),
+     *  so a backchannel writer can detect a camera that has silently stopped reading. */
+    bool sendBinaryResponse(const quint8* buffer, int size);
     void setPlayNowModeAllowed(bool value);
     bool isPlayNowMode() const;
     static quint8* prepareDemuxedData(
@@ -382,12 +385,19 @@ public:
     bool ignoreQopInDigest() const;
 
     bool readAndProcessTextData();
-    void setCloudConnectEnabled(bool enabled);
 
     void setDoSendOptions(bool value);
 
     void setConnectionTimeout(std::chrono::milliseconds timeout);
     std::chrono::milliseconds connectionTimeout() const;
+
+    CameraDiagnostics::Result sendOptions();
+    /** DESCRIBE for the opened URL: proves the requested path actually carries a
+     *  stream, which a successful OPTIONS alone does not. */
+    CameraDiagnostics::Result sendDescribe();
+    void setTcpSocket(
+        std::unique_ptr<nx::network::AbstractStreamSocket> socket,
+        const nx::Url& url = nx::Url());
 
 private:
     struct SetupRequest
@@ -417,8 +427,6 @@ private:
         SDPTrackInfo& track,
         int trackIndex,
         nx::vms::api::RtpTransportType transport);
-    CameraDiagnostics::Result sendOptions();
-    CameraDiagnostics::Result sendDescribe();
     bool sendKeepAlive();
     std::shared_ptr<nx::rtsp::SrtpEncryptor> srtpEncryptorForChannel(int channelNumber) const;
     std::shared_ptr<nx::rtsp::SrtpDecryptor> srtpDecryptorForChannel(int channelNumber) const;
@@ -439,6 +447,7 @@ private:
     void processTextData(const QByteArray& textData);
     static std::string getGuid();
     void registerRTPChannel(int rtpNum, int rtcpNum, int trackIndex);
+    void parseRtpInfoHeader(const QString& rtpInfo, const QString& dateHeader);
     nx::network::http::Request createPlayRequest(qint64 startPos, qint64 endPos);
     bool sendRequestInternal(nx::network::http::Request&& request);
     void addCommonHeaders(nx::network::http::HttpHeaders& headers);
@@ -446,7 +455,6 @@ private:
         std::string_view requestName,
         nx::network::http::HttpHeaders* outHeaders);
     QString parseContentBase(const QString& buffer);
-    void setTcpSocket(std::unique_ptr<nx::network::AbstractStreamSocket> socket);
     CameraDiagnostics::Result parseErrorResponse(const nx::network::rtsp::RtspResponse& response);
 
     Config m_config;
@@ -514,8 +522,7 @@ private:
     int m_tcpRecvBufferSize = 512 * 1024;
     int m_nonceCount = 0;
     bool m_ignoreQopInDigest = false;
-    nx::network::NatTraversalSupport m_natTraversal{nx::network::NatTraversalSupport::enabled};
-    bool m_keepAliveSupported = true;
+    bool m_useGetParameterKeepAlive = true; ///< false → use OPTIONS for keepalive instead
     std::chrono::milliseconds m_tcpConnectionTimeout{};
     Format m_format = Format::RTP;
 

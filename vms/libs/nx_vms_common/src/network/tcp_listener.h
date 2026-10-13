@@ -6,7 +6,6 @@
 #include <unordered_map>
 
 #include <QtCore/QObject>
-#include <QtNetwork/QNetworkInterface>
 
 #include <nx/network/abstract_socket.h>
 #include <nx/network/http/http_types.h>
@@ -57,6 +56,9 @@ public:
     void waitForPortUpdated();
 
     int getPort() const;
+
+    /** Connections being served, accepted ones and those passed to processNewConnection(). */
+    int connectionCount() const;
     nx::network::SocketAddress getLocalEndpoint() const;
 
     /** Remove ownership from connection.*/

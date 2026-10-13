@@ -5,6 +5,8 @@
 #include <atomic>
 #include <regex>
 
+#include <QtNetwork/QHostAddress>
+
 #include <nx/metric/metrics_storage.h>
 #include <nx/network/socket.h>
 #include <nx/network/socket_global.h>
@@ -29,7 +31,7 @@ public:
     QList<QnLongRunnable*> connections;
     QByteArray authDigest;
     mutable nx::Mutex mutex;
-    nx::Mutex connectionMtx;
+    mutable nx::Mutex connectionMtx;
     std::atomic<int> newPort{};
     QHostAddress serverAddress;
     std::atomic<int> localPort = 0;
@@ -448,6 +450,13 @@ void QnTcpListener::processNewConnection(std::unique_ptr<nx::network::AbstractSt
     NX_MUTEX_LOCKER lock(&d->connectionMtx);
     d->connections << processor;
     processor->start();
+}
+
+int QnTcpListener::connectionCount() const
+{
+    Q_D(const QnTcpListener);
+    NX_MUTEX_LOCKER lock(&d->connectionMtx);
+    return d->connections.size();
 }
 
 int QnTcpListener::getPort() const

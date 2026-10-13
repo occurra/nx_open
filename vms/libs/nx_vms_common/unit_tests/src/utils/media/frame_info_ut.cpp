@@ -750,8 +750,8 @@ void decodeAndCheck(
     auto decoder = std::make_unique<QnFfmpegVideoDecoder>(decoderConfig, nullptr, video);
     QSharedPointer<CLVideoDecoderOutput> decodedVideoFrame(new CLVideoDecoderOutput());
     ASSERT_TRUE(
-        decoder->decode(video, &decodedVideoFrame)
-        || decoder->decode(nullptr, &decodedVideoFrame)); //< Need to flush.
+        decoder->decode(video, decodedVideoFrame.data())
+        || decoder->decode(nullptr, decodedVideoFrame.data())); //< Need to flush.
     // Scale.
     auto scaledVideo = decodedVideoFrame->scaled(decodedVideoFrame->size(), pixelFormat);
     auto dataToCheck = scaledVideo->rawData();

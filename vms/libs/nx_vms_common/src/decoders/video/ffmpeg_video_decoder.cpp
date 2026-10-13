@@ -400,6 +400,14 @@ bool QnFfmpegVideoDecoder::openDecoder(const QnConstCompressedVideoDataPtr& data
     return true;
 }
 
+void QnFfmpegVideoDecoder::flushBuffers()
+{
+    if (m_context)
+        avcodec_flush_buffers(m_context);
+    // Frames already drained from the decoder belong to the pre-flush position.
+    m_outputFrames.clear();
+}
+
 bool QnFfmpegVideoDecoder::resetDecoder(const QnConstCompressedVideoDataPtr& data)
 {
     NX_DEBUG(this, "Reset video decoder: %1", data);
@@ -463,7 +471,6 @@ bool QnFfmpegVideoDecoder::decodeVideo(const QnConstCompressedVideoDataPtr& data
 {
     nx::media::ffmpeg::AvPacket avPacket(data.get());
     auto packet = avPacket.get();
-    packet->pts = AV_NOPTS_VALUE;
     if (data && isImage(data))
         packet->flags = AV_PKT_FLAG_KEY;
 
@@ -531,6 +538,9 @@ bool QnFfmpegVideoDecoder::finalizeDecodedFrame(
             outFrame->sample_aspect_ratio = getSampleAspectRatio();
             outFrame->flags = m_lastFlags;
             outFrame->channel = m_lastChannelNumber;
+            // See the rationale on the pts fallback in the non-RGBA branch below.
+            if (outFrame->pts == AV_NOPTS_VALUE)
+                outFrame->pts = outFrame->pkt_dts;
             return m_context->pix_fmt != AV_PIX_FMT_NONE;
         }
     }
@@ -546,6 +556,15 @@ bool QnFfmpegVideoDecoder::finalizeDecodedFrame(
         outFrame->pkt_dts = m_prevTimestamp + m_prevFrameDuration;
         m_prevTimestamp = outFrame->pkt_dts;
     }
+    // Source packets carry the presentation timestamp in data->timestamp,
+    // which we feed to the decoder via packet.dts (because RTSP-style
+    // streams supply only one timestamp). FFmpeg propagates that to
+    // pkt_dts on the output frame, and for B-frame streams it also
+    // computes pts via POC reordering — but for intra-only / no-reorder
+    // streams it leaves pts unset. Make pts authoritative for callers
+    // by falling back to pkt_dts when FFmpeg didn't fill it.
+    if (outFrame->pts == AV_NOPTS_VALUE)
+        outFrame->pts = outFrame->pkt_dts;
     return m_context->pix_fmt != AV_PIX_FMT_NONE;
 }
 
@@ -555,7 +574,7 @@ bool QnFfmpegVideoDecoder::finalizeDecodedFrame(
 // MPEG streams.
 bool QnFfmpegVideoDecoder::decode(
     const QnConstCompressedVideoDataPtr& data,
-    CLVideoDecoderOutputPtr* const outFramePtr)
+    CLVideoDecoderOutput* const outFrame)
 {
     if (data && m_codecId != data->compressionType)
     {
@@ -574,7 +593,7 @@ bool QnFfmpegVideoDecoder::decode(
     if (!m_opened)
         return false;
 
-    outFramePtr->data()->clean();
+    outFrame->clean();
 
     if (data)
     {
@@ -595,7 +614,7 @@ bool QnFfmpegVideoDecoder::decode(
         }
 
         if ((m_decodeMode > DecodeMode_Full
-             || (data->flags & QnAbstractMediaData::MediaFlags_Ignore))
+             || (data->flags & QnAbstractMediaData::MediaFlags_PreRoll))
             && data->data())
         {
             if (data->compressionType == AV_CODEC_ID_MJPEG)
@@ -682,12 +701,15 @@ bool QnFfmpegVideoDecoder::decode(
     }
 
     // Hand out the oldest ready frame first, so a burst of reordered output is only delayed
-    // across calls, never dropped.
+    // across calls, never dropped. The caller owns the output frame, so move the queued frame's
+    // buffers into it instead of handing out the queued object itself.
     if (m_outputFrames.empty())
         return false;
 
-    *outFramePtr = m_outputFrames.front();
+    const CLVideoDecoderOutputPtr frame = m_outputFrames.front();
     m_outputFrames.pop_front();
+    outFrame->assignMiscData(frame.get());
+    av_frame_move_ref(outFrame, frame.get());
     return true;
 }
 

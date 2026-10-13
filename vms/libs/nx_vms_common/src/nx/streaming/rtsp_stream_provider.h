@@ -2,16 +2,13 @@
 
 #pragma once
 
-#include <atomic>
 #include <cstdint>
 #include <optional>
 #include <vector>
 
 #include <QtCore/QElapsedTimer>
 
-#include <common/common_globals.h>
 #include <core/dataprovider/abstract_media_stream_provider.h>
-#include <core/dataprovider/live_stream_params.h>
 #include <core/resource/resource_media_layout.h>
 #include <nx/media/media_data_packet.h>
 #include <nx/network/multicast_address_registry.h>
@@ -21,11 +18,9 @@
 #include <nx/utils/log/format.h>
 #include <nx/utils/safe_direct_connection.h>
 #include <nx/utils/thread/stoppable.h>
+#include <nx/vms/api/types/rtp_types.h>
 #include <nx/vms/common/system_settings.h>
-#include <nx/vms/event/event_fwd.h>
 #include <utils/camera/camera_diagnostics.h>
-
-namespace nx::vms::rules { struct NetworkIssueInfo; }
 
 namespace nx::rtp {
 
@@ -71,10 +66,14 @@ public:
     using OnSocketReadTimeoutCallback = nx::MoveOnlyFunc<QnAbstractMediaDataPtr()>;
 
     /*
+     * streamIndex - Which lane of the camera this provider serves. The primary lane is the
+     *     reference clock that dependent lanes - the secondary lane, and audio/metadata tracks -
+     *     bind to when the camera provides no UTC time.
      * forceCameraTime - Never correct RTSP time, trust RTSP source.
      */
     RtspStreamProvider(
         const nx::vms::common::SystemSettings* systemSetting,
+        nx::vms::api::StreamIndex streamIndex,
         const nx::streaming::rtp::TimeOffsetPtr& timeOffset,
         bool forceCameraTime = false);
     virtual ~RtspStreamProvider();
@@ -99,9 +98,10 @@ public:
     virtual void pleaseStop() override;
 
     void setRequest(const QString& request);
-    void setRole(Qn::ConnectionRole role);
+
     // Force credentials. If credentials were not explicitly set, derived classes may use other
     // sources to automatically obtain them.
+    std::optional<nx::network::http::Credentials> credentials() const;
     void setCredentials(const nx::network::http::Credentials& credentials);
     void setPreferredAuthScheme(const nx::network::http::header::AuthScheme::Value scheme);
 
@@ -145,9 +145,6 @@ public:
     // Extra payload types for which parsers will be created for each track, if possible
     void setExtraPayloadTypes(std::vector<int> payloadTypes);
 
-    // Enable connect proxying via Cloud.
-    void setCloudConnectEnabled(bool value);
-
     std::chrono::microseconds translateTimestampFromCameraToVmsSystem(
         std::chrono::microseconds timestamp,
         int channelNumber);
@@ -158,20 +155,12 @@ protected:
     const QString& logName() const { return m_logName; }
 
     virtual nx::network::MulticastAddressRegistry* multicastAddressRegistry();
-    virtual QnAdvancedStreamParams advancedLiveStreamParams() const;
-    virtual void reportNetworkIssue(
-        std::chrono::microseconds timestamp,
-        nx::vms::api::EventReason reasonCode,
-        const nx::vms::rules::NetworkIssueInfo& info);
     virtual uint32_t numberOfVideoChannels() const;
     virtual void at_numberOfVideoChannelsChanged() {}
-    virtual bool isRtcpReportsForced() const;
     virtual std::string timeHelperKey() const;
     virtual void updateStreamUrlIfNeeded() {};
     virtual nx::streaming::rtp::TimePolicy getTimePolicy() const;
     virtual CameraDiagnostics::Result registerMulticastAddressesIfNeeded();
-
-    virtual std::optional<nx::network::http::Credentials> credentials() const;
 
 private:
     struct TrackInfo
@@ -242,7 +231,6 @@ protected:
     bool m_pleaseStop;
     QElapsedTimer m_rtcpReportTimer;
     bool m_gotSomeFrame;
-    Qn::ConnectionRole m_role;
 
     QnCustomResourceVideoLayoutPtr m_customVideoLayout;
     mutable nx::Mutex m_layoutMutex;
@@ -255,6 +243,7 @@ protected:
     int m_maxRtpRetryCount{0};
     int m_rtpFrameTimeoutMs{0};
     const bool m_forceCameraTime = false;
+    const nx::vms::api::StreamIndex m_streamIndex;
 
     PlaybackRange m_playbackRange;
     OnSocketReadTimeoutCallback m_onSocketReadTimeoutCallback;
@@ -271,44 +260,8 @@ protected:
     std::vector<int> m_extraPayloadTypes;
     nx::rtp::Result m_lastRtpParseResult;
     nx::network::AbstractStreamSocket* m_tcpSocket = nullptr;
-    bool m_cloudConnectEnabled = false;
     nx::Url m_url;
     std::optional<nx::network::http::Credentials> m_credentials;
-};
-
-class NX_VMS_COMMON_API RtspResourceStreamProvider: public RtspStreamProvider
-{
-    using base_type = RtspStreamProvider;
-
-public:
-    RtspResourceStreamProvider(
-        const QnVirtualCameraResourcePtr& resource,
-        const nx::streaming::rtp::TimeOffsetPtr& timeOffset);
-
-    virtual CameraDiagnostics::Result openStream() override;
-    virtual nx::vms::api::RtpTransportType getRtpTransport() const override;
-
-protected:
-    QnVirtualCameraResourcePtr resource() const { return m_resource; }
-    void updateTimePolicy();
-    virtual uint32_t numberOfVideoChannels() const override;
-    virtual void at_numberOfVideoChannelsChanged() override;
-    virtual bool isRtcpReportsForced() const override;
-    virtual std::string timeHelperKey() const override;
-    virtual void updateStreamUrlIfNeeded() override;
-    virtual nx::streaming::rtp::TimePolicy getTimePolicy() const override;
-    virtual CameraDiagnostics::Result registerMulticastAddressesIfNeeded() override;
-    virtual void processCameraTimeHelperEvent(
-        nx::streaming::rtp::CameraTimeHelper::EventType event) override;
-
-    virtual std::optional<nx::network::http::Credentials> credentials() const override;
-
-private:
-    CameraDiagnostics::Result registerAddressIfNeeded(
-        const QnRtspIoDevice::AddressInfo& addressInfo);
-
-private:
-    QnVirtualCameraResourcePtr m_resource;
 };
 
 } // namespace nx::streaming

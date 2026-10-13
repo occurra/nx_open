@@ -18,7 +18,7 @@ MediaTranscoder::MediaTranscoder(const Config& config, nx::metric::Storage* metr
 
 bool MediaTranscoder::setVideoCodec(
     AVCodecID codec,
-    Qn::StreamQuality quality,
+    nx::vms::api::StreamQuality quality,
     const QSize& sourceResolution,
     const QSize& resolution,
     int bitrate,
@@ -74,6 +74,14 @@ bool MediaTranscoder::openVideo(const QnConstCompressedVideoDataPtr& video)
 }
 
 bool MediaTranscoder::openAudio(const QnConstCompressedAudioDataPtr& audio)
+{
+    if (!m_aTranscoder)
+        return false;
+
+    return m_aTranscoder->open(audio);
+}
+
+bool MediaTranscoder::openAudio(const CodecParametersConstPtr& audio)
 {
     if (!m_aTranscoder)
         return false;

@@ -10,10 +10,5 @@ nx_add_test(nx_vms_common_ut
         nx_media_core
         nx_vms_common
         Qt6::Test
-    PRIVATE_LIBS
-        nx_vms_common_test_support
-    PROJECT VMS
-    COMPONENT Server
-    SUITES
     FOLDER common/tests
 )

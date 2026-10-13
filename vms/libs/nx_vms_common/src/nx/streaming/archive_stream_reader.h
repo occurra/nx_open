@@ -4,28 +4,36 @@
 
 #include <optional>
 
-#include <QtCore/QQueue>
-
 #include <core/resource/resource_media_layout.h>
 #include <nx/media/codec_parameters.h>
 #include <nx/media/media_data_packet.h>
-#include <nx/streaming/abstract_archive_stream_reader.h>
+#include <nx/streaming/abstract_archive_delegate.h>
+#include <nx/streaming/abstract_media_stream_data_provider.h>
+#include <nx/string.h>
+#include <nx/utils/datetime.h>
+#include <nx/utils/elapsed_timer.h>
+#include <nx/utils/move_only_func.h>
 #include <nx/utils/thread/wait_condition.h>
-#include <nx/vms/api/types/storage_location.h>
 #include <recording/playbackmask_helper.h>
 
-#include "motion/metadata_multiplexer.h"
+extern "C" {
+#include <libavutil/avutil.h>
+}
 
 // Private.
 class FrameTypeExtractor;
+
+struct QnTimePeriod;
+class QnTimePeriodList;
+class AbstractMediaDataFilter;
 
 /**
  * Provides reading of media data from QnMediaResource stream with specified playback speed and
  * with navigation supported.
  * Before starting to work, setArchiveDelegate() must be called, passing QnAbstractArchiveDelegate
  * working on the same QnMediaResource. Most of QnAbstractArchiveDelegate implementations
- * require pointer to QnAbstractArchiveStreamReader (or subclass) passed into constructor, so
- * cross-referencing will be established this way.
+ * require pointer to QnArchiveStreamReader passed into constructor, so cross-referencing will be
+ * established this way.
  * To consume data read, user has to subclass QnAbstractDataConsumer and provide one or more
  * instances to addDataProcessor(). Sequential calls for QnAbstractDataConsumer::processData()
  * will happen passing sequential packets of data read in form of QnAbstractMediaDataPtr.
@@ -36,53 +44,69 @@ class FrameTypeExtractor;
  * It is possible to set single (via setPlaybackRange()) or multiple (via setPlaybackMask()) time
  * intervals where playback is exclusively permitted.
  */
-class NX_VMS_COMMON_API QnArchiveStreamReader: public QnAbstractArchiveStreamReader
+class NX_VMS_COMMON_API QnArchiveStreamReader: public QnAbstractMediaStreamDataProvider
 {
-    using base_type = QnAbstractArchiveStreamReader;
+    Q_OBJECT
+
+    using base_type = QnAbstractMediaStreamDataProvider;
 
 public:
-    /**
-     * @param dev Must be an instance of QnMediaResource subclass.
-     */
-    QnArchiveStreamReader(const QnResourcePtr& dev);
+    QnArchiveStreamReader(const nx::Uuid& deviceId, const QString& url);
 
     virtual ~QnArchiveStreamReader();
 
     // Manual open. Open will be called automatically on first data access
-    virtual bool open(AbstractArchiveIntegrityWatcher* archiveIntegrityWatcher) override;
+    bool open();
 
-    virtual bool isSkippingFrames() const override;
+    bool isSkippingFrames() const;
 
-    virtual QStringList getAudioTracksInfo() const override;
-    virtual unsigned getCurrentAudioChannel() const override;
-    virtual bool setAudioChannel(unsigned num) override;
-    virtual bool isReverseMode() const override;
+    // gives a list of audio tracks
+    QStringList getAudioTracksInfo() const;
+
+    // gets current audio channel ( if we have the only channel - returns 0 )
+    unsigned getCurrentAudioChannel() const;
+
+    // sets certain track
+    bool setAudioChannel(unsigned num);
+
+    bool isReverseMode() const;
 
     /** Is not used and not implemented. */
-    virtual bool isNegativeSpeedSupported() const override;
+    bool isNegativeSpeedSupported() const;
 
-    virtual bool isSingleShotMode() const override;
+    bool isSingleShotMode() const;
 
-    virtual QnConstResourceVideoLayoutPtr getDPVideoLayout() const;
-    virtual AudioLayoutConstPtr getAudioLayout() const;
+    QnConstResourceVideoLayoutPtr getDPVideoLayout() const;
+    virtual AudioLayoutConstPtr getAudioLayout() const override;
     virtual bool hasVideo() const override;
-    void renameFileOnDestroy(const QString& newFileName);
-    // void jumpWithMarker(qint64 usec, bool findIFrame, int marker);
-    void setMarker(int marker);
+
+    //! Implementation of QnAbstractMediaStreamDataProvider::diagnoseMediaStreamConnection
+    virtual CameraDiagnostics::Result diagnoseMediaStreamConnection() override;
+
+    void setCycleMode(bool value);
 
     /**
      * Jump to frame directly, ignoring start of GOP, i.e. no preliminary jump to preceding key
      * frame performed, so usually no possibility to correctly decode the frame.
      */
-    virtual void directJumpToNonKeyFrame(qint64 usec) override;
+    void directJumpToNonKeyFrame(qint64 usec);
 
     /** The same as jumpToEx() with bindPositionToPlaybackMask = true. */
-    virtual bool jumpTo(qint64 usec, qint64 skipTime) override;
+    bool jumpTo(qint64 usec, qint64 skipTime);
+
+    /**
+     * Same as jumpTo(), but binds marker to this jump atomically (see jumpToEx()
+     * marker). Use this instead of a separate marker setter to avoid a race with
+     * the reader thread processing the jump.
+     */
+    bool jumpTo(qint64 usec, qint64 skipTime, std::optional<int> marker);
+
+    void jumpToPreviousFrame(qint64 usec);
 
     /**
      * Jump to frame at time specified by usec. Actually, preliminary jump to preceding key
      * frame performed, and all intermediate frames are read to allow normal decoding. All such
-     * intermediate frames get MediaFlags_Ignore flag set. It is guaranteed that frames read are
+     * intermediate frames get MediaFlags_PreRoll flag set. It is guaranteed that frames read are
      * enough to decode frames up to including usec.
      * Note: jumping (forward or backward) within the GOP of current position causes
      * preliminary jump to preceding key frame again, despite it is not necessary for decoding.
@@ -97,30 +121,31 @@ public:
      *     of GOP to the frame specified by usec and pausing the media just after reaching.
      * @param outJumpTime If not nullptr, actual jump time (after correction by playback mask),
      *     in microseconds, will be written by the pointer.
-     * @param useDelegate If false, QnAbstractNavigator object provided to setNavDelegate() will
-     *     not be used during jump.
+     * @param marker When set, the first packet delivered from this jump (and every packet after
+     *     it until the next marked jump) carries it in opaque. Bound to the jump atomically so a
+     *     reader-thread seek cannot mis-associate it with a different jump - unlike a separate
+     *     setter call.
      * @return false if jump to the same usec and skipTime is already performing right now.
      */
-    virtual bool jumpToEx(
+    bool jumpToEx(
         qint64 usec,
         qint64 skipTime,
         bool bindPositionToPlaybackMask,
         qint64* outJumpTime,
-        bool useDelegate = true) override;
+        std::optional<int> marker = std::nullopt,
+        bool skipToFrameBefore = false);
 
-    virtual void setSkipFramesToTime(qint64 skipTime) override;
-    virtual void nextFrame() override;
+    void setSkipFramesToTime(qint64 skipTime);
+    void nextFrame();
     void needMoreData();
-    virtual void previousFrame(qint64 usec) override;
-    virtual void pauseMedia() override;
-    virtual bool isMediaPaused() const override;
-    virtual void resumeMedia() override;
-    virtual QnAbstractMediaDataPtr getNextData() override;
+    void previousFrame(qint64 usec);
+    void pauseMedia();
+    bool isMediaPaused() const;
+    void resumeMedia();
+    QnAbstractMediaDataPtr getNextData();
 
-    virtual bool setStreamDataFilter(nx::vms::api::StreamDataFilters filter) override;
-    virtual nx::vms::api::StreamDataFilters streamDataFilter() const override;
-
-    virtual void setStorageLocationFilter(nx::vms::api::StorageLocation filter) override;
+    bool setStreamDataFilter(nx::vms::api::StreamDataFilters filter);
+    nx::vms::api::StreamDataFilters streamDataFilter() const;
 
     /**
      * Set time period within the archive, where playback is permitted. Upon reaching borders
@@ -128,9 +153,9 @@ public:
      * current position to the start of playbackRange specified. Other aspects of behavior are the
      * same as for setPlaybackMask().
      */
-    virtual void setPlaybackRange(const QnTimePeriod& playbackRange) override;
+    void setPlaybackRange(const QnTimePeriod& playbackRange);
 
-    virtual QnTimePeriod getPlaybackRange() const override;
+    QnTimePeriod getPlaybackRange() const;
 
     /**
      * Set several time periods within the archive, where playback is permitted. Upon reaching
@@ -139,176 +164,206 @@ public:
      * bindPositionToPlaybackMask = false. All other navigation methods will never cause reading
      * frames outside playback mask.
      */
-    virtual void setPlaybackMask(const QnTimePeriodList& playbackMask) override;
+    void setPlaybackMask(const QnTimePeriodList& playbackMask);
 
-    virtual void setQuality(
-        MediaQuality quality,
-        bool fastSwitch,
-        const QSize& resolution = QSize()) override;
-    virtual MediaQuality getQuality() const override;
-    virtual AVCodecID getTranscodingCodec() const override;
+    /**
+     * @param resolution Should be specified only if quality == MEDIA_Quality_CustomResolution;
+     *     width can be <= 0 which is treated as "auto".
+     */
+    void setQuality(MediaQuality quality, bool fastSwitch, const QSize& resolution = QSize());
+    MediaQuality getQuality() const;
+    AVCodecID getTranscodingCodec() const;
 
-    virtual void setSpeed(double value, qint64 currentTimeHint = AV_NOPTS_VALUE) override;
-    virtual double getSpeed() const override;
+    void setSpeed(double value, qint64 currentTimeHint = AV_NOPTS_VALUE);
+    double getSpeed() const;
 
     /* For atomic changing several params: quality and position for example */
     void lock();
     void unlock();
 
-    virtual void setArchiveDelegate(std::unique_ptr<QnAbstractArchiveDelegate> delegate) override;
-    QnAbstractArchiveDelegate* getArchiveDelegate() const override;
-    std::unique_ptr<QnAbstractArchiveDelegate> releaseArchiveDelegate() override;
+    void setArchiveDelegate(std::unique_ptr<QnAbstractArchiveDelegate> delegate);
+    QnAbstractArchiveDelegate* getArchiveDelegate() const;
+    std::unique_ptr<QnAbstractArchiveDelegate> releaseArchiveDelegate();
 
-    virtual void startPaused(qint64 startTime) override;
+    void startPaused(qint64 startTime);
 
-    virtual qint64 startTime() const override;
-    virtual qint64 endTime() const override;
+    /**
+     * \returns                         Time of the archive's start, in microseconds.
+     */
+    qint64 startTime() const;
+
+    /**
+     * \returns                         Time of the archive's end, in microseconds.
+     */
+    qint64 endTime() const;
 
     /* Return true if archive range is accessible immediately without opening an archive */
     bool offlineRangeSupported() const;
 
+    virtual void run() override;
     virtual void afterRun() override;
-    virtual void setGroupId(const nx::String& groupId) override;
+    void setGroupId(const nx::String& groupId);
 
     virtual void pause() override;
     virtual void resume() override;
     virtual bool isPaused() const override;
 
-    virtual bool isRealTimeSource() const override;
+    bool isRealTimeSource() const;
     virtual void pleaseStop() override;
 
-    virtual void setEndOfPlaybackHandler(std::function<void()> handler) override;
-    virtual void setErrorHandler(std::function<void(const QString& errorString)> handler) override;
+    bool isEnabled() const { return m_enabled; }
+    void setEnabled(bool value) { m_enabled = value; }
+    void setEndOfPlaybackHandler(std::function<void()> handler);
+    void setErrorHandler(std::function<void(const QString& errorString)> handler);
+    void setNoDataHandler(nx::MoveOnlyFunc<void()> noDataHandler);
+
+    void addMediaFilter(const std::shared_ptr<AbstractMediaDataFilter>& filter);
 
     CameraDiagnostics::Result lastError() const;
 
-    virtual std::chrono::microseconds currentTime() const override;
+    /**
+     * \returns                         Current position of this reader, in
+     *                                  microseconds.
+     */
+    std::chrono::microseconds currentTime() const;
 
     void reopen();
-    bool isJumpProcessing() const override;
+    bool isJumpProcessing() const;
+
+    void setRealtimeSpeed(float value) { m_realTimeSpeed = value; }
+
+    // Paces one packet to wall clock at the configured real-time speed: sleeps
+    // for getDelay(). No-op when no real-time speed is set (max throughput) or
+    // for pre-roll frames. Called from run(); also exposed so a synchronous
+    // getNextData() consumer can reuse the same pacing instead of its own.
+    void applyRealtimeDelay(const QnAbstractMediaDataPtr& data);
+
+signals:
+    void beforeJump(qint64 usec);
+    void jumpOccurred(qint64 usec, int sequence);
+    void streamAboutToBePaused();
+    void streamPaused();
+    void streamAboutToBeResumed();
+    void streamResumed();
+    void nextFrameOccurred();
+    void prevFrameOccurred();
+    void skipFramesTo(qint64 usec);
+    void waitForDataCanBeAccepted();
 
 protected:
-    virtual bool init();
+    bool init();
 
-    virtual qint64 contentLength() const
-    {
-        return m_delegate->endTime() - m_delegate->startTime();
-    }
+    qint64 contentLength() const { return m_delegate->endTime() - m_delegate->startTime(); }
     bool initCodecs();
     bool openFormatContext();
     void setCurrentTime(qint64 value);
     QnAbstractMediaDataPtr createEmptyPacket(bool isReverseMode);
     void beforeJumpInternal(qint64 usec);
+    void resetRealtimeDelay();
 
 protected:
-    qint64 m_currentTime;
-    qint64 m_topIFrameTime;
-    qint64 m_bottomIFrameTime;
+    qint64 m_currentTime = 0;
+    qint64 m_topIFrameTime = -1;
+    qint64 m_bottomIFrameTime = -1;
 
-    int m_primaryVideoIdx;
-    int m_audioStreamIndex;
+    int m_primaryVideoIdx = -1;
+    int m_audioStreamIndex = -1;
 
-    AVCodecID m_videoCodecId;
-    AVCodecID m_audioCodecId;
+    bool m_firstTime = true;
 
-    int m_freq;
-    int m_channels;
-
-    bool m_firstTime;
-
-    volatile bool m_wakeup;
-    qint64 m_tmpSkipFramesToTime;
+    qint64 m_tmpSkipFramesToTime = AV_NOPTS_VALUE;
+    bool m_cycleMode = false;
 
 private:
     void setSpeedInternal(double speed, qint64 currentTimeHint = AV_NOPTS_VALUE);
     bool isCompatiblePacketForMask(const QnAbstractMediaDataPtr& mediaData) const;
     virtual bool needKeyData(int channel) const override;
     void emitJumpOccurred(qint64 jumpTime, bool usePreciseSeek, int sequence);
+    std::chrono::milliseconds getDelay(int64_t timestamp);
+    void runCycleImpl();
 
 private:
-    unsigned m_selectedAudioChannel;
-    bool m_eof;
-    FrameTypeExtractor* m_frameTypeExtractor;
-    qint64 m_lastGopSeekTime;
-    QList<int> m_audioCodecs;
-    bool m_IFrameAfterJumpFound;
-    std::atomic<qint64> m_requiredJumpTime;
+    unsigned m_selectedAudioChannel = 0;
+    bool m_eof = false;
+    FrameTypeExtractor* m_frameTypeExtractor = nullptr;
+    qint64 m_lastGopSeekTime = -1;
+    bool m_IFrameAfterJumpFound = false;
+    std::atomic<qint64> m_requiredJumpTime{AV_NOPTS_VALUE};
     qint64 m_lastSeekPosition = AV_NOPTS_VALUE;
-    bool m_lastUsePreciseSeek;
-    QString m_onDestroyFileName;
-    bool m_BOF;
-    int m_afterBOFCounter;
-    int m_dataMarker;
-    int m_newDataMarker;
-    qint64 m_currentTimeHint;
+    bool m_lastUsePreciseSeek = false;
+    bool m_BOF = false;
+    int m_afterBOFCounter = -1;
+    int m_dataMarker = 0;
+    int m_newDataMarker = 0;
+    qint64 m_currentTimeHint = AV_NOPTS_VALUE;
     std::unique_ptr<QnAbstractArchiveDelegate> m_delegate;
-    AbstractArchiveIntegrityWatcher* m_archiveIntegrityWatcher = nullptr;
 
 private:
-    bool m_bofReached;
-    bool m_externalLocked;
-    bool m_exactJumpToSpecifiedFrame;
-    bool m_ignoreSkippingFrame;
-    qint64 m_skipFramesToTime;
-    bool m_keepLastSkkipingFrame;
-    bool m_singleShot;
-    bool m_singleQuantProcessed;
+    bool m_bofReached = false;
+    bool m_externalLocked = false;
+    bool m_exactJumpToSpecifiedFrame = false;
+    bool m_ignoreSkippingFrame = false;
+    qint64 m_skipFramesToTime = 0;
+    // Set for a previousFrame() jump: the skip must stop just BEFORE m_skipFramesToTime
+    // (not at/after it, as a seek does). It rides the jump like skipTime - passed as a
+    // jumpToEx()/channeljumpToUnsync() argument, staged in m_tmp... and promoted to the
+    // active m_skipToFrameBeforeTarget when the reader thread applies the jump. Since
+    // skip frames are delivered one per call, the frame before the target is already
+    // out; the reader just withholds the crossing frame into m_bufferedVideoData and
+    // ends the shot, then a following nextFrame() reveals that buffered frame.
+    bool m_tmpSkipToFrameBeforeTarget = false;
+    bool m_skipToFrameBeforeTarget = false;
+    QnAbstractMediaDataPtr m_bufferedVideoData;
+    bool m_singleShot = false;
+    bool m_singleQuantProcessed = false;
     mutable nx::Mutex m_jumpMtx;
     nx::WaitCondition m_singleShowWaitCond;
     QnAbstractMediaDataPtr m_currentData;
     QnAbstractMediaDataPtr m_afterMotionData;
-    QnAbstractMediaDataPtr m_nextData;
-    QQueue<QnAbstractMediaDataPtr> m_skippedMetadata;
 
     mutable nx::Mutex m_playbackMaskSync;
     QnPlaybackMaskHelper m_playbackMaskHelper;
-    MediaQuality m_quality;
-    bool m_qualityFastSwitch;
+    MediaQuality m_quality = MEDIA_Quality_High;
+    bool m_qualityFastSwitch = true;
     QSize m_customResolution;
-    MediaQuality m_oldQuality;
-    bool m_oldQualityFastSwitch;
+    MediaQuality m_oldQuality = MEDIA_Quality_High;
+    bool m_oldQualityFastSwitch = true;
     QSize m_oldResolution;
-    bool m_isStillImage;
-    double m_speed = 0.0f;
-    double m_prevSpeed;
+    bool m_isStillImage = false;
+    double m_speed = 1.0;
+    double m_prevSpeed = 1.0;
 
-    bool m_rewSecondaryStarted[CL_MAX_CHANNELS];
-    std::shared_ptr<MetadataMultiplexer> m_motionConnection[CL_MAX_CHANNELS];
-    nx::vms::api::StreamDataFilters m_streamDataFilter;
-    nx::vms::api::StreamDataFilters m_prevStreamDataFilter;
+    bool m_rewSecondaryStarted[CL_MAX_CHANNELS] = {};
+    nx::vms::api::StreamDataFilters m_streamDataFilter = nx::vms::api::StreamDataFilter::media;
+    nx::vms::api::StreamDataFilters m_prevStreamDataFilter = nx::vms::api::StreamDataFilter::media;
 
-    nx::vms::api::StorageLocation m_prevStorageLocationFilter{};
+    bool m_outOfPlaybackMask = false;
+    qint64 m_latPacketTime = DATETIME_NOW;
 
-    bool m_outOfPlaybackMask;
-    qint64 m_latPacketTime;
-
-    // This is only needed to drain the Android or iOS hardware video decoder, since
-    // they buffer video frames and cannot work in a simple one-in, one-out manner.
-    // Instead, they operate more like four-in, four-out. Therefore, when the
-    // player is paused, we may need more frames than just the one needed to
-    // display the frame at a specified position. After refactoring, this code
-    // should be removed.
-    int m_extraFrames = 0;
-    int m_extraFramesAfterSeek = 0;
-
-public:
-    void setExtraFramesAfterSeek(int value) { m_extraFramesAfterSeek = value; }
-
-private:
-    bool m_stopCond;
+    bool m_stopCond = false;
     mutable nx::Mutex m_stopMutex;
     nx::WaitCondition m_stopWaitCond;
     mutable std::optional<bool> m_hasVideo;
     mutable std::optional<AudioLayoutConstPtr> m_audioLayout;
 
+    // For realtime delay.
+    std::optional<float> m_realTimeSpeed{};
+    nx::utils::ElapsedTimer m_timer; //< Timer for realtime playback delay.
+    int64_t m_sendTimeBaseUs = -1;
+
+    bool m_enabled = true;
+    std::vector<std::shared_ptr<AbstractMediaDataFilter>> m_filters;
+    nx::MoveOnlyFunc<void()> m_noDataHandler;
+    const nx::Uuid m_deviceId;
+
     qint64 determineDisplayTime(bool reverseMode);
     void internalJumpTo(qint64 usec);
-    bool getNextVideoPacket();
     QnAbstractMediaDataPtr getNextPacket();
-    void channeljumpToUnsync(qint64 usec, int channel, qint64 skipTime);
-    void setSkipFramesToTime(qint64 skipFramesToTime, bool keepLast);
+    void channeljumpToUnsync(
+        qint64 usec,
+        int channel,
+        qint64 skipTime,
+        bool skipToFrameBefore = false);
     std::function<void()> m_endOfPlaybackHandler;
     std::function<void(const QString& errorString)> m_errorHandler;
-
-    void updateMetadataReaders(int channel, nx::vms::api::StreamDataFilters filter);
 };
