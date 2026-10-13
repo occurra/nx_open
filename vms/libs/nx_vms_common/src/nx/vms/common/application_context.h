@@ -6,7 +6,6 @@
 
 #include <nx/utils/impl_ptr.h>
 #include <nx/utils/uuid.h>
-#include <nx/vms/api/types/connection_types.h>
 
 class QnLongRunableCleanup;
 class QnStoragePluginFactory;
@@ -26,9 +25,6 @@ namespace nx::vms::common {
  */
 class NX_VMS_COMMON_API ApplicationContext: public QObject
 {
-protected:
-    using PeerType = nx::vms::api::PeerType;
-
 public:
     enum class FeatureFlag
     {
@@ -58,27 +54,20 @@ public:
 
         static Features all() { return {FeatureFlag::all}; }
         static Features none() { return {FeatureFlag::none}; }
+        static Features networkingOnly() { return {FeatureFlag::networking}; }
     };
 
-    ApplicationContext(
-        PeerType localPeerType = PeerType::notDefined,
-        Features features = Features::none(),
-        const QString& customCloudHost = QString{},
-        QObject* parent = nullptr);
+    ApplicationContext(Features features = Features::networkingOnly(), QObject* parent = nullptr);
 
     virtual ~ApplicationContext() override;
 
     /** Call before the destructor to ensure correct stop order. */
     virtual void stopAll();
 
-    const Features& commonFeatures() const;
-
     /**
      * Main context of the VMS applications. Exists through all application lifetime.
      */
     static ApplicationContext* instance();
-
-    PeerType localPeerType() const;
 
     /** Application language locale code (in form `en_US`). */
     QString locale() const;
@@ -89,15 +78,9 @@ public:
     /** Application-wide translation manager. */
     nx::i18n::TranslationManager* translationManager() const;
 
-    void setModuleShortId(const nx::Uuid& id, int number);
-    int moduleShortId(const nx::Uuid& id) const;
-    QString moduleDisplayName(const nx::Uuid& id) const;
-
     QnStoragePluginFactory* storagePluginFactory() const;
     QnLongRunableCleanup* longRunableCleanup() const;
     nx::metric::ApplicationMetricsStorage* metrics() const;
-
-    virtual bool isCertificateValidationLevelStrict() const;
 
     template<typename ContextType>
     ContextType* as()

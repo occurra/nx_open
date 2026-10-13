@@ -2,13 +2,13 @@
 
 #include "multicast_address_registry.h"
 
-#include <core/resource/camera_resource.h>
+#include <core/resource/resource.h>
 #include <nx/utils/log/log.h>
 
 namespace nx::network {
 
 MulticastAddressRegistry::RegisteredAddressHolderPtr MulticastAddressRegistry::registerAddress(
-    QnVirtualCameraResourcePtr resource,
+    QnResourcePtr resource,
     nx::vms::api::StreamIndex streamIndex,
     nx::network::SocketAddress address)
 {

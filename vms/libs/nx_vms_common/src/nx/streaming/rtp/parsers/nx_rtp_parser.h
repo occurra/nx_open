@@ -6,10 +6,8 @@
 #include <QtCore/QFile>
 #include <QtCore/QMap>
 
-#include <nx/analytics/metadata_logger.h>
 #include <nx/rtp/parsers/rtp_stream_parser.h>
 #include <nx/rtp/result.h>
-#include <nx/utils/software_version.h>
 
 namespace nx::rtp {
 
@@ -45,7 +43,6 @@ public:
      * Don't parse incoming audio packets if value is false.
      */
     void setAudioEnabled(bool value);
-    void setServerVersion(const nx::utils::SoftwareVersion& serverVersion);
 
 private:
     void logMediaData(const QnAbstractMediaDataPtr& metadata);
@@ -56,7 +53,6 @@ private:
         bool& gotData);
 
 private:
-    nx::utils::SoftwareVersion m_serverVersion;
     CodecParametersConstPtr m_context;
     QnAbstractMediaDataPtr m_mediaData;
     QnAbstractMediaDataPtr m_nextDataPacket;
@@ -64,8 +60,6 @@ private:
     qint64 m_position = AV_NOPTS_VALUE;
     bool m_isAudioEnabled = true;
     qint64 m_lastFramePtsUs; //< Intended for debug.
-    std::unique_ptr<nx::analytics::MetadataLogger> m_primaryLogger;
-    std::unique_ptr<nx::analytics::MetadataLogger> m_secondaryLogger;
 };
 
 using QnNxRtpParserPtr = QSharedPointer<QnNxRtpParser>;

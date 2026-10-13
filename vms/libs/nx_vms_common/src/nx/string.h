@@ -10,9 +10,6 @@
 #include <QtCore/QString>
 
 #include <nx/utils/buffer.h>
-
-class QnJsonContext;
-
 namespace nx {
 
 /**
@@ -122,11 +119,5 @@ inline nx::String operator+(const nx::String& left, const char* right)
 
 //-------------------------------------------------------------------------------------------------
 // Fusion serialization helpers.
-
-NX_VMS_COMMON_API void serialize(QnJsonContext* ctx, const nx::String& value, QJsonValue* target);
-NX_VMS_COMMON_API bool deserialize(
-    QnJsonContext* ctx,
-    const QJsonValue& value,
-    nx::String* target);
 
 } // namespace nx

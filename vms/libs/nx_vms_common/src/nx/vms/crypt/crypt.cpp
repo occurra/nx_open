@@ -5,9 +5,9 @@
 #include <QtCore/QtEndian>
 #include <QtCore/QtGlobal>
 
-#include <nx/fusion/model_functions.h>
 #include <nx/utils/cryptographic_hash.h>
 #include <nx/utils/log/assert.h>
+#include <nx/utils/log/log.h>
 #include <nx/utils/random.h>
 
 namespace nx::vms::crypt {
@@ -165,8 +165,5 @@ std::pair<AesKey, uint64_t> fromEncryptionData(const std::vector<uint8_t>& encry
 
     return {key, nonce};
 }
-
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(AesKey, (json), AesKey_Fields)
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(AesKeyWithTime, (json), AesKeyWithTime_Fields)
 
 } // namespace nx::vms::crypt

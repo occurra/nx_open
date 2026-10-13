@@ -6,20 +6,11 @@
 #include <QtCore/QDebug>
 #include <QtCore/QtEndian>
 
-#include <nx/fusion/model_functions.h>
 #include <nx/utils/datetime.h>
 #include <nx/utils/math/math.h>
-#include <nx/vms/api/data/server_time_period.h>
 #include <utils/common/util.h>
 
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(
-    QnTimePeriod,
-    (ubjson) (xml) (csv_record),
-    (startTimeMs) (durationMs))
-
 namespace detail {
-
-QN_FUSION_DEFINE_FUNCTIONS(QnTimePeriod, (json))
 
 } // namespace detail
 
@@ -218,16 +209,6 @@ qint64 QnTimePeriod::bound(qint64 timeMs) const
     return qBound(startTimeMs, timeMs, endTimeMs() - 1);
 }
 
-nx::vms::api::ServerTimePeriod QnTimePeriod::toServerPeriod() const
-{
-    auto result = nx::vms::api::ServerTimePeriod{.startTimeMs = startTime()};
-
-    if (!isInfinite())
-        result.durationMs = duration();
-
-    return result;
-}
-
 void PrintTo(const QnTimePeriod& period, ::std::ostream* os)
 {
     const QString fmt = "%1 - %2";
@@ -241,7 +222,7 @@ void PrintTo(const QnTimePeriod& period, ::std::ostream* os)
 
 QDebug operator<<(QDebug dbg, const QnTimePeriod& period)
 {
-    const QString fmt = lit("dd MM yyyy hh:mm:ss");
+    const QString fmt = "dd MM yyyy hh:mm:ss";
     if (!period.isInfinite())
         dbg.nospace() << "" << QDateTime::fromMSecsSinceEpoch(period.startTimeMs).toString(fmt)
                       << " - "
@@ -255,7 +236,7 @@ QDebug operator<<(QDebug dbg, const QnTimePeriod& period)
 
 std::string toString(const QnTimePeriod& period)
 {
-    const QString fmt = lit("dd MM yyyy hh:mm:ss");
+    const QString fmt = "dd MM yyyy hh:mm:ss";
     std::string result;
     if (!period.isInfinite())
         result = QDateTime::fromMSecsSinceEpoch(period.startTimeMs).toString(fmt).toStdString()
@@ -271,21 +252,6 @@ std::string toString(const QnTimePeriod& period)
         + std::to_string(period.durationMs) + ")";
 }
 
-void serialize(QnJsonContext* ctx, const QnTimePeriod& value, QJsonValue* target)
-{
-    detail::serialize(ctx, value, target);
-}
-
-bool deserialize(QnJsonContext* ctx, const QJsonValue& value, QnTimePeriod* target)
-{
-    if (value.type() == QJsonValue::Null)
-    {
-        *target = QnTimePeriod();
-        return false;
-    }
-    return detail::deserialize(ctx, value, target);
-}
-
 QDataStream& operator<<(QDataStream& out, const QnTimePeriod& value)
 {
     return out << value.startTimeMs << value.durationMs; //< QDataStream takes care of endianness.
@@ -294,17 +260,4 @@ QDataStream& operator<<(QDataStream& out, const QnTimePeriod& value)
 QDataStream& operator>>(QDataStream& in, QnTimePeriod& value)
 {
     return in >> value.startTimeMs >> value.durationMs; //< QDataStream takes care of endianness.
-}
-
-QnTimePeriod variantMapToTimePeriod(const QVariantMap& map)
-{
-    const auto startTimeIt = map.find("startTime");
-    if (startTimeIt == map.end())
-        return QnTimePeriod();
-
-    const auto durationIt = map.find("duration");
-    if (durationIt == map.end())
-        return QnTimePeriod();
-
-    return QnTimePeriod(startTimeIt.value().toInt(), durationIt.value().toInt());
 }

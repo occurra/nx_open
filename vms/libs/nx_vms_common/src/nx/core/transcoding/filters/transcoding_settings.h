@@ -13,13 +13,9 @@
 #include <nx/core/watermark/watermark.h>
 #include <nx/vms/api/data/dewarping_data.h>
 #include <nx/vms/api/data/image_correction_data.h>
-#include <nx/vms/api/data/pixelation_settings.h>
-#include <nx/vms/common/utils/detected_object.h>
 #include <utils/common/aspect_ratio.h>
 
 #include "../timestamp_format.h"
-
-namespace nx::analytics::taxonomy { class AbstractState; }
 
 namespace nx::core::transcoding {
 
@@ -41,16 +37,6 @@ struct OverlaySettings
 };
 
 using OverlaySettingsPtr = QSharedPointer<OverlaySettings>;
-
-struct ObjectExportSettings
-{
-    bool showAttributes = false;
-    vms::api::ObjectTypeSettings typeSettings;
-
-    std::shared_ptr<nx::analytics::taxonomy::AbstractState> taxonomyState;
-    QColor textColor;
-    vms::common::DetectedObjectSettingsMap frameColors;
-};
 
 struct MotionExportSettings
 {
@@ -81,8 +67,6 @@ struct Settings
     // Watermark; sometimes it behaves different from other overlays.
     Watermark watermark;
 
-    std::optional<nx::vms::api::PixelationSettings> pixelationSettings;
-    std::optional<ObjectExportSettings> objectExportSettings;
     std::optional<MotionExportSettings> motionExportSettings;
 
     // The target resolution to which the image will be scaled before other filters.
@@ -96,11 +80,7 @@ struct Settings
     // Force transcoding
     bool forceTranscoding = false;
 
-    inline bool metadataRequired() const
-    {
-        return objectExportSettings.has_value() || motionExportSettings.has_value()
-            || (pixelationSettings.has_value() && !pixelationSettings->empty());
-    }
+    inline bool metadataRequired() const { return motionExportSettings.has_value(); }
 
     /**
      * Check if options require transcoding.

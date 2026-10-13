@@ -8,7 +8,7 @@
 #include <nx/network/socket_common.h>
 #include <nx/utils/scope_guard.h>
 #include <nx/utils/thread/mutex.h>
-#include <nx/vms/api/types/motion_types.h>
+#include <nx/vms/api/types/stream_index.h>
 
 namespace nx::network {
 
@@ -19,7 +19,7 @@ class NX_VMS_COMMON_API MulticastAddressRegistry: public QObject
 public:
     struct AddressUsageInfo
     {
-        QWeakPointer<QnVirtualCameraResource> device;
+        QWeakPointer<QnResource> device;
         nx::vms::api::StreamIndex stream;
     };
 
@@ -28,7 +28,7 @@ public:
 
 public:
     RegisteredAddressHolderPtr registerAddress(
-        QnVirtualCameraResourcePtr resource,
+        QnResourcePtr resource,
         nx::vms::api::StreamIndex streamIndex,
         nx::network::SocketAddress address);
 

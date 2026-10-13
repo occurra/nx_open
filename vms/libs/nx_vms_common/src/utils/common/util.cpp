@@ -2,7 +2,6 @@
 
 #include "util.h"
 
-#include <common/common_globals.h>
 #include <nx/utils/datetime.h>
 #include <nx/utils/thread/mutex.h>
 #include <nx/utils/time.h>

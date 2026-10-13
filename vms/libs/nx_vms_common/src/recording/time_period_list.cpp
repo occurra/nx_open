@@ -4,19 +4,12 @@
 #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include <nx/fusion/model_functions.h>
-#include <nx/fusion/serialization/compressed_time_functions.h>
 #include <nx/utils/datetime.h>
 #include <nx/utils/math/math.h>
 #include <nx/vms/common/recording/time_periods_utils.h>
 #include <utils/common/util.h>
 
 #include "time_period_list.h"
-
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(
-    MultiServerPeriodData,
-    (json) (ubjson) (xml) (csv_record) (compressed_time),
-    (guid) (periods))
 
 namespace { static const qint64 InvalidValue = std::numeric_limits<qint64>::max(); } // namespace
 

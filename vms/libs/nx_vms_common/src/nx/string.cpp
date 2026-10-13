@@ -2,8 +2,6 @@
 
 #include "string.h"
 
-#include <nx/fusion/serialization/json_functions.h>
-
 namespace nx {
 
 String::String(const std::string& str):
@@ -116,20 +114,5 @@ nx::String& String::append(const nx::Buffer& buf)
 
 //-------------------------------------------------------------------------------------------------
 // Fusion serialization helpers.
-
-void serialize(QnJsonContext* ctx, const nx::String& value, QJsonValue* target)
-{
-    ::serialize(ctx, QString::fromUtf8(value), target);
-}
-
-bool deserialize(QnJsonContext* ctx, const QJsonValue& value, nx::String* target)
-{
-    QString str;
-    if (!::deserialize(ctx, value, &str))
-        return false;
-
-    *target = str.toUtf8();
-    return true;
-}
 
 } // namespace nx

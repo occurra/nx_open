@@ -4,7 +4,6 @@
 
 #include <list>
 
-#include <analytics/common/object_metadata.h>
 #include <core/resource/resource_fwd.h>
 #include <core/resource/resource_media_layout.h>
 #include <nx/core/transcoding/filters/transcoding_settings.h>
@@ -49,9 +48,6 @@ public:
     void reset();
     bool empty();
 
-    void setMetadata(
-        const std::vector<common::metadata::ObjectMetadataPacketPtr>& objectsData,
-        const std::vector<QnConstMetaDataV1Ptr>& motionData);
     QSize apply(const QSize& resolution) const;
     CLVideoDecoderOutputPtr apply(const CLVideoDecoderOutputPtr& source) const;
 
@@ -68,16 +64,12 @@ private:
     void prepareWatermarkFilter();
     void prepareDownscaleFilter(const QSize& srcFrameResolution, const QSize& resolutionLimit);
     void createScaleImageFilter(const QSize& dstSize);
-    void createPixelationImageFilter();
-    void createObjectInfoFilter();
-    void createMotionFilter();
 
 private:
     bool m_ready = false;
     Settings m_settings;
     std::list<QnAbstractImageFilterPtr> m_legacyFilters;
     std::list<QnAbstractImageFilterPtr> m_filters;
-    std::list<AbstractMetadataFilterPtr> m_metadataFilters;
 };
 
 using FilterChainPtr = std::unique_ptr<FilterChain>;

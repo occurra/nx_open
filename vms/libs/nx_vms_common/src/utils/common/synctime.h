@@ -2,70 +2,29 @@
 
 #pragma once
 
-#include <atomic>
 #include <chrono>
 
 #include <QtCore/QDateTime>
-#include <QtCore/QObject>
-
-#include <nx/utils/impl_ptr.h>
-
-namespace ec2 {
-
-class AbstractTimeNotificationManager;
-using AbstractTimeNotificationManagerPtr = std::shared_ptr<AbstractTimeNotificationManager>;
-
-} // namespace ec2
-
-namespace nx::vms::common {
-
-class AbstractTimeSyncManager;
-using AbstractTimeSyncManagerPtr = std::shared_ptr<AbstractTimeSyncManager>;
-
-} // namespace nx::vms::common
 
 /**
- * Time provider that is synchronized with Server.
+ * Legacy class which always return local OS time now.
  */
-class NX_VMS_COMMON_API QnSyncTime final: public QObject
+class NX_VMS_COMMON_API QnSyncTime final
 {
-    Q_OBJECT;
-
 public:
-    QnSyncTime(QObject* parent = NULL);
-    ~QnSyncTime();
+    static inline qint64 currentUSecsSinceEpoch()
+    {
+        // system_clock::now() reads GetSystemTimePreciseAsFileTime on Windows and so stays
+        // sub-microsecond. QDateTime::currentMSecsSinceEpoch() is truncated to whole milliseconds
+        // and only advances at the global timer resolution (15.6 ms by default on Windows), too
+        // coarse for binding an RTP stream to the server clock.
+        return std::chrono::duration_cast<std::chrono::microseconds>(
+                   std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    }
 
-    static QnSyncTime* instance();
-
-    void setTimeSyncManager(nx::vms::common::AbstractTimeSyncManagerPtr timeSyncManager);
-    void setTimeNotificationManager(
-        ec2::AbstractTimeNotificationManagerPtr timeNotificationManager);
-
-    /**
-     * Synchronized time of the System in milliseconds since epoch. Can be taken from the Internet
-     * if there is a network access, otherwise one of the Servers is chosen as main, and it's time
-     * is used.
-     * If System connection is not established yet, local OS time is used.
-     */
-    std::chrono::milliseconds value() const;
-
-    qint64 currentMSecsSinceEpoch() const;
-    qint64 currentUSecsSinceEpoch() const;
-    std::chrono::microseconds currentTimePoint() const;
-    QDateTime currentDateTime() const;
-
-    /** Forced re-synchronization. */
-    void resync();
-
-signals:
-    /**
-     * Emitted whenever time on Server changes. Deprecated. Use AbstractTimeSyncManager instead.
-     */
-    void timeChanged();
-
-private:
-    struct Private;
-    nx::utils::ImplPtr<Private> d;
+    static inline std::chrono::microseconds currentTimePoint()
+    {
+        return std::chrono::microseconds(currentUSecsSinceEpoch());
+    }
 };
-
-#define qnSyncTime (QnSyncTime::instance())

@@ -1,22 +1,8 @@
 ## Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-find_package(Qt6 COMPONENTS ShaderTools)
 find_package(libsrtp REQUIRED)
-find_package(crashpad REQUIRED)
-
-set(date_time_formatter_root "${open_source_root}/artifacts/date_time_formatter")
-file(GLOB_RECURSE date_time_formatter_sources
-    "${date_time_formatter_root}/src/date_time_formatter/*")
-
-set(device_vendor_names_root "${open_source_root}/artifacts/device_vendor_names")
-file(GLOB_RECURSE device_vendor_names_sources
-    "${device_vendor_names_root_root}/src/device_vendor_names/*")
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/resources")
-
-if(MACOSX)
-    set(mac_sources src/utils/mac_utils.mm)
-endif()
 
 if(APPLE)
     set(apple_sources src/utils/apple_utils.mm)
@@ -26,34 +12,24 @@ nx_add_target(nx_vms_common LIBRARY
     ADDITIONAL_SOURCES
         ${mac_sources}
         ${apple_sources}
-        ${date_time_formatter_sources}
-        ${device_vendor_names_sources}
     ADDITIONAL_RESOURCES
         "${CMAKE_CURRENT_BINARY_DIR}/resources"
     PUBLIC_LIBS
         Qt6::Gui
         Qt6::Concurrent
-        Qt6::Xml
         ffmpeg::ffmpeg
         nx_vms_api
-        nx_vms_utils
         nx_network
         nx_network_rest
         nx_utils
-        nx_sdk
-        nx_fusion
         nx_rtp
         nx_metric
-        cloud_db_client
-        nx_vms_update
         nx_media_core
         nx_codec
         libsrtp::libsrtp
-    PRIVATE_LIBS
-        crashpad::crashpad
     FOLDER common/libs
 )
-nx_make_target_translatable(nx_vms_common COMPONENTS "client" "server" "mobile")
+nx_make_target_translatable(nx_vms_common COMPONENTS "server")
 
 if(compilerMsvc)
     # ignore PDB was not found
@@ -63,23 +39,16 @@ endif()
 target_compile_definitions(nx_vms_common
     PRIVATE
         NX_VMS_COMMON_API=${API_EXPORT_MACRO}
-        NX_STATISTICS_SERVER_URL="${statisticsServerUrl}"
-        NX_STATISTICS_SERVER_USER="${statisticsServerUser}"
-        NX_STATISTICS_SERVER_PASSWORD="${statisticsServerPassword}"
-        NX_CRASH_REPORT_API_URL="${crashReportApiUrl}"
     INTERFACE
         NX_VMS_COMMON_API=${API_IMPORT_MACRO}
 )
 
 if(LINUX AND NOT ANDROID)
-    add_dependencies(nx_vms_common libgl_stub libegl_stub libglx_stub libx11_stub libva-x11_stub)
     target_link_libraries(nx_vms_common PRIVATE rt)
 endif()
 
 target_include_directories(nx_vms_common
     PRIVATE
-        ${Qt6Core_PRIVATE_INCLUDE_DIRS}
-        ${Qt6Gui_PRIVATE_INCLUDE_DIRS}
         ${device_vendor_names_root}/src
     PUBLIC
         ${date_time_formatter_root}/src
@@ -103,25 +72,9 @@ if(MACOSX)
         PUBLIC ${CoreFoundation_LIBRARY} ${IOKit_LIBRARY} ${AppKit_LIBRARY})
 endif()
 
-if(NOT ANDROID AND NOT IOS)
-    find_package(Freetype)
-    target_link_libraries(nx_vms_common PRIVATE Freetype::Freetype)
-endif()
-
+find_package(Freetype)
+target_link_libraries(nx_vms_common PRIVATE Freetype::Freetype)
 
 if(withTests)
-    add_subdirectory(test_support)
     add_subdirectory(unit_tests)
 endif()
-
-# This command generates nx_vms_common_other_files target.
-qt6_add_shaders(nx_vms_common "pixelation_shaders"
-    PREFIX
-        "/"
-    FILES
-        "src/nx/vms/common/pixelation/shaders/color.frag"
-        "src/nx/vms/common/pixelation/shaders/color.vert"
-        "src/nx/vms/common/pixelation/shaders/pixelation.frag"
-        "src/nx/vms/common/pixelation/shaders/pixelation.vert"
-)
-set_property(TARGET nx_vms_common_other_files PROPERTY FOLDER common/other_files)

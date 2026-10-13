@@ -5,8 +5,9 @@
 #include <chrono>
 #include <limits>
 
-#include <nx/fusion/model_functions_fwd.h>
-#include <nx/fusion/serialization/compressed_time_fwd.h>
+#include <QtCore/QByteArray>
+#include <QtCore/QtGlobal>
+
 #include <nx/reflect/instrument.h>
 
 namespace nx::vms::api { struct ServerTimePeriod; }
@@ -82,8 +83,6 @@ public:
     {
         return fromInterval(startTime.count(), endTime.count());
     }
-
-    nx::vms::api::ServerTimePeriod toServerPeriod() const;
 
     bool isLeftIntersection(const QnTimePeriod& other) const;
 
@@ -197,7 +196,6 @@ public:
 
 using OptionalTimePeriod = std::optional<QnTimePeriod>;
 
-NX_VMS_COMMON_API QnTimePeriod variantMapToTimePeriod(const QVariantMap& map);
 NX_VMS_COMMON_API void PrintTo(const QnTimePeriod& period, ::std::ostream* os);
 NX_VMS_COMMON_API QDebug operator<<(QDebug dbg, const QnTimePeriod& period);
 NX_VMS_COMMON_API std::string toString(const QnTimePeriod& period);
@@ -207,7 +205,5 @@ NX_VMS_COMMON_API QDataStream& operator<<(QDataStream& out, const QnTimePeriod& 
 NX_VMS_COMMON_API QDataStream& operator>>(QDataStream& in, QnTimePeriod& value);
 
 Q_DECLARE_TYPEINFO(QnTimePeriod, Q_MOVABLE_TYPE);
-
-QN_FUSION_DECLARE_FUNCTIONS(QnTimePeriod, (json) (ubjson) (xml) (csv_record), NX_VMS_COMMON_API)
 
 NX_REFLECTION_INSTRUMENT(QnTimePeriod, (startTimeMs)(durationMs))
