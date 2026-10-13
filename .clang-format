@@ -1,0 +1,146 @@
+AccessModifierOffset: -4
+AlignAfterOpenBracket: AlwaysBreak
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: DontAlign
+AlignOperands: DontAlign
+AlignTrailingComments: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLambdasOnASingleLine: Empty
+AllowShortLoopsOnASingleLine: false
+AllowShortNamespacesOnASingleLine: true
+AlwaysBreakBeforeMultilineStrings: false
+AttributeMacros:
+  - DEVICE_CORE_API
+  - DEVICE_DRIVERS_API
+  - OCCURRA_MEDIA_API
+  - OCCURRA_REST_API
+  - VMS_RULES_API
+BinPackArguments: false
+BinPackParameters: OnePerLine
+BraceWrapping:
+    AfterCaseLabel: true
+    AfterClass: true
+    AfterControlStatement: Always
+    AfterEnum: true
+    AfterFunction: true
+    AfterNamespace: false
+    AfterObjCDeclaration: true
+    AfterStruct: true
+    AfterUnion: true
+    AfterExternBlock: false
+    BeforeCatch: true
+    BeforeElse: true
+    BeforeLambdaBody: true
+    BeforeWhile: false
+    IndentBraces: false
+    SplitEmptyFunction: true
+    SplitEmptyRecord: true
+    SplitEmptyNamespace: true
+BreakAfterAttributes: Leave
+BreakAfterReturnType: ExceptShortType
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Custom
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: AfterColon
+BreakFunctionDefinitionParameters: false
+BreakInheritanceList: AfterColon
+BreakStringLiterals: false
+BreakTemplateDeclarations: Yes
+ColumnLimit: 99
+CompactNamespaces: false
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+FixNamespaceComments: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '<[[:alnum:]_]+>'
+    Priority:        10
+  - Regex:           'system_network_headers'
+    Priority:        15
+  - Regex:           '(<[[:alnum:]._]+>|<(linux|sys)/)'
+    Priority:        20
+  - Regex:           '^(<(boost|gmock|gtest|openssl|quazip|range|rapidjson )/)'
+    Priority:        30
+  - Regex:           '^(<Qt)'
+    Priority:        40
+    CaseSensitive:   true
+  - Regex:           '^(<qt_)'
+    Priority:        50
+    CaseSensitive:   true
+  - Regex:           '^<'
+    Priority:        60
+  - Regex:           '^"'
+    Priority:        70
+IncludeIsMainRegex: "(_ut)?(_win|_linux)?$"
+IndentAccessModifiers: false
+IndentCaseBlocks: false
+IndentCaseLabels: true
+IndentExternBlock: NoIndent
+IndentPPDirectives: BeforeHash
+IndentWidth: 4
+IndentWrappedFunctionNames: true
+InsertNewlineAtEOF: true
+InsertTrailingCommas: None
+KeepEmptyLines:
+  AtEndOfFile: false
+  AtStartOfBlock: false
+  AtStartOfFile: false
+LambdaBodyIndentation: Signature
+Language: Cpp
+LineEnding: LF
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+PackConstructorInitializers: Never
+PenaltyReturnTypeOnItsOwnLine: 10000
+PointerAlignment: Left
+ReferenceAlignment: Left
+ReflowComments: Always
+SeparateDefinitionBlocks: Leave
+SortIncludes: true
+SortUsingDeclarations: false
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: false
+SpaceBeforeInheritanceColon: false
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: false
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 1
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInConditionalStatement: false
+SpacesInContainerLiterals: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+Standard: Latest
+StatementAttributeLikeMacros:
+  - emit
+StatementMacros:
+  - Q_DECLARE_FLAGS
+  - Q_DECLARE_OPERATORS_FOR_FLAGS
+  - Q_NAMESPACE
+  - Q_OBJECT
+TabWidth: 4
+WhitespaceSensitiveMacros:
+  - NX_REFLECTION_ENUM_CLASS
+  - NX_REFLECTION_ENUM_CLASS_IN_CLASS
+  - NX_REFLECTION_INSTRUMENT
+  - BOOST_PP_STRINGIZE
+WrapNamespaceBodyWithEmptyLines: Always
+UseTab: Never
