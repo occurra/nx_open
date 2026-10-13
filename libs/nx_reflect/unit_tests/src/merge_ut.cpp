@@ -8,6 +8,7 @@
 
 #include <gtest/gtest.h>
 
+#include <nx/reflect/instrument.h>
 #include <nx/reflect/json/deserializer.h>
 #include <nx/reflect/merge.h>
 

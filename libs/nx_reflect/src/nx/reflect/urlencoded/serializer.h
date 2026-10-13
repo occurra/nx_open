@@ -51,7 +51,7 @@ private:
 struct SerializationContext
 {
     UrlencodedComposer composer;
-    int flags = (int) SerializationFlag::uuidWithBraces;
+    int flags = 0;
 
     bool uuidWithBraces() const { return flags & ((int) SerializationFlag::uuidWithBraces); }
 

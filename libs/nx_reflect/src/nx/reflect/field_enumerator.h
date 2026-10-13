@@ -5,6 +5,8 @@
 #include <array>
 #include <string_view>
 
+#include "instrument.h"
+
 namespace nx::reflect {
 
 /**

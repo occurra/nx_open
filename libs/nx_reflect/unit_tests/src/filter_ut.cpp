@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <nx/reflect/instrument.h>
 #include <nx/reflect/json/filter.h>
 
 namespace nx::reflect::test {
