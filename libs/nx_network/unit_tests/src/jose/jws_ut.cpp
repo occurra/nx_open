@@ -4,6 +4,7 @@
 
 #include <nx/network/jose/jws.h>
 #include <nx/network/jose/jwt.h>
+#include <nx/reflect/instrument.h>
 #include <nx/reflect/json/raw_json_text.h>
 #include <nx/utils/random.h>
 #include <nx/utils/time.h>
