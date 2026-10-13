@@ -467,12 +467,6 @@ bool QnFfmpegTranscoder::open(
         else if (audio)
             metadata->startTimeMs = audio->timestamp / 1000;
         metadata->version = QnAviArchiveMetadata::kMetadataStreamVersion_4;
-
-        if (m_timeZone)
-        {
-            metadata->timeZoneOffset = m_timeZone->timeZoneOffsetMs;
-            metadata->timeZoneId = m_timeZone->timeZoneId;
-        }
     }
 
     if (!m_muxer.open(metadata))
@@ -483,11 +477,6 @@ bool QnFfmpegTranscoder::open(
 
     m_initialized = true;
     return true;
-}
-
-void QnFfmpegTranscoder::setTimeZone(const nx::vms::api::ServerTimeZoneInformation& value)
-{
-    m_timeZone = value;
 }
 
 bool QnFfmpegTranscoder::transcodePacketInternal(const QnConstAbstractMediaDataPtr& media)
