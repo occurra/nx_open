@@ -7,10 +7,10 @@ nx_add_target(nx_media_core LIBRARY
         nx_codec
         nx_metric
         nx_reflect
-        nx_fusion
         ffmpeg::ffmpeg
     PRIVATE_LIBS
         Qt6::Gui
+        Qt6::CorePrivate
     FOLDER common/libs
 )
 
@@ -32,10 +32,13 @@ if(COMPILER_SUPPORTS_X86_64_V3)
     target_compile_options(nx_media_core PRIVATE -march=x86-64-v3)
 endif()
 
-target_include_directories(nx_media_core
-    PRIVATE
-        ${Qt6Core_PRIVATE_INCLUDE_DIRS}
-)
+if(compilerMsvc)
+    # Qt's QT_COMPILER_SUPPORTS_HERE(), which guards the SIMD dispatch in yuvconvert.cpp, expands
+    # to an expression containing `defined`. That is undefined behavior the conforming
+    # preprocessor reports as C5105, at our use site rather than in the Qt header, so /external:W0
+    # does not cover it.
+    target_compile_options(nx_media_core PRIVATE /wd5105)
+endif()
 
 if(withTests)
     add_subdirectory(unit_tests)

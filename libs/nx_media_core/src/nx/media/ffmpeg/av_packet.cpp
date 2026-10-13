@@ -7,6 +7,7 @@ extern "C" {
 } // extern "C"
 
 #include <nx/media/media_data_packet.h>
+#include <nx/media/video_data_packet.h>
 
 namespace nx::media::ffmpeg {
 
@@ -29,7 +30,12 @@ AvPacket::AvPacket(const QnAbstractMediaData* data)
 
     m_packet->data = (unsigned char*) data->data();
     m_packet->size = static_cast<int>(data->dataSize());
-    m_packet->dts = m_packet->pts = data->timestamp;
+    m_packet->dts = data->timestamp;
+    if (auto video = dynamic_cast<const QnCompressedVideoData*>(data))
+        m_packet->pts = video->pts;
+    else
+        m_packet->pts = AV_NOPTS_VALUE;
+
     if (data->flags & QnAbstractMediaData::MediaFlags_AVKey)
         m_packet->flags = AV_PKT_FLAG_KEY;
 

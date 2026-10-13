@@ -120,9 +120,24 @@ HwVideoDecoder::HwVideoDecoder(
     m_options = std::move(options);
 }
 
+HwVideoDecoder::HwVideoDecoder(
+    AVHWDeviceType type,
+    nx::metric::Storage* metrics,
+    AVBufferRef* sharedDeviceContext):
+    m_type(type),
+    m_metrics(metrics)
+{
+    if (m_metrics)
+        m_metrics->decoders()++;
+    if (sharedDeviceContext)
+        m_externalDeviceContext = av_buffer_ref(sharedDeviceContext);
+}
+
 HwVideoDecoder::~HwVideoDecoder()
 {
     resetDecoder(nullptr);
+    if (m_externalDeviceContext)
+        av_buffer_unref(&m_externalDeviceContext);
     if (m_metrics)
         m_metrics->decoders()--;
 }
@@ -254,7 +269,12 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
     m_decoderContext->get_format = getHwFormat;
     int status = 0;
 
-    if (m_initFunc)
+    if (m_externalDeviceContext)
+    {
+        // Borrow a ref from a shared device cache; skip av_hwdevice_ctx_create.
+        m_decoderContext->hw_device_ctx = av_buffer_ref(m_externalDeviceContext);
+    }
+    else if (m_initFunc)
     {
         m_decoderContext->hw_device_ctx = av_hwdevice_ctx_alloc(m_type);
 
@@ -336,9 +356,8 @@ bool HwVideoDecoder::sendPacket(const QnConstCompressedVideoDataPtr& data)
     return true;
 }
 
-bool HwVideoDecoder::receiveFrame(CLVideoDecoderOutputPtr* const outFrame)
+bool HwVideoDecoder::receiveFrame(CLVideoDecoderOutput* const frame)
 {
-    CLVideoDecoderOutput* const frame = outFrame->data();
     int status = avcodec_receive_frame(m_decoderContext, frame);
     if (status == AVERROR(EAGAIN) || status == AVERROR_EOF)
     {
@@ -356,6 +375,12 @@ bool HwVideoDecoder::receiveFrame(CLVideoDecoderOutputPtr* const outFrame)
 
     frame->channel = m_channel;
     frame->flags = m_flags;
+    // Defensive: HwVideoDecoder sets both input packet.pts and packet.dts to
+    // data->timestamp so the output normally has pts populated, but make pts
+    // the authoritative presentation-timestamp field across all decoder paths
+    // by falling back to pkt_dts when FFmpeg didn't fill it.
+    if (frame->pts == AV_NOPTS_VALUE)
+        frame->pts = frame->pkt_dts;
     m_lastDecodeResult = 0;
     if (m_metrics)
         m_metrics->decodedPixels() += frame->width * frame->height;
@@ -366,12 +391,12 @@ bool HwVideoDecoder::receiveFrame(CLVideoDecoderOutputPtr* const outFrame)
 
 bool HwVideoDecoder::decode(
     const QnConstCompressedVideoDataPtr& data,
-    CLVideoDecoderOutputPtr* const outFrame)
+    CLVideoDecoderOutput* outFrame)
 {
     if (!sendPacket(data))
         return false;
 
-    if (!receiveFrame(outFrame) || (outFrame && (*outFrame)->format == -1))
+    if (!receiveFrame(outFrame) || (outFrame && outFrame->format == -1))
         return false;
 
     return true;
@@ -383,6 +408,12 @@ int HwVideoDecoder::currentFrameNumber() const
         return 0;
 
     return std::max<int64_t>(0, m_decoderContext->frame_num - 1);
+}
+
+void HwVideoDecoder::flushBuffers()
+{
+    if (m_decoderContext)
+        avcodec_flush_buffers(m_decoderContext);
 }
 
 bool HwVideoDecoder::resetDecoder(const QnConstCompressedVideoDataPtr& data)

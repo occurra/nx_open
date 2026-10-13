@@ -65,8 +65,11 @@ public:
         MediaFlags_AfterEOF = 0x00002,
         MediaFlags_BOF = 0x00004,
         MediaFlags_LIVE = 0x00008,
-        // The frame should not be displayed.
-        MediaFlags_Ignore = 0x00010,
+        // The frame must be decoded for state (reference history) but not
+        // shown to the user. Set by QnArchiveStreamReader on pre-roll frames
+        // between the seek I-frame and the seek target during precise seeks.
+        // Distinct from MediaFlags_Skip below, which means "drop entirely".
+        MediaFlags_PreRoll = 0x00010,
 
         MediaFlags_ReverseReordered = 0x00020,
         MediaFlags_ReverseBlockStart = 0x00040,
@@ -109,19 +112,16 @@ public:
 
         // Flag indicates to the first frame after a removed portion of the stream (e.g. when
         // clearing the media queue due to overflow).
-        MediaFlags_Discontinuity = 0x400000)
+        MediaFlags_Discontinuity = 0x400000,
+
+        // The first packet of a GOP in the timeline when that is not the key frame itself: the
+        // frame's metadata is stamped a fraction of a millisecond before it, so a consumer that
+        // positions a GOP by byte offset must start at this packet, not at the key frame.
+        MediaFlags_GopStart = 0x800000)
 
     Q_DECLARE_FLAGS(MediaFlags, MediaFlag)
 
-    NX_REFLECTION_ENUM_IN_CLASS(
-        DataType,
-        UNKNOWN = -1,
-        VIDEO = 0,
-        AUDIO,
-        CONTAINER,
-        EMPTY_DATA,
-        META_V1, //< Deprecated. Don't use it. Use MetadataType instead.
-        GENERIC_METADATA)
+    NX_REFLECTION_ENUM_IN_CLASS(DataType, UNKNOWN = -1, VIDEO = 0, AUDIO, METADATA, EMPTY_DATA)
 
 public:
     QnAbstractMediaData(DataType _dataType);

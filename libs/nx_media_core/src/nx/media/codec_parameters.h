@@ -19,16 +19,11 @@ class NX_MEDIA_CORE_API CodecParameters
 public:
     virtual ~CodecParameters();
 
-    // Deserialize from ubjson format.
-    // Specify 'version' only for the version of VMS between 5.0 - 5.0.34644, all other versions
-    // should be analyzed automatically(zero value).
-    bool deserialize(const char* data, int size, int version = 0);
+    /** Deserialize from the version-prefixed JSON that serialize() writes. */
+    bool deserialize(const char* data, int size);
 
-    // Serialize to ubjson format.
+    /** Serialize to JSON, prefixed with the format version byte. */
     QByteArray serialize() const;
-
-    // Serialize to ubjson format that compatible with version 4.2 and below
-    QByteArray serializeInDeprecatedFormat42() const;
 
     CodecParameters();
 

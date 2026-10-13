@@ -2,6 +2,8 @@
 
 #include <gtest/gtest.h>
 
+#include <QtCore/QList>
+
 #include <nx/media/stream_event.h>
 
 namespace nx::media::test {

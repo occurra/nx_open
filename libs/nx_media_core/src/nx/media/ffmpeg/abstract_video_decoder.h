@@ -56,7 +56,7 @@ public:
      */
     virtual bool decode(
         const QnConstCompressedVideoDataPtr& data,
-        QSharedPointer<CLVideoDecoderOutput>* const outFrame) = 0;
+        CLVideoDecoderOutput* outFrame) = 0;
 
     virtual void setLightCpuMode(DecodeMode val) = 0;
 
@@ -75,6 +75,15 @@ public:
        contain sequence header
     */
     virtual bool resetDecoder(const QnConstCompressedVideoDataPtr& data) = 0;
+
+    /**
+     * Drop pending reference frames and the output queue (DPB), keeping
+     * the codec context intact. Intended for "after seek" use when the
+     * stream is continuing in the same codec/profile but the source has
+     * jumped — strictly cheaper than resetDecoder, which reallocates the
+     * codec context. Default is a no-op for decoders that don't need it.
+     */
+    virtual void flushBuffers() {}
 
     // return status of last decode call. Success - 0, Error - other value.
     virtual int getLastDecodeResult() const = 0;
