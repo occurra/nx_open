@@ -14,9 +14,13 @@
 #include <memory>
 
 #if defined(_WIN32)
-    #include <direct.h> //< For mkdir().
+    #define NOMINMAX //< Needed to prevent windows.h define macros min() and max().
+    #include <windows.h> //< For FindFirstFile(): C++11 offers no directory enumeration.
+    #include <direct.h> //< For mkdir() and rmdir().
 #else
-    #include <sys/stat.h> //< For mkdir().
+    #include <sys/stat.h> //< For mkdir() and lstat().
+    #include <dirent.h> //< For opendir(): C++11 offers no directory enumeration.
+    #include <unistd.h> //< For rmdir().
 #endif
 
 namespace nx {
@@ -380,16 +384,68 @@ static std::string systemTempDir()
     #endif
 }
 
+/** @return Whether the directory was created; false if it exists already or on any other error. */
+static bool tryCreateDir(const std::string& dir)
+{
+    #if defined(_WIN32)
+        return _mkdir(dir.c_str()) == 0;
+    #else
+        return mkdir(dir.c_str(), /*octal*/ 0777) == 0;
+    #endif
+}
+
 /** Create directory, issuing a fatal error on failure. */
 static void createDir(const std::string& dir)
 {
-    #if defined(_WIN32)
-        const int resultCode = _mkdir(dir.c_str());
-    #else
-        const int resultCode = mkdir(dir.c_str(), /*octal*/ 0777);
-    #endif
-    if (resultCode != 0)
+    if (!tryCreateDir(dir))
         fatalError("Unable to create dir: %s", dir.c_str());
+}
+
+/** Delete the directory with everything in it. Failures are reported but are not fatal. */
+static void removeDirRecursively(const std::string& dir)
+{
+    #if defined(_WIN32)
+        WIN32_FIND_DATAA entry;
+        const HANDLE handle = FindFirstFileA((dir + "*").c_str(), &entry);
+        if (handle != INVALID_HANDLE_VALUE)
+        {
+            do
+            {
+                const std::string name = entry.cFileName;
+                if (name == "." || name == "..")
+                    continue;
+                if (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                    removeDirRecursively(dir + name + kPathSeparator);
+                else
+                    remove((dir + name).c_str());
+            } while (FindNextFileA(handle, &entry));
+            FindClose(handle);
+        }
+        const bool removed = _rmdir(dir.c_str()) == 0;
+    #else
+        if (DIR* const dirStream = opendir(dir.c_str()))
+        {
+            while (const dirent* const entry = readdir(dirStream))
+            {
+                const std::string name = entry->d_name;
+                if (name == "." || name == "..")
+                    continue;
+                struct stat entryStat;
+                // lstat() rather than stat(): a symlink is unlinked, never followed into.
+                if (lstat((dir + name).c_str(), &entryStat) == 0 && S_ISDIR(entryStat.st_mode))
+                    removeDirRecursively(dir + name + kPathSeparator);
+                else
+                    remove((dir + name).c_str());
+            }
+            closedir(dirStream);
+        }
+        const bool removed = rmdir(dir.c_str()) == 0;
+    #endif
+
+    if (!removed)
+        printNote("Unable to remove temp dir: %s", dir.c_str());
+    else if (verbose)
+        printNote("Removed temp dir: %s", dir.c_str());
 }
 
 static std::string randAsString()
@@ -410,6 +466,19 @@ static std::string randAsString()
     return s.str();
 }
 
+/** The temp dir this process created, if any: the only one it may delete when it exits. */
+static std::string& ownBaseTempDir()
+{
+    static std::string value;
+    return value;
+}
+
+static void removeOwnBaseTempDir()
+{
+    if (!ownBaseTempDir().empty())
+        removeDirRecursively(ownBaseTempDir());
+}
+
 static std::string baseTempDir()
 {
     static std::string value;
@@ -417,8 +486,23 @@ static std::string baseTempDir()
     {
         if (parsedCmdLineArgs().explicitBaseTempDir.empty())
         {
-            value = systemTempDir() + "nx_kit_test_" + randAsString() + kPathSeparator;
-            createDir(value);
+            // The name space of rand() is only 32768 wide with MSVC, so a draw can well hit a dir
+            // another suite is using right now.
+            static const int kMaxAttempts = 100;
+            for (int attempt = 0; value.empty() && attempt < kMaxAttempts; ++attempt)
+            {
+                const std::string dir =
+                    systemTempDir() + "nx_kit_test_" + randAsString() + kPathSeparator;
+                if (tryCreateDir(dir))
+                    value = dir;
+            }
+            if (value.empty())
+            {
+                fatalError("Unable to create a temp dir in %d attempts under: %s",
+                    kMaxAttempts, systemTempDir().c_str());
+            }
+            ownBaseTempDir() = value;
+            atexit(&removeOwnBaseTempDir);
         }
         else
         {
@@ -457,7 +541,8 @@ Usage:
     Stop on first test failure.
 
   --tmp[=]<temp-dir>
-    Use <temp-dir> for temp files instead of a random dir in the system temp dir.
+    Use <temp-dir> for temp files instead of a random dir in the system temp dir. Unlike the
+    random dir, which is deleted on exit, <temp-dir> is left in place for inspection.
 )" + specificArgsSection;
 }
 
