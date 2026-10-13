@@ -4,6 +4,8 @@
 
 #include <string>
 
+#include <nx/reflect/instrument.h>
+
 #include "deserializer.h"
 #include "serializer.h"
 
