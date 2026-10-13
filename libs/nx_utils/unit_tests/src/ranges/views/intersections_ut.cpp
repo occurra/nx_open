@@ -430,8 +430,6 @@ struct PeriodWithOffset
     std::chrono::milliseconds startTimeMs{};
     std::chrono::milliseconds durationMs{};
     std::chrono::milliseconds offsetMs{};
-
-    friend bool operator==(const PeriodWithOffset&, const PeriodWithOffset&) = default;
 };
 
 // GTest printer

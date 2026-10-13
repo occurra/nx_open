@@ -9,17 +9,7 @@
 
 namespace nx::log {
 
-NX_REFLECTION_ENUM_CLASS(Level,
-    undefined,
-    none,
-    error,
-    warning,
-    info,
-    debug,
-    verbose,
-    trace,
-    notConfigured = 0xFF
-)
+NX_REFLECTION_ENUM_CLASS(Level, undefined, none, error, warning, info, debug, verbose, trace, notConfigured = 0xFF)
 
 constexpr size_t kLevelsCount = nx::reflect::enumeration::visitAllItems<Level>(
     []([[maybe_unused]] auto&&... items)
@@ -136,7 +126,7 @@ struct NX_UTILS_API LevelSettings
      *
      * Example:
      * <pre><code>
-     *     none, verbose[nx::media::media_player_quality_chooser], debug[ec2::DbManager]
+     *     none, verbose[nx::media::media_player_quality_chooser], debug[DbManager]
      * </code></pre>
      */
     bool parse(const QString& s);

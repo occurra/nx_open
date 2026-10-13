@@ -278,12 +278,6 @@ NX_UTILS_API QString toString(const nx::Url& value);
 
 } // namespace nx
 
-class QnJsonContext;
-class QJsonValue;
-
-NX_UTILS_API void serialize(QnJsonContext* /*ctx*/, const nx::Url& url, QJsonValue* target);
-NX_UTILS_API bool deserialize(QnJsonContext* /*ctx*/, const QJsonValue& value, nx::Url* target);
-
 namespace std {
 
 template<>

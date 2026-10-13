@@ -4,7 +4,7 @@
 
 #include <QtCore/QString>
 
-#include "../string.h"
+#include "../std_string_utils.h"
 #include "named_pipe_socket_win.h"
 
 namespace nx::utils {

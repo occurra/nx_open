@@ -17,8 +17,10 @@ namespace nx {
 
 namespace {
 
+#if defined(NX_CHECK_MEASURE_TIME)
 /** Change to see more or less records at the end of execution */
 static const size_t kShowTheMostCount(30);
+#endif
 
 static std::function<void(const QString&)> g_onAssertHandler;
 
@@ -139,6 +141,7 @@ void disableQtMessageAsserts()
         NX_ASSERT(false, "Qt message asserts are not enabled");
 }
 
+#if defined(NX_CHECK_MEASURE_TIME)
 AssertTimer::TimeInfo::TimeInfo():
     m_count(0),
     m_time(0)
@@ -219,7 +222,6 @@ AssertTimer::~AssertTimer()
     }
 }
 
-#ifdef NX_CHECK_MEASURE_TIME
 AssertTimer AssertTimer::instance;
 #endif
 

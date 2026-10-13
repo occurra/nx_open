@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <nx/reflect/instrument.h>
 #include <nx/reflect/json.h>
 #include <nx/utils/json/flags.h>
 #include <nx/utils/nx_utils_ini.h>

@@ -3,9 +3,8 @@
 #pragma once
 
 #include <nx/utils/system_error.h>
-#include <nx/utils/time.h>
 
-#include "log_logger.h"
+#include "abstract_logger.h"
 
 namespace nx::log {
 
@@ -42,7 +41,7 @@ bool NX_UTILS_API showPasswords();
 
 namespace detail {
 
-class LevelReducer
+class NX_UTILS_API LevelReducer
 {
 public:
     LevelReducer(Level level):
@@ -51,37 +50,12 @@ public:
     }
     Level baseLevel() const { return m_level; }
 
-    std::pair<Level, bool /*isOnLimit*/> nextLevel()
-    {
-        if (!s_isEnabled || (m_level > Level::info))
-            return {m_level, /*isOnLimit*/ false};
-
-        const auto limit = (uint32_t) nx::utils::ini().logLevelReducerPassLimit;
-        const auto windowSizeS = (uint32_t) nx::utils::ini().logLevelReducerWindowSizeS;
-
-        const auto nowS = (uint32_t) std::chrono::duration_cast<std::chrono::seconds>(
-                              nx::utils::monotonicTime().time_since_epoch())
-                              .count();
-
-        const auto windowStartS = m_windowStartS.load();
-        if (m_passCount == 0 || windowStartS + windowSizeS <= nowS || windowStartS > nowS)
-        {
-            // It is possible to have a race on these 2 atomics and actual log writing, but it
-            // would only affect the number of records on each level and their order.
-            m_windowStartS = nowS;
-            m_passCount = 0;
-        }
-
-        const auto newCount = ++m_passCount;
-        return {
-            (newCount <= limit) ? m_level : Level::debug,
-            /*isOnLimit*/ (newCount == limit)};
-    }
+    std::pair<Level, bool /*isOnLimit*/> nextLevel();
 
     static void setEnabled(bool value) { s_isEnabled = value; }
 
 private:
-    NX_UTILS_API static bool s_isEnabled /*= true*/;
+    static bool s_isEnabled /*= true*/;
 
     const Level m_level;
     std::atomic<uint32_t> m_passCount{0};

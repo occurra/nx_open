@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <tuple>
 
 #include <nx/ranges.h>
 #include <nx/utils/string.h>
@@ -26,9 +25,6 @@ inline std::string normalizedGTestNameString(std::string_view value)
 }
 
 } // namespace nx::utils::test
-
-/** Creates gmock checker that verifies argument type with dynamic_cast. */
-#define GMOCK_DYNAMIC_TYPE_MATCHER(T) ::testing::WhenDynamicCastTo<T>(::testing::An<T>())
 
 /**
  * Analogue of gtest's ASSERT_EQ but supports placing in non-void methods (throws on failure).
@@ -55,58 +51,6 @@ inline std::string normalizedGTestNameString(std::string_view value)
     { \
         NX_GTEST_ASSERT_EQ(true, expected); \
     } while (0)
-
-#define NX_GTEST_ASSERT_FALSE(expected) \
-    do \
-    { \
-        NX_GTEST_ASSERT_EQ(false, expected); \
-    } while (0)
-
-#define NX_GTEST_ASSERT_GT(actual, expected) \
-    do \
-    { \
-        NX_GTEST_ASSERT_TRUE(actual > expected); \
-    } while (0)
-
-#define NX_GTEST_ASSERT_LT(actual, expected) \
-    do \
-    { \
-        NX_GTEST_ASSERT_TRUE(actual < expected); \
-    } while (0)
-
-#define NX_GTEST_ASSERT_ANY_OF(expectedValues, actual) \
-    do \
-    { \
-        const auto& actualValue = actual; \
-        bool foundMatchingValue = std::apply( \
-            [&actualValue](const auto&... values) \
-            { \
-                return ((actualValue == values) || ...); \
-            }, \
-            std::make_tuple expectedValues); \
-        ASSERT_TRUE(foundMatchingValue); \
-    } while (0)
-
-#define NX_GTEST_ASSERT_NO_THROW(expression) \
-    do \
-    { \
-        try \
-        { \
-            expression; \
-        } \
-        catch (std::exception & e) \
-        { \
-            ASSERT_TRUE(false) << e.what(); \
-        } \
-    } while (0)
-
-#define NX_GTEST_WRAP(expr) \
-    [&]() \
-    { \
-        expr; \
-    }()
-
-#define NX_GTEST_ASSERT_NE(expected, actual) NX_GTEST_WRAP(ASSERT_NE(expected, actual))
 
 #define ASSERT_EQ_BINARY(data1, data2, size) \
     ASSERT_EQ(nx::utils::toHex(data1, size), nx::utils::toHex(data2, size))

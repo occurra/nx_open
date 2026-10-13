@@ -4,7 +4,7 @@
 
 #include <nx/reflect/string_conversion.h>
 #include <nx/utils/log/assert.h>
-#include <nx/utils/string.h>
+#include <nx/utils/std_string_utils.h>
 
 namespace Qn {
 

@@ -2,14 +2,15 @@
 
 #pragma once
 
-#include <atomic>
-#include <chrono>
 #include <functional>
-#include <iostream>
-#include <map>
-#include <mutex>
-#include <sstream>
-#include <string>
+
+#if defined(NX_CHECK_MEASURE_TIME)
+    #include <atomic>
+    #include <chrono>
+    #include <map>
+    #include <mutex>
+    #include <string>
+#endif
 
 #include <nx/utils/general_macros.h>
 #include <nx/utils/nx_utils_ini.h>
@@ -65,6 +66,7 @@ bool assertFailure(
     return assertFailure(isCritical, out);
 }
 
+#if defined(NX_CHECK_MEASURE_TIME)
 class NX_UTILS_API AssertTimer
 {
 public:
@@ -88,14 +90,13 @@ public:
     TimeInfo* info(const char* file, int line);
     ~AssertTimer();
 
-#ifdef NX_CHECK_MEASURE_TIME
     static AssertTimer instance;
-#endif
 
 private:
     std::mutex m_mutex;
     std::map<std::string, TimeInfo> m_times;
 };
+#endif
 
 } // namespace nx
 

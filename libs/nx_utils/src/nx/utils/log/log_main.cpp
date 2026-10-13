@@ -5,14 +5,42 @@
 #include <atomic>
 
 #include <nx/utils/nx_utils_ini.h>
+#include <nx/utils/time.h>
 
 #include "logger_collection.h"
 
 namespace nx::log {
 
-namespace detail { /*static*/
+namespace detail {
 
-bool LevelReducer::s_isEnabled = true;
+/*static*/ bool LevelReducer::s_isEnabled = true;
+
+std::pair<Level, bool /*isOnLimit*/> LevelReducer::nextLevel()
+{
+    if (!s_isEnabled || (m_level > Level::info))
+        return {m_level, /*isOnLimit*/ false};
+
+    const auto limit = (uint32_t) nx::utils::ini().logLevelReducerPassLimit;
+    const auto windowSizeS = (uint32_t) nx::utils::ini().logLevelReducerWindowSizeS;
+
+    const auto nowS = (uint32_t) std::chrono::duration_cast<std::chrono::seconds>(
+                          nx::utils::monotonicTime().time_since_epoch())
+                          .count();
+
+    const auto windowStartS = m_windowStartS.load();
+    if (m_passCount == 0 || windowStartS + windowSizeS <= nowS || windowStartS > nowS)
+    {
+        // It is possible to have a race on these 2 atomics and actual log writing, but it
+        // would only affect the number of records on each level and their order.
+        m_windowStartS = nowS;
+        m_passCount = 0;
+    }
+
+    const auto newCount = ++m_passCount;
+    return {
+        (newCount <= limit) ? m_level : Level::debug,
+        /*isOnLimit*/ (newCount == limit)};
+}
 
 } // namespace detail
 

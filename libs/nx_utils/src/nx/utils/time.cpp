@@ -7,6 +7,7 @@
 #include <QtCore/QTimeZone>
 
 #include <nx/utils/log/log.h>
+#include <nx/utils/std_string_utils.h>
 
 #if defined(Q_OS_LINUX) || defined(Q_OS_WASM)
     #include <sys/time.h>

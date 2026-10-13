@@ -4,12 +4,8 @@
 
 #include <QtCore/QString>
 
+#include <nx/reflect/instrument.h>
 #include <nx/reflect/json.h>
-
-#include "conversion_wrapper.h"
-
-class QnJsonContext;
-class QJsonValue;
 
 namespace nx::utils {
 
@@ -21,13 +17,5 @@ struct Void
 };
 
 NX_REFLECTION_INSTRUMENT(Void, )
-
-inline void serialize(QnJsonContext*, const Void&, QJsonValue*)
-{
-}
-inline bool deserialize(QnJsonContext*, QnConversionWrapper<QJsonValue>, Void*)
-{
-    return true;
-}
 
 } // namespace nx::utils

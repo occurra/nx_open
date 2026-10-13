@@ -117,8 +117,7 @@ private:
     nx::WaitCondition m_waitCondition;
     QSet<QnLongRunnable*> m_created;
     QSet<QnLongRunnable*> m_running;
-    std::chrono::milliseconds m_stopTimeout{
-        (nx::build_info::isMacOsX() || nx::build_info::isIos()) ? 500 : 60 * 1000};
+    std::chrono::milliseconds m_stopTimeout{nx::build_info::isMacOsX() ? 500 : 60 * 1000};
 };
 
 //-------------------------------------------------------------------------------------------------

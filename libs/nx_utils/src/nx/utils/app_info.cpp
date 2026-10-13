@@ -8,28 +8,13 @@
 namespace nx::utils {
 
 using namespace nx::build_info;
-using namespace nx::branding;
-
-QString AppInfo::appFullVersion(const QString& version)
-{
-    return QString("%1-%2-%3%4")
-        .arg(version)
-        .arg(revision())
-        .arg(customization().replace(' ', '_'))
-        .arg(publicationTypeSuffix());
-}
 
 QString AppInfo::vmsFullVersion()
 {
-    static const QString kFullVersion = appFullVersion(vmsVersion());
-    return kFullVersion;
-}
+    static const QString kFullVersion =
+        QString("%1-%2-%3").arg(vmsVersion()).arg(revision()).arg(developerBuildSuffix());
 
-QString AppInfo::organizationNameForSettings()
-{
-    if (isWindows())
-        return company();
-    return companyId();
+    return kFullVersion;
 }
 
 } // namespace nx::utils

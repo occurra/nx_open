@@ -144,14 +144,14 @@ qint64 QnFile::write(const char* buffer, qint64 count)
 
     if (!isOpen())
     {
-        printLogMessage(lit("File is not opened."));
+        printLogMessage("File is not opened.");
         return -1LL;
     }
     qint64 writtenBytes = ::write(m_fd, buffer, count);
     if (writtenBytes == -1)
-        printLogMessage(lit(""));
+        printLogMessage("");
     else if (writtenBytes < count)
-        printLogMessage(lit("Failed to write all bytes."));
+        printLogMessage("Failed to write all bytes.");
 
     return writtenBytes;
 }

@@ -6,9 +6,6 @@
 
 #include <nx/reflect/json/deserializer.h>
 
-class QJsonValue;
-class QnJsonContext;
-
 namespace nx::json {
 
 struct Int64AsNumber
@@ -85,9 +82,6 @@ inline void serialize(SerializationContext* context, const Int64AsNumber& value)
 {
     context->composer.writeInt(value.value);
 }
-
-NX_UTILS_API void serialize(QnJsonContext*, const Int64AsNumber& value, QJsonValue* out);
-NX_UTILS_API bool deserialize(QnJsonContext*, const QJsonValue& value, Int64AsNumber* out);
 
 } // namespace nx::json
 

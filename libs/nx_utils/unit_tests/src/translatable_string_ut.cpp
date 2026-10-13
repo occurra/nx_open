@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <nx/branding.h>
+#include <nx/reflect/instrument.h>
 #include <nx/reflect/json.h>
 #include <nx/utils/i18n/scoped_locale.h>
 #include <nx/utils/i18n/translation_manager.h>
