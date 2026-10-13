@@ -3,7 +3,5 @@
 nx_add_test(nx_rtp_ut
     PUBLIC_LIBS
         nx_rtp
-    PROJECT VMS
-    COMPONENT Server
     FOLDER common/tests
 )

@@ -10,6 +10,7 @@ namespace nx::rtp {
 
 RtpParser::RtpParser(int payloadType, StreamParserPtr codecParser):
     m_codecParser(std::move(codecParser)),
+    m_timestampMapper(NX_FMT("Payload type %1", payloadType).toStdString()),
     m_payloadType(payloadType)
 {
 }
@@ -148,16 +149,7 @@ int64_t RtpParser::getTimestamp(uint32_t rtpTime, const nx::rtp::RtcpSenderRepor
     if (m_onvifExtensionTimestamp)
         return m_onvifExtensionTimestamp->count();
 
-    // rtcp
-    if (senderReport.ntpTimestamp > 0)
-    {
-        const int64_t rtpTimeDiff = int32_t(rtpTime - senderReport.rtpTimestamp) * 1'000'000LL
-            / m_codecParser->getFrequency();
-        return senderReport.ntpTimestamp + rtpTimeDiff;
-    }
-
-    // rtp
-    return m_linearizer.linearize(rtpTime) * 1'000'000LL / m_codecParser->getFrequency();
+    return m_timestampMapper.getTimestamp(rtpTime, senderReport, m_codecParser->getFrequency());
 }
 
 } // namespace nx::rtp

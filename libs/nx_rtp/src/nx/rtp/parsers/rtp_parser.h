@@ -7,8 +7,8 @@
 #include <nx/rtp/parsers/rtp_stream_parser.h>
 #include <nx/rtp/result.h>
 #include <nx/rtp/rtcp.h>
+#include <nx/rtp/rtcp_timestamp_mapper.h>
 #include <nx/rtp/rtp.h>
-#include <nx/rtp/time_linearizer.h>
 
 namespace nx::rtp {
 
@@ -36,7 +36,7 @@ private:
 
 private:
     StreamParserPtr m_codecParser;
-    nx::rtp::TimeLinearizer<uint32_t> m_linearizer{0};
+    RtcpTimestampMapper m_timestampMapper;
     std::optional<uint16_t> m_sequenceNumber;
     int m_payloadType = 0;
     bool m_isUtcTime = false;
