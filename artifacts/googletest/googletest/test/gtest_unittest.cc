@@ -195,7 +195,7 @@ class TestEventListenersAccessor {
 
 class UnitTestRecordPropertyTestHelper : public Test {
  protected:
-  UnitTestRecordPropertyTestHelper() {}
+  UnitTestRecordPropertyTestHelper() = default;
 
   // Forwards to UnitTest::RecordProperty() to bypass access controls.
   void UnitTestRecordProperty(const char* key, const std::string& value) {
@@ -375,7 +375,7 @@ TEST(CanonicalizeForStdLibVersioning, LeavesUnversionedNamesUnchanged) {
   EXPECT_EQ("std::bind", CanonicalizeForStdLibVersioning("std::bind"));
   EXPECT_EQ("std::_", CanonicalizeForStdLibVersioning("std::_"));
   EXPECT_EQ("std::__foo", CanonicalizeForStdLibVersioning("std::__foo"));
-  EXPECT_EQ("gtl::__1::x", CanonicalizeForStdLibVersioning("gtl::__1::x"));
+  EXPECT_EQ("absl::__1::x", CanonicalizeForStdLibVersioning("absl::__1::x"));
   EXPECT_EQ("__1::x", CanonicalizeForStdLibVersioning("__1::x"));
   EXPECT_EQ("::__1::x", CanonicalizeForStdLibVersioning("::__1::x"));
 }
@@ -1873,36 +1873,31 @@ TEST(ShouldRunTestOnShardTest, IsPartitionWhenThereIsOneShard) {
 
 class ShouldShardTest : public testing::Test {
  protected:
-  void SetUp() override {
-    index_var_ = GTEST_FLAG_PREFIX_UPPER_ "INDEX";
-    total_var_ = GTEST_FLAG_PREFIX_UPPER_ "TOTAL";
-  }
+  void SetUp() override {}
 
   void TearDown() override {
-    SetEnv(index_var_, "");
-    SetEnv(total_var_, "");
+    GTEST_FLAG_SET(shard_index, -1);
+    GTEST_FLAG_SET(total_shards, -1);
   }
-
-  const char* index_var_;
-  const char* total_var_;
 };
 
 // Tests that sharding is disabled if neither of the environment variables
 // are set.
 TEST_F(ShouldShardTest, ReturnsFalseWhenNeitherEnvVarIsSet) {
-  SetEnv(index_var_, "");
-  SetEnv(total_var_, "");
+  GTEST_FLAG_SET(shard_index, -1);
+  GTEST_FLAG_SET(total_shards, -1);
 
-  EXPECT_FALSE(ShouldShard(total_var_, index_var_, false));
-  EXPECT_FALSE(ShouldShard(total_var_, index_var_, true));
+  EXPECT_FALSE(ShouldShard(false));
+  EXPECT_FALSE(ShouldShard(true));
 }
 
 // Tests that sharding is not enabled if total_shards  == 1.
 TEST_F(ShouldShardTest, ReturnsFalseWhenTotalShardIsOne) {
-  SetEnv(index_var_, "0");
-  SetEnv(total_var_, "1");
-  EXPECT_FALSE(ShouldShard(total_var_, index_var_, false));
-  EXPECT_FALSE(ShouldShard(total_var_, index_var_, true));
+  GTEST_FLAG_SET(shard_index, 0);
+  GTEST_FLAG_SET(total_shards, 1);
+
+  EXPECT_FALSE(ShouldShard(false));
+  EXPECT_FALSE(ShouldShard(true));
 }
 
 // Tests that sharding is enabled if total_shards > 1 and
@@ -1910,20 +1905,20 @@ TEST_F(ShouldShardTest, ReturnsFalseWhenTotalShardIsOne) {
 // Environment variables are not supported on Windows CE.
 #ifndef GTEST_OS_WINDOWS_MOBILE
 TEST_F(ShouldShardTest, WorksWhenShardEnvVarsAreValid) {
-  SetEnv(index_var_, "4");
-  SetEnv(total_var_, "22");
-  EXPECT_TRUE(ShouldShard(total_var_, index_var_, false));
-  EXPECT_FALSE(ShouldShard(total_var_, index_var_, true));
+  GTEST_FLAG_SET(shard_index, 4);
+  GTEST_FLAG_SET(total_shards, 22);
+  EXPECT_TRUE(ShouldShard(false));
+  EXPECT_FALSE(ShouldShard(true));
 
-  SetEnv(index_var_, "8");
-  SetEnv(total_var_, "9");
-  EXPECT_TRUE(ShouldShard(total_var_, index_var_, false));
-  EXPECT_FALSE(ShouldShard(total_var_, index_var_, true));
+  GTEST_FLAG_SET(shard_index, 8);
+  GTEST_FLAG_SET(total_shards, 9);
+  EXPECT_TRUE(ShouldShard(false));
+  EXPECT_FALSE(ShouldShard(true));
 
-  SetEnv(index_var_, "0");
-  SetEnv(total_var_, "9");
-  EXPECT_TRUE(ShouldShard(total_var_, index_var_, false));
-  EXPECT_FALSE(ShouldShard(total_var_, index_var_, true));
+  GTEST_FLAG_SET(shard_index, 0);
+  GTEST_FLAG_SET(total_shards, 9);
+  EXPECT_TRUE(ShouldShard(false));
+  EXPECT_FALSE(ShouldShard(true));
 }
 #endif  // !GTEST_OS_WINDOWS_MOBILE
 
@@ -1932,21 +1927,21 @@ TEST_F(ShouldShardTest, WorksWhenShardEnvVarsAreValid) {
 typedef ShouldShardTest ShouldShardDeathTest;
 
 TEST_F(ShouldShardDeathTest, AbortsWhenShardingEnvVarsAreInvalid) {
-  SetEnv(index_var_, "4");
-  SetEnv(total_var_, "4");
-  EXPECT_DEATH_IF_SUPPORTED(ShouldShard(total_var_, index_var_, false), ".*");
+  GTEST_FLAG_SET(shard_index, 4);
+  GTEST_FLAG_SET(total_shards, 4);
+  EXPECT_DEATH_IF_SUPPORTED(ShouldShard(false), ".*");
 
-  SetEnv(index_var_, "4");
-  SetEnv(total_var_, "-2");
-  EXPECT_DEATH_IF_SUPPORTED(ShouldShard(total_var_, index_var_, false), ".*");
+  GTEST_FLAG_SET(shard_index, 4);
+  GTEST_FLAG_SET(total_shards, -2);
+  EXPECT_DEATH_IF_SUPPORTED(ShouldShard(false), ".*");
 
-  SetEnv(index_var_, "5");
-  SetEnv(total_var_, "");
-  EXPECT_DEATH_IF_SUPPORTED(ShouldShard(total_var_, index_var_, false), ".*");
+  GTEST_FLAG_SET(shard_index, 5);
+  GTEST_FLAG_SET(total_shards, 5);
+  EXPECT_DEATH_IF_SUPPORTED(ShouldShard(false), ".*");
 
-  SetEnv(index_var_, "");
-  SetEnv(total_var_, "5");
-  EXPECT_DEATH_IF_SUPPORTED(ShouldShard(total_var_, index_var_, false), ".*");
+  GTEST_FLAG_SET(shard_index, -1);
+  GTEST_FLAG_SET(total_shards, 5);
+  EXPECT_DEATH_IF_SUPPORTED(ShouldShard(false), ".*");
 }
 
 // Tests that ShouldRunTestOnShard is a partition when 5
@@ -2163,7 +2158,7 @@ class UnitTestRecordPropertyTestEnvironment : public Environment {
 };
 
 // This will test property recording outside of any test or test case.
-GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED static Environment* record_property_env =
+[[maybe_unused]] static Environment* record_property_env =
     AddGlobalTestEnvironment(new UnitTestRecordPropertyTestEnvironment);
 
 // This group of tests is for predicate assertions (ASSERT_PRED*, etc)
@@ -2649,8 +2644,8 @@ TEST(IsSubstringTest, GeneratesCorrectMessageForCString) {
 // Tests that IsSubstring returns the correct result when the input
 // argument type is ::std::string.
 TEST(IsSubstringTest, ReturnsCorrectResultsForStdString) {
-  EXPECT_TRUE(IsSubstring("", "", std::string("hello"), "ahellob"));
-  EXPECT_FALSE(IsSubstring("", "", "hello", std::string("world")));
+  EXPECT_TRUE(IsSubstring("", "", "hello", "ahellob"));
+  EXPECT_FALSE(IsSubstring("", "", "hello", "world"));
 }
 
 #if GTEST_HAS_STD_WSTRING
@@ -2707,8 +2702,8 @@ TEST(IsNotSubstringTest, GeneratesCorrectMessageForWideCString) {
 // Tests that IsNotSubstring returns the correct result when the input
 // argument type is ::std::string.
 TEST(IsNotSubstringTest, ReturnsCorrectResultsForStdString) {
-  EXPECT_FALSE(IsNotSubstring("", "", std::string("hello"), "ahellob"));
-  EXPECT_TRUE(IsNotSubstring("", "", "hello", std::string("world")));
+  EXPECT_FALSE(IsNotSubstring("", "", "hello", "ahellob"));
+  EXPECT_TRUE(IsNotSubstring("", "", "hello", "world"));
 }
 
 // Tests that IsNotSubstring() generates the correct message when the input
@@ -2719,8 +2714,7 @@ TEST(IsNotSubstringTest, GeneratesCorrectMessageForStdString) {
       "  Actual: \"needle\"\n"
       "Expected: not a substring of haystack_expr\n"
       "Which is: \"two needles\"",
-      IsNotSubstring("needle_expr", "haystack_expr", ::std::string("needle"),
-                     "two needles")
+      IsNotSubstring("needle_expr", "haystack_expr", "needle", "two needles")
           .failure_message());
 }
 
@@ -2870,6 +2864,8 @@ TEST_F(FloatTest, LargeDiff) {
 // This ensures that no overflow occurs when comparing numbers whose
 // absolute value is very large.
 TEST_F(FloatTest, Infinity) {
+  EXPECT_FLOAT_EQ(values_.infinity, values_.infinity);
+  EXPECT_FLOAT_EQ(-values_.infinity, -values_.infinity);
   EXPECT_FLOAT_EQ(values_.infinity, values_.close_to_infinity);
   EXPECT_FLOAT_EQ(-values_.infinity, -values_.close_to_infinity);
   EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(values_.infinity, -values_.infinity),
@@ -2894,6 +2890,11 @@ TEST_F(FloatTest, NaN) {
   EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(v.nan1, v.nan1), "v.nan1");
   EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(v.nan1, v.nan2), "v.nan2");
   EXPECT_NONFATAL_FAILURE(EXPECT_FLOAT_EQ(1.0, v.nan1), "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(1.0f, v.nan1, 1.0f), "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(1.0f, v.nan1, v.infinity), "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(v.infinity, v.nan1, 1.0f), "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(v.infinity, v.nan1, v.infinity),
+                          "v.nan1");
 
   EXPECT_FATAL_FAILURE(ASSERT_FLOAT_EQ(v.nan1, v.infinity), "v.infinity");
 }
@@ -2917,11 +2918,28 @@ TEST_F(FloatTest, Commutative) {
 
 // Tests EXPECT_NEAR.
 TEST_F(FloatTest, EXPECT_NEAR) {
+  static const FloatTest::TestValues& v = this->values_;
+
   EXPECT_NEAR(-1.0f, -1.1f, 0.2f);
   EXPECT_NEAR(2.0f, 3.0f, 1.0f);
+  EXPECT_NEAR(v.infinity, v.infinity, 0.0f);
+  EXPECT_NEAR(-v.infinity, -v.infinity, 0.0f);
+  EXPECT_NEAR(0.0f, 1.0f, v.infinity);
+  EXPECT_NEAR(v.infinity, -v.infinity, v.infinity);
+  EXPECT_NEAR(-v.infinity, v.infinity, v.infinity);
   EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(1.0f, 1.5f, 0.25f),  // NOLINT
                           "The difference between 1.0f and 1.5f is 0.5, "
                           "which exceeds 0.25f");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(v.infinity, -v.infinity, 0.0f),  // NOLINT
+                          "The difference between v.infinity and -v.infinity "
+                          "is inf, which exceeds 0.0f");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(-v.infinity, v.infinity, 0.0f),  // NOLINT
+                          "The difference between -v.infinity and v.infinity "
+                          "is inf, which exceeds 0.0f");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_NEAR(v.infinity, v.close_to_infinity, v.further_from_infinity),
+      "The difference between v.infinity and v.close_to_infinity is inf, which "
+      "exceeds v.further_from_infinity");
 }
 
 // Tests ASSERT_NEAR.
@@ -3028,6 +3046,8 @@ TEST_F(DoubleTest, LargeDiff) {
 // This ensures that no overflow occurs when comparing numbers whose
 // absolute value is very large.
 TEST_F(DoubleTest, Infinity) {
+  EXPECT_DOUBLE_EQ(values_.infinity, values_.infinity);
+  EXPECT_DOUBLE_EQ(-values_.infinity, -values_.infinity);
   EXPECT_DOUBLE_EQ(values_.infinity, values_.close_to_infinity);
   EXPECT_DOUBLE_EQ(-values_.infinity, -values_.close_to_infinity);
   EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(values_.infinity, -values_.infinity),
@@ -3047,6 +3067,12 @@ TEST_F(DoubleTest, NaN) {
   EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(v.nan1, v.nan1), "v.nan1");
   EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(v.nan1, v.nan2), "v.nan2");
   EXPECT_NONFATAL_FAILURE(EXPECT_DOUBLE_EQ(1.0, v.nan1), "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(1.0, v.nan1, 1.0), "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(1.0, v.nan1, v.infinity), "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(v.infinity, v.nan1, 1.0), "v.nan1");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(v.infinity, v.nan1, v.infinity),
+                          "v.nan1");
+
   EXPECT_FATAL_FAILURE(ASSERT_DOUBLE_EQ(v.nan1, v.infinity), "v.infinity");
 }
 
@@ -3069,11 +3095,28 @@ TEST_F(DoubleTest, Commutative) {
 
 // Tests EXPECT_NEAR.
 TEST_F(DoubleTest, EXPECT_NEAR) {
+  static const DoubleTest::TestValues& v = this->values_;
+
   EXPECT_NEAR(-1.0, -1.1, 0.2);
   EXPECT_NEAR(2.0, 3.0, 1.0);
+  EXPECT_NEAR(v.infinity, v.infinity, 0.0);
+  EXPECT_NEAR(-v.infinity, -v.infinity, 0.0);
+  EXPECT_NEAR(0.0, 1.0, v.infinity);
+  EXPECT_NEAR(v.infinity, -v.infinity, v.infinity);
+  EXPECT_NEAR(-v.infinity, v.infinity, v.infinity);
   EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(1.0, 1.5, 0.25),  // NOLINT
                           "The difference between 1.0 and 1.5 is 0.5, "
                           "which exceeds 0.25");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(v.infinity, -v.infinity, 0.0),
+                          "The difference between v.infinity and -v.infinity "
+                          "is inf, which exceeds 0.0");
+  EXPECT_NONFATAL_FAILURE(EXPECT_NEAR(-v.infinity, v.infinity, 0.0),
+                          "The difference between -v.infinity and v.infinity "
+                          "is inf, which exceeds 0.0");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_NEAR(v.infinity, v.close_to_infinity, v.further_from_infinity),
+      "The difference between v.infinity and v.close_to_infinity is inf, which "
+      "exceeds v.further_from_infinity");
   // At this magnitude adjacent doubles are 512.0 apart, so this triggers a
   // slightly different failure reporting path.
   EXPECT_NONFATAL_FAILURE(
@@ -3530,13 +3573,13 @@ TEST(EditDistance, TestSuites) {
       {__LINE__, "A", "A", " ", ""},
       {__LINE__, "ABCDE", "ABCDE", "     ", ""},
       // Simple adds.
-      {__LINE__, "X", "XA", " +", "@@ +1,2 @@\n X\n+A\n"},
-      {__LINE__, "X", "XABCD", " ++++", "@@ +1,5 @@\n X\n+A\n+B\n+C\n+D\n"},
+      {__LINE__, "X", "XA", " +", "@@ -1 +1,2 @@\n X\n+A\n"},
+      {__LINE__, "X", "XABCD", " ++++", "@@ -1 +1,5 @@\n X\n+A\n+B\n+C\n+D\n"},
       // Simple removes.
-      {__LINE__, "XA", "X", " -", "@@ -1,2 @@\n X\n-A\n"},
-      {__LINE__, "XABCD", "X", " ----", "@@ -1,5 @@\n X\n-A\n-B\n-C\n-D\n"},
+      {__LINE__, "XA", "X", " -", "@@ -1,2 +1 @@\n X\n-A\n"},
+      {__LINE__, "XABCD", "X", " ----", "@@ -1,5 +1 @@\n X\n-A\n-B\n-C\n-D\n"},
       // Simple replaces.
-      {__LINE__, "A", "a", "/", "@@ -1,1 +1,1 @@\n-A\n+a\n"},
+      {__LINE__, "A", "a", "/", "@@ -1 +1 @@\n-A\n+a\n"},
       {__LINE__, "ABCD", "abcd", "////",
        "@@ -1,4 +1,4 @@\n-A\n-B\n-C\n-D\n+a\n+b\n+c\n+d\n"},
       // Path finding.
@@ -3606,8 +3649,7 @@ TEST(AssertionTest, EqFailure) {
       msg4.c_str());
 
   const std::string msg5(
-      EqFailure("foo", "bar", std::string("\"x\""), std::string("\"y\""), true)
-          .failure_message());
+      EqFailure("foo", "bar", "\"x\"", "\"y\"", true).failure_message());
   EXPECT_STREQ(
       "Expected equality of these values:\n"
       "  foo\n"
@@ -6668,6 +6710,9 @@ TEST(ColoredOutputTest, UsesColorsWhenTermSupportsColors) {
   SetEnv("TERM", "xterm-color");      // TERM supports colors.
   EXPECT_TRUE(ShouldUseColor(true));  // Stdout is a TTY.
 
+  SetEnv("TERM", "xterm-ghostty");    // TERM supports colors.
+  EXPECT_TRUE(ShouldUseColor(true));  // Stdout is a TTY.
+
   SetEnv("TERM", "xterm-kitty");      // TERM supports colors.
   EXPECT_TRUE(ShouldUseColor(true));  // Stdout is a TTY.
 
@@ -6705,9 +6750,8 @@ TEST(ColoredOutputTest, UsesColorsWhenTermSupportsColors) {
 
 // Verifies that StaticAssertTypeEq works in a namespace scope.
 
-GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED static bool dummy1 =
-    StaticAssertTypeEq<bool, bool>();
-GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED static bool dummy2 =
+[[maybe_unused]] static bool dummy1 = StaticAssertTypeEq<bool, bool>();
+[[maybe_unused]] static bool dummy2 =
     StaticAssertTypeEq<const int, const int>();
 
 // Verifies that StaticAssertTypeEq works in a class.
