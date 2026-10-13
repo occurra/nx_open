@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <core/resource/resource_fwd.h>
 #include <nx/rtp/parsers/rtp_parser.h>
 #include <nx/rtp/parsers/rtp_stream_parser.h>
 #include <nx/rtp/reordering_cache.h>
@@ -26,8 +25,6 @@ public:
         uint32_t videoSsrc); //< Back to sender. RTCP for emitting keyframe.
     QnAbstractMediaDataPtr getNextFrame(); //< From sender.
     void setSrtpEncryptionData(const rtsp::EncryptionData& data);
-    void setResource(QnVirtualCameraResourcePtr resource) { m_resource = resource; }
-    QnVirtualCameraResourcePtr resource() { return m_resource; }
     CodecParametersConstPtr audioCodecParameters() const { return m_audioCodecParameters; }
 
 private:
@@ -63,7 +60,6 @@ private:
     std::unique_ptr<rtsp::SrtpEncryptor> m_encryptor;
     std::deque<QnAbstractMediaDataPtr> m_frames;
     std::deque<nx::Buffer> m_feedbacks;
-    QnVirtualCameraResourcePtr m_resource;
     nx::rtp::RtcpFirFeedback m_rtcpFir;
     CodecParametersConstPtr m_audioCodecParameters;
 };

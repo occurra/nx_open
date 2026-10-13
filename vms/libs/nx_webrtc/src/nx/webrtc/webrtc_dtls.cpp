@@ -2,9 +2,13 @@
 
 #include "webrtc_dtls.h"
 
+#include <algorithm>
+
 #include <openssl/err.h>
 
 #include <nx/utils/log/log.h>
+
+#include "nx_webrtc_ini.h"
 
 namespace nx::webrtc {
 
@@ -154,6 +158,24 @@ bool Dtls::initDtls()
     else
         SSL_set_connect_state(m_ssl.get());
     SSL_set_mtu(m_ssl.get(), 1280 - 8 - 40); //< From libdatachannel
+
+    // OpenSSL retransmits a lost handshake flight only after 1s (doubling),
+    // so a single lost packet stalls the whole connect by ~1s - the dominant
+    // random connect-time jitter on lossy long-haul links. Start at the
+    // configured timeout instead and keep doubling, capped at 3s. Spurious
+    // retransmits on slow links are harmless: DTLS tolerates duplicates.
+    if (::ini().webrtcDtlsInitialRetransmitMs > 0)
+    {
+        DTLS_set_timer_cb(
+            m_ssl.get(),
+            [](SSL*, unsigned int timerUs) -> unsigned int
+            {
+                constexpr unsigned int kMaxTimerUs = 3'000'000;
+                if (timerUs == 0)
+                    return (unsigned int) ::ini().webrtcDtlsInitialRetransmitMs * 1000;
+                return std::min(2 * timerUs, kMaxTimerUs);
+            });
+    }
 
     // 5. Bind to current object
     SSL_set_app_data(m_ssl.get(), this);

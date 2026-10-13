@@ -2,239 +2,88 @@
 
 #include "webrtc_turn_info_fetcher.h"
 
-#include <nx/network/cloud/cloud_connect_controller.h>
-#include <nx/vms/common/system_settings.h>
+#include <nx/branding.h>
+#include <nx/network/socket_common.h>
 
 #include "nx_webrtc_ini.h"
 
 namespace nx::webrtc {
 
-static constexpr char kTurnModule[] = "turn";
-static constexpr std::chrono::seconds kDiscoveryKeepAliveTimeout{60};
+namespace {
 
-TurnInfoFetcher::TurnInfoFetcher(nx::vms::common::SystemSettings* settings):
-    m_systemSettings(settings),
-    m_turnInfoFetcher(kTurnModule),
-    m_cdbConnection(
-        "https://" + nx::network::SocketGlobals::cloud().cloudHost(),
-        nx::network::ssl::kDefaultCertificateCheck)
+// Standard STUN/TURN port. SocketAddress parses a bare hostname with port 0,
+// which connectAsync() cannot dial, so default to this when none is given.
+static constexpr std::uint16_t kDefaultTurnPort = 3478;
+
+} // namespace
+
+TurnInfoFetcher::TurnInfoFetcher(const std::string realm, const std::string cloudHost)
 {
-}
-
-TurnInfoFetcher::~TurnInfoFetcher()
-{
-    stop();
-}
-
-void TurnInfoFetcher::stop()
-{
-    m_turnInfoFetcher.pleaseStopSync();
-}
-
-void TurnInfoFetcher::onTurnServerInfoUnsafe()
-{
-    if (!m_turnInfo.address.isNull())
-    {
-        for (const auto& handlerIter: m_turnInfoSessions)
-            handlerIter.second(m_turnInfo);
-    }
-    m_turnInfoSessions.clear();
-}
-
-void TurnInfoFetcher::onOauthInfoUnsafe()
-{
-    if (m_oauthInfo)
-    {
-        for (const auto& handlerIter: m_oauthSessions)
-            handlerIter.second(*m_oauthInfo);
-    }
-    m_oauthSessions.clear();
-}
-
-void TurnInfoFetcher::fetchTurnInfoUnsafe()
-{
-    m_turnInfoFetcher.setModulesXmlUrl(
-        nx::network::AppInfo::defaultCloudModulesXmlUrl(
-            nx::network::SocketGlobals::cloud().cloudHost()));
-    m_turnInfoFetcher.get(
-        [this](nx::network::http::StatusCode::Value code, nx::Url url)
-        {
-            // Sometimes it called immediately with cached result.
-            m_turnInfoFetcher.post(
-                [this, code, url]
-                {
-                    NX_MUTEX_LOCKER lk(&m_mutex);
-                    NX_DEBUG(this, "Discovery: got code %1, url %2", code, url);
-                    if (nx::network::http::StatusCode::isSuccessCode(code) && !url.isEmpty())
-                        m_turnInfo.address = nx::network::SocketAddress::fromUrl(url);
-
-                    onTurnServerInfoUnsafe();
-                    m_turnInfoTimer.restart();
-                });
-        });
-}
-
-void TurnInfoFetcher::fillTurnInfoDefaults()
-{
-    // Reset previously cached values.
-    m_turnInfo = {};
-    // Default values.
-    static const std::string kTurnRealm = "nx"; //< Doesn't matter, overridden while authorization.
-    m_turnInfo.realm = kTurnRealm;
+    m_turnInfo.realm = realm;
     m_turnInfo.longTermAuth = true;
-    // Default values from Cloud.
-    m_turnInfo.user = m_systemSettings->cloudSystemId().toStdString();
-    m_turnInfo.password = m_systemSettings->cloudAuthKey().toStdString();
-    // Overriding values from ini().
+
     const std::string turnServerIni = ini().turnServer;
+    nx::network::SocketAddress address;
     auto atPos = turnServerIni.rfind('@');
     if (atPos != std::string::npos)
     {
-        m_turnInfo.address = nx::network::SocketAddress(turnServerIni.substr(atPos + 1));
+        address = nx::network::SocketAddress(turnServerIni.substr(atPos + 1));
         auto colonPos = turnServerIni.find(':');
         if (colonPos != std::string::npos && colonPos < atPos)
         {
             m_turnInfo.user = turnServerIni.substr(0, colonPos);
             m_turnInfo.password = turnServerIni.substr(colonPos + 1, atPos - colonPos - 1);
+            m_iniOverrideHasCreds = true;
         }
     }
     else if (!turnServerIni.empty())
     {
-        m_turnInfo.address = nx::network::SocketAddress(turnServerIni);
+        address = nx::network::SocketAddress(turnServerIni);
     }
-}
-
-void TurnInfoFetcher::fetchTurnInfo(const std::string& sessionId, const TurnInfoHandler& handler)
-{
-    NX_MUTEX_LOCKER lk(&m_mutex);
-    bool alreadyFetching = !m_turnInfoSessions.empty();
-    m_turnInfoSessions[sessionId] = handler;
-
-    // Check if already requested nearest TURN server.
-    if (alreadyFetching)
-        return;
-
-    if (m_turnInfoTimer.isValid() && !m_turnInfoTimer.hasExpired(kDiscoveryKeepAliveTimeout))
+    else if (!cloudHost.empty())
     {
-        // Has actual TURN server information stored.
-        onTurnServerInfoUnsafe();
-        return;
-    }
-    // Fill turnInfo from config.
-    fillTurnInfoDefaults();
-    // Reset previously cached value.
-    m_turnInfoFetcher.resetUrl();
-    // Request Discovery service if not overridden in ini().
-    if (m_turnInfo.address.isNull() && !nx::network::SocketGlobals::cloud().cloudHost().empty())
-    {
-        fetchTurnInfoUnsafe();
+        address = nx::network::SocketAddress("turn." + cloudHost);
     }
     else
     {
-        onTurnServerInfoUnsafe();
-        m_turnInfoTimer.restart();
+        return; //< No cloud: sessions stay STUN-only.
     }
+
+    // A hostname without an explicit ":port" leaves port == 0; apply the
+    // standard TURN port so connectAsync() has a real endpoint to dial.
+    if (address.port == 0)
+        address.port = kDefaultTurnPort;
+
+    // The ini override yields a single endpoint; default to UDP, which is the
+    // transport the deployment's TURN server answers on.
+    m_turnInfo.endpoints.push_back({address, nx::network::TransportProtocol::udp});
 }
 
-void TurnInfoFetcher::removeTurnInfoHandler(const std::string& sessionId)
+TurnInfoFetcher::~TurnInfoFetcher() = default;
+
+void TurnInfoFetcher::setCredentialProvider(CredentialProvider provider)
 {
     NX_MUTEX_LOCKER lk(&m_mutex);
-    m_turnInfoSessions.erase(sessionId);
+    m_credentialProvider = std::move(provider);
 }
 
-void TurnInfoFetcher::removeOauthInfoHandler(const std::string& sessionId)
+TurnServerInfo TurnInfoFetcher::turnServerInfo() const
 {
-    NX_MUTEX_LOCKER lk(&m_mutex);
-    m_oauthSessions.erase(sessionId);
-}
-
-void TurnInfoFetcher::fetchThirdPartyAuthorization(
-    const std::string& sessionId,
-    const std::string& serverName,
-    const OauthInfoHandler& handler)
-{
-    NX_MUTEX_LOCKER lk(&m_mutex);
-    bool fetching = !m_oauthSessions.empty();
-    m_oauthSessions[sessionId] = handler;
-
-    if (fetching)
-        return;
-
-    if (m_oauthInfo
-        && m_oauthInfo->expires_at > std::chrono::duration_cast<std::chrono::seconds>(
-               nx::utils::utcTime().time_since_epoch()))
+    CredentialProvider provider;
     {
-        onOauthInfoUnsafe();
-        return;
+        NX_MUTEX_LOCKER lk(&m_mutex);
+        if (m_iniOverrideHasCreds)
+            return m_turnInfo;
+        provider = m_credentialProvider;
     }
-
-    if (nx::network::SocketGlobals::cloud().cloudHost().empty())
+    // Invoke the provider without holding m_mutex: it may block on network I/O,
+    // and m_turnInfo is immutable after construction so the fallback read is safe.
+    if (provider)
     {
-        onOauthInfoUnsafe();
-        return;
+        if (auto info = provider())
+            return *info;
     }
-    m_cdbConnection.setCredentials(
-        nx::network::http::PasswordCredentials(
-            m_systemSettings->cloudSystemId().toStdString(),
-            m_systemSettings->cloudAuthKey().toStdString()));
-
-    m_cdbConnection.oauthManager()->issueStunToken(
-        nx::cloud::db::api::IssueStunTokenRequest{.server_name = serverName},
-        [this](auto code, auto response)
-        {
-            // Always being posted.
-            NX_MUTEX_LOCKER lk(&m_mutex);
-            if (code != nx::cloud::db::api::ResultCode::ok)
-            {
-                NX_DEBUG(this, "Oauth: unexpected error code: %1", code);
-                m_oauthInfo = std::nullopt;
-            }
-            else if (response.error)
-            {
-                NX_DEBUG(this, "Oauth: got error while generating token: %1", *response.error);
-                m_oauthInfo = std::nullopt;
-            }
-            else
-            {
-                constexpr auto kOauthExpiratinGap = std::chrono::seconds(5);
-                auto expiresAt = std::chrono::duration_cast<std::chrono::seconds>(
-                                     nx::utils::utcTime().time_since_epoch())
-                    + response.expires_in
-                    - (response.expires_in > kOauthExpiratinGap ? kOauthExpiratinGap
-                                                                : std::chrono::seconds(0));
-                m_oauthInfo = OauthInfo{
-                    .kid = response.kid,
-                    .lifetime = static_cast<int>(response.expires_in.count()), // Actually unused.
-                    .expires_at = expiresAt,
-                    .sessionKey = nx::utils::fromBase64(response.mac_code),
-                    .accessToken = nx::utils::fromBase64(response.token)};
-
-                NX_DEBUG(
-                    this,
-                    "Oauth: got token with kid %1 and lifetime %2",
-                    m_oauthInfo->kid,
-                    m_oauthInfo->lifetime);
-            }
-            onOauthInfoUnsafe();
-        });
+    return m_turnInfo;
 }
 
 } // namespace nx::webrtc
-
-// turnutils_oauth -e --server-name blackdow.carleon.gov --auth-key-id oldempire
-//    --auth-key MTIzNDU2Nzg5MDEyMzQ1Njc4OTA= --auth-key-timestamp 1664203748 --auth-key-lifetime
-//    21600
-//    --token-mac-key MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=  --token-timestamp `expr $(date +%s) \* 65536`
-//    --token-lifetime=3600 --auth-key-as-rs-alg A256GCM
-// , where:
-// server-name - authorization server name.
-// auth-key-id - key id, stored in redis db as part of key path: 'turn/oauth/kid/oldempire'.
-// auth-key - key which also should be stored in redis db:
-//     hmset turn/oauth/kid/oldempire ikm_key MTIzNDU2Nzg5MDEyMzQ1Njc4OTAx
-//  auth-key-timestamp - unix time of key emitted.
-//  auth-key-lifetime - key lifetime. Probably doesn't checked in authorization process.
-//  token-mac-key - temporary token key. Should be 20 bytes length sha1 of some secret key.
-//  token-timestamp - timestamp of token emit.
-//  token-lifetime - lifetime. Checked in authorization process.
-//  auth-key-as-rs-alg - some algorithm, should be same in redis db:
-//      hmset turn/oauth/kid/oldempire as_rs_alg A256GCM

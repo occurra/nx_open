@@ -53,6 +53,14 @@ protected:
 
 private:
     void onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTransferred);
+    void onBytesWritten(SystemError::ErrorCode errorCode, std::size_t bytesTransferred);
+    void startReading();
+    /// Parse whole RFC4571 frames out of m_readBuffer and either arm the next
+    /// read or, once the session is known, hand this ice to its thread.
+    void processBufferedPackets();
+    /// Move m_socket and m_pollable to the session's aio thread and resume
+    /// there. Callable only with no read armed and no send outstanding.
+    void migrateToSessionAioThread();
 
 private:
     nx::network::BufferedStreamSocket m_socket;

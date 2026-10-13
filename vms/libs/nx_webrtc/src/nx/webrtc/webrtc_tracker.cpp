@@ -2,11 +2,16 @@
 
 #include "webrtc_tracker.h"
 
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+
+extern "C" {
+#include <libavcodec/avcodec.h>
+}
+
 #include <network/tcp_connection_priv.h>
 #include <nx/network/http/custom_headers.h>
 #include <nx/network/websocket/websocket_handshake.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
 
 #include "nx_webrtc_ini.h"
 #include "webrtc_session_pool.h"
@@ -17,8 +22,9 @@ using namespace nx::vms::api;
 using namespace nx::network;
 using namespace nx;
 
-Tracker::Tracker(Session* session):
-    m_session(session)
+Tracker::Tracker(Session* session, nx::network::aio::AbstractAioThread* aioThread):
+    m_session(session),
+    m_pollable(aioThread)
 {
     const std::string iceCandidatesIni = ::ini().webrtcIceCandidates;
     if (!iceCandidatesIni.empty())
@@ -49,14 +55,18 @@ void Tracker::stopUnsafe()
 
 void Tracker::start(
     std::unique_ptr<AbstractStreamSocket>&& socket,
-    const nx::network::http::HttpHeaders& headers)
+    const nx::network::http::HttpHeaders& headers,
+    nx::network::websocket::Role wsRole)
 {
     socket->setNonBlockingMode(true);
-    socket->bindToAioThread(m_pollable.getAioThread());
-
+    //< No bindToAioThread here: the tracker was constructed on this socket's
+    //< own thread. Moving a socket that is already live - a relayed one is fed
+    //< by the tunnel from another thread throughout the handover - would leave
+    //< its queued posted calls behind on the old thread, where draining them
+    //< trips the isInSelfAioThread assert in AioTaskQueue::processPostedCalls.
     m_webSocket.reset(new WebSocket(
         std::move(socket),
-        nx::network::websocket::Role::server,
+        wsRole,
         nx::network::websocket::FrameType::text,
         websocket::compressionType(headers)));
     m_pollable.post(
@@ -81,20 +91,29 @@ void Tracker::readMessage()
 
 void Tracker::sendOffer()
 {
+    // Every offer path funnels through here, so this is the single point that marks a round in
+    // flight; add/remove commands then queue until onOfferAnswered() lands the answer.
+    m_session->markOfferSent();
     rapidjson::Document d(rapidjson::kObjectType);
     rapidjson::Value sdpRoot(rapidjson::kObjectType);
     sdpRoot.AddMember("type", "offer", d.GetAllocator());
     std::string sdp = m_session->constructSdp();
     rapidjson::Value sdpValue(sdp, d.GetAllocator());
     sdpRoot.AddMember("sdp", sdpValue, d.GetAllocator());
-    if (const auto& mime = m_session->tracks()->mimeType(); !mime.empty())
-    {
-        rapidjson::Value mimeValue(mime, d.GetAllocator());
-        d.AddMember("mime", mimeValue, d.GetAllocator());
-    }
-
     d.AddMember("sdp", sdpRoot, d.GetAllocator());
+    // The peer echoes it with its answer, which is the only way to tell which offer an answer
+    // is to: the SDP of an answer names nothing of the offer.
+    d.AddMember("offerId", m_session->offerVersion(), d.GetAllocator());
     sendJson(d);
+}
+
+void Tracker::renegotiateCodec(nx::Uuid deviceId)
+{
+    m_pollable.dispatch(
+        [this, deviceId]()
+        {
+            m_session->beginCodecRenegotiation(deviceId);
+        });
 }
 
 void Tracker::sendJson(const rapidjson::Document& doc)
@@ -119,6 +138,21 @@ void Tracker::sendJson(const rapidjson::Document& doc)
         });
 }
 
+void Tracker::sendUnsupportedCodecs()
+{
+    for (const auto& [deviceId, codecId]: m_session->unsupportedVideoCodecs())
+    {
+        rapidjson::Document d(rapidjson::kObjectType);
+        d.AddMember("error", "codecUnsupported", d.GetAllocator());
+        rapidjson::Value deviceValue(deviceId.toSimpleStdString(), d.GetAllocator());
+        d.AddMember("deviceId", deviceValue, d.GetAllocator());
+        //< FFmpeg's short name, e.g. "hevc"; the client maps it to a display name.
+        rapidjson::Value codecValue(avcodec_get_name(codecId), d.GetAllocator());
+        d.AddMember("codec", codecValue, d.GetAllocator());
+        sendJson(d);
+    }
+}
+
 void Tracker::sendIce(const IceCandidate& candidate)
 {
     if (!candidate.matchFilter(m_candidateFilter))
@@ -129,9 +163,8 @@ void Tracker::sendIce(const IceCandidate& candidate)
     rapidjson::Value candidateValue(candidateStr, d.GetAllocator());
     ice.AddMember("candidate", candidateValue, d.GetAllocator());
 
-    const auto tracks = m_session->tracks()->allTracks();
-    int mid = tracks.empty() ? kDataChannelMid : tracks[0].mid;
-    ice.AddMember("sdpMid", mid, d.GetAllocator());
+    //< Candidates attach to the bundle's first m-line - the data channel leads every offer.
+    ice.AddMember("sdpMid", kDataChannelMid, d.GetAllocator());
     ice.AddMember("sdpMLineIndex", 0, d.GetAllocator());
     std::string ufrag = m_session->id();
     rapidjson::Value ufragValue(ufrag, d.GetAllocator());
@@ -155,18 +188,9 @@ AnswerResult Tracker::examineAnswer()
             const auto& candidate = ice["candidate"];
             if (candidate.IsString())
             {
-                auto iceCandidate = IceCandidate::parse(candidate.GetString());
-
-                if (iceCandidate.type == IceCandidate::Type::Srflx)
-                    m_session->gotIceFromTracker(iceCandidate);
-
-                if (iceCandidate.type == IceCandidate::Type::Srflx)
-                {
-                    m_srflxReceived = true;
-                    if (m_srflxCandidate)
-                        sendIce(*m_srflxCandidate);
-                    m_srflxCandidate.reset();
-                }
+                // The tracker only parses; which candidate types drive what is
+                // ICE policy and lives in Session::gotIceFromTracker.
+                m_session->gotIceFromTracker(IceCandidate::parse(candidate.GetString()));
             }
         }
     }
@@ -183,7 +207,32 @@ AnswerResult Tracker::examineAnswer()
     const auto& sdp = sdpRoot["sdp"];
     if (!sdp.IsString())
         return AnswerResult::noop;
+    // An offer sent before its predecessor was answered leaves that answer describing an older
+    // set of tracks. Judged against the current one, every track minted since reads as rejected
+    // by the peer - a healthy camera then ends up reported as a codec the browser cannot play.
+    // A peer that echoes no id is taken at its word.
+    if (d.HasMember("offerId") && d["offerId"].IsInt()
+        && d["offerId"].GetInt() != m_session->offerVersion())
+    {
+        NX_DEBUG(
+            this,
+            "%1: ignoring the answer to offer %2, offer %3 is out",
+            m_session->id(),
+            d["offerId"].GetInt(),
+            m_session->offerVersion());
+        return AnswerResult::noop;
+    }
     return m_session->processSdpAnswer(sdp.GetString());
+}
+
+void Tracker::flushIceCandidatesOnce()
+{
+    if (m_iceSent)
+        return;
+    const auto iceCandidates = m_session->getIceCandidates();
+    for (const auto& candidate: iceCandidates)
+        sendIce(candidate);
+    m_iceSent = true;
 }
 
 bool Tracker::processMessages()
@@ -203,33 +252,41 @@ bool Tracker::processMessages()
      */
 
     AnswerResult result = examineAnswer();
+    if (result == AnswerResult::failed)
+        return false;
+    // A camera the peer cannot decode is that camera's problem alone: name it, and leave the
+    // socket and the session to the cameras that do play.
+    if (result != AnswerResult::noop)
+        sendUnsupportedCodecs();
     if (result == AnswerResult::again)
     {
         sendOffer();
         return true;
     }
-    else if (result == AnswerResult::failed)
-    {
-        return false;
-    }
 
     NX_VERBOSE(this, "Answer examination result: %1 in stage: %2", (int) result);
 
-    m_session->consumer()->startProvidersIfNeeded();
-
-    if (!m_iceSent)
+    //< A Purpose::data session has no consumer and nothing to start.
+    if (auto* consumer = m_session->consumer())
     {
-        NX_VERBOSE(this, "Answer succeeded, send ice candidates");
-        const auto iceCandidates = m_session->getIceCandidates();
-        for (const auto& candidate: iceCandidates)
-        {
-            if (m_srflxReceived || candidate.type != IceCandidate::Type::Srflx)
-                sendIce(candidate); //< Send Srflx only after get one from remote peer.
-            else
-                m_srflxCandidate = candidate;
-        }
-        m_iceSent = true;
+        consumer->startProvidersIfNeeded();
+
+        //< A successful answer to a codec-change offer: let the consumer resume,
+        //< re-feeding the held packet to the freshly rebuilt encoder. Gated on
+        //< `success` (not `noop`) so a stray trickle-ICE message during the
+        //< renegotiation window can't resume media before the answer lands.
+        if (result == AnswerResult::success)
+            consumer->resumeAfterRenegotiation();
     }
+
+    // The round has landed: apply any add/remove that queued while this offer was in flight and
+    // send one coalesced offer for them. `noop` is a non-answer (trickle ICE) and ends no round;
+    // a session whose every camera the peer rejected did answer, and must still be able to take
+    // the next one.
+    if (result == AnswerResult::success || result == AnswerResult::unsupportedCodec)
+        m_session->onOfferAnswered();
+
+    flushIceCandidatesOnce();
     return true;
 }
 
@@ -241,10 +298,7 @@ void Tracker::onIceCandidate(const IceCandidate& candidate)
         {
             if (!m_iceSent)
                 return; //< All ice will be send later.
-            if (m_srflxReceived || candidate.type != IceCandidate::Type::Srflx)
-                sendIce(candidate); //< Send Srflx only after get one from remote peer.
-            else
-                m_srflxCandidate = candidate;
+            sendIce(candidate);
         });
 }
 

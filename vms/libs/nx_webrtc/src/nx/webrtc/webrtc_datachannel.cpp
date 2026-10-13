@@ -81,6 +81,19 @@ bool DataChannel::init()
         isLibraryInitializated,
         []()
         {
+            // usrsctp itself. Note that this call will spawn a thread which will wake each usrsctp
+            // socket every 10 ms. This is probably safe, because access to socket is atomic.
+            //
+            // MUST come before every usrsctp_sysctl_set_...() below: usrsctp_init() runs
+            // sctp_init_sysctls(), which resets the whole sysctl block to the library defaults
+            // (and then overwrites sendspace/recvspace itself). Settings applied before this
+            // call are silently discarded - as this whole block was until VMS-279.
+            usrsctp_init(
+                /*port*/ 0,
+                &DataChannel::usrsctpWriteCallback,
+                &DataChannel::usrsctpDebugCallback);
+            usrsctp_enable_crc32c_offload(); //< Computing CRC32 only for outgoing packets.
+
             // usrsctp_sysctl...().
             // The send and receive window size of usrsctp is 256KiB, which is too small for
             // realistic RTTs, therefore we increase it to 1MiB by default for better performance.
@@ -91,12 +104,22 @@ bool DataChannel::init()
             // Increase the maximum number of chunks in the queue to 10K by default.
             usrsctp_sysctl_set_sctp_max_chunks_on_queue(10 * 1024);
 
-            // Increase initial congestion window size to 10 MTUs (RFC 6928) by default
-            usrsctp_sysctl_set_sctp_initial_cwnd(10);
+            // Max burst caps how much leaves per output round. With the cwnd-based variant
+            // disabled below it no longer touches the congestion window itself.
+            usrsctp_sysctl_set_sctp_max_burst_default(64);
 
-            // Set the max burst to 10 MTUs by default
-            // (the max burst is initially 0, meaning disabled).
-            usrsctp_sysctl_set_sctp_max_burst_default(10);
+            // Initial congestion window. RFC 6928 settles on 10 MTUs for the open internet,
+            // but every reconnect starts a fresh association and on a 200 ms path 10 MTUs is
+            // an opening capacity of ~58 KB/s - the reconnect burst then becomes a backlog
+            // that takes tens of seconds to drain. usrsctp takes the minimum of this and the
+            // max burst above, so 64 is the ceiling and asking for more would only mislead.
+            usrsctp_sysctl_set_sctp_initial_cwnd(64);
+
+            // Do NOT clamp cwnd to flight_size + max_burst * MTU on every output (the usrsctp
+            // default). That clamp assumes a sender that keeps its window full; a frame-paced
+            // stream drains between frames, so the clamp pins the window just above the
+            // current flight and it never grows. Loss-driven congestion control is unaffected.
+            usrsctp_sysctl_set_sctp_use_cwnd_based_maxburst(0);
 
             // Use the standard SCTP congestion control (RFC 4960) by default.
             // See https://github.com/paullouisageneau/libdatachannel/issues/354
@@ -108,9 +131,13 @@ bool DataChannel::init()
 
             // RTO settings.
 
-            // RFC 2988 recommends a 1s min RTO, which is very high,
-            // but TCP on Linux has a 200ms min RTO.
-            usrsctp_sysctl_set_sctp_rto_min_default(200);
+            // Keep RFC 2988's 1 s floor. A 200 ms floor (what TCP on Linux uses) is safe only
+            // on a LAN: toward a cloud peer the RTT is itself ~200 ms, so a floor equal to the
+            // RTT makes the retransmission timer expire on ordinary jitter. Each spurious T3
+            // timeout resets the congestion window to one MTU, so the window sawtooths between
+            // 30 and 100 KB instead of reaching the ~400 KB the link sustains, and the send
+            // buffer backs up behind it - seconds of added latency with nothing lost.
+            usrsctp_sysctl_set_sctp_rto_min_default(1'000);
             // Set only 10s as max RTO instead of 60s for shorter connection timeout.
             usrsctp_sysctl_set_sctp_rto_max_default(10'000);
             usrsctp_sysctl_set_sctp_init_rto_max_default(10'000);
@@ -119,9 +146,11 @@ bool DataChannel::init()
 
             // RTX settings.
 
-            // Use 5 retransmissions instead of 8 to shorten the backoff for a shorter
-            // connection timeout.
-            auto maxRtx = 5;
+            // Attempts before the path is declared dead. Read together with the min RTO
+            // above: the backoff doubles from 1 s, so 4 attempts give up after ~15 s, which
+            // is long enough to ride out an ordinary blip and short enough not to hold on to
+            // a path that is genuinely gone. 8, the library default, would be ~55 s.
+            auto maxRtx = 4;
             usrsctp_sysctl_set_sctp_init_rtx_max_default(maxRtx);
             usrsctp_sysctl_set_sctp_assoc_rtx_max_default(maxRtx);
             usrsctp_sysctl_set_sctp_path_rtx_max_default(maxRtx); //< Single path.
@@ -129,13 +158,6 @@ bool DataChannel::init()
             // Heartbeat interval.
             usrsctp_sysctl_set_sctp_heartbeat_interval_default(10000);
 
-            // usrsctp itself. Note that this call will spawn a thread which will wake each usrsctp
-            // socket every 10 ms. This is probably safe, because access to socket is atomic.
-            usrsctp_init(
-                /*port*/ 0,
-                &DataChannel::usrsctpWriteCallback,
-                &DataChannel::usrsctpDebugCallback);
-            usrsctp_enable_crc32c_offload(); //< Computing CRC32 only for outgoing packets.
             usrsctp_sysctl_set_sctp_pr_enable(
                 1); //< Enable Partial Reliability Extension (RFC 3758).
             usrsctp_sysctl_set_sctp_ecn_enable(0); //< Disable Explicit Congestion Notification.
@@ -435,7 +457,9 @@ bool DataChannel::handleRead()
             &infoLen,
             &infoType,
             &flags);
-        NX_CRITICAL(len < kSctpMaxMessageSize);
+        //< A partial chunk of a message larger than the buffer fills it
+        //< completely, so equality is legitimate; recvv cannot return more.
+        NX_CRITICAL(len <= kSctpMaxMessageSize);
 
         const auto savedErrno = errno;
 
@@ -492,10 +516,50 @@ bool DataChannel::handleRead()
 
 int DataChannel::outputQueueSize() const
 {
-    return m_outputQueue.size();
+    return m_outputQueueSize.load(std::memory_order_relaxed);
 }
 
-bool DataChannel::handleWrite()
+int DataChannel::removeQueuedStrings(const nx::Uuid& deviceId)
+{
+    if (deviceId.isNull() || m_outputQueue.size() <= 1)
+        return 0;
+
+    std::queue<Message> kept;
+    kept.push(std::move(m_outputQueue.front()));
+    m_outputQueue.pop();
+    int removed = 0;
+    while (!m_outputQueue.empty())
+    {
+        auto& message = m_outputQueue.front();
+        if (message.type == Message::Type::string && message.deviceId == deviceId)
+            ++removed;
+        else
+            kept.push(std::move(message));
+        m_outputQueue.pop();
+    }
+    m_outputQueue = std::move(kept);
+    publishQueueSize();
+    return removed;
+}
+
+void DataChannel::publishQueueSize()
+{
+    m_outputQueueSize.store((int) m_outputQueue.size(), std::memory_order_relaxed);
+}
+
+void DataChannel::notifyQueueProgress()
+{
+    publishQueueSize();
+    // Every pop, not just the transition to empty. A delegate that gates on a
+    // backlog THRESHOLD rather than on emptiness needs the condition
+    // re-evaluated each time the queue shrinks: it can become satisfiable at any
+    // depth, and if the queue then stalls above zero a drain-only notification
+    // would never arrive and the delegate would wait forever.
+    if (m_ice)
+        m_ice->onDataChannelQueueProgress();
+}
+
+DataChannel::WriteResult DataChannel::handleWrite()
 {
     NX_CRITICAL(m_outputQueue.size() > 0);
     auto& message = m_outputQueue.front();
@@ -514,7 +578,8 @@ bool DataChannel::handleWrite()
             break;
         case Message::Type::reset:
             m_outputQueue.pop();
-            return sendStreamReset(streamId);
+            notifyQueueProgress();
+            return sendStreamReset(streamId) ? WriteResult::sent : WriteResult::failed;
         default:
             NX_CRITICAL(false);
             break;
@@ -533,14 +598,25 @@ bool DataChannel::handleWrite()
         sendvSpa.sendv_sndinfo.snd_flags |= SCTP_EOR;
     else
         sendvSpa.sendv_sndinfo.snd_flags &= ~SCTP_EOR;
+    // Deliberately narrower than the prinfo condition below: the session-wide
+    // m_config.unreliableTransport (the tracker's MSE media-over-datachannel
+    // mode) keeps its historical "no retransmissions, but ordered" contract -
+    // an MSE consumer appends segments in order. Only the per-message flag,
+    // used for self-contained overlay metadata, also drops the ordering.
+    if (message.unreliableTransport)
+        sendvSpa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
 
-    // Set prinfo.
+    // Set prinfo. The PR-SCTP policy names read inverted: SCTP_PR_SCTP_NONE
+    // means no PARTIAL-reliability policy - i.e. fully reliable delivery with
+    // unlimited retransmissions - while SCTP_PR_SCTP_RTX caps retransmissions
+    // at pr_value, and pr_value = 0 sends exactly once: a lost chunk is
+    // abandoned via FORWARD-TSN instead of being retransmitted.
     sendvSpa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
 
-    if (m_config.unreliableTransport)
-        sendvSpa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX; //<  // No retransmissions.
+    if (m_config.unreliableTransport || message.unreliableTransport)
+        sendvSpa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
     else
-        sendvSpa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE; //< // Default reliability setting.
+        sendvSpa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
     sendvSpa.sendv_prinfo.pr_value = 0;
 
     ssize_t ret = 0;
@@ -576,27 +652,28 @@ bool DataChannel::handleWrite()
     {
         if (errno == EWOULDBLOCK || errno == EAGAIN)
         {
-            // This case is unexpected, but not an error.
-            NX_DEBUG(this, "SCTP sending not available");
-            return true;
+            NX_DEBUG(this, "SCTP send buffer is full");
+            return WriteResult::wouldBlock;
         }
         else
         {
             NX_DEBUG(this, "SCTP sending failed: errno %1", errno);
-            return false;
+            return WriteResult::failed;
         }
     }
     NX_TRACE(this, "SCTP send size = %1 ret = %2", message.data.size(), ret);
     if (message.data.size() == (size_t) ret)
     {
         m_outputQueue.pop();
+        notifyQueueProgress();
+        return WriteResult::sent;
     }
-    else
-    {
-        NX_ASSERT((size_t) ret < message.data.size());
-        message.data.erase(0, ret);
-    }
-    return true;
+
+    // usrsctp accepted a prefix and stopped, which means its buffer just filled up. Keep
+    // the remainder at the head of the queue for the next write.
+    NX_ASSERT((size_t) ret < message.data.size());
+    message.data.erase(0, ret);
+    return WriteResult::wouldBlock;
 }
 
 bool DataChannel::sendStreamReset(int streamId)
@@ -644,8 +721,21 @@ bool DataChannel::handleIo()
             handled = true;
             // Upcall callback can be called with new event set on usrsctp_sendv.
             m_lastUpcallEvents &= ~SCTP_EVENT_WRITE;
-            if (!handleWrite())
-                return false;
+            // Hand usrsctp everything it will take rather than one message per event: it
+            // applies the congestion window itself and stops accepting once its send
+            // buffer is full. Sending a single message per upcall caps the channel at the
+            // upcall rate and, worse, starves the association - with the data waiting in
+            // this queue instead of in flight, the congestion window never fills, so it
+            // never grows, and everything queued behind it is delayed, including messages
+            // that have nothing to do with video.
+            while (!m_outputQueue.empty())
+            {
+                const WriteResult result = handleWrite();
+                if (result == WriteResult::failed)
+                    return false;
+                if (result == WriteResult::wouldBlock)
+                    break;
+            }
         }
         // Loop until the internal usrsctp event queue is empty, and there is no data to send
         // in the outputQueue.
@@ -666,11 +756,16 @@ bool DataChannel::closeStream(int streamId)
     return writeMessage({Message::Type::reset, streamId, std::string(), true});
 }
 
-bool DataChannel::writeString(const std::string& data, int streamId)
+bool DataChannel::writeString(
+    const std::string& data,
+    int streamId,
+    const nx::Uuid& deviceId,
+    bool unreliableTransport)
 {
     if (streamId < 0)
         streamId = defaultStream();
-    return writeUserMessage({Message::Type::string, streamId, data, true});
+    return writeUserMessage(
+        {Message::Type::string, streamId, data, true, deviceId, unreliableTransport});
 }
 
 bool DataChannel::writeBinary(const std::string& data, int streamId)
@@ -733,6 +828,7 @@ bool DataChannel::writeMessage(Message message)
     if (message.data.size() <= kDataChannelFragment)
     {
         m_outputQueue.emplace(std::move(message));
+        publishQueueSize();
         return handleIo();
     }
 
@@ -751,6 +847,7 @@ bool DataChannel::writeMessage(Message message)
         m_outputQueue.emplace(std::move(fragmentedMessage));
         offset += len;
     }
+    publishQueueSize();
     return handleIo();
 }
 
@@ -983,6 +1080,8 @@ bool DataChannel::processReceivedMessage(const Message& message)
                         m_defaultStreamId,
                         m_label,
                         m_protocol);
+                    if (m_ice)
+                        m_ice->onDataChannelOpened(m_defaultStreamId);
                     break;
                 case MessageType::close:
                     m_dataChannelOpened = false;
@@ -1069,8 +1168,11 @@ bool DataChannel::processOpenMessage(const Message& message)
         m_protocol);
 
     uint8_t ack = MessageType::ack;
-    return writeMessage(
+    const bool result = writeMessage(
         {Message::Type::control, message.streamId, std::string((const char*) &ack, 1), true});
+    if (result && m_ice)
+        m_ice->onDataChannelOpened(message.streamId);
+    return result;
 }
 
 bool DataChannel::openDataChannel(const std::string& label, const std::string& protocol)
@@ -1079,6 +1181,13 @@ bool DataChannel::openDataChannel(const std::string& label, const std::string& p
         return true; //< Don't need another Data Channel.
     m_label = label;
     m_protocol = protocol;
+
+    // RFC 8832 #6: the side acting as the DTLS server MUST open its channels
+    // on an odd stream id (the client owns the even ones). This end always
+    // takes the DTLS server role, and a strict peer - the toolbox's
+    // libdatachannel - resets an even-stream open from the server as an
+    // odd/even violation. Browsers accepted the old stream 0.
+    m_defaultStreamId = 1;
 
     // Always use default reliability parameters: looks like all dataChannel implementations
     // always use TCP-like reliability.

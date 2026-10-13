@@ -3,6 +3,7 @@
 #include "media_queue.h"
 
 #include <nx/media/video_data_packet.h>
+#include <nx/streaming/abstract_stream_data_provider.h> //< CL_MAX_CHANNEL_NUMBER.
 #include <nx/utils/log/log.h>
 
 namespace nx::vms::server {
@@ -10,6 +11,14 @@ namespace nx::vms::server {
 MediaQueue::MediaQueue(int maxSize):
     m_maxSize(maxSize)
 {
+}
+
+void MediaQueue::setKeyDataFound(bool value)
+{
+    NX_MUTEX_LOCKER lock(&m_mutex);
+    //< Every channel, not just the ones seen so far: this is normally called
+    //< before any data arrives, when the vector is still empty.
+    m_keyDataFound.assign(CL_MAX_CHANNEL_NUMBER, value);
 }
 
 // Normally should drop only first gop for the first appeared channel in media queue, and all audio
@@ -106,6 +115,14 @@ void MediaQueue::putData(const QnConstAbstractMediaDataPtr& media)
     m_waitForFrame.wakeAll();
 }
 
+void MediaQueue::pushFront(const QnConstAbstractMediaDataPtr& media)
+{
+    NX_MUTEX_LOCKER lock(&m_mutex);
+    m_mediaQueue.push_front(media);
+    m_needToStop = false;
+    m_waitForFrame.wakeAll();
+}
+
 QnConstAbstractMediaDataPtr MediaQueue::popData(bool blocked)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
@@ -130,11 +147,21 @@ void MediaQueue::stop()
     m_waitForFrame.wakeAll();
 }
 
-void MediaQueue::clearUnprocessedData()
+void MediaQueue::clearUnprocessedData(std::optional<nx::Uuid> deviceId)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
-    m_mediaQueue.clear();
-    m_keyDataFound.clear();
+    if (!deviceId)
+    {
+        m_mediaQueue.clear();
+        m_keyDataFound.clear();
+        return;
+    }
+    std::erase_if(
+        m_mediaQueue,
+        [&deviceId](const auto& media)
+        {
+            return media->deviceId == *deviceId;
+        });
 }
 
 } // namespace nx::vms::server

@@ -21,35 +21,71 @@ static const std::set<AVCodecID> kSrtpAudioCodecs = {
     AV_CODEC_ID_PCM_ALAW,
     AV_CODEC_ID_ADPCM_G722};
 
-static const std::set<AVCodecID> kMseVideoCodecs = {AV_CODEC_ID_H264, AV_CODEC_ID_H265};
-
-static const std::set<AVCodecID> kMseAudioCodecs = {
-    // PCM* codecs are also supported by browser side, but there is no ffmpeg mp4 muxing for them.
-    AV_CODEC_ID_AAC,
-    AV_CODEC_ID_MP2,
-    AV_CODEC_ID_MP3,
-    AV_CODEC_ID_AC3,
-    AV_CODEC_ID_EAC3,
-};
-
 /* For some NATs, there can be another network layer, such as VPN,
  * which fragments original UDP packets with RTP.
  * Note that RTP packets with UDP transport can't be reassembled:
  * there is no information about original RTP packet size in RTP packet via UDP.
+ *
+ * 1200 (the libwebrtc default) rather than 1300: tunnels commonly have a
+ * 1280 MTU (IPv6 minimum - WireGuard, Tailscale), and an oversized IPv6
+ * packet is dropped silently instead of fragmented, which black-holes
+ * exactly the key-frame packets while STUN/DTLS/audio still pass.
+ * Measured on Tailscale: 1232-byte UDP payloads pass, 1300 vanish.
  * */
-static const int kWebrtcMtu = 1300;
+static const int kWebrtcMtu = 1200;
+
+// Step this far ahead of the last emitted sequence when rebuilding an encoder on a reused
+// ssrc, so the new sequence lands clear of any packet still in flight from the old one.
+static const uint16_t kSequenceRebuildGap = 100;
+
+// Carry the RTP sequence forward from the encoder being replaced into its successor. The
+// successor reuses the same ssrc; continuing the sequence forward (rather than letting the
+// muxer pick a fresh random base that may fall behind) keeps it clear of the receiver's SRTP
+// replay window. First-time encoders start at zero and own the counter from then on.
+void seedSequenceForward(
+    const std::map<nx::Uuid, QnUniversalRtpEncoderPtr>& encoders,
+    const nx::Uuid& deviceId,
+    QnUniversalRtpEncoder& encoder)
+{
+    const auto it = encoders.find(deviceId);
+    if (it != encoders.end() && it->second->nextSequence())
+        encoder.setStartSequence(uint16_t(*it->second->nextSequence() + kSequenceRebuildGap));
+    else
+        encoder.setStartSequence(0);
+}
+
+// Step this far (media time) ahead of the old encoder's last output when rebuilding on a
+// reused ssrc, so the new timeline lands well clear of it. Applied equally to video and audio,
+// so their relation - and A/V sync - is preserved. rebaseOutputTimestamps forces a fresh RTCP
+// sender report, so the peer re-learns the NTP-RTP mapping and renders the jump immediately.
+static const std::chrono::microseconds kTimestampRebuildGap{100'000'000}; //< 100 s.
+
+// Continue the RTP timestamp forward from the encoder being replaced, the same way
+// seedSequenceForward continues the sequence. A rebuilt encoder on a reused ssrc otherwise
+// starts its timeline at a fresh base that may fall behind the last emitted timestamp; the
+// peer then discards those "past" frames - the exact analogue of a backward sequence - and the
+// picture waits for the next key frame. rtpClockHz is the stream's RTP clock (90 kHz video,
+// the sample rate for audio) - the same media base rescales to each stream's own clock.
+void seedTimestampForward(
+    const std::map<nx::Uuid, QnUniversalRtpEncoderPtr>& encoders,
+    const nx::Uuid& deviceId,
+    QnUniversalRtpEncoder& encoder,
+    int64_t rtpClockHz)
+{
+    const auto it = encoders.find(deviceId);
+    if (it == encoders.end() || rtpClockHz <= 0)
+        return;
+    const int64_t lastUs =
+        (int64_t) it->second->getLastTimestamps().rtpTimestamp * 1000000 / rtpClockHz;
+    encoder.rebaseOutputTimestamps(std::chrono::microseconds(lastUs) + kTimestampRebuildGap);
+}
 
 } // namespace
 
 namespace nx::webrtc {
 
-Transcoder::Transcoder(
-    Session* session,
-    nx::vms::api::WebRtcMethod method,
-    nx::vms::api::WebRtcTrackerSettings::MseFormat mseFormat):
-    m_session(session),
-    m_method(method),
-    m_mseFormat(mseFormat)
+Transcoder::Transcoder(Session* session):
+    m_session(session)
 {
 }
 
@@ -58,10 +94,7 @@ bool Transcoder::createEncoders(
     AVCodecParameters* videoParameters,
     AVCodecParameters* audioParameters)
 {
-    if (m_method == nx::vms::api::WebRtcMethod::srtp)
-        return createRtpEncoders(deviceId, videoParameters, audioParameters);
-    else
-        return createMseEncoder(videoParameters, audioParameters);
+    return createRtpEncoders(deviceId, videoParameters, audioParameters);
 }
 
 bool Transcoder::createRtpEncoders(
@@ -80,6 +113,8 @@ bool Transcoder::createRtpEncoders(
                 success = true;
                 if (m_encryptionData.has_value())
                     encoder->setSrtpEncryptionData(*m_encryptionData);
+                seedSequenceForward(m_videoEncoders, deviceId, *encoder);
+                seedTimestampForward(m_videoEncoders, deviceId, *encoder, /*rtpClockHz*/ 90000);
                 m_videoEncoders[deviceId] = std::move(encoder);
                 track->offerState = TrackState::active;
             }
@@ -105,6 +140,12 @@ bool Transcoder::createRtpEncoders(
                 success = true;
                 if (m_encryptionData.has_value())
                     encoder->setSrtpEncryptionData(*m_encryptionData);
+                seedSequenceForward(m_audioEncoders, deviceId, *encoder);
+                seedTimestampForward(
+                    m_audioEncoders,
+                    deviceId,
+                    *encoder,
+                    /*rtpClockHz*/ audioParameters->sample_rate);
                 m_audioEncoders[deviceId] = std::move(encoder);
                 track->offerState = TrackState::active;
             }
@@ -125,70 +166,16 @@ bool Transcoder::createRtpEncoders(
 
 bool Transcoder::isVideoCodecSupported(AVCodecID codecId)
 {
-    if (m_method == nx::vms::api::WebRtcMethod::srtp)
-    {
-        if (kSrtpVideoCodecs.count(codecId) == 0)
-            return false;
-        if (codecId == AV_CODEC_ID_H265 && !::ini().webrtcSrtpTransportEnableH265)
-            return false;
-        return true;
-    }
-    else
-    {
-        return kMseVideoCodecs.count(codecId) != 0;
-    }
+    if (kSrtpVideoCodecs.count(codecId) == 0)
+        return false;
+    if (codecId == AV_CODEC_ID_H265 && !::ini().webrtcSrtpTransportEnableH265)
+        return false;
+    return true;
 }
 
 bool Transcoder::isAudioCodecSupported(AVCodecID codecId)
 {
-    if (m_method == nx::vms::api::WebRtcMethod::srtp)
-    {
-        return kSrtpAudioCodecs.count(codecId) != 0;
-    }
-    else
-    {
-        return kMseAudioCodecs.count(codecId) != 0;
-    }
-}
-
-bool Transcoder::createMseEncoder(
-    AVCodecParameters* videoParameters,
-    AVCodecParameters* audioParameters)
-{
-    if (!videoParameters && !audioParameters)
-    {
-        NX_DEBUG(this, "Can't create MSE transcoder without video and audio");
-        return false;
-    }
-
-    m_mseMuxer = std::make_unique<FfmpegMuxer>(FfmpegMuxer::Config());
-    m_mseMuxer->setContainer(nx::toString(m_mseFormat));
-    if (m_mseFormat == nx::vms::api::WebRtcTrackerSettings::MseFormat::mp4)
-    {
-        m_mseMuxer->setFormatOption(
-            "movflags",
-            "empty_moov+omit_tfhd_offset+frag_keyframe+default_base_moof+isml");
-    }
-
-    if (videoParameters && !m_mseMuxer->addVideo(videoParameters))
-    {
-        NX_DEBUG(this, "Can't add video stream to MSE muxer");
-        return false;
-    }
-
-    if (audioParameters && !m_mseMuxer->addAudio(audioParameters))
-    {
-        NX_DEBUG(this, "Can't add audio stream to MSE muxer");
-        return false;
-    }
-
-    if (!m_mseMuxer->open())
-    {
-        NX_DEBUG(this, "Can't open MSE muxer");
-        return false;
-    }
-
-    return constructMimeType();
+    return kSrtpAudioCodecs.count(codecId) != 0;
 }
 
 QnUniversalRtpEncoderPtr Transcoder::createRtpEncoder(
@@ -200,6 +187,10 @@ QnUniversalRtpEncoderPtr Transcoder::createRtpEncoder(
     QnUniversalRtpEncoder::Config config;
     config.absoluteRtcpTimestamps = true;
     config.addOnvifHeaderExtension = false;
+    config.addAbsCaptureTime = m_session->config().addAbsCaptureTime;
+    // playout-delay is a video-only extension - stamp it only on the video track.
+    config.addPlayoutDelay =
+        m_session->config().addPlayoutDelay && codecParameters->codec_type == AVMEDIA_TYPE_VIDEO;
     config.useMultipleSdpPayloadTypes = false;
     config.useRtcpNack = true;
     config.webRtcMode = ::ini().webrtcFixH264ProfileConstraints;
@@ -254,42 +245,35 @@ QnUniversalRtpEncoder* Transcoder::videoEncoder(nx::Uuid deviceId) const
 QnUniversalRtpEncoder* Transcoder::audioEncoder(nx::Uuid deviceId) const
 {
     auto it = m_audioEncoders.find(deviceId);
-    return it != m_videoEncoders.end() ? it->second.get() : nullptr;
+    return it != m_audioEncoders.end() ? it->second.get() : nullptr;
 }
 
-bool Transcoder::constructMimeType()
+void Transcoder::retargetDevice(nx::Uuid from, nx::Uuid to)
 {
-    m_mimeType = nx::media::getFormatMimeType(m_mseMuxer->container().toStdString());
-    if (m_mimeType.empty())
+    const auto moveEntry = [from, to](auto& map)
     {
-        NX_DEBUG(
-            this,
-            "Failed to build mime type, container not supported: %1",
-            m_mseMuxer->container());
-        return false;
-    }
+        auto it = map.find(from);
+        if (it == map.end())
+            return;
+        auto value = std::move(it->second);
+        map.erase(it);
+        map.insert_or_assign(to, std::move(value));
+    };
 
-    const auto* videoCodecParameters = m_mseMuxer->getVideoCodecParameters();
-    const auto* audioCodecParameters = m_mseMuxer->getAudioCodecParameters();
-
-    auto videoStr = nx::media::getMimeType(videoCodecParameters);
-    auto audioStr = nx::media::getMimeType(audioCodecParameters);
-    if (!videoStr.empty() || !audioStr.empty())
-        m_mimeType += "; codecs=\"";
-    if (!videoStr.empty())
-    {
-        m_mimeType += videoStr;
-        if (!audioStr.empty())
-            m_mimeType += ",";
-    }
-    if (!audioStr.empty())
-    {
-        m_mimeType += audioStr;
-    }
-    if (!videoStr.empty() || !audioStr.empty())
-        m_mimeType += "\"";
-
-    return true;
+    //< The encoders keep their ssrc, sequence numbers and RTP timeline, so the
+    //< peer sees one continuous stream across the switch. A new camera whose
+    //< codec differs is rejected by its first packet (isEof) exactly as a
+    //< mid-stream codec change is, and takes the renegotiation path.
+    moveEntry(m_videoEncoders);
+    moveEntry(m_audioEncoders);
+    //< The RTP rebase armed for the switch was addressed to the new device, so
+    //< only carry over an unconsumed one from the old device if the new device
+    //< has none of its own.
+    if (!m_pendingRtpRebase.contains(to))
+        moveEntry(m_pendingRtpRebase);
+    else
+        m_pendingRtpRebase.erase(from);
+    moveEntry(m_rtpBaseLinearizer);
 }
 
 QnUniversalRtpEncoder* Transcoder::encoderBySsrc(uint32_t ssrc) const
@@ -313,175 +297,99 @@ QnUniversalRtpEncoder* Transcoder::getRtpEncoder(
     return it != encoders.end() ? it->second.get() : nullptr;
 }
 
-bool Transcoder::checkForMseEof(QnConstAbstractMediaDataPtr media)
-{
-    NX_ASSERT(m_method == nx::vms::api::WebRtcMethod::mse, "Should be called only with MSE");
-
-    // Checks for EOF.
-    // 1. If EOF is already set, you can only re-create Transcoder.
-    if (!m_eof.empty())
-        return true;
-
-    // 2. Check for codec changed on-fly.
-    auto videoParameters = m_mseMuxer->getVideoCodecParameters();
-    auto audioParameters = m_mseMuxer->getAudioCodecParameters();
-
-    if ((media->dataType == QnAbstractMediaData::VIDEO && !videoParameters)
-        || (media->dataType == QnAbstractMediaData::AUDIO && !audioParameters))
-    {
-        NX_DEBUG(this, "MSE transcoder got EOF, appeared track that is not announced: %1", media);
-        return true; //< New appeared track.
-    }
-
-    if (media->dataType == QnAbstractMediaData::VIDEO && videoParameters
-        && media->compressionType != videoParameters->codec_id)
-    {
-        NX_DEBUG(
-            this,
-            "MSE transcoder got EOF for video: has %1, got %2",
-            media->compressionType,
-            videoParameters ? videoParameters->codec_id : AV_CODEC_ID_NONE);
-        return true;
-    }
-    else if (
-        media->dataType == QnAbstractMediaData::AUDIO && audioParameters
-        && media->compressionType != audioParameters->codec_id)
-    {
-        NX_DEBUG(
-            this,
-            "MSE transcoder got EOF for audio: has %1, got %2",
-            media->compressionType,
-            audioParameters ? audioParameters->codec_id : AV_CODEC_ID_NONE);
-        return true;
-    }
-
-    // 3. Check for audio or video track disappear.
-    if (videoParameters && audioParameters)
-    {
-        if (media->dataType == QnAbstractMediaData::VIDEO)
-        {
-            constexpr int kMinVideoInGop = 7; //< Special const for strange small GOPs.
-            if (media->flags & AV_PKT_FLAG_KEY)
-            {
-                if (m_audioPacketsCount == 0 && m_videoPacketsCount > kMinVideoInGop)
-                {
-                    NX_DEBUG(
-                        this,
-                        "MSE transcoder got EOF: not enough audio for gop: %1",
-                        m_videoPacketsCount);
-                    return true;
-                }
-                m_videoPacketsCount = m_audioPacketsCount = 0;
-            }
-            ++m_videoPacketsCount;
-        }
-        else if (media->dataType == QnAbstractMediaData::AUDIO)
-        {
-            ++m_audioPacketsCount;
-        }
-    }
-
-    return false;
-}
-
 QnUniversalRtpEncoder* Transcoder::setDataPacket(
     nx::Uuid deviceId,
     QnConstAbstractMediaDataPtr media)
 {
     m_lastTimestampMs = media->timestamp / 1000;
-    if (m_method == nx::vms::api::WebRtcMethod::srtp)
+
+    const auto rebase = m_pendingRtpRebase.find(deviceId);
+    const bool rebaseMatches =
+        rebase != m_pendingRtpRebase.end() && media->opaque == rebase->second.seekSeq;
+    if (rebaseMatches)
     {
-        QnUniversalRtpEncoder* rtpEncoder = getRtpEncoder(deviceId, media->dataType);
-        if (!rtpEncoder)
-            return nullptr; //< Skip not supported data.
-
-        rtpEncoder->setDataPacket(media);
-        return rtpEncoder;
+        // Round up so the first frame lands at or past the base the player
+        // gates on. One shared microsecond base keeps video and audio aligned:
+        // each muxer rescales it to its own stream clock.
+        NX_VERBOSE(
+            this,
+            "SEEKPROF first post-seek packet seq=%1 mediaTs=%2ms",
+            rebase->second.seekSeq,
+            media->timestamp / 1000);
+        const std::chrono::microseconds baseUs((rebase->second.rtpBase90k * 100 + 8) / 9);
+        if (auto encoder = videoEncoder(deviceId))
+            encoder->rebaseOutputTimestamps(baseUs);
+        if (auto encoder = audioEncoder(deviceId))
+            encoder->rebaseOutputTimestamps(baseUs);
     }
-    else
-    {
-        NX_ASSERT(m_mseMuxer);
-        // Checks for inappropriate data.
-        if (media->dataType != QnAbstractMediaData::VIDEO
-            && media->dataType != QnAbstractMediaData::AUDIO)
-        {
-            return nullptr; //< Skip not supported data.
-        }
-        if (checkForMseEof(media))
-        {
-            m_eof.insert(deviceId);
-            return nullptr;
-        }
 
-        if (!m_mseMuxer->process(media))
-        {
-            NX_DEBUG(this, "MSE muxer: failed to process data");
-            m_eof.insert(deviceId);
-            return nullptr;
-        }
+    QnUniversalRtpEncoder* rtpEncoder = getRtpEncoder(deviceId, media->dataType);
+    if (!rtpEncoder)
+        return nullptr; //< Skip not supported data.
 
-        nx::utils::ByteArray buffer;
-        m_mseMuxer->getResult(&buffer);
-        if (buffer.size() != 0)
-            m_mseBuffers.emplace(std::move(buffer));
-        return nullptr;
-    }
+    rtpEncoder->setDataPacket(media);
+
+    // The rebase is spent only once a packet is really taken. A codec this
+    // encoder cannot accept raises EOF instead of consuming it: the Consumer
+    // holds the packet, the session rebuilds the encoder against the new codec
+    // and re-feeds it, and it is THAT encoder - brand new, its output timeline
+    // starting at zero - that needs the base applied. Erasing here regardless
+    // left a camera switch which changes codec streaming from zero while the
+    // player waited for the base it asked for, so it stayed frozen on the
+    // previous camera until the freeze timed out.
+    if (rebaseMatches && !rtpEncoder->isEof())
+        m_pendingRtpRebase.erase(rebase);
+
+    return rtpEncoder;
+}
+
+void Transcoder::setPendingRtpRebase(nx::Uuid deviceId, int seekSeq, int64_t rtpBase90k)
+{
+    // rtpBase90k arrives as a 32-bit RTP timestamp (the player's base % 2^32).
+    // Linearize it into a monotonic 64-bit value so a wrap past 2^32 mid-scrub
+    // does not drive the muxer's output DTS backwards (which would make
+    // FfmpegMuxer reject every packet and freeze the stream). Start the timeline
+    // at 0 (the base only ever advances, so it never wraps below zero) - the
+    // default start is near int64 max and would overflow the *100 rescale in
+    // setDataPacket().
+    auto& linearizer = m_rtpBaseLinearizer.try_emplace(deviceId, /*startValue*/ 0).first->second;
+    m_pendingRtpRebase[deviceId] = {seekSeq, linearizer.linearize((uint32_t) rtpBase90k)};
+}
+
+void Transcoder::rebaseRtpNow(nx::Uuid deviceId, int64_t rtpBase90k)
+{
+    // Same linearization and 90 kHz -> microsecond rescale as the pending path (see
+    // setPendingRtpRebase and setDataPacket), only applied immediately: rebaseOutputTimestamps
+    // clears the corrector so the very next packet lands at baseUs.
+    auto& linearizer = m_rtpBaseLinearizer.try_emplace(deviceId, /*startValue*/ 0).first->second;
+    const int64_t base64 = linearizer.linearize((uint32_t) rtpBase90k);
+    const std::chrono::microseconds baseUs((base64 * 100 + 8) / 9);
+    if (auto encoder = videoEncoder(deviceId))
+        encoder->rebaseOutputTimestamps(baseUs);
+    if (auto encoder = audioEncoder(deviceId))
+        encoder->rebaseOutputTimestamps(baseUs);
 }
 
 bool Transcoder::getNextPacket(QnUniversalRtpEncoder* rtpEncoder, nx::utils::ByteArray& buffer)
 {
-    if (m_method == nx::vms::api::WebRtcMethod::srtp)
-    {
-        return rtpEncoder->getNextPacket(buffer);
-    }
-    else
-    {
-        if (!m_mseBuffers.empty())
-        {
-            buffer = std::move(m_mseBuffers.front());
-            m_mseBuffers.pop();
-            return true;
-        }
-        return false;
-    }
+    return rtpEncoder->getNextPacket(buffer);
 }
 
-bool Transcoder::isEof(nx::Uuid deviceId, QnUniversalRtpEncoder* rtpEncoder) const
+bool Transcoder::isEof(QnUniversalRtpEncoder* rtpEncoder) const
 {
-    if (m_eof.contains(deviceId))
-        return true;
-
-    if (m_method == nx::vms::api::WebRtcMethod::srtp)
-    {
-        return rtpEncoder->isEof();
-    }
-    else
-    {
-        return !m_mseMuxer;
-    }
+    return rtpEncoder->isEof();
 }
 
-FfmpegMuxer::PacketTimestamp Transcoder::getLastTimestamps() const
+FfmpegMuxer::PacketTimestamp Transcoder::getLastTimestamps(nx::Uuid deviceId) const
 {
-    // TODO: this function doesn't support multi camera streaming properly. It is needed to
-    // refactor it.
-    if (m_method == nx::vms::api::WebRtcMethod::srtp)
-    {
-        QnUniversalRtpEncoder* rtpEncoder = nullptr;
-        if (!m_videoEncoders.empty())
-            rtpEncoder = m_videoEncoders.begin()->second.get();
-        else if (!m_audioEncoders.empty())
-            rtpEncoder = m_videoEncoders.begin()->second.get();
-
-        if (!rtpEncoder)
-            return FfmpegMuxer::PacketTimestamp(); //< Skip not supported data.
-        return rtpEncoder->getLastTimestamps();
-    }
-    else
-    {
-        NX_ASSERT(m_mseMuxer);
-        return m_mseMuxer->getLastPacketTimestamp();
-    }
+    // Per device: every camera has its own RTP timeline, and a sync anchor built from
+    // another camera's encoder is exactly as useless as a missing one.
+    QnUniversalRtpEncoder* rtpEncoder = videoEncoder(deviceId);
+    if (!rtpEncoder)
+        rtpEncoder = audioEncoder(deviceId);
+    if (!rtpEncoder)
+        return FfmpegMuxer::PacketTimestamp(); //< Skip not supported data.
+    return rtpEncoder->getLastTimestamps();
 }
 
 } // namespace nx::webrtc

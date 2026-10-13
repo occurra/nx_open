@@ -2,8 +2,9 @@
 
 #include "webrtc_tracks.h"
 
-#include <core/resource/camera_resource.h>
-#include <nx/sdk/helpers/uuid_helper.h>
+#include <algorithm>
+#include <limits>
+
 #include <nx/utils/log/log.h>
 #include <nx/utils/random.h>
 
@@ -52,6 +53,36 @@ Track* Tracks::audioTrack(nx::Uuid deviceId) const
     return nullptr;
 }
 
+int Tracks::retargetDevice(nx::Uuid from, nx::Uuid to)
+{
+    int count = 0;
+    for (const auto& [_, track]: m_tracks)
+    {
+        if (track->deviceId != from)
+            continue;
+        track->deviceId = to;
+        ++count;
+    }
+    return count;
+}
+
+std::vector<nx::Uuid> Tracks::orderByMid(std::vector<nx::Uuid> deviceIds) const
+{
+    const auto midOf = [this](const nx::Uuid& deviceId)
+    {
+        const auto track = videoTrack(deviceId);
+        return track ? track->mid : std::numeric_limits<int>::max();
+    };
+    std::stable_sort(
+        deviceIds.begin(),
+        deviceIds.end(),
+        [&midOf](const nx::Uuid& a, const nx::Uuid& b)
+        {
+            return midOf(a) < midOf(b);
+        });
+    return deviceIds;
+}
+
 std::vector<Track> Tracks::allTracks() const
 {
     std::vector<Track> result;
@@ -72,6 +103,26 @@ Track* Tracks::track(uint32_t ssrc) const
 {
     const auto it = m_tracks.find(ssrc);
     return it != m_tracks.end() ? it->second.get() : nullptr;
+}
+
+uint32_t Tracks::rotateSsrc(nx::Uuid deviceId, TrackType type)
+{
+    for (auto it = m_tracks.begin(); it != m_tracks.end(); ++it)
+    {
+        if (it->second->deviceId == deviceId && it->second->trackType == type)
+        {
+            auto track = std::move(it->second);
+            m_tracks.erase(it);
+            do
+            {
+                track->ssrc = nx::utils::random::number<uint32_t>();
+            } while (m_tracks.find(track->ssrc) != m_tracks.end());
+            const uint32_t newSsrc = track->ssrc;
+            m_tracks.emplace(newSsrc, std::move(track));
+            return newSsrc;
+        }
+    }
+    return 0;
 }
 
 Tracks::Tracks(Session* session):
@@ -123,41 +174,8 @@ void Tracks::addTrack(std::unique_ptr<Track> track)
     m_tracks.emplace(track->ssrc, std::move(track));
 }
 
-std::string TracksForSend::mimeType() const
-{
-    return m_session->muxer()->mimeType();
-}
-
-std::string TracksForRecv::mimeType() const
-{
-    return "";
-}
-
 bool TracksForSend::examineSdp(const std::string& /*sdp*/)
 {
-    return true;
-}
-
-bool TracksForRecv::examineSdp(const std::string& sdp)
-{
-    m_session->demuxer()->setSdp(sdp);
-
-#if 0
-    if (hasVideo() != m_session->demuxer()->hasVideo()
-        || hasAudio() != m_session->demuxer()->hasAudio())
-    {
-        return false;
-    }
-
-    if (hasAudio())
-    {
-        auto audioCodecParameters = m_session->demuxer()->audioCodecParameters();
-        NX_ASSERT(audioCodecParameters);
-        auto layout = std::make_shared<AudioLayout>(audioCodecParameters);
-        m_session->reader()->setAudioLayout(layout);
-    }
-#endif
-
     return true;
 }
 
@@ -194,56 +212,40 @@ std::string Tracks::getSdpForTrack(const Track* track, uint16_t /*port*/) const
 
     // Mid in RTP extension is not used now.
     // sdp += "a=extmap:1 urn:ietf:params:rtp-hdrext:sdes:mid" ENDL;
+
+    // Absolute capture time — lets the browser know each frame's UTC capture
+    // time. Off by default (see SessionConfig::addAbsCaptureTime); the SDP
+    // advertisement and the actual extension emission in the encoder are
+    // gated by the same flag, so they stay in lockstep.
+    if (m_session->config().addAbsCaptureTime)
+        sdp += "a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time" ENDL;
+
+    // Playout-delay (video only): min=max=0 asks Chrome to render each decoded
+    // frame immediately (low-latency path) instead of holding it in the playout
+    // buffer. The encoder stamps it for video tracks only, so advertise it only
+    // there to keep the SDP and the emitted extension in lockstep.
+    if (m_session->config().addPlayoutDelay && track->trackType == TrackType::video)
+        sdp += "a=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/playout-delay" ENDL;
+
     return sdp;
 }
 
 std::string TracksForSend::getSdpForTrack(const Track* track, uint16_t port) const
 {
-    auto encoder = m_session->muxer()->videoEncoder(track->deviceId);
+    bool isVideo = track->trackType == TrackType::video;
+    const auto muxer = m_session->muxer();
+    auto encoder =
+        isVideo ? muxer->videoEncoder(track->deviceId) : muxer->audioEncoder(track->deviceId);
     if (!encoder)
     {
         NX_DEBUG(this, "Encoder is not initialized for track %1:%2", track->deviceId, track->ssrc);
         return {};
     }
-    bool isVideo = track->trackType == TrackType::video;
     return encoder->getSdpMedia(isVideo, track->mid, port, /*ssl*/ true).toStdString()
         + base_type::getSdpForTrack(track, port);
 }
 
-std::string TracksForRecv::getSdpForTrack(const Track* track, uint16_t port) const
-{
-    std::string result;
-    if (track->trackType == TrackType::video)
-    {
-        result = NX_FMT(
-                     "m=video %1 RTP/AVP %2\r\n"
-                     "a=rtpmap:%2 H264/90000\r\n"
-                     "a=fmtp:%2 packetization-mode=1\r\n",
-                     port,
-                     track->payloadType)
-                     .toStdString();
-    }
-    else
-    {
-        result = NX_FMT(
-                     "m=audio %1 RTP/AVP %2\r\n"
-                     "a=rtpmap:%2 PCMU/8000\r\n",
-                     port,
-                     track->payloadType)
-                     .toStdString();
-    }
-    // Full intra request: https://datatracker.ietf.org/doc/html/rfc5104#section-4.3.1
-    // `ccm` mean `Codec Control Message`.
-    result += "a=rtcp-fb:" + std::to_string(track->payloadType) + " ccm fir\r\n";
-    return result + base_type::getSdpForTrack(track, port);
-}
-
 TracksForSend::TracksForSend(Session* session):
-    Tracks(session)
-{
-}
-
-TracksForRecv::TracksForRecv(Session* session):
     Tracks(session)
 {
 }
