@@ -1,1 +1,0 @@
-include(common/wasm.profile)
