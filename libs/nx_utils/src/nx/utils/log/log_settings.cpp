@@ -7,6 +7,7 @@
 #include <QtCore/QSettings>
 
 #include <nx/utils/deprecated_settings.h>
+#include <nx/utils/std_string_utils.h>
 #include <nx/utils/string.h>
 #include <nx/utils/time.h>
 

@@ -2,7 +2,7 @@
 
 #include "attribute_dictionary.h"
 
-#include <nx/utils/string.h>
+#include <nx/utils/std_string_utils.h>
 
 namespace nx::utils::stree {
 

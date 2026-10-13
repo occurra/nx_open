@@ -4,10 +4,8 @@
 
 #include <cctype>
 
-#include <QtCore/QJsonValue>
 #include <QtCore/QStringView>
 #include <QtCore/QUrlQuery>
-#include <QtNetwork/QHostAddress>
 
 #include <nx/utils/log/log.h>
 #include <nx/utils/nx_utils_ini.h>
@@ -584,14 +582,3 @@ QString toString(const nx::Url& value)
 }
 
 } // namespace nx
-
-void serialize(QnJsonContext* /*ctx*/, const nx::Url& url, QJsonValue* target)
-{
-    *target = QJsonValue(url.toString());
-}
-
-bool deserialize(QnJsonContext* /*ctx*/, const QJsonValue& value, nx::Url* target)
-{
-    *target = nx::Url(value.toString());
-    return true;
-}

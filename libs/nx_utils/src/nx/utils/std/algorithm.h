@@ -8,6 +8,8 @@
 #include <set>
 #include <vector>
 
+#include <QtCore/QString>
+
 namespace nx {
 namespace utils {
 

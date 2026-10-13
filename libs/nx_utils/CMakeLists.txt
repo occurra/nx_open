@@ -1,39 +1,27 @@
 ## Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-if(NOT EMSCRIPTEN)
-    find_package(perfetto REQUIRED)
-    nx_fix_target_interface_for_cuda(perfetto::perfetto)
-    find_package(CPPTRACE REQUIRED)
-endif()
-
-if(IOS)
-    set(ios_sources "src/nx/utils/log/log_ios.mm")
-endif()
+find_package(perfetto REQUIRED)
+nx_fix_target_interface_for_cuda(perfetto::perfetto)
+find_package(CPPTRACE REQUIRED)
 
 set(aes_library_root "${open_source_root}/artifacts/tiny_aes_c")
 file(GLOB_RECURSE aes_library_sources "${aes_library_root}/src/tiny_aes_c/*")
 
-set(libs
-    Boost::headers
-    OpenSSL::OpenSSL
-    Qt6::Core Qt6::Xml
-    quazip
-    nx_branding
-    nx_build_info
-    nx_kit
-    nx_reflect)
-
-if(NOT EMSCRIPTEN)
-    list(APPEND libs CPPTRACE::CPPTRACE perfetto::perfetto)
-endif()
-
 nx_add_target(nx_utils LIBRARY
     NO_MOC
     ADDITIONAL_SOURCES
-        ${ios_sources}
         ${aes_library_sources}
     PUBLIC_LIBS
-        ${libs}
+        Boost::headers
+        OpenSSL::OpenSSL
+        CPPTRACE::CPPTRACE
+        perfetto::perfetto
+        Qt6::Core
+        quazip
+        nx_branding
+        nx_build_info
+        nx_kit
+        nx_reflect
     FOLDER common/libs)
 
 set(mocableFiles
@@ -50,7 +38,6 @@ set(mocableFiles
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nx/utils/coro/task_utils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nx/utils/property_storage/property.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nx/utils/property_storage/storage.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nx/utils/test_support/item_model_signal_log.h
 )
 
 nx_add_qt_mocables(nx_utils ${mocableFiles}
@@ -62,39 +49,23 @@ target_compile_definitions(nx_utils
     PRIVATE NX_UTILS_API=${API_EXPORT_MACRO}
     INTERFACE NX_UTILS_API=${API_IMPORT_MACRO})
 
-if(NOT EMSCRIPTEN)
-    # Defining PERFETTO_IMPLEMENTATION for nx_utils makes perfetto symbols compiled in nx_utils
-    # as "implementation" (dllexport / non-import), aligning declarations with the actual
-    # definitions and eliminating the spurious linker warnings.
-    target_compile_definitions(nx_utils
-        PRIVATE PERFETTO_IMPLEMENTATION)
-endif()
+# Defining PERFETTO_IMPLEMENTATION for nx_utils makes perfetto symbols compiled in nx_utils
+# as "implementation" (dllexport / non-import), aligning declarations with the actual
+# definitions and eliminating the spurious linker warnings.
+target_compile_definitions(nx_utils
+    PRIVATE PERFETTO_IMPLEMENTATION)
 
 target_include_directories(nx_utils
     PRIVATE
-        ${Qt6Core_PRIVATE_INCLUDE_DIRS}
         ${aes_library_root}/src
 )
-
-if (IOS)
-    target_compile_definitions(nx_utils
-        PRIVATE HAVE_UNISTD_H)
-endif()
 
 if(WINDOWS)
     target_link_libraries(nx_utils PRIVATE DbgHelp ws2_32)
 endif()
 
 if(LINUX)
-    target_link_libraries(nx_utils PRIVATE dl)
-endif()
-
-if(LINUX AND NOT ANDROID)
-    target_link_libraries(nx_utils PRIVATE pthread)
-endif()
-
-if(LINUX)
-    target_link_libraries(nx_utils PRIVATE dl)
+    target_link_libraries(nx_utils PRIVATE dl pthread)
 endif()
 
 if(MACOSX)

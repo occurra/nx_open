@@ -9,17 +9,6 @@
 
 namespace nx::utils::test {
 
-TEST(NxAssertHeavyCondition, All3)
-{
-    nx::kit::IniConfig::Tweaks iniTweaks;
-    iniTweaks.set(&nx::utils::ini().assertCrash, true);
-    iniTweaks.set(&nx::utils::ini().assertHeavyCondition, true);
-
-    EXPECT_DEATH(NX_ASSERT_HEAVY_CONDITION(false), "");
-    EXPECT_DEATH(NX_ASSERT_HEAVY_CONDITION(false, "oops"), "");
-    EXPECT_DEATH(NX_ASSERT_HEAVY_CONDITION(false, "oops %1 != %2", "a", 7), "");
-}
-
 TEST(NxAssert, All3)
 {
     nx::kit::IniConfig::Tweaks iniTweaks;
@@ -39,15 +28,6 @@ TEST(NxCritical, All3)
     EXPECT_DEATH(NX_CRITICAL(false), "");
     EXPECT_DEATH(NX_CRITICAL(false, "oops"), "");
     EXPECT_DEATH(NX_CRITICAL(false, "oops %1 != %2", "a", 7), "");
-}
-
-TEST(Freeze, DISABLED_Hour)
-{
-    std::this_thread::sleep_for(std::chrono::hours(1));
-}
-TEST(Freeze, DISABLED_Seconds)
-{
-    std::this_thread::sleep_for(std::chrono::seconds(5));
 }
 
 } // namespace nx::utils::test

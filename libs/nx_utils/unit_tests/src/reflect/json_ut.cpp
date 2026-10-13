@@ -5,6 +5,7 @@
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
 
+#include <nx/reflect/instrument.h>
 #include <nx/utils/json/qjson.h>
 
 namespace test {

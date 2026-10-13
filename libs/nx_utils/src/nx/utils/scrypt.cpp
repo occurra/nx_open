@@ -8,7 +8,7 @@
 #include <nx/utils/std/cppnx.h>
 
 #include "log/log.h"
-#include "string.h"
+#include "std_string_utils.h"
 
 namespace nx::scrypt {
 

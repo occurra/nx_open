@@ -11,7 +11,7 @@
 #include <QtCore/QString>
 #include <QtCore/QStringList>
 
-#include "string.h"
+#include "std_string_utils.h"
 
 namespace nx {
 namespace utils {
