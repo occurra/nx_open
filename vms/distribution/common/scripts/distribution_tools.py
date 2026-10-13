@@ -130,29 +130,8 @@ def openssl_files(source_dir):
             yield file
 
 
-def hidapi_files(source_dir):
-    template = 'hidapi-hidraw' if is_linux() else 'hidapi'
-    yield os.path.join(source_dir, dynamic_library_filename(template))
-
-
-def openal_files(source_dir):
-    template = 'OpenAL32' if is_windows() else 'openal'
-    yield os.path.join(source_dir, dynamic_library_filename(template, version='1'))
-
-
 def quazip_files_to(source_dir):
     yield os.path.join(source_dir, dynamic_library_filename('quazip'))
-
-
-def icu_files(source_dir):
-    if is_windows():
-        templates = ['icudt74', 'icuin74', 'icuuc74']
-    else:
-        templates = ['icudata', 'icui18n', 'icuuc']
-
-    for template in templates:
-        yield from find_files_by_template(
-            source_dir, dynamic_library_filename(template, None, '74'))
 
 
 def shared_libraries(directory: str) -> Generator[str, None, None]:
