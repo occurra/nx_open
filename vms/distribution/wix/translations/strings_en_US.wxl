@@ -76,4 +76,5 @@
   <!-- ArchCheck -->
   <String Id="Product_ArchMismatch_x86">This package is designed for 32-bit OS. Setup will now exit.</String>
   <String Id="Product_ArchMismatch_x64">This package is designed for 64-bit OS. Setup will now exit.</String>
+  <String Id="Product_UnsupportedOsVersion">This package requires Windows 10 or later. Setup will now exit.</String>
 </WixLocalization>
