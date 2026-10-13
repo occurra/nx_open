@@ -10,6 +10,8 @@ extern "C" {
 
 #include <QtCore/QByteArray>
 
+#include <nx/reflect/instrument.h>
+
 /**
  * Contains fields of AVCodecParameters (and respectively of CodecParameters) which
  * are transferred from Server to Client with a media stream.
@@ -40,13 +42,13 @@ struct NX_MEDIA_CORE_API QnMediaContextSerializableData
     /// Fields defined in ffmpeg's AVCodecParameters.
     //@{
 
-    AVCodecID codecId = AV_CODEC_ID_NONE;
-    AVMediaType codecType = AVMEDIA_TYPE_UNKNOWN;
+    int codecId = AV_CODEC_ID_NONE;
+    int codecType = AVMEDIA_TYPE_UNKNOWN;
     QByteArray extradata;
 
     int channels = 0;
     int sampleRate = 0;
-    AVSampleFormat sampleFmt = AV_SAMPLE_FMT_NONE;
+    int sampleFmt = AV_SAMPLE_FMT_NONE;
     int bitsPerCodedSample = 0;
     int codedWidth_deprecated = 0;
     int codedHeight_deprecated = 0;
@@ -58,3 +60,9 @@ struct NX_MEDIA_CORE_API QnMediaContextSerializableData
 
     //@}
 };
+
+#define QnMediaContextSerializableData_Fields \
+    (codecId)(codecType)( \
+        extradata) (channels) (sampleRate) (sampleFmt) (bitsPerCodedSample) (width) (height) (bitRate) (channelLayout) (blockAlign)
+
+NX_REFLECTION_INSTRUMENT(QnMediaContextSerializableData, QnMediaContextSerializableData_Fields)

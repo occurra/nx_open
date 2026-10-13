@@ -2,6 +2,7 @@
 
 #include "frame_info.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstring>
@@ -274,16 +275,27 @@ AVPixelFormat CLVideoDecoderOutput::fixDeprecatedPixelFormat(AVPixelFormat origi
 
 void CLVideoDecoderOutput::memZero()
 {
+    memZero(0, height);
+}
+
+void CLVideoDecoderOutput::memZero(int rowOffset, int rowCount)
+{
     const AVPixFmtDescriptor* descriptor = av_pix_fmt_desc_get((AVPixelFormat) format);
+    // For YUV "zero" is black = luma 0, chroma 128. For RGB formats (including
+    // planar GBRP) every plane is a colour channel, so they must all be 0;
+    // writing 128 to planes 1/2 tints the cleared region (e.g. teal padding).
+    const bool isRgb = descriptor && (descriptor->flags & AV_PIX_FMT_FLAG_RGB);
     for (int i = 0; i < QnFfmpegHelper::planeCount(descriptor) && data[i]; ++i)
     {
-        int w = linesize[i];
-        int h = height;
+        const int w = linesize[i];
+        int off = rowOffset;
+        int h = rowCount;
         if (QnFfmpegHelper::isChromaPlane(i, descriptor))
+        {
+            off >>= descriptor->log2_chroma_h;
             h >>= descriptor->log2_chroma_h;
-
-        int fillLen = h * w;
-        memset(data[i], i == 0 ? 0 : 0x80, fillLen);
+        }
+        memset(data[i] + off * w, (!isRgb && i != 0) ? 0x80 : 0, h * w);
     }
 }
 
@@ -305,12 +317,35 @@ bool CLVideoDecoderOutput::reallocate(int newWidth, int newHeight, int newFormat
     height = newHeight;
     format = newFormat;
 
-    int status = av_frame_get_buffer(this, 0);
-    if (status < 0)
+    // Always allocate every plane in a single contiguous av_buffer. With
+    // av_image_fill_arrays setting up `data[]` and `linesize[]` from the
+    // one allocation, downstream code can treat `buf[0]->size` as the
+    // total byte count covering all planes — useful for callers (e.g.
+    // ai_agent_toolbox's python bridge) that hand the whole frame to a
+    // consumer as one memoryview without having to worry about
+    // per-plane allocations.
+    const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get((AVPixelFormat) format);
+    const int align = (desc && (desc->flags & AV_PIX_FMT_FLAG_FLOAT)) ? 64 : 32;
+
+    const int size = av_image_get_buffer_size((AVPixelFormat) format, width, height, align);
+    if (size < 0)
     {
         NX_WARNING(this, "Failed to allocate frame: %1x%2, format: %3", width, height, format);
         return false;
     }
+    buf[0] = av_buffer_alloc(size);
+    if (!buf[0])
+        return false;
+
+    av_image_fill_arrays(
+        data,
+        linesize,
+        buf[0]->data,
+        (AVPixelFormat) format,
+        width,
+        height,
+        align);
+
     return true;
 }
 
@@ -583,6 +618,24 @@ void CLVideoDecoderOutput::assignMiscData(const CLVideoDecoderOutput* other)
 bool CLVideoDecoderOutput::invalidScaleParameters(const QSize& size) const
 {
     return size.width() == 0 || size.height() == 0 || height == 0 || width == 0;
+}
+
+ScaleContext::ScaleContext(
+    int srcW,
+    int srcH,
+    AVPixelFormat srcFmt,
+    int dstW,
+    int dstH,
+    AVPixelFormat dstFmt,
+    int flags)
+{
+    m_ctx = sws_getContext(srcW, srcH, srcFmt, dstW, dstH, dstFmt, flags, NULL, NULL, NULL);
+}
+
+ScaleContext::~ScaleContext()
+{
+    if (m_ctx)
+        sws_freeContext(m_ctx);
 }
 
 CLVideoDecoderOutputPtr CLVideoDecoderOutput::scaled(

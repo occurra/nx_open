@@ -47,6 +47,29 @@ class CLVideoDecoderOutput;
 using CLVideoDecoderOutputPtr = QSharedPointer<CLVideoDecoderOutput>;
 using CLConstVideoDecoderOutputPtr = QSharedPointer<const CLVideoDecoderOutput>;
 
+/** RAII wrapper for SwsContext. Freed automatically on destruction. */
+class NX_MEDIA_CORE_API ScaleContext
+{
+public:
+    ScaleContext(
+        int srcW,
+        int srcH,
+        AVPixelFormat srcFmt,
+        int dstW,
+        int dstH,
+        AVPixelFormat dstFmt,
+        int flags);
+    ~ScaleContext();
+    ScaleContext(const ScaleContext&) = delete;
+    ScaleContext& operator=(const ScaleContext&) = delete;
+
+    struct SwsContext* get() const { return m_ctx; }
+    explicit operator bool() const { return m_ctx != nullptr; }
+
+private:
+    struct SwsContext* m_ctx = nullptr;
+};
+
 /**
  * Decoded frame, ready to be rendered.
  *
@@ -89,6 +112,7 @@ public:
     bool reallocate(int newWidth, int newHeight, int format);
     bool reallocate(const QSize& size, int format);
     void memZero();
+    void memZero(int rowOffset, int rowCount);
 
     /** Scale frame to new size */
     CLVideoDecoderOutputPtr scaled(

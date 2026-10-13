@@ -10,6 +10,7 @@ extern "C" {
 #include <cstring>
 
 #include <nx/media/media_data_packet.h>
+#include <nx/media/video_data_packet.h>
 #include <nx/utils/log/log.h>
 
 namespace nx::media::ffmpeg {
@@ -51,7 +52,12 @@ AvPacket::AvPacket(const QnAbstractMediaData* data)
         NX_WARNING(this, "Failed to allocate a packet of %1 bytes", size);
     }
 
-    m_packet->dts = m_packet->pts = data->timestamp;
+    m_packet->dts = data->timestamp;
+    if (auto video = dynamic_cast<const QnCompressedVideoData*>(data))
+        m_packet->pts = video->pts;
+    else
+        m_packet->pts = AV_NOPTS_VALUE;
+
     if (data->isKeyFrame())
         m_packet->flags = AV_PKT_FLAG_KEY;
 }

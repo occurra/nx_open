@@ -5,7 +5,7 @@
 namespace nx::media {
 
 InStreamCompressedMetadata::InStreamCompressedMetadata(QString codec, QByteArray metadata):
-    base_type(MetadataType::InStream, metadata.size()),
+    base_type(MetadataType::inStream, metadata.size()),
     m_codec(codec)
 {
     setData(std::move(metadata));

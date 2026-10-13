@@ -945,9 +945,20 @@ void yuv_to_rgb_planarfp32_avx(
     const __m256i kCbG = _mm256_set1_epi16(5638); // 0.344136 * 16384
     const __m256i kCrG = _mm256_set1_epi16(11698); // 0.714136 * 16384
 
+    // Write only the image span (dstWidth rounded up to a whole block),
+    // then re-anchor to the next row by dstLineSize. Writing the full
+    // dstLineSize per row from a padLeft-shifted base overran the
+    // allocation by padLeft bytes on the last row (VMS-186). The last
+    // block's tail lanes past dstWidth carry the zero sentinel, which the
+    // color math turns GREEN — zero them after the stores so horizontal
+    // padding stays black.
+    const int blockCount = (context->dstWidth + 15) / 16;
+    const int rowAdvance = context->dstLineSize - blockCount * 16;
+    const int tailCount = blockCount * 16 - context->dstWidth;
+
     for (int row = 0; row < context->dstHeight; ++row)
     {
-        for (int x = 0; x < context->dstWidth / 16; ++x)
+        for (int x = 0; x < blockCount; ++x)
         {
             const __m256i y16 = loadPixelsToI16(yp, context->xShufleY[x]); // 0..255 in i16
             const __m256i cb16 =
@@ -978,6 +989,94 @@ void yuv_to_rgb_planarfp32_avx(
             gp += 16;
             bp += 16;
         }
+        if (tailCount > 0)
+        {
+            memset(rp - tailCount, 0, tailCount * sizeof(float));
+            memset(gp - tailCount, 0, tailCount * sizeof(float));
+            memset(bp - tailCount, 0, tailCount * sizeof(float));
+        }
+        rp += rowAdvance;
+        gp += rowAdvance;
+        bp += rowAdvance;
+        yp += context->lineStepY[row];
+        up += context->lineStepUV[row];
+        vp += context->lineStepUV[row];
+    }
+}
+
+// uint8 store: pack 16 x i16 -> 16 x u8 with unsigned saturation, store as
+// one __m128i (16 contiguous bytes). _mm256_packus_epi16 packs each 128b
+// lane separately, so we need a permute4x64 to gather the two valid halves.
+QT_FUNCTION_TARGET(AVX2)
+static inline void store_u8_from_i16(uint8_t* dst, __m256i v16)
+{
+    // packus: [r0..r7, r0..r7, r8..r15, r8..r15] (per-lane low/high pack)
+    const __m256i packed = _mm256_packus_epi16(v16, v16);
+    // Permute so the two valid 64-bit halves end up adjacent in lo lane.
+    const __m256i permuted = _mm256_permute4x64_epi64(packed, _MM_SHUFFLE(3, 1, 2, 0));
+    _mm_storeu_si128(reinterpret_cast<__m128i*>(dst), _mm256_castsi256_si128(permuted));
+}
+
+QT_FUNCTION_TARGET(AVX2)
+void yuv_to_rgb_planaru8_avx(
+    const YuvToRgbScaleContext* context,
+    const uint8_t* yp,
+    const uint8_t* up,
+    const uint8_t* vp,
+    uint8_t* rp,
+    uint8_t* gp,
+    uint8_t* bp)
+{
+    // Same BT.601 full-range Q14 coefficients as the float32 path.
+    const __m256i kCrR = _mm256_set1_epi16(22970); // 1.4020 * 16384
+    const __m256i kCbB = _mm256_set1_epi16(29032); // 1.7720 * 16384
+    const __m256i kCbG = _mm256_set1_epi16(5638); // 0.344136 * 16384
+    const __m256i kCrG = _mm256_set1_epi16(11698); // 0.714136 * 16384
+
+    // See yuv_to_rgb_planarfp32_avx: write the image span only, re-anchor
+    // each row by dstLineSize, zero the green sentinel tail (VMS-186).
+    const int blockCount = (context->dstWidth + 15) / 16;
+    const int rowAdvance = context->dstLineSize - blockCount * 16;
+    const int tailCount = blockCount * 16 - context->dstWidth;
+
+    for (int row = 0; row < context->dstHeight; ++row)
+    {
+        for (int x = 0; x < blockCount; ++x)
+        {
+            const __m256i y16 = loadPixelsToI16(yp, context->xShufleY[x]);
+            const __m256i cb16 = centerChromaU16(loadPixelsToI16(up, context->xShufleUV[x]));
+            const __m256i cr16 = centerChromaU16(loadPixelsToI16(vp, context->xShufleUV[x]));
+
+            const __m256i cb2 = _mm256_slli_epi16(cb16, 1);
+            const __m256i cr2 = _mm256_slli_epi16(cr16, 1);
+
+            const __m256i cr_r = _mm256_mulhrs_epi16(cr2, kCrR);
+            const __m256i cb_b = _mm256_mulhrs_epi16(cb2, kCbB);
+            const __m256i cr_g = _mm256_mulhrs_epi16(cr2, kCrG);
+            const __m256i cb_g = _mm256_mulhrs_epi16(cb2, kCbG);
+
+            const __m256i r16 = _mm256_add_epi16(y16, cr_r);
+            const __m256i b16 = _mm256_add_epi16(y16, cb_b);
+            const __m256i g16 = _mm256_sub_epi16(y16, _mm256_add_epi16(cb_g, cr_g));
+
+            // Saturate to u8 and store 16 contiguous bytes per channel.
+            store_u8_from_i16(rp, r16);
+            store_u8_from_i16(gp, g16);
+            store_u8_from_i16(bp, b16);
+
+            rp += 16;
+            gp += 16;
+            bp += 16;
+        }
+        if (tailCount > 0)
+        {
+            memset(rp - tailCount, 0, tailCount);
+            memset(gp - tailCount, 0, tailCount);
+            memset(bp - tailCount, 0, tailCount);
+        }
+        rp += rowAdvance;
+        gp += rowAdvance;
+        bp += rowAdvance;
         yp += context->lineStepY[row];
         up += context->lineStepUV[row];
         vp += context->lineStepUV[row];
@@ -991,6 +1090,7 @@ void YuvToRgbScaleContext::init(
     int srcHeight,
     int dstWidth,
     int dstHeight,
+    int dstLineSize,
     int yLineSize,
     int uvLineSize,
     int srcFormat)
@@ -1001,8 +1101,24 @@ void YuvToRgbScaleContext::init(
     this->dstHeight = dstHeight;
     this->srcFormat = srcFormat;
 
-    float xStep = (float) srcWidth / dstWidth;
-    float yStep = (float) srcHeight / dstHeight;
+    // The SIMD kernel writes 16 destination pixels per inner-loop step.
+    // `dstLineSize` must be 16-aligned and >= dstWidth so the last block
+    // can spill into row padding. If a caller passes a smaller / unaligned
+    // value, fall back to the floor-of-16 of dstWidth (matches the
+    // pre-`dstLineSize` behavior — drops the rightmost (dstWidth % 16)
+    // pixels) to keep the kernel safe.
+    if (!NX_ASSERT(dstLineSize % 16 == 0, "dstLineSize must be 16-aligned for SIMD"))
+    {
+        dstLineSize -= dstLineSize % 16;
+    }
+    if (!NX_ASSERT(dstLineSize >= dstWidth, "dstLineSize must be >= dstWidth"))
+    {
+        dstLineSize = dstWidth - (dstWidth % 16);
+    }
+    this->dstLineSize = dstLineSize;
+
+    const float xStep = (float) srcWidth / dstWidth;
+    const float yStep = (float) srcHeight / dstHeight;
 
     float xDownscale = 2.0;
     float yDownscale = 2.0;
@@ -1015,35 +1131,59 @@ void YuvToRgbScaleContext::init(
         yDownscale = static_cast<float>(1 << desc->log2_chroma_h);
     }
 
-    auto makeShufle = [](int dstWidth, float xStep, auto& shufleData)
+    // Build per-block shuffle entries for one row.
+    //
+    // For destination cells [0, dstWidth) the shuffle is computed
+    // normally from the scale factor. For tail cells [dstWidth,
+    // dstLineSize) the source-side base offset is clamped against
+    // `srcLineSize - 16` so `_mm_loadu_si128(base + offset)` stays
+    // inside the source row's allocation, and the 128-sentinel mask
+    // bytes pass through unchanged so those output lanes write zero.
+    // Tail outputs land in destination row padding, so their value
+    // doesn't matter — we only need the source load to be safe.
+    auto makeShufle = [dstWidth, dstLineSize](int srcLineSize, float xStep, auto& shufleData)
     {
         const float kBias = 0.4999f;
-        if (!NX_ASSERT(dstWidth % 16 == 0))
-        {
-            dstWidth = dstWidth - (dstWidth % 16);
-        }
-        shufleData.resize(dstWidth / 16);
-        for (int x = 0; x < dstWidth; x += 16)
+        const int safeSrcMax = std::max(0, srcLineSize - 16);
+        shufleData.resize(dstLineSize / 16);
+        for (int x = 0; x < dstLineSize; x += 16)
         {
             for (int k = 0; k < 16;)
             {
                 std::array<uint8_t, 16> maskY;
-                memset(maskY.data(), 128, 16); // zero mask
+                memset(maskY.data(), 128, 16); // sentinel: write 0 for this lane
                 int baseSrcX = int(xStep * (x + k) + kBias);
+                if (baseSrcX > safeSrcMax)
+                    baseSrcX = safeSrcMax;
+                const int kStart = k;
                 for (; k < 16; ++k)
                 {
+                    if (x + k >= dstWidth)
+                    {
+                        // Tail lane — leave mask at 128 (writes zero) so
+                        // we don't care where it would have read from.
+                        continue;
+                    }
                     int srcX = int(xStep * (x + k) + kBias);
                     if (srcX - baseSrcX >= 16)
-                        break; // next mm128 register filled.
-                    maskY[k] = srcX - baseSrcX;
+                        break; // next 16-byte register filled
+                    if (srcX < baseSrcX)
+                        srcX = baseSrcX; // post-clamp, can be slightly off
+                    maskY[k] = uint8_t(srcX - baseSrcX);
+                }
+                if (k == kStart)
+                {
+                    // Pure-tail block (every lane past dstWidth) — push a
+                    // safe no-op entry and force k forward so we don't spin.
+                    ++k;
                 }
                 shufleData[x / 16].offsets.push_back(baseSrcX);
                 shufleData[x / 16].masks.push_back(maskY);
             }
         }
     };
-    makeShufle(dstWidth, xStep, xShufleY);
-    makeShufle(dstWidth, xStep / xDownscale, xShufleUV);
+    makeShufle(yLineSize, xStep, xShufleY);
+    makeShufle(uvLineSize, xStep / xDownscale, xShufleUV);
 
     int prevY = 0, prevUV = 0;
     lineStepY.resize(dstHeight);
@@ -1058,6 +1198,217 @@ void YuvToRgbScaleContext::init(
         prevUV = uv;
     }
 }
+
+#if defined(NX_SSE2_SUPPORTED)
+
+// SSE/SSSE3 version: processes 8 pixels at a time using 128-bit registers.
+// pick16Bytes gathers 16 source bytes via shuffle masks into a single __m128i.
+// We split that into two halves of 8, process each half independently.
+static inline __m128i ssse3_attribute pick16Bytes_sse(const uint8_t* base, const Shuffle16& data)
+{
+    __m128i value = _mm_loadu_si128(reinterpret_cast<const __m128i*>(base + data.offsets[0]));
+    const __m128i mask = _mm_load_si128(reinterpret_cast<const __m128i*>(&data.masks[0]));
+    value = _mm_shuffle_epi8(value, mask);
+    for (int i = 1; i < (int) data.offsets.size(); i++)
+    {
+        __m128i value2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(base + data.offsets[i]));
+        const __m128i mask2 = _mm_load_si128(reinterpret_cast<const __m128i*>(&data.masks[i]));
+        value2 = _mm_shuffle_epi8(value2, mask2);
+        value = _mm_or_si128(value2, value);
+    }
+    return value;
+}
+
+// Store 8 x i16 as 8 x float in [0,1] with saturation to [0,255].
+static inline void sse4_attribute store_u8unit_from_i16_sse(float* dst, __m128i v16)
+{
+    // Pack 8 x i16 → 8 x u8 (with unsigned saturation), lower 8 bytes valid.
+    const __m128i u8x8 = _mm_packus_epi16(v16, _mm_setzero_si128());
+    // Widen 8 bytes → 8 x i32.
+    const __m128i lo32 = _mm_cvtepu8_epi32(u8x8); // bytes 0..3
+    const __m128i hi32 = _mm_cvtepu8_epi32(_mm_srli_si128(u8x8, 4)); // bytes 4..7
+    const __m128 scale = _mm_set1_ps(1.0f / 255.0f);
+    _mm_storeu_ps(dst, _mm_mul_ps(_mm_cvtepi32_ps(lo32), scale));
+    _mm_storeu_ps(dst + 4, _mm_mul_ps(_mm_cvtepi32_ps(hi32), scale));
+}
+
+void sse4_attribute yuv_to_rgb_planarfp32_sse(
+    const YuvToRgbScaleContext* context,
+    const uint8_t* yp,
+    const uint8_t* up,
+    const uint8_t* vp,
+    float* rp,
+    float* gp,
+    float* bp)
+{
+    // BT.601 full-range, Q14
+    const __m128i kCrR = _mm_set1_epi16(22970); // 1.4020 * 16384
+    const __m128i kCbB = _mm_set1_epi16(29032); // 1.7720 * 16384
+    const __m128i kCbG = _mm_set1_epi16(5638); // 0.344136 * 16384
+    const __m128i kCrG = _mm_set1_epi16(11698); // 0.714136 * 16384
+    const __m128i k128 = _mm_set1_epi16(128);
+
+    // See yuv_to_rgb_planarfp32_avx: write the image span only, re-anchor
+    // each row by dstLineSize, zero the green sentinel tail (VMS-186).
+    const int blockCount = (context->dstWidth + 15) / 16;
+    const int rowAdvance = context->dstLineSize - blockCount * 16;
+    const int tailCount = blockCount * 16 - context->dstWidth;
+
+    for (int row = 0; row < context->dstHeight; ++row)
+    {
+        for (int x = 0; x < blockCount; ++x)
+        {
+            // Gather 16 source pixels via shuffle masks.
+            const __m128i y_u8 = pick16Bytes_sse(yp, context->xShufleY[x]);
+            const __m128i cb_u8 = pick16Bytes_sse(up, context->xShufleUV[x]);
+            const __m128i cr_u8 = pick16Bytes_sse(vp, context->xShufleUV[x]);
+
+            // Process low 8 and high 8 pixels separately.
+            for (int half = 0; half < 2; ++half)
+            {
+                // Zero-extend 8 bytes → 8 x i16.
+                const __m128i y16 = (half == 0) ? _mm_cvtepu8_epi16(y_u8)
+                                                : _mm_cvtepu8_epi16(_mm_srli_si128(y_u8, 8));
+                const __m128i cb16 = _mm_sub_epi16(
+                    (half == 0) ? _mm_cvtepu8_epi16(cb_u8)
+                                : _mm_cvtepu8_epi16(_mm_srli_si128(cb_u8, 8)),
+                    k128);
+                const __m128i cr16 = _mm_sub_epi16(
+                    (half == 0) ? _mm_cvtepu8_epi16(cr_u8)
+                                : _mm_cvtepu8_epi16(_mm_srli_si128(cr_u8, 8)),
+                    k128);
+
+                // Scale chroma by 2 to compensate for mulhrs >> 15 with Q14 coeffs.
+                const __m128i cb2 = _mm_slli_epi16(cb16, 1);
+                const __m128i cr2 = _mm_slli_epi16(cr16, 1);
+
+                // Products in 16-bit with rounding.
+                const __m128i cr_r = _mm_mulhrs_epi16(cr2, kCrR);
+                const __m128i cb_b = _mm_mulhrs_epi16(cb2, kCbB);
+                const __m128i cr_g = _mm_mulhrs_epi16(cr2, kCrG);
+                const __m128i cb_g = _mm_mulhrs_epi16(cb2, kCbG);
+
+                // Combine with Y.
+                const __m128i r16 = _mm_add_epi16(y16, cr_r);
+                const __m128i b16 = _mm_add_epi16(y16, cb_b);
+                const __m128i g16 = _mm_sub_epi16(y16, _mm_add_epi16(cb_g, cr_g));
+
+                // Saturate → float[0,1] and store.
+                store_u8unit_from_i16_sse(rp, r16);
+                store_u8unit_from_i16_sse(gp, g16);
+                store_u8unit_from_i16_sse(bp, b16);
+
+                rp += 8;
+                gp += 8;
+                bp += 8;
+            }
+        }
+        if (tailCount > 0)
+        {
+            memset(rp - tailCount, 0, tailCount * sizeof(float));
+            memset(gp - tailCount, 0, tailCount * sizeof(float));
+            memset(bp - tailCount, 0, tailCount * sizeof(float));
+        }
+        rp += rowAdvance;
+        gp += rowAdvance;
+        bp += rowAdvance;
+        yp += context->lineStepY[row];
+        up += context->lineStepUV[row];
+        vp += context->lineStepUV[row];
+    }
+}
+
+// uint8 store: pack 8 x i16 -> 8 x u8 with unsigned saturation, store as
+// 8 contiguous bytes (lower 64 bits of an __m128i).
+static inline void sse4_attribute store_u8_from_i16_sse(uint8_t* dst, __m128i v16)
+{
+    const __m128i u8x8 = _mm_packus_epi16(v16, _mm_setzero_si128());
+    _mm_storel_epi64(reinterpret_cast<__m128i*>(dst), u8x8);
+}
+
+void sse4_attribute yuv_to_rgb_planaru8_sse(
+    const YuvToRgbScaleContext* context,
+    const uint8_t* yp,
+    const uint8_t* up,
+    const uint8_t* vp,
+    uint8_t* rp,
+    uint8_t* gp,
+    uint8_t* bp)
+{
+    // Same BT.601 full-range Q14 coefficients as the float32 path.
+    const __m128i kCrR = _mm_set1_epi16(22970);
+    const __m128i kCbB = _mm_set1_epi16(29032);
+    const __m128i kCbG = _mm_set1_epi16(5638);
+    const __m128i kCrG = _mm_set1_epi16(11698);
+    const __m128i k128 = _mm_set1_epi16(128);
+
+    // See yuv_to_rgb_planarfp32_avx: write the image span only, re-anchor
+    // each row by dstLineSize, zero the green sentinel tail (VMS-186).
+    const int blockCount = (context->dstWidth + 15) / 16;
+    const int rowAdvance = context->dstLineSize - blockCount * 16;
+    const int tailCount = blockCount * 16 - context->dstWidth;
+
+    for (int row = 0; row < context->dstHeight; ++row)
+    {
+        for (int x = 0; x < blockCount; ++x)
+        {
+            // Gather 16 source pixels via shuffle masks.
+            const __m128i y_u8 = pick16Bytes_sse(yp, context->xShufleY[x]);
+            const __m128i cb_u8 = pick16Bytes_sse(up, context->xShufleUV[x]);
+            const __m128i cr_u8 = pick16Bytes_sse(vp, context->xShufleUV[x]);
+
+            // Process low 8 and high 8 pixels separately.
+            for (int half = 0; half < 2; ++half)
+            {
+                const __m128i y16 = (half == 0) ? _mm_cvtepu8_epi16(y_u8)
+                                                : _mm_cvtepu8_epi16(_mm_srli_si128(y_u8, 8));
+                const __m128i cb16 = _mm_sub_epi16(
+                    (half == 0) ? _mm_cvtepu8_epi16(cb_u8)
+                                : _mm_cvtepu8_epi16(_mm_srli_si128(cb_u8, 8)),
+                    k128);
+                const __m128i cr16 = _mm_sub_epi16(
+                    (half == 0) ? _mm_cvtepu8_epi16(cr_u8)
+                                : _mm_cvtepu8_epi16(_mm_srli_si128(cr_u8, 8)),
+                    k128);
+
+                const __m128i cb2 = _mm_slli_epi16(cb16, 1);
+                const __m128i cr2 = _mm_slli_epi16(cr16, 1);
+
+                const __m128i cr_r = _mm_mulhrs_epi16(cr2, kCrR);
+                const __m128i cb_b = _mm_mulhrs_epi16(cb2, kCbB);
+                const __m128i cr_g = _mm_mulhrs_epi16(cr2, kCrG);
+                const __m128i cb_g = _mm_mulhrs_epi16(cb2, kCbG);
+
+                const __m128i r16 = _mm_add_epi16(y16, cr_r);
+                const __m128i b16 = _mm_add_epi16(y16, cb_b);
+                const __m128i g16 = _mm_sub_epi16(y16, _mm_add_epi16(cb_g, cr_g));
+
+                // Saturate to u8 and store 8 bytes per channel.
+                store_u8_from_i16_sse(rp, r16);
+                store_u8_from_i16_sse(gp, g16);
+                store_u8_from_i16_sse(bp, b16);
+
+                rp += 8;
+                gp += 8;
+                bp += 8;
+            }
+        }
+        if (tailCount > 0)
+        {
+            memset(rp - tailCount, 0, tailCount);
+            memset(gp - tailCount, 0, tailCount);
+            memset(bp - tailCount, 0, tailCount);
+        }
+        rp += rowAdvance;
+        gp += rowAdvance;
+        bp += rowAdvance;
+        yp += context->lineStepY[row];
+        up += context->lineStepUV[row];
+        vp += context->lineStepUV[row];
+    }
+}
+
+#endif
 
 void yuv_to_rgb_planarfp32_no_avx(
     const YuvToRgbScaleContext* context,
@@ -1127,5 +1478,72 @@ void yuv_to_rgb_planarfp32(
     if (qCpuHasFeature(AVX2))
         return yuv_to_rgb_planarfp32_avx(context, yp, up, vp, rp, gp, bp);
 #endif
+#if defined(NX_SSE2_SUPPORTED)
+    return yuv_to_rgb_planarfp32_sse(context, yp, up, vp, rp, gp, bp);
+#endif
     yuv_to_rgb_planarfp32_no_avx(context, yp, up, vp, rp, gp, bp);
+}
+
+// uint8 RGB CHW: portable fallback that delegates to sws_scale with the
+// AV_PIX_FMT_GBRP target. FFmpeg orders the planes as G, B, R — we map
+// our R/G/B output pointers accordingly.
+void yuv_to_rgb_planaru8_no_avx(
+    const YuvToRgbScaleContext* context,
+    const uint8_t* yp,
+    const uint8_t* up,
+    const uint8_t* vp,
+    uint8_t* rp,
+    uint8_t* gp,
+    uint8_t* bp)
+{
+    int xDownscale = 2;
+    const auto pixelFormat = static_cast<AVPixelFormat>(context->srcFormat);
+    const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(pixelFormat);
+    if (desc)
+        xDownscale = static_cast<int>(1 << desc->log2_chroma_w);
+
+    const uint8_t* srcData[3] = {yp, up, vp};
+    const int srcStride[3] = {
+        context->srcWidth,
+        context->srcWidth / xDownscale,
+        context->srcWidth / xDownscale};
+
+    // GBRP plane order: data[0]=G, data[1]=B, data[2]=R.
+    uint8_t* dstData[3] = {gp, bp, rp};
+    const int dstStride[3] = {context->dstWidth, context->dstWidth, context->dstWidth};
+
+    SwsContext* ctx = sws_getContext(
+        context->srcWidth,
+        context->srcHeight,
+        (AVPixelFormat) context->srcFormat,
+        context->dstWidth,
+        context->dstHeight,
+        AV_PIX_FMT_GBRP,
+        SWS_FAST_BILINEAR,
+        nullptr,
+        nullptr,
+        nullptr);
+    if (!ctx)
+        return;
+    sws_scale(ctx, srcData, srcStride, 0, context->srcHeight, dstData, dstStride);
+    sws_freeContext(ctx);
+}
+
+void yuv_to_rgb_planaru8(
+    const YuvToRgbScaleContext* context,
+    const uint8_t* yp,
+    const uint8_t* up,
+    const uint8_t* vp,
+    uint8_t* rp,
+    uint8_t* gp,
+    uint8_t* bp)
+{
+#if QT_COMPILER_SUPPORTS_HERE(AVX2)
+    if (qCpuHasFeature(AVX2))
+        return yuv_to_rgb_planaru8_avx(context, yp, up, vp, rp, gp, bp);
+#endif
+#if defined(NX_SSE2_SUPPORTED)
+    return yuv_to_rgb_planaru8_sse(context, yp, up, vp, rp, gp, bp);
+#endif
+    yuv_to_rgb_planaru8_no_avx(context, yp, up, vp, rp, gp, bp);
 }
