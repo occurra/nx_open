@@ -704,7 +704,9 @@ protected:
     std::unique_ptr<TestWebSocket> serverWebSocket;
 
     const std::chrono::milliseconds kAliveTimeout = std::chrono::milliseconds(100000);
-    const std::chrono::milliseconds kShortTimeout = std::chrono::milliseconds(3000);
+    // The ping-pong cases idle for four times this, so the value is nearly the whole cost of
+    // the four slowest cases in the suite. Several ping intervals still elapse while idle.
+    const std::chrono::milliseconds kShortTimeout = std::chrono::milliseconds(500);
 };
 
 TEST_P(WebSocket, MultipleMessages_twoWay)
