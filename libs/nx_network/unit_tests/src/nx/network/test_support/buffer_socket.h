@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "dummy_socket.h"
+#include <nx/network/test_support/dummy_socket.h>
 
 namespace nx::network {
 

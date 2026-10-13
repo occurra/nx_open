@@ -11,7 +11,7 @@ namespace network {
 /**
  * Base class for socket, reading/writing data from/to any source (e.g., file).
  */
-class DummySocket: public AbstractStreamSocket
+class NX_NETWORK_API DummySocket: public AbstractStreamSocket
 {
     using base_type = AbstractStreamSocket;
 
