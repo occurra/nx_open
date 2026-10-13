@@ -70,7 +70,9 @@ bool AdtsHeader::encodeToFfmpegExtradata(QByteArray* extradata) const
     {
         nx::utils::BitStreamWriter writer;
         writer.setBuffer((quint8*) buffer, ((quint8*) buffer) + kAscLength);
-        writer.putBits(kAscObjectTypeLength, profile);
+        // The ADTS profile is the MPEG-4 Audio Object Type minus one (LC = ADTS
+        // profile 1 = AOT 2), so add one back for the ASC audioObjectType.
+        writer.putBits(kAscObjectTypeLength, profile + 1);
         writer.putBits(kAscSamplingIndexLength, mpeg4SamplingFrequencyIndex);
         writer.putBits(kAscChannelConfigLength, mpeg4ChannelConfiguration);
         writer.putBit(0); //< Frame length - 1024 samples.
