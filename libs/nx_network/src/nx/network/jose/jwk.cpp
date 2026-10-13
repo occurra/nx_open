@@ -112,11 +112,66 @@ static RSA* jwkToRsa(const Key& jwkKey)
     return rsa;
 }
 
-std::expected<KeyPair, std::string /*error*/> generateKeyPairForSigning(
-    const Algorithm& /*algorithm*/)
+static std::expected<KeyPair, std::string /*error*/> generateEd25519KeyPair()
 {
-    // TODO: add support for algorithm.
+    // Ed25519 keygen via OpenSSL. Raw accessors give the 32-byte public
+    // and 32-byte private halves directly, which map straight onto the
+    // OKP JWK form (RFC 8037).
+    EVP_PKEY* pkey = nullptr;
+    EVP_PKEY_CTX* pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_ED25519, nullptr);
+    if (!pctx)
+        return std::unexpected<std::string>("EVP_PKEY_CTX_new_id(ED25519) failed");
 
+    if (EVP_PKEY_keygen_init(pctx) <= 0 || EVP_PKEY_keygen(pctx, &pkey) <= 0)
+    {
+        EVP_PKEY_CTX_free(pctx);
+        return std::unexpected<std::string>("EVP_PKEY_keygen(ED25519) failed");
+    }
+    EVP_PKEY_CTX_free(pctx);
+
+    unsigned char pub[32];
+    size_t pubLen = sizeof(pub);
+    unsigned char priv[32];
+    size_t privLen = sizeof(priv);
+    if (EVP_PKEY_get_raw_public_key(pkey, pub, &pubLen) != 1
+        || EVP_PKEY_get_raw_private_key(pkey, priv, &privLen) != 1)
+    {
+        EVP_PKEY_free(pkey);
+        return std::unexpected<std::string>("Failed to extract raw Ed25519 key bytes");
+    }
+    EVP_PKEY_free(pkey);
+
+    const auto xB64 = nx::utils::toBase64Url(std::string_view((const char*) pub, pubLen));
+    const auto dB64 = nx::utils::toBase64Url(std::string_view((const char*) priv, privLen));
+    const std::string kid = nx::Uuid::createUuid().toSimpleStdString();
+
+    Key publicKey, privateKey;
+    publicKey.setKty("OKP");
+    publicKey.setUse(Use::sig);
+    publicKey.setAlg("EdDSA");
+    publicKey.setKid(kid);
+    publicKey.set("crv", std::string("Ed25519"));
+    publicKey.set("x", xB64);
+    publicKey.setKeyOps({KeyOp::verify});
+
+    privateKey.setKty("OKP");
+    privateKey.setUse(Use::sig);
+    privateKey.setAlg("EdDSA");
+    privateKey.setKid(kid);
+    privateKey.set("crv", std::string("Ed25519"));
+    privateKey.set("x", xB64);
+    privateKey.set("d", dB64);
+    privateKey.setKeyOps({KeyOp::sign});
+
+    return KeyPair{.pub = publicKey, .priv = privateKey};
+}
+
+std::expected<KeyPair, std::string /*error*/> generateKeyPairForSigning(const Algorithm& algorithm)
+{
+    if (algorithm == Algorithm::EdDSA)
+        return generateEd25519KeyPair();
+
+    // RS256 (default / legacy path).
     // Key size for RSA, typically 2048 or 3072 bits for RS256
     const int keySize = 2048;
 
@@ -236,6 +291,46 @@ ParsedKey& ParsedKey::operator=(ParsedKey&& rhs)
     return *this;
 }
 
+static std::expected<EVP_PKEY*, std::string> jwkToEd25519Pkey(const Key& key)
+{
+    // RFC 8037: OKP/Ed25519 JWK carries the raw 32-byte public key in 'x'
+    // and (for a private key) the raw 32-byte secret in 'd'. OpenSSL's
+    // EVP_PKEY_new_raw_*_key consumes exactly those bytes.
+    if (key.get<std::string>("crv").value_or("") != "Ed25519")
+        return std::unexpected<std::string>("EdDSA JWK must have crv=Ed25519");
+
+    const auto d = key.get<std::string>("d");
+    if (d)
+    {
+        const auto priv = nx::utils::fromBase64Url(*d);
+        if (priv.size() != 32)
+            return std::unexpected<std::string>("Ed25519 private key must be 32 bytes");
+        EVP_PKEY* pkey = EVP_PKEY_new_raw_private_key(
+            EVP_PKEY_ED25519,
+            nullptr,
+            reinterpret_cast<const unsigned char*>(priv.data()),
+            priv.size());
+        if (!pkey)
+            return std::unexpected<std::string>("EVP_PKEY_new_raw_private_key failed");
+        return pkey;
+    }
+
+    const auto x = key.get<std::string>("x");
+    if (!x)
+        return std::unexpected<std::string>("EdDSA JWK missing both 'd' and 'x'");
+    const auto pub = nx::utils::fromBase64Url(*x);
+    if (pub.size() != 32)
+        return std::unexpected<std::string>("Ed25519 public key must be 32 bytes");
+    EVP_PKEY* pkey = EVP_PKEY_new_raw_public_key(
+        EVP_PKEY_ED25519,
+        nullptr,
+        reinterpret_cast<const unsigned char*>(pub.data()),
+        pub.size());
+    if (!pkey)
+        return std::unexpected<std::string>("EVP_PKEY_new_raw_public_key failed");
+    return pkey;
+}
+
 std::expected<ParsedKey, std::string /*error*/> parseKey(const Key& key)
 {
     if (key.alg() == "RS256")
@@ -248,6 +343,13 @@ std::expected<ParsedKey, std::string /*error*/> parseKey(const Key& key)
         EVP_PKEY_assign_RSA(signing_key, rsa);
 
         return ParsedKey(std::make_unique<ParsedKeyImpl>(key.alg(), key.kid(), signing_key));
+    }
+    else if (key.alg() == "EdDSA")
+    {
+        auto pkey = jwkToEd25519Pkey(key);
+        if (!pkey)
+            return std::unexpected<std::string>(pkey.error());
+        return ParsedKey(std::make_unique<ParsedKeyImpl>(key.alg(), key.kid(), *pkey));
     }
     else if (key.alg() == "HS256")
     {
@@ -275,6 +377,15 @@ bool rs256Verify(
     const std::string_view signature,
     const ParsedKey& key);
 
+std::expected<SignResult, std::string /*error*/> eddsaSign(
+    const std::string_view message,
+    const ParsedKey& key);
+
+bool eddsaVerify(
+    const std::string_view message,
+    const std::string_view signature,
+    const ParsedKey& key);
+
 std::expected<SignResult, std::string /*error*/> hs256Sign(
     const std::string_view message,
     const ParsedKey& key);
@@ -292,7 +403,7 @@ std::expected<std::string /*alg*/, std::string /*err*/> getAlgorithmForSigning(c
     if (alg.empty())
         return std::unexpected<std::string>("Key must specify alg to use for signing");
 
-    if (alg == "RS256" || alg == "HS256")
+    if (alg == "RS256" || alg == "EdDSA" || alg == "HS256")
         return alg;
     else
         return std::unexpected<std::string>("alg '" + alg + "' is not supported for signing");
@@ -304,6 +415,8 @@ std::expected<SignResult, std::string /*error*/> sign(
 {
     if (key.impl()->algorithm == "RS256")
         return rs256Sign(message, key);
+    else if (key.impl()->algorithm == "EdDSA")
+        return eddsaSign(message, key);
     else if (key.impl()->algorithm == "HS256")
         return hs256Sign(message, key);
     else
@@ -348,6 +461,8 @@ bool verify(
 
     if (alg == "RS256")
         return rs256Verify(message, signature, key);
+    else if (alg == "EdDSA")
+        return eddsaVerify(message, signature, key);
     else if (alg == "HS256")
         return hs256Verify(message, signature, key);
     else
@@ -409,6 +524,71 @@ bool rs256Verify(
     EVP_MD_CTX_free(md_ctx);
 
     return verify_status == 1;
+}
+
+//--------------------------------------------------------------------------------------------------
+// EdDSA (Ed25519) asymmetric key signing and verification — RFC 8037.
+
+std::expected<SignResult, std::string /*error*/> eddsaSign(
+    const std::string_view message,
+    const ParsedKey& key)
+{
+    // Ed25519 signatures are a fixed 64 bytes. EVP_DigestSignInit is called
+    // with a NULL digest because Ed25519 hashes internally — passing a
+    // digest like SHA-256 here would break signing.
+    EVP_MD_CTX* md_ctx = EVP_MD_CTX_new();
+    if (!md_ctx)
+        return std::unexpected<std::string>("EVP_MD_CTX_new failed");
+
+    if (EVP_DigestSignInit(md_ctx, nullptr, nullptr, nullptr, key.impl()->key) != 1)
+    {
+        EVP_MD_CTX_free(md_ctx);
+        return std::unexpected<std::string>("EVP_DigestSignInit(EdDSA) failed");
+    }
+
+    unsigned char signature[64];
+    size_t sig_len = sizeof(signature);
+    const int rc = EVP_DigestSign(
+        md_ctx,
+        signature,
+        &sig_len,
+        reinterpret_cast<const unsigned char*>(message.data()),
+        message.size());
+    EVP_MD_CTX_free(md_ctx);
+    if (rc != 1 || sig_len != 64)
+        return std::unexpected<std::string>("EVP_DigestSign(EdDSA) failed");
+
+    return SignResult{
+        .alg = "EdDSA",
+        .signature = nx::utils::toBase64Url(
+            std::string_view(reinterpret_cast<const char*>(signature), sig_len)),
+    };
+}
+
+bool eddsaVerify(
+    const std::string_view message,
+    const std::string_view signature,
+    const ParsedKey& key)
+{
+    EVP_MD_CTX* md_ctx = EVP_MD_CTX_new();
+    if (!md_ctx)
+        return false;
+
+    if (EVP_DigestVerifyInit(md_ctx, nullptr, nullptr, nullptr, key.impl()->key) != 1)
+    {
+        EVP_MD_CTX_free(md_ctx);
+        return false;
+    }
+
+    const std::string decoded = nx::utils::fromBase64Url(signature);
+    const int rc = EVP_DigestVerify(
+        md_ctx,
+        reinterpret_cast<const unsigned char*>(decoded.data()),
+        decoded.size(),
+        reinterpret_cast<const unsigned char*>(message.data()),
+        message.size());
+    EVP_MD_CTX_free(md_ctx);
+    return rc == 1;
 }
 
 //--------------------------------------------------------------------------------------------------

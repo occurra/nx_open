@@ -75,7 +75,8 @@ NX_REFLECTION_INSTRUMENT(KeyPair, (pub)(priv))
 
 // Supported algorithms.
 NX_REFLECTION_ENUM_CLASS(Algorithm,
-    RS256
+    RS256,
+    EdDSA
 );
 
 /**
