@@ -2,13 +2,13 @@
 
 #include "webrtc_tracks.h"
 
-#include <core/resource/camera_resource.h>
-#include <nx/sdk/helpers/uuid_helper.h>
+#include <algorithm>
+#include <limits>
+
 #include <nx/utils/log/log.h>
 #include <nx/utils/random.h>
 
 #include "webrtc_session.h"
-#include "webrtc_twcc.h"
 
 namespace nx::webrtc {
 
@@ -17,54 +17,6 @@ namespace {
 static const std::string kSendOnlyAttr = "a=sendonly";
 static const std::string kRecvOnlyAttr = "a=recvonly";
 static const std::string kSendRecvAttr = "a=sendrecv";
-
-// PCMU's statically assigned RTP payload type, RFC 3551 table 4.
-constexpr int kPcmuPayloadType = 0;
-
-// One codec offered on an m-line. `channels` is omitted from the rtpmap when zero, and
-// `fmtpParams` produces no fmtp line when empty.
-struct OfferedCodec
-{
-    int payloadType = -1;
-    std::string name;
-    int clockRate = 0;
-    int channels = 0;
-    std::string fmtpParams;
-};
-
-// Builds the m-line plus the rtpmap and optional fmtp lines for every offered codec. The answerer
-// picks one of the payload types listed on the m-line (RFC 3264), and their order expresses our
-// preference, so pass the codecs most-preferred first.
-// Uses the DTLS-SRTP AVPF profile (RFC 4585) so rtcp-fb directives are honored
-// -- Safari/iOS enforce this strictly, Chrome is lenient -- and a bundled session
-// must not mix AVP and SAVPF across its m-lines.
-std::string makeMediaLines(
-    const std::string& mediaType,
-    uint16_t port,
-    const std::vector<OfferedCodec>& codecs)
-{
-    auto mlines = "m=" + mediaType + " " + std::to_string(port) + " UDP/TLS/RTP/SAVPF";
-    for (const auto& codec: codecs)
-        mlines += " " + std::to_string(codec.payloadType);
-    mlines += "\r\n";
-
-    for (const auto& codec: codecs)
-    {
-        mlines += "a=rtpmap:" + std::to_string(codec.payloadType) + " " + codec.name + "/"
-            + std::to_string(codec.clockRate);
-        if (codec.channels > 0)
-            mlines += "/" + std::to_string(codec.channels);
-        mlines += "\r\n";
-
-        if (!codec.fmtpParams.empty())
-        {
-            mlines +=
-                "a=fmtp:" + std::to_string(codec.payloadType) + " " + codec.fmtpParams + "\r\n";
-        }
-    }
-
-    return mlines;
-}
 
 } // namespace
 
@@ -101,6 +53,36 @@ Track* Tracks::audioTrack(nx::Uuid deviceId) const
     return nullptr;
 }
 
+int Tracks::retargetDevice(nx::Uuid from, nx::Uuid to)
+{
+    int count = 0;
+    for (const auto& [_, track]: m_tracks)
+    {
+        if (track->deviceId != from)
+            continue;
+        track->deviceId = to;
+        ++count;
+    }
+    return count;
+}
+
+std::vector<nx::Uuid> Tracks::orderByMid(std::vector<nx::Uuid> deviceIds) const
+{
+    const auto midOf = [this](const nx::Uuid& deviceId)
+    {
+        const auto track = videoTrack(deviceId);
+        return track ? track->mid : std::numeric_limits<int>::max();
+    };
+    std::stable_sort(
+        deviceIds.begin(),
+        deviceIds.end(),
+        [&midOf](const nx::Uuid& a, const nx::Uuid& b)
+        {
+            return midOf(a) < midOf(b);
+        });
+    return deviceIds;
+}
+
 std::vector<Track> Tracks::allTracks() const
 {
     std::vector<Track> result;
@@ -123,31 +105,24 @@ Track* Tracks::track(uint32_t ssrc) const
     return it != m_tracks.end() ? it->second.get() : nullptr;
 }
 
-uint32_t Tracks::updateSsrc(Track* track, std::optional<uint32_t> newSsrc)
+uint32_t Tracks::rotateSsrc(nx::Uuid deviceId, TrackType type)
 {
-    if (!track)
-        return 0;
-
-    if (!newSsrc)
+    for (auto it = m_tracks.begin(); it != m_tracks.end(); ++it)
     {
-        do
-            newSsrc = nx::utils::random::number<uint32_t>();
-        while (m_tracks.contains(*newSsrc));
+        if (it->second->deviceId == deviceId && it->second->trackType == type)
+        {
+            auto track = std::move(it->second);
+            m_tracks.erase(it);
+            do
+            {
+                track->ssrc = nx::utils::random::number<uint32_t>();
+            } while (m_tracks.find(track->ssrc) != m_tracks.end());
+            const uint32_t newSsrc = track->ssrc;
+            m_tracks.emplace(newSsrc, std::move(track));
+            return newSsrc;
+        }
     }
-    else if (m_tracks.contains(*newSsrc))
-    {
-        return 0;
-    }
-
-    auto it = m_tracks.find(track->ssrc);
-    if (!NX_ASSERT(it != m_tracks.end() && it->second.get() == track, "Foreign track"))
-        return 0;
-
-    auto ownedTrack = std::move(it->second);
-    m_tracks.erase(it);
-    ownedTrack->ssrc = *newSsrc;
-    m_tracks.emplace(*newSsrc, std::move(ownedTrack));
-    return *newSsrc;
+    return 0;
 }
 
 Tracks::Tracks(Session* session):
@@ -199,37 +174,8 @@ void Tracks::addTrack(std::unique_ptr<Track> track)
     m_tracks.emplace(track->ssrc, std::move(track));
 }
 
-std::string TracksForSend::mimeType() const
-{
-    return m_session->muxer()->mimeType();
-}
-
-std::string TracksForRecv::mimeType() const
-{
-    return "";
-}
-
 bool TracksForSend::examineSdp(const std::string& /*sdp*/)
 {
-    return true;
-}
-
-bool TracksForRecv::examineSdp(const std::string& sdp)
-{
-    m_session->demuxer()->setSdp(sdp);
-    if (!m_session->demuxer()->hasVideo()
-        || m_session->demuxer()->resource()->isAudioEnabled() != m_session->demuxer()->hasAudio())
-    {
-        return false;
-    }
-
-    if (m_session->demuxer()->resource()->isAudioEnabled())
-    {
-        auto audioCodecParameters = m_session->demuxer()->audioCodecParameters();
-        NX_ASSERT(audioCodecParameters);
-        auto layout = std::make_shared<AudioLayout>(audioCodecParameters);
-        m_session->reader()->setAudioLayout(layout);
-    }
     return true;
 }
 
@@ -266,15 +212,30 @@ std::string Tracks::getSdpForTrack(const Track* track, uint16_t /*port*/) const
 
     // Mid in RTP extension is not used now.
     // sdp += "a=extmap:1 urn:ietf:params:rtp-hdrext:sdes:mid" ENDL;
+
+    // Absolute capture time — lets the browser know each frame's UTC capture
+    // time. Off by default (see SessionConfig::addAbsCaptureTime); the SDP
+    // advertisement and the actual extension emission in the encoder are
+    // gated by the same flag, so they stay in lockstep.
+    if (m_session->config().addAbsCaptureTime)
+        sdp += "a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time" ENDL;
+
+    // Playout-delay (video only): min=max=0 asks Chrome to render each decoded
+    // frame immediately (low-latency path) instead of holding it in the playout
+    // buffer. The encoder stamps it for video tracks only, so advertise it only
+    // there to keep the SDP and the emitted extension in lockstep.
+    if (m_session->config().addPlayoutDelay && track->trackType == TrackType::video)
+        sdp += "a=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/playout-delay" ENDL;
+
     return sdp;
 }
 
 std::string TracksForSend::getSdpForTrack(const Track* track, uint16_t port) const
 {
     bool isVideo = track->trackType == TrackType::video;
-    auto encoder = isVideo ? m_session->muxer()->videoEncoder(track->deviceId)
-                           : m_session->muxer()->audioEncoder(track->deviceId);
-
+    const auto muxer = m_session->muxer();
+    auto encoder =
+        isVideo ? muxer->videoEncoder(track->deviceId) : muxer->audioEncoder(track->deviceId);
     if (!encoder)
     {
         NX_DEBUG(
@@ -285,81 +246,11 @@ std::string TracksForSend::getSdpForTrack(const Track* track, uint16_t port) con
             (int) track->trackType);
         return {};
     }
-
     return encoder->getSdpMedia(isVideo, track->mid, port, /*ssl*/ true).toStdString()
         + base_type::getSdpForTrack(track, port);
 }
 
-std::string TracksForRecv::getSdpForTrack(const Track* track, uint16_t port) const
-{
-    std::string sdp;
-    if (track->trackType == TrackType::video)
-    {
-        sdp = makeMediaLines(
-            "video",
-            port,
-            {{
-                .payloadType = track->payloadType,
-                .name = "H264",
-                .clockRate = 90000,
-                .fmtpParams = "packetization-mode=1",
-            }});
-
-        // Full intra request: https://datatracker.ietf.org/doc/html/rfc5104#section-4.3.1
-        // `ccm` means `Codec Control Message`.
-        sdp += "a=rtcp-fb:" + std::to_string(track->payloadType) + " ccm fir\r\n";
-
-        // Transport-wide congestion control: we echo per-packet arrival timing
-        // back to the publisher so its send-side estimator can raise the send
-        // bitrate. Advertising only transport-cc (not goog-remb) makes the
-        // publisher select send-side BWE deterministically. See VMS-62147.
-        sdp += "a=rtcp-fb:" + std::to_string(track->payloadType) + " transport-cc\r\n"
-            + "a=extmap:" + std::to_string(kTransportCcExtId) + " " + kTransportCcUri + "\r\n";
-    }
-    else if (track->trackType == TrackType::audio)
-    {
-        // Opus first: every WebRTC stack implements it, it is what browsers pick by default, and
-        // unlike PCMU it is not locked to 8 kHz narrowband. Per RFC 7587 section 7 the rtpmap
-        // always reads 48000/2 regardless of what the sender ends up encoding. `useinbandfec=1`
-        // lets the sender add in-band FEC, which matters because we archive this stream and cannot
-        // ask for a retransmit later. Stereo is left at its default of mono.
-        //
-        // PCMU stays on the m-line only as a fallback for a publisher that cannot do Opus.
-        // examineSdp() rejects the whole session when the publisher answers with no audio, so
-        // offering Opus alone would cost such a publisher its video too, not just its audio. Any
-        // browser prefers Opus over G.711, so this costs nothing in practice.
-        sdp = makeMediaLines(
-            "audio",
-            port,
-            {
-                {
-                    .payloadType = track->payloadType,
-                    .name = "opus",
-                    .clockRate = 48000,
-                    .channels = 2,
-                    .fmtpParams = "minptime=10;useinbandfec=1",
-                },
-                {
-                    .payloadType = kPcmuPayloadType,
-                    .name = "PCMU",
-                    .clockRate = 8000,
-                },
-            });
-    }
-    else
-    {
-        NX_DEBUG(this, "Unknown track type %1", (int) track->trackType);
-    }
-
-    return sdp + base_type::getSdpForTrack(track, port);
-}
-
 TracksForSend::TracksForSend(Session* session):
-    Tracks(session)
-{
-}
-
-TracksForRecv::TracksForRecv(Session* session):
     Tracks(session)
 {
 }

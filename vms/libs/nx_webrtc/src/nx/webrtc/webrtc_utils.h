@@ -2,8 +2,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <nx/network/socket_common.h>
 #include <nx/network/ssl/certificate.h>
@@ -13,6 +15,16 @@ namespace nx::webrtc {
 constexpr uint16_t kDefaultSctpPort = 5000;
 constexpr int kSctpMaxMessageSize = 65536;
 
+/**
+ * Advertised max-message-size for the data channel, every session alike. A
+ * spec-conforming peer (the toolbox's libdatachannel) caps its sends at what
+ * we advertise; our receive path reassembles SCTP fragments regardless. The
+ * largest single message is one video frame (segments travel frame by frame;
+ * a 4K key frame runs single-digit megabytes) or a metadata batch with
+ * embedded images, so 16 MB leaves ample headroom.
+ */
+constexpr int kSctpMaxMessageSizeData = 16 * 1024 * 1024;
+
 using namespace nx::network;
 using namespace nx;
 
@@ -21,6 +33,13 @@ enum class Purpose
     send,
     recv,
     sendrecv,
+
+    /// Datachannel-only session: no media tracks, no consumer/providers. The
+    /// SDP carries a single application m-line and every byte rides the SCTP
+    /// datachannel (see DataPeer). This end stays the offerer, exactly as for
+    /// browser peers; the answering end (the AI agent toolbox) runs
+    /// libdatachannel and behaves browser-identically.
+    data,
 };
 
 class Dtls;
@@ -35,6 +54,8 @@ struct SessionDescription
     std::string id;
     std::string remoteUfrag;
     std::string localPwd;
+    std::string remotePwd; ///< Peer's ice-pwd; keys MESSAGE-INTEGRITY of checks we send.
+    std::uint64_t tieBreaker = 0; ///< This agent's ICE tie-breaker (role-conflict resolution).
     std::shared_ptr<Dtls> dtls;
 };
 
@@ -62,7 +83,7 @@ struct SdpParseResult
     static SdpParseResult parse(const std::string& sdp);
 };
 
-struct IceCandidate
+struct NX_WEBRTC_API IceCandidate
 {
     static constexpr int kIceMaxPriority = std::numeric_limits<int>::max();
     static constexpr int kIceMinIndex = 0;
@@ -125,13 +146,22 @@ struct IceCandidate
     bool matchFilter(const Filter filter) const;
 };
 
-struct TurnServerInfo
+struct TurnEndpoint
 {
     nx::network::SocketAddress address;
+    nx::network::TransportProtocol transport =
+        nx::network::TransportProtocol::udp; //< RFC 7065 default for the "turn:" scheme.
+};
+
+struct TurnServerInfo
+{
+    std::vector<TurnEndpoint> endpoints; //< Cloud order, used as the failover preference order.
     std::string user;
     std::string password;
     std::string realm;
     bool longTermAuth = false;
+
+    bool isNull() const { return endpoints.empty(); } //< Replaces the old address.isNull() checks.
 };
 
 struct OauthInfo
@@ -146,6 +176,45 @@ struct OauthInfo
 struct SessionConfig
 {
     bool unreliableTransport = false;
+
+    /// Advertise and emit the abs-capture-time RTP header extension
+    /// (http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time).
+    /// Disabled by default: the player gets RTP→UTC mappings via
+    /// data-channel timestamp messages, which are explicit and stay
+    /// consistent with the pre-roll PTS compression. abs-capture-time
+    /// would carry the original capture UTC for pre-roll frames, which
+    /// would conflict with the data-channel reports. Re-enable only
+    /// when something downstream actually needs the extension (e.g.
+    /// inter-stream sync via the browser's native capture-time path).
+    bool addAbsCaptureTime = false;
+
+    /// Advertise and emit the playout-delay RTP header extension with min=max=0
+    /// (http://www.webrtc.org/experiments/rtp-hdrext/playout-delay). Puts Chrome
+    /// into its low-latency render path so a decoded frame is shown immediately
+    /// instead of being held by the playout buffer - important for archive seeks,
+    /// where the paused single-shot stream otherwise stalled the compositor for
+    /// hundreds of ms. Video only (see Transcoder::createRtpEncoder).
+    bool addPlayoutDelay = true;
 };
+
+/**
+ * Whether the address is unroutable from the public internet, so advertising
+ * it to a remote peer can only produce a dead ICE candidate.
+ *
+ * Not HostAddress::isLocalNetwork(): that check misses CGNAT 100.64.0.0/10
+ * (Tailscale v4) and matches only the fd00:/16 slice of the fc00::/7 ULA
+ * range (Tailscale v6 is fd7a:...).
+ */
+NX_WEBRTC_API bool isPrivateScope(const nx::network::HostAddress& host);
+
+/** Same-family binary IP equality; HostAddress::operator== is text-based. */
+NX_WEBRTC_API bool sameIp(const nx::network::HostAddress& a, const nx::network::HostAddress& b);
+
+/**
+ * Public STUN servers every process hosting a SessionPool uses by default
+ * (media_server, ai_agent_toolbox), so srflx behavior is identical on both
+ * ends of a session.
+ */
+NX_WEBRTC_API const std::vector<nx::network::SocketAddress>& defaultStunServers();
 
 } // namespace nx::webrtc

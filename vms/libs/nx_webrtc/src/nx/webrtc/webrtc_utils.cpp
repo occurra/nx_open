@@ -2,7 +2,10 @@
 
 #include "webrtc_utils.h"
 
+#include <cstring>
 #include <set>
+
+#include <nx/utils/system_network_headers.h> //< Full in_addr/in6_addr and in6addr_loopback.
 
 namespace {
 
@@ -494,6 +497,51 @@ IceCandidate::Filter IceCandidate::parseFilter(const std::string& filter)
                 result |= Filter::UdpRelay;
         });
     return (IceCandidate::Filter) result;
+}
+
+bool isPrivateScope(const nx::network::HostAddress& host)
+{
+    if (const auto& ip = host.ipV4())
+    {
+        const auto addr = ntohl(ip->s_addr);
+        return (addr & 0xFF000000) == 0x7F000000 //< 127.0.0.0/8
+            || (addr & 0xFF000000) == 0x0A000000 //< 10.0.0.0/8
+            || (addr & 0xFFF00000) == 0xAC100000 //< 172.16.0.0/12
+            || (addr & 0xFFFF0000) == 0xC0A80000 //< 192.168.0.0/16
+            || (addr & 0xFFC00000) == 0x64400000 //< 100.64.0.0/10 (CGNAT).
+            || (addr & 0xFFFF0000) == 0xA9FE0000; //< 169.254.0.0/16
+    }
+    if (const auto ip = host.ipV6().first)
+    {
+        return (ip->s6_addr[0] & 0xFE) == 0xFC //< fc00::/7 (ULA).
+            || (ip->s6_addr[0] == 0xFE && (ip->s6_addr[1] & 0xC0) == 0x80) //< fe80::/10
+            || std::memcmp(&*ip, &in6addr_loopback, sizeof(*ip)) == 0; //< ::1
+    }
+    return false;
+}
+
+bool sameIp(const nx::network::HostAddress& a, const nx::network::HostAddress& b)
+{
+    const auto a4 = a.ipV4();
+    const auto b4 = b.ipV4();
+    if (a4 && b4)
+        return std::memcmp(&*a4, &*b4, sizeof(in_addr)) == 0;
+    const auto a6 = a.ipV6().first;
+    const auto b6 = b.ipV6().first;
+    if (a6 && b6 && !a4 && !b4)
+        return std::memcmp(&*a6, &*b6, sizeof(in6_addr)) == 0;
+    return false;
+}
+
+const std::vector<nx::network::SocketAddress>& defaultStunServers()
+{
+    static const std::vector<nx::network::SocketAddress> kStunServers = {
+        nx::network::SocketAddress("stun.l.google.com:19302"),
+        nx::network::SocketAddress("stun1.l.google.com:19302"),
+        nx::network::SocketAddress("stun2.l.google.com:19302"),
+        nx::network::SocketAddress("stun.stunprotocol.org:3478"),
+    };
+    return kStunServers;
 }
 
 } // namespace nx::webrtc

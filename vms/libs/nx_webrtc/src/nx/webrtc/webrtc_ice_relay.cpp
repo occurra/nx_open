@@ -2,44 +2,58 @@
 
 #include "webrtc_ice_relay.h"
 
+#include <algorithm>
+
+#include <nx/network/system_socket.h>
 #include <nx/utils/cryptographic_hash.h>
 
 #include "webrtc_session_pool.h"
 
+using namespace std::chrono;
+
 namespace nx::webrtc {
 
+namespace {
+
 constexpr size_t kRawReadBufferSize = 65536;
-constexpr size_t kOauthKeySize = 16;
-constexpr std::chrono::seconds kKeepAliveTimeout{15};
+
+constexpr auto kKeepAliveTimeout = 15s;
 
 // Can't detect permissions lifetime in runtime,
 // but default lifetime in coturn is 300s.
-constexpr std::chrono::seconds kPermissionsLifetime{295};
+constexpr auto kPermissionsLifetime = 295s;
+
+constexpr auto kTurnConnectTimeout = 10s;
+
+std::unique_ptr<nx::network::AbstractCommunicatingSocket> makeSocket(
+    nx::network::TransportProtocol transport)
+{
+    if (transport == nx::network::TransportProtocol::tcp)
+        return std::make_unique<nx::network::TCPSocket>();
+
+    return std::make_unique<nx::network::UDPSocket>();
+}
+
+} // namespace
 
 IceRelay::IceRelay(
     SessionPool* sessionPool,
     const SessionConfig& config,
     const std::string& sessionId,
-    const CandidateHandler& handler):
-    Ice(sessionPool, config),
+    const CandidateHandler& handler,
+    aio::AbstractAioThread* aioThread):
+    Ice(sessionPool, config, aioThread),
     m_sessionId(sessionId),
     m_onCandidateReadyHandler(handler)
 {
     m_readBuffer.reserve(kRawReadBufferSize);
-
-    m_socket.bindToAioThread(m_pollable.getAioThread());
     m_keepAliveTimer.bindToAioThread(m_pollable.getAioThread());
     m_createPermissionTimer.bindToAioThread(m_pollable.getAioThread());
     m_refreshTimer.bindToAioThread(m_pollable.getAioThread());
-
-    m_socket.setSendBufferSize(kIceTcpSendBufferSize);
-    m_socket.setNonBlockingMode(true);
 }
 
 IceRelay::~IceRelay()
 {
-    m_sessionPool->turnInfoFetcher().removeOauthInfoHandler(m_sessionId);
-
     std::promise<void> stoppedPromise;
     m_pollable.dispatch(
         [this, &stoppedPromise]()
@@ -57,7 +71,9 @@ void IceRelay::stopUnsafe()
         m_keepAliveTimer.cancelSync();
         m_createPermissionTimer.cancelSync();
         m_refreshTimer.cancelSync();
-        m_socket.cancelIOSync(aio::EventType::etAll);
+
+        if (m_socket)
+            m_socket->cancelIOSync(aio::EventType::etAll);
 
         Ice::stopUnsafe(); //< Dangerous, object can be destroyed after this call.
     }
@@ -71,19 +87,74 @@ IceCandidate::Filter IceRelay::type() const
 void IceRelay::startRelay(const TurnServerInfo& turnServer)
 {
     m_turnServer = turnServer;
+    m_endpointIndex = 0;
+    connectCurrentEndpoint();
+}
 
-    m_socket.connectAsync(
-        m_turnServer.address,
+void IceRelay::connectCurrentEndpoint()
+{
+    if (m_needStop)
+        return;
+
+    if (m_endpointIndex >= m_turnServer.endpoints.size())
+    {
+        NX_DEBUG(
+            this,
+            "TURN: all %1 endpoint(s) failed for %2",
+            m_turnServer.endpoints.size(),
+            m_sessionId);
+        stopUnsafe();
+        return;
+    }
+
+    const auto& endpoint = m_turnServer.endpoints[m_endpointIndex];
+    NX_DEBUG(
+        this,
+        "TURN: dialing endpoint %1 (%2) for %3",
+        endpoint.address,
+        endpoint.transport == nx::network::TransportProtocol::tcp ? "tcp" : "udp",
+        m_sessionId);
+
+    m_relayStage = RelayStage::Binding; //< Reset the protocol state machine for this attempt.
+    // m_socket is only (re)assigned here, during the pre-candidate connect/failover
+    // phase. The send path (asyncSendPacketUnsafe), which reads m_socket off the AIO
+    // thread, becomes active only after a relay candidate is reported - past the last
+    // reassignment - so it never observes a concurrent change. Keep that invariant if
+    // sending is ever moved earlier.
+    m_socket = makeSocket(endpoint.transport);
+    m_socket->bindToAioThread(m_pollable.getAioThread());
+    m_socket->setSendBufferSize(kIceTcpSendBufferSize);
+    m_socket->setSendTimeout(
+        milliseconds(kTurnConnectTimeout).count()); //< connectAsync() uses the send timeout.
+    m_socket->setNonBlockingMode(true);
+
+    m_socket->connectAsync(
+        endpoint.address,
         [this](SystemError::ErrorCode errorCode)
         {
+            if (m_needStop)
+                return;
+
             if (errorCode != SystemError::noError)
-                stopUnsafe();
+            {
+                ++m_endpointIndex;
+                // Defer so the failed socket's own callback unwinds before we
+                // replace it in connectCurrentEndpoint(); both run on the same
+                // AIO thread.
+                m_pollable.post(
+                    [this]()
+                    {
+                        connectCurrentEndpoint();
+                    });
+            }
             else
+            {
                 bindToRelay();
+            }
         });
 }
 
-void IceRelay::setRemoteSrflx(const IceCandidate& candidate)
+void IceRelay::addRemotePeer(const IceCandidate& candidate)
 {
     // Guarded by IceManager, so can't be called in parallel with ~IceRelay().
     m_pollable.dispatch(
@@ -91,23 +162,38 @@ void IceRelay::setRemoteSrflx(const IceCandidate& candidate)
         {
             if (m_needStop)
                 return;
-            m_remoteSrflx = candidate;
-            if (m_relayStage == RelayStage::CreatePermission)
+
+            if (candidate.type == IceCandidate::Type::Srflx)
+                m_remoteSrflx = candidate;
+
+            // Permissions are per-IP: a second candidate on an already
+            // permitted IP (e.g. another relay port on the same TURN server)
+            // adds nothing and must not resend the request.
+            const bool alreadyPermitted = std::any_of(
+                m_permittedPeers.begin(),
+                m_permittedPeers.end(),
+                [&candidate](const nx::network::SocketAddress& address)
+                {
+                    return address.address == candidate.address.address;
+                });
+            if (alreadyPermitted)
+                return;
+            m_permittedPeers.push_back(candidate.address);
+
+            // Before the allocation completes the addresses just accumulate -
+            // handleAllocate() issues the request. Past that point every new
+            // IP needs a fresh CreatePermission covering the whole set
+            // (permissions are additive on the server, RFC 5766 #9.1).
+            if (m_relayStage == RelayStage::CreatePermission
+                || m_relayStage == RelayStage::Indication)
             {
-                NX_DEBUG(this, "TURN: create permission for %1", m_sessionId);
+                NX_DEBUG(
+                    this,
+                    "TURN: create permission for %1 peer address(es), session %2",
+                    m_permittedPeers.size(),
+                    m_sessionId);
                 createPermission();
             }
-        });
-}
-
-void IceRelay::setOauthInfo(const OauthInfo& oauth)
-{
-    m_pollable.dispatch(
-        [this, oauth]()
-        {
-            m_oauthInfo = oauth;
-            NX_ASSERT(m_relayStage == RelayStage::Allocate);
-            sendAllocate();
         });
 }
 
@@ -123,12 +209,15 @@ void IceRelay::bindToRelay()
 
     NX_DEBUG(this, "TURN: binding sent for session %1", m_sessionId);
 
-    m_socket.readSomeAsync(
-        &m_readBuffer,
-        [this](auto... args)
-        {
-            onBytesRead(std::move(args)...);
-        });
+    if (NX_ASSERT(m_socket))
+    {
+        m_socket->readSomeAsync(
+            &m_readBuffer,
+            [this](auto... args)
+            {
+                onBytesRead(std::move(args)...);
+            });
+    }
 }
 
 nx::Buffer IceRelay::toSendBuffer(const char* data, int dataSize) const
@@ -139,15 +228,20 @@ nx::Buffer IceRelay::toSendBuffer(const char* data, int dataSize) const
         return nx::Buffer();
     }
 
-    NX_CRITICAL(m_remoteSrflx);
+    NX_CRITICAL(m_peerAddress || !m_permittedPeers.empty());
     stun::Message response(
         stun::Header(stun::MessageClass::indication, stun::MethodType::sendMethod));
-    // m_peerAddress and m_remoteSrflx::address should match, but sometimes they don't.
-    // Probably the reason is that external port of sender is unexpectedly changed.
+    // Prefer the address the peer's own packets actually arrived from (its
+    // NAT may have rewritten the port, or the peer may be reaching us through
+    // its relay rather than the srflx it signaled); before any packet arrives,
+    // fall back to its srflx, then to the first permitted address (a
+    // relay-only peer signals no srflx at all).
     if (m_peerAddress)
         response.newAttribute<stun::attrs::XorPeerAddress>(*m_peerAddress);
-    else
+    else if (m_remoteSrflx)
         response.newAttribute<stun::attrs::XorPeerAddress>(m_remoteSrflx->address);
+    else
+        response.newAttribute<stun::attrs::XorPeerAddress>(m_permittedPeers.front());
     response.newAttribute<stun::attrs::Data>(nx::Buffer(data, dataSize));
 
     stun::MessageSerializer stunSerializer;
@@ -167,29 +261,22 @@ void IceRelay::fillAuthorizationAndIntegrity(stun::Message& message)
             message.newAttribute<stun::attrs::Nonce>(m_nonce);
             message.insertIntegrity(m_turnServer.user, m_password);
             return;
-        case AuthorizationType::Oauth:
-            NX_CRITICAL(m_oauthInfo);
-            message.newAttribute<stun::attrs::Realm>(m_realm);
-            message.newAttribute<stun::attrs::Nonce>(m_nonce);
-            //            message.newAttribute<stun::attrs::Lifetime>(m_oauthInfo->lifetime);
-            message.newAttribute<stun::attrs::AccessToken>(m_oauthInfo->accessToken);
-            // Use first 16 bytes of key, see https://github.com/coturn/coturn/issues/189.
-            message.insertIntegrity(
-                m_oauthInfo->kid,
-                m_oauthInfo->sessionKey.substr(0, kOauthKeySize));
-            return;
     }
 }
 
 void IceRelay::createPermission()
 {
-    NX_CRITICAL(m_remoteSrflx);
+    NX_CRITICAL(!m_permittedPeers.empty());
 
     stun::MessageSerializer stunSerializer;
     stunSerializer.setAlwaysAddFingerprint(false);
     stun::Message request(
         stun::Header(stun::MessageClass::request, stun::MethodType::createPermissionMethod));
-    request.newAttribute<stun::attrs::XorPeerAddress>(m_remoteSrflx->address);
+    // One XOR-PEER-ADDRESS per permitted IP (RFC 5766 #9 allows several per
+    // request): the peer's srflx plus its relayed address(es), so its checks
+    // pass whichever public identity they arrive from.
+    for (const auto& peer: m_permittedPeers)
+        request.newAttribute<stun::attrs::XorPeerAddress>(peer);
     fillAuthorizationAndIntegrity(request);
 
     nx::Buffer sendBuffer = stunSerializer.serialized(request);
@@ -303,39 +390,6 @@ bool IceRelay::handleLongTermAuthorization(const stun::Message& message)
     return true;
 }
 
-bool IceRelay::handleThirdPartyAuthorization(const stun::Message& message)
-{
-    auto nonce = message.getAttribute<stun::attrs::Nonce>();
-    if (!nonce)
-        m_nonce = nx::Uuid::createUuid().toStdString(QUuid::WithBraces);
-    else
-        m_nonce = nonce->getString();
-
-    auto realm = message.getAttribute<stun::attrs::Realm>();
-    if (!realm)
-        m_realm = m_turnServer.realm;
-    else
-        m_realm = realm->getString();
-
-    m_turnAuth = AuthorizationType::Oauth;
-    if (!m_oauthInfo)
-    {
-        auto thirdPartyAuthorization =
-            message.getAttribute<stun::attrs::ThirdPartyAuthorization>();
-        NX_CRITICAL(thirdPartyAuthorization);
-
-        m_sessionPool->turnInfoFetcher().fetchThirdPartyAuthorization(
-            m_sessionId,
-            thirdPartyAuthorization->getString(),
-            [this](const OauthInfo& info)
-            {
-                setOauthInfo(info);
-            });
-        return false;
-    }
-    return true;
-}
-
 void IceRelay::sendAllocate()
 {
     stun::MessageSerializer stunSerializer;
@@ -367,13 +421,8 @@ bool IceRelay::handleAllocateNoAuth(const stun::Message& message)
 
     if (message.header.messageClass == stun::MessageClass::errorResponse)
     {
-        auto thirdPartyAuthorization =
-            message.getAttribute<stun::attrs::ThirdPartyAuthorization>();
-
-        // Once fill authorization info.
-        if ((thirdPartyAuthorization && !handleThirdPartyAuthorization(message))
-            || (!thirdPartyAuthorization && !handleLongTermAuthorization(message)))
-            return true;
+        // coturn uses long-term auth; fill authorization info once.
+        handleLongTermAuthorization(message);
 
         sendAllocate();
         return true;
@@ -412,17 +461,38 @@ bool IceRelay::handleAllocate(const stun::Message& message)
         return false;
     }
 
+    // A TURN server behind 1:1 NAT (e.g. coturn on a cloud VM without `external-ip`) can return a
+    // private, non-routable XOR-RELAYED-ADDRESS that the remote peer can't reach. In that case
+    // keep the allocated relay port but advertise the address of the TURN server we actually
+    // connected to — the relay is reachable there through the same NAT. Correctly configured
+    // servers return a routable relayed address and are left untouched.
+    auto relayedAddr = xorRelayedAddress->addr();
+    if (relayedAddr.address.isLocalNetwork() && NX_ASSERT(m_socket))
+    {
+        const auto turnAddr = m_socket->getForeignAddress();
+        if (turnAddr.address.isIpAddress() && !turnAddr.address.isLocalNetwork())
+        {
+            NX_DEBUG(
+                this,
+                "TURN relayed address %1 is private; advertising TURN server %2 instead for %3",
+                relayedAddr,
+                turnAddr,
+                m_sessionId);
+            relayedAddr.address = turnAddr.address;
+        }
+    }
+
     m_localRelay = IceCandidate{
         .protocol = IceCandidate::Protocol::UDP,
-        .address = xorRelayedAddress->addr(),
+        .address = relayedAddr,
         .type = IceCandidate::Type::Relay,
         .relatedAddress = xorMappedAddress->addr()};
 
     m_relayStage = RelayStage::CreatePermission;
-    if (!m_remoteSrflx)
+    if (m_permittedPeers.empty())
         NX_VERBOSE(
             this,
-            "TURN waiting from Srflx for remote peer to make CreatePermission request %1",
+            "TURN waiting for a remote peer address to make CreatePermission request %1",
             m_sessionId);
     else
         createPermission();
@@ -434,11 +504,11 @@ bool IceRelay::handleAllocate(const stun::Message& message)
 
 bool IceRelay::handleCreatePermission(const stun::Message& message)
 {
-    if (!m_remoteSrflx)
+    if (m_permittedPeers.empty())
     {
         NX_WARNING(
             this,
-            "TURN unexpected message while waiting for remote srflx: %1/%2 for %3",
+            "TURN unexpected message while waiting for a remote peer address: %1/%2 for %3",
             message.header.messageClass,
             message.header.method,
             m_sessionId);
@@ -518,7 +588,9 @@ bool IceRelay::handleIndication(const stun::Message& message)
         return true; //< Not a fatal error.
     }
     const auto& buffer = data->getBuffer();
-    return processIncomingPacket((const uint8_t*) buffer.data(), buffer.size());
+    // The relay has no consent timer; only a fatal inner-packet result tears it down.
+    return processIncomingPacket((const uint8_t*) buffer.data(), buffer.size())
+        != PacketResult::fatal;
 }
 
 bool IceRelay::processRelayPackets()
@@ -586,11 +658,9 @@ bool IceRelay::processRelayPackets()
 
 void IceRelay::writeRelayPacket(const char* data, int size)
 {
-    NX_MUTEX_LOCKER lock(&m_mutex);
+    NX_ASSERT(m_pollable.isInSelfAioThread());
     // Always foreground.
-    NX_ASSERT(m_foregroundOffset <= m_sendBuffers.size());
-    m_sendBuffers.insert(m_sendBuffers.begin() + m_foregroundOffset, {data, (size_t) size});
-    ++m_foregroundOffset;
+    insertForegroundBuffer(nx::Buffer(data, (size_t) size));
 
     sendNextBufferUnsafe();
 }
@@ -606,7 +676,7 @@ void IceRelay::onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTr
     }
     else
     {
-        bool result = processRelayPackets();
+        bool result = processRelayPackets() && m_socket;
         if (result)
         {
             m_keepAliveTimer.start(
@@ -619,7 +689,7 @@ void IceRelay::onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTr
                         m_sessionId);
                     stopUnsafe(); //< Ice restart is better.
                 });
-            m_socket.readSomeAsync(
+            m_socket->readSomeAsync(
                 &m_readBuffer,
                 [this](auto... args)
                 {
@@ -635,29 +705,32 @@ void IceRelay::onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTr
 
 void IceRelay::asyncSendPacketUnsafe()
 {
-    m_socket.post(
-        [this]()
-        {
-            if (m_needStop)
-                return;
-            NX_MUTEX_LOCKER lock(&m_mutex);
-            m_socket.sendAsync(
-                &m_sendBuffers.front(),
-                [this](auto... args)
-                {
-                    onBytesWritten(std::move(args)...);
-                });
-        });
+    // See IceUdp::asyncSendPacketUnsafe: same thread, so no trip through the reactor.
+    if (NX_ASSERT(m_socket))
+    {
+        m_socket->sendAsync(
+            &m_sendingBuffer,
+            [this](auto... args)
+            {
+                onBytesWritten(std::move(args)...);
+            });
+    }
 }
 
 nx::network::SocketAddress IceRelay::iceRemoteAddress() const
 {
-    return m_socket.getForeignAddress();
+    if (NX_ASSERT(m_socket))
+        return m_socket->getForeignAddress();
+
+    return {};
 }
 
 nx::network::SocketAddress IceRelay::iceLocalAddress() const
 {
-    return m_socket.getLocalAddress();
+    if (NX_ASSERT(m_socket))
+        return m_socket->getLocalAddress();
+
+    return {};
 }
 
 } // namespace nx::webrtc

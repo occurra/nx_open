@@ -32,10 +32,13 @@ public:
         std::unique_ptr<nx::network::AbstractDatagramSocket>&& socket)>;
 
 public:
+    /// @param aioThread Thread to run on, normally the owning session's, so
+    ///     the destructor's wait is a direct call. Null keeps the socket's own.
     Srflx(
         const std::string& sessionId,
         const std::vector<nx::network::SocketAddress>& stunServers,
-        const Handler& handler);
+        const Handler& handler,
+        nx::network::aio::AbstractAioThread* aioThread = nullptr);
     ~Srflx();
 
 private:

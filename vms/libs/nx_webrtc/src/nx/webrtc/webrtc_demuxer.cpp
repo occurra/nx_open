@@ -5,7 +5,6 @@
 #include <array>
 #include <chrono>
 
-#include <core/resource/camera_resource.h>
 #include <nx/rtp/parsers/av1_rtp_parser.h>
 #include <nx/rtp/parsers/h264_rtp_parser.h>
 #include <nx/rtp/parsers/hevc_rtp_parser.h>
@@ -163,17 +162,12 @@ void Demuxer::setSdp(const std::string& value)
                     senderSsrc = track->ssrc;
             }
 
-            NX_ASSERT(m_resource);
-            auto timeHelper = std::make_unique<nx::streaming::rtp::CameraTimeHelper>(
-                media.mediaType,
-                m_resource->getPhysicalId().toStdString(),
-                m_resource->getTimeOffset());
             auto result = m_parsers.emplace(
                 media.ssrc,
                 ParserContext(
                     nx::rtp::RtpParser(media.payloadType, std::move(parser)),
                     senderSsrc,
-                    std::move(timeHelper),
+                    nullptr,
                     trackIdx,
                     media.payloadType));
             if (result.second)
@@ -414,13 +408,17 @@ bool Demuxer::demux(const char* data, size_t size)
         nx::rtp::RtcpSenderReport senderReport;
         auto media = context.parser.nextData(senderReport);
         media->channelNumber = static_cast<uint32_t>(context.trackIdx);
-        media->timestamp = context.timeHelper
-                               ->getTime(
-                                   qnSyncTime->currentTimePoint(),
-                                   std::chrono::microseconds(media->timestamp),
-                                   context.parser.isUtcTime(),
-                                   true)
-                               .count();
+        if (context.timeHelper)
+        {
+            media->timestamp = context.timeHelper
+                                   ->getTime(
+                                       QnSyncTime::currentTimePoint(),
+                                       std::chrono::microseconds(media->timestamp),
+                                       context.parser.isUtcTime(),
+                                       /*isPrimaryStream*/ true,
+                                       /*isPrimaryTrack*/ true)
+                                   .count();
+        }
         // TODO emit network issues like in server_rtsp_stream_provider.cpp.
         // TODO Separate timestamp-related code.
         m_frames.emplace_back(std::move(media));

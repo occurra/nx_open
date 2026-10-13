@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include <nx/network/system_socket.h>
+#include <memory>
+
+#include <nx/network/abstract_socket.h>
 
 #include "webrtc_ice.h"
 
@@ -18,9 +20,18 @@ public:
         SessionPool* sessionPool,
         const SessionConfig& config,
         const std::string& sessionId,
-        const CandidateHandler& handler);
+        const CandidateHandler& handler,
+        aio::AbstractAioThread* aioThread = nullptr);
     virtual ~IceRelay();
-    void setRemoteSrflx(const IceCandidate& candidate);
+    /**
+     * Registers a peer address the TURN permission must cover. Accepts the
+     * peer's srflx candidate (the classic case) and its relay candidate: a
+     * CGNAT peer reaches distinct destinations from distinct public IPs, so
+     * the srflx it signals may never be the address our TURN server sees its
+     * packets from - but its relayed address (the TURN server's own IP) always
+     * is. All registered IPs go into one CreatePermission request.
+     */
+    void addRemotePeer(const IceCandidate& candidate);
     void startRelay(const TurnServerInfo& turnServer);
     virtual IceCandidate::Filter type() const override;
 
@@ -33,7 +44,6 @@ protected:
     virtual nx::Buffer toSendBuffer(const char* data, int dataSize) const override final;
 
 private:
-    void setOauthInfo(const OauthInfo& oauth);
     void writeRelayPacket(const char* data, int size);
     void onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTransferred);
     bool processRelayPackets();
@@ -49,8 +59,8 @@ private:
     bool handleCreatePermission(const stun::Message& message);
     bool handleIndication(const stun::Message& message);
     bool handleLongTermAuthorization(const stun::Message& message);
-    bool handleThirdPartyAuthorization(const stun::Message& message);
     bool handleRefresh(const stun::Message& message);
+    void connectCurrentEndpoint();
 
 private:
     enum RelayStage
@@ -65,23 +75,29 @@ private:
     enum AuthorizationType
     {
         None,
-        LongTerm,
-        Oauth
+        LongTerm
     };
 
 private:
     nx::Buffer m_readBuffer;
 
-    nx::network::TCPSocket m_socket;
+    std::unique_ptr<nx::network::AbstractCommunicatingSocket> m_socket;
+    size_t m_endpointIndex = 0; //< Index into m_turnServer.endpoints for the current attempt.
+
     TurnServerInfo m_turnServer;
-    std::optional<OauthInfo> m_oauthInfo;
     std::string m_nonce;
     std::string m_realm;
     std::string m_password;
     AuthorizationType m_turnAuth = AuthorizationType::None;
     const std::string m_sessionId;
     RelayStage m_relayStage = RelayStage::Binding;
-    std::optional<IceCandidate> m_remoteSrflx;
+    std::optional<IceCandidate> m_remoteSrflx; //< Preferred send target until the peer speaks.
+    /**
+     * Every peer address a permission must be installed for, deduplicated by
+     * IP (permissions are per-IP, RFC 5766). Holds srflx and relay candidate
+     * addresses; m_remoteSrflx is always among them when known.
+     */
+    std::vector<nx::network::SocketAddress> m_permittedPeers;
     std::optional<nx::network::SocketAddress> m_peerAddress;
     std::optional<IceCandidate> m_localRelay;
     nx::network::aio::Timer m_keepAliveTimer;
