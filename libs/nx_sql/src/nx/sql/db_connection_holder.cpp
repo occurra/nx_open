@@ -44,11 +44,8 @@ bool DbConnectionHolder::open()
     {
         NX_WARNING(
             this,
-            "Failed to establish connection to %1 DB %2 at %3:%4. %5",
-            connectionOptions().driverType,
+            "Failed to establish connection to DB %1. %2",
             connectionOptions().dbName,
-            connectionOptions().hostName,
-            connectionOptions().port,
             m_connection->lastError());
         return false;
     }
@@ -84,37 +81,17 @@ DBResult DbConnectionHolder::lastError() const
 
 bool DbConnectionHolder::tuneConnection()
 {
-    switch (connectionOptions().driverType)
+    auto query = m_connection->createQuery();
+    query->prepare("PRAGMA foreign_keys = ON");
+    try
     {
-        case RdbmsDriverType::mysql:
-            return tuneMySqlConnection();
-        default:
-            return true;
+        query->exec();
     }
-}
-
-bool DbConnectionHolder::tuneMySqlConnection()
-{
-    if (!connectionOptions().encoding.isEmpty())
+    catch (const Exception& e)
     {
-        auto query = m_connection->createQuery();
-        query->prepare(
-            nx::format("SET NAMES '%1'").args(connectionOptions().encoding).toStdString());
-        try
-        {
-            query->exec();
-        }
-        catch (const Exception& e)
-        {
-            NX_WARNING(
-                this,
-                "Failed to set connection character set to \"%1\". %2",
-                connectionOptions().encoding,
-                e.what());
-            return false;
-        }
+        NX_WARNING(this, "Failed to enable foreign keys. %1", e.what());
+        return false;
     }
-
     return true;
 }
 

@@ -6,7 +6,6 @@
 
 #include <QtSql/QSqlError>
 
-#include <nx/telemetry/span.h>
 #include <nx/utils/log/log.h>
 
 #include "abstract_db_connection.h"
@@ -27,22 +26,18 @@ void AbstractSqlQuery::bindValue(std::string_view placeholder, const QByteArray&
 //-------------------------------------------------------------------------------------------------
 
 SqlQuery::SqlQuery(QSqlDatabase connection):
-    m_sqlQuery(connection),
-    m_driverType(rdbmsDriverTypeFromString(connection.driverName().toStdString()))
+    m_sqlQuery(connection)
 {
 }
 
 SqlQuery::SqlQuery(AbstractDbConnection* connection):
-    m_sqlQuery(*connection->qtSqlConnection()),
-    m_driverType(
-        rdbmsDriverTypeFromString(connection->qtSqlConnection()->driverName().toStdString()))
+    m_sqlQuery(*connection->qtSqlConnection())
 {
 }
 
 SqlQuery::SqlQuery(QSqlDatabase connection, StatisticsCollector* statisticsCollector):
     m_sqlQuery(connection),
-    m_statisticsCollector(statisticsCollector),
-    m_driverType(rdbmsDriverTypeFromString(connection.driverName().toStdString()))
+    m_statisticsCollector(statisticsCollector)
 {
 }
 
@@ -116,14 +111,6 @@ void SqlQuery::exec(const std::optional<std::string_view>& query)
 
     bool ok;
 
-    nx::telemetry::Span telemetrySpan;
-
-    // Avoid dumping queries not related to HTTP requests.
-    if (nx::telemetry::Span::activeSpan().isValid())
-        telemetrySpan = nx::telemetry::Span("query");
-
-    nx::telemetry::Span::Scope scope = telemetrySpan.activate();
-
     if (query)
     {
         ok = m_sqlQuery.exec(QString::fromUtf8(query->data(), query->size()));
@@ -137,10 +124,6 @@ void SqlQuery::exec(const std::optional<std::string_view>& query)
         ok = m_sqlQuery.exec();
     }
 
-    scope.exit();
-
-    telemetrySpan.updateName(m_sqlQuery.executedQuery().toStdString());
-
     auto executionTime = floor<milliseconds>(steady_clock::now() - t0);
 
     if (m_statisticsCollector)
@@ -149,8 +132,6 @@ void SqlQuery::exec(const std::optional<std::string_view>& query)
     if (ok)
     {
         NX_TRACE(this, "Query %1 completed in %2", m_sqlQuery.lastQuery(), executionTime);
-
-        telemetrySpan.setStatus(nx::telemetry::Span::Status::ok);
     }
     else
     {
@@ -159,9 +140,6 @@ void SqlQuery::exec(const std::optional<std::string_view>& query)
             "Query %1 failed. %2",
             m_sqlQuery.lastQuery(),
             m_sqlQuery.lastError().text());
-
-        telemetrySpan.setStatus(nx::telemetry::Span::Status::error);
-        telemetrySpan.setAttribute("error", m_sqlQuery.lastError().text().toStdString());
 
         throw Exception(getLastError());
     }
@@ -248,19 +226,11 @@ DBResult SqlQuery::getLastError()
     }
 
     // Trying to add more details to the result code.
-    if (m_driverType == RdbmsDriverType::sqlite)
+    const auto nativeErrorCode = lastError.nativeErrorCode();
+    if (nativeErrorCode == "2067" //< SQLITE_CONSTRAINT_UNIQUE
+        || nativeErrorCode == "1555") //< SQLITE_CONSTRAINT_PRIMARYKEY
     {
-        const auto nativeErrorCode = m_sqlQuery.lastError().nativeErrorCode();
-        if (nativeErrorCode == "2067") //< SQLITE_CONSTRAINT_UNIQUE
-            res.code = DBResultCode::uniqueConstraintViolation;
-        else if (nativeErrorCode == "1555") //< SQLITE_CONSTRAINT_PRIMARYKEY
-            res.code = DBResultCode::uniqueConstraintViolation;
-    }
-    else if (m_driverType == RdbmsDriverType::mysql)
-    {
-        const auto nativeErrorCode = m_sqlQuery.lastError().nativeErrorCode();
-        if (nativeErrorCode == "1062") //< ERROR 1062 (23000): Duplicate entry
-            res.code = DBResultCode::uniqueConstraintViolation;
+        res.code = DBResultCode::uniqueConstraintViolation;
     }
 
     res.text = lastError.text().toStdString();

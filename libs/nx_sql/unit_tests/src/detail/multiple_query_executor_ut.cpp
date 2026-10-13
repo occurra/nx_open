@@ -40,8 +40,6 @@ public:
 
     virtual std::unique_ptr<AbstractSqlQuery> createQuery() override { return nullptr; }
 
-    virtual RdbmsDriverType driverType() const override { return RdbmsDriverType::sqlite; }
-
     virtual QSqlDatabase* qtSqlConnection() override { return nullptr; }
 
     virtual bool tableExist(std::string_view) override { return true; }

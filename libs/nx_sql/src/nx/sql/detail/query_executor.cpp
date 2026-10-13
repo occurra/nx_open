@@ -17,14 +17,8 @@ BaseExecutor::BaseExecutor(QueryType queryType, const std::string& queryAggregat
     m_queryStatistics{.queryType = queryType},
     m_queryExecuted(false),
     m_queryType(queryType),
-    m_queryAggregationKey(queryAggregationKey),
-    m_completionHandlerTelemetrySpan(nx::telemetry::Span::activeSpan())
+    m_queryAggregationKey(queryAggregationKey)
 {
-    if (m_completionHandlerTelemetrySpan.isValid())
-    {
-        m_telemetrySpan = nx::telemetry::Span("db", m_completionHandlerTelemetrySpan);
-        m_telemetrySpan.setAttribute("query-type", nx::reflect::enumeration::toString(queryType));
-    }
 }
 
 BaseExecutor::~BaseExecutor()
@@ -48,9 +42,6 @@ DBResult BaseExecutor::execute(AbstractDbConnection* const connection)
 {
     using namespace std::chrono;
 
-    m_telemetrySpan.updateName(std::string("db:") + nx::sql::toString(connection->driverType()));
-    nx::telemetry::Span::Scope scope = m_telemetrySpan.activate();
-
     const auto executionStartTime = nx::utils::monotonicTime();
 
     m_queryStatistics.waitForExecutionDuration =
@@ -61,13 +52,6 @@ DBResult BaseExecutor::execute(AbstractDbConnection* const connection)
 
     m_queryStatistics.executionDuration =
         duration_cast<milliseconds>(nx::utils::monotonicTime() - executionStartTime);
-
-    m_telemetrySpan.setStatus(
-        m_queryStatistics.result->ok() ? nx::telemetry::Span::Status::ok
-                                       : nx::telemetry::Span::Status::error,
-        m_queryStatistics.result->toString());
-
-    m_telemetrySpan.end();
 
     return *m_queryStatistics.result;
 }
@@ -133,16 +117,12 @@ DBResult SelectExecutor::executeQuery(AbstractDbConnection* const connection)
     QueryContext queryContext(connection, nullptr);
     auto result = invokeDbQueryFunc(m_dbSelectFunc, &queryContext);
     if (completionHandler)
-    {
-        auto spanScope = m_completionHandlerTelemetrySpan.activate();
         completionHandler(result);
-    }
     return result;
 }
 
 void SelectExecutor::reportErrorWithoutExecution(DBResult errorCode)
 {
-    auto spanScope = m_completionHandlerTelemetrySpan.activate();
     m_completionHandler(errorCode);
 }
 

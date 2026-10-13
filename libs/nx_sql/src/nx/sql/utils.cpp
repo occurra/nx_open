@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-#include <nx/utils/string.h>
+#include <nx/utils/std_string_utils.h>
 
 #include "query_context.h"
 
@@ -22,31 +22,11 @@ static std::optional<nx::utils::SoftwareVersion> fetchVersion(
     return detail::parseVersion(query->value(0).toString().toStdString());
 }
 
-static std::optional<Info> fetchSqliteInfo(QueryContext* qctx)
+Info fetchRdbmsInfo(QueryContext* qctx)
 {
     return Info{
         // Example: "3.11.0".
         .version = fetchVersion(qctx, "SELECT sqlite_version()")};
-}
-
-static std::optional<Info> fetchMysqlInfo(QueryContext* qctx)
-{
-    return Info{
-        // Example: "5.7.38-log".
-        .version = fetchVersion(qctx, "SELECT version()")};
-}
-
-std::optional<Info> fetchRdbmsInfo(QueryContext* qctx)
-{
-    switch (qctx->connection()->driverType())
-    {
-        case RdbmsDriverType::sqlite:
-            return fetchSqliteInfo(qctx);
-        case RdbmsDriverType::mysql:
-            return fetchMysqlInfo(qctx);
-        default:
-            return std::nullopt;
-    }
 }
 
 //-------------------------------------------------------------------------------------------------

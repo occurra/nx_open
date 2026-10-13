@@ -51,7 +51,6 @@ private:
     QString m_connectionName;
 
     bool tuneConnection();
-    bool tuneMySqlConnection();
 
     std::shared_ptr<nx::sql::QueryContext> createNewTran();
 

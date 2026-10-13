@@ -2,7 +2,6 @@
 
 #include "db_statistics_collector.h"
 
-#include <nx/utils/log/assert.h>
 #include <nx/utils/time.h>
 
 #include "detail/query_queue.h"
@@ -51,97 +50,49 @@ void StatisticsCollector::SingleQueryStatisticsContext::reset()
 StatisticsCollector::StatisticsCollector(
     std::chrono::milliseconds period,
     const detail::QueryQueue& queryQueue,
-    std::atomic<std::size_t>* dbThreadPoolSize,
-    nx::prometheus::Registry* metricsRegistry):
+    std::atomic<std::size_t>* dbThreadPoolSize):
     m_period(period),
     m_queryQueue(queryQueue),
     m_dbThreadPoolSize(dbThreadPoolSize),
-    m_metrics(
-        metricsRegistry ? std::make_optional(detail::makeMetrics(metricsRegistry)) : std::nullopt),
     m_queryExecutionTaskStatistics(m_period)
 {
-    if (m_metrics)
-    {
-        // Publishes this to scrape threads before the constructor returns: read only the members
-        // initialised above.
-        m_metrics->collector = metricsRegistry->registerCollector(
-            [this]()
-            {
-                const auto queueStatistics = m_queryQueue.stats();
-                m_metrics->pendingQueries.set(queueStatistics.pendingQueryCount);
-                m_metrics->oldestQueryAge.set(
-                    std::chrono::duration<double>(queueStatistics.oldestQueryAge).count());
-                m_metrics->threadPoolSize.set(static_cast<double>(m_dbThreadPoolSize->load()));
-            });
-    }
 }
 
 void StatisticsCollector::recordQueryExecutionTask(QueryExecutionTaskRecord record)
 {
-    const auto outcome = !record.result
-        ? detail::Outcome::cancelled
-        : (DBResultCode::ok == record.result->code ? detail::Outcome::ok
-                                                   : detail::Outcome::failed);
-
-    {
-        NX_MUTEX_LOCKER lock(&m_mutex);
-
-        if (record.executionDuration)
-            m_queryExecutionTaskStatistics.taskExecutionTimeCounter.add(*record.executionDuration);
-
-        m_queryExecutionTaskStatistics.tasksWaitingForExecutionCounter.add(
-            record.waitForExecutionDuration);
-
-        const bool modification = QueryType::modification == record.queryType;
-        if (modification)
-            ++m_totalModificationRequests;
-
-        if (outcome == detail::Outcome::cancelled)
-        {
-            m_queryExecutionTaskStatistics.cancelledRequestsCounter.add(1);
-            if (modification)
-                m_queryExecutionTaskStatistics.cancelledModificationRequestsCounter.add(1);
-        }
-        else
-        {
-            const bool succeeded = outcome == detail::Outcome::ok;
-            if (modification)
-            {
-                if (succeeded)
-                    m_queryExecutionTaskStatistics.successfulModificationRequestsCounter.add(1);
-                else
-                    m_queryExecutionTaskStatistics.failedModificationRequestsCounter.add(1);
-            }
-
-            if (succeeded)
-                m_queryExecutionTaskStatistics.successfulRequestsCounter.add(1);
-            else
-                m_queryExecutionTaskStatistics.failedRequestsCounter.add(1);
-        }
-    }
-
-    // Outside m_mutex: prometheus-cpp locks per series, and every DB thread contends on m_mutex.
-    if (!m_metrics)
-        return;
-
-    const auto queryTypeIndex = static_cast<std::size_t>(record.queryType);
-    const auto index = detail::queryTasksIndex(record.queryType, outcome);
-    if (!NX_ASSERT(
-            index < m_metrics->queryTasks.size()
-                && queryTypeIndex < m_metrics->queryDuration.size()
-                && queryTypeIndex < m_metrics->queueWait.size(),
-            "Unexpected query type %1",
-            static_cast<int>(record.queryType)))
-    {
-        return;
-    }
-
-    m_metrics->queryTasks[index].increment();
+    NX_MUTEX_LOCKER lock(&m_mutex);
 
     if (record.executionDuration)
-        m_metrics->queryDuration[queryTypeIndex].observe(*record.executionDuration);
+        m_queryExecutionTaskStatistics.taskExecutionTimeCounter.add(*record.executionDuration);
 
-    m_metrics->queueWait[queryTypeIndex].observe(record.waitForExecutionDuration);
+    m_queryExecutionTaskStatistics.tasksWaitingForExecutionCounter.add(
+        record.waitForExecutionDuration);
+
+    const bool modification = QueryType::modification == record.queryType;
+    if (modification)
+        ++m_totalModificationRequests;
+
+    if (!record.result)
+    {
+        m_queryExecutionTaskStatistics.cancelledRequestsCounter.add(1);
+        if (modification)
+            m_queryExecutionTaskStatistics.cancelledModificationRequestsCounter.add(1);
+        return;
+    }
+
+    const bool succeeded = DBResultCode::ok == record.result->code;
+    if (modification)
+    {
+        if (succeeded)
+            m_queryExecutionTaskStatistics.successfulModificationRequestsCounter.add(1);
+        else
+            m_queryExecutionTaskStatistics.failedModificationRequestsCounter.add(1);
+    }
+
+    if (succeeded)
+        m_queryExecutionTaskStatistics.successfulRequestsCounter.add(1);
+    else
+        m_queryExecutionTaskStatistics.failedRequestsCounter.add(1);
 }
 
 void StatisticsCollector::recordQuery(std::string query, std::chrono::milliseconds executionTime)

@@ -4,18 +4,13 @@
 
 #include <chrono>
 #include <map>
-#include <optional>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 
 #include <QtCore/QString>
-#include <QtSql/QSqlDatabase>
 
 #include <nx/reflect/instrument.h>
 #include <nx/utils/json/qt_core_types.h>
-
-class QnSettings;
 
 namespace nx::sql {
 
@@ -57,30 +52,11 @@ struct NX_SQL_API DBResult
 
 // NX_SQL_API const char* toString(DBResult value);
 
-NX_REFLECTION_ENUM_CLASS(RdbmsDriverType,
-    unknown,
-    sqlite,
-    mysql,
-    postgresql,
-    oracle
-);
-
-NX_SQL_API const char* toString(RdbmsDriverType value);
-NX_SQL_API RdbmsDriverType rdbmsDriverTypeFromString(std::string_view str);
-
-class NX_SQL_API ConnectionOptions
+struct NX_SQL_API ConnectionOptions
 {
-public:
-    RdbmsDriverType driverType = RdbmsDriverType::sqlite;
-    QString hostName;
-    int port = 3306;
+    /** Path to the SQLite database file. */
     QString dbName;
-    QString userName;
-    QString password;
-    QString connectOptions;
-    QString encoding;
     int maxConnectionCount = 1;
-    bool execDDLStatements = true;
 
     /** Connection is closed if not used for this interval. */
     std::chrono::seconds inactivityTimeout = std::chrono::minutes(10);
@@ -97,12 +73,6 @@ public:
     bool failOnDbTuneError = false;
 
     /**
-     * If specified, then no more than this amount of data modification queries will be run
-     * concurrently. Otherwise, there is no limit (if DB type supports it).
-     */
-    std::optional<int> concurrentModificationQueryLimit;
-
-    /**
      * Delay between retries to restore a lost DB connection.
      */
     std::chrono::milliseconds reconnectAfterFailureDelay = std::chrono::seconds(1);
@@ -113,17 +83,12 @@ public:
      */
     int maxQueriesAggregatedUnderSingleTransaction = 9999;
 
-    ConnectionOptions();
-
-    void loadFromSettings(const QnSettings& settings, const QString& groupName = "db");
-
     bool operator==(const ConnectionOptions&) const = default;
 };
 
-NX_REFLECTION_INSTRUMENT(ConnectionOptions, (driverType)(hostName)(port)(dbName)(userName) \
-    (password)(connectOptions)(encoding)(maxConnectionCount)(inactivityTimeout) \
+NX_REFLECTION_INSTRUMENT(ConnectionOptions, (dbName)(maxConnectionCount)(inactivityTimeout) \
     (maxPeriodQueryWaitsForAvailableConnection)(maxErrorsInARowBeforeClosingConnection) \
-    (failOnDbTuneError)(concurrentModificationQueryLimit)(execDDLStatements))
+    (failOnDbTuneError))
 
 NX_REFLECTION_ENUM_CLASS(QueryType,
     lookup,

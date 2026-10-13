@@ -2,27 +2,22 @@
 
 #include "db_instance_controller.h"
 
-#include <string>
-#include <thread>
-
 #include <QtSql/QSqlError>
 #include <QtSql/QSqlQuery>
 
 #include <nx/utils/log/log.h>
 
 #include "test_support/query_executor_factory.h"
-namespace nx::sql {
 
-static const std::string kCdbStructureName = "cdb_BF58C070-B0E6-4327-BB2E-417A68AAA53D";
+namespace nx::sql {
 
 InstanceController::InstanceController(const ConnectionOptions& dbConnectionOptions):
     m_dbConnectionOptions(dbConnectionOptions),
-    m_queryExecutor(QueryExecutorProviderFactory::instance().create(dbConnectionOptions)),
-    m_dbStructureUpdater(kCdbStructureName, m_queryExecutor.get())
+    m_queryExecutor(QueryExecutorProviderFactory::instance().create(dbConnectionOptions))
 {
 }
 
-bool InstanceController::initialize(bool runUpdateScripts)
+bool InstanceController::initialize()
 {
     NX_DEBUG(this, "Initializing DB %1", m_dbConnectionOptions.dbName);
     if (!m_queryExecutor->init())
@@ -37,13 +32,6 @@ bool InstanceController::initialize(bool runUpdateScripts)
         NX_ERROR(this, "Failed to tune DB %1", m_dbConnectionOptions.dbName);
         if (m_dbConnectionOptions.failOnDbTuneError)
             return false;
-    }
-
-    NX_DEBUG(this, "Updating DB structure %1", m_dbConnectionOptions.dbName);
-    if (runUpdateScripts && !updateDbStructure())
-    {
-        NX_ERROR(this, "Could not update DB %1 to current version", m_dbConnectionOptions.dbName);
-        return false;
     }
 
     NX_DEBUG(this, nx::format("DB initialized"));
@@ -71,28 +59,15 @@ const StatisticsCollector& InstanceController::statisticsCollector() const
     return m_queryExecutor->statisticsCollector();
 }
 
-DbStructureUpdater& InstanceController::dbStructureUpdater()
-{
-    return m_dbStructureUpdater;
-}
-
-bool InstanceController::updateDbStructure()
-{
-    return m_dbStructureUpdater.updateStructSync();
-}
-
 bool InstanceController::configureDb()
 {
     using namespace std::placeholders;
-
-    if (m_dbConnectionOptions.driverType != RdbmsDriverType::sqlite)
-        return true;
 
     std::promise<DBResult> cacheFilledPromise;
     auto future = cacheFilledPromise.get_future();
 
     m_queryExecutor->executeUpdateWithoutTran(
-        &InstanceController::configureSqliteInstance,
+        &InstanceController::configureDbInstance,
         [&](DBResult dbResult)
         {
             cacheFilledPromise.set_value(dbResult);
@@ -101,7 +76,7 @@ bool InstanceController::configureDb()
     return future.get() == DBResultCode::ok;
 }
 
-DBResult InstanceController::configureSqliteInstance(QueryContext* queryContext)
+DBResult InstanceController::configureDbInstance(QueryContext* queryContext)
 {
     auto enableAutoVacuumQuery = queryContext->connection()->createQuery();
     enableAutoVacuumQuery->prepare("PRAGMA auto_vacuum = 1");
