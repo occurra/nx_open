@@ -1,7 +1,5 @@
 ## Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-set(QT_HOST_PATH "${CONAN_QT-HOST_ROOT}")
-
 include("${CMAKE_CURRENT_LIST_DIR}/qt_utils/moc_utils.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/qt_utils/translation_utils.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/qt_utils/qrc_utils.cmake")
@@ -12,51 +10,6 @@ list(APPEND CMAKE_FIND_ROOT_PATH ${QT_DIR})
 if(MACOSX)
     set(CMAKE_FRAMEWORK_PATH "${QT_DIR}/lib")
     list(APPEND CMAKE_INSTALL_RPATH ${QT_DIR}/lib)
-endif()
-
-if(IOS)
-    set(CMAKE_THREAD_LIBS_INIT "-lpthread")
-    set(CMAKE_HAVE_THREADS_LIBRARY 1)
-    set(CMAKE_USE_WIN32_THREADS_INIT 0)
-    set(CMAKE_USE_PTHREADS_INIT 1)
-    set(THREADS_PREFER_PTHREAD_FLAG ON)
-
-    # Add stubs for various libraries Qt expects but are not present on iOS (simulator).
-
-    # Backtrace
-    set(WrapBacktrace_FOUND TRUE)
-    if(NOT TARGET WrapBacktrace::WrapBacktrace)
-        add_library(WrapBacktrace::WrapBacktrace INTERFACE IMPORTED)
-    endif()
-    set(WrapBacktrace_LIBRARIES WrapBacktrace::WrapBacktrace)
-    set(WrapBacktrace_INCLUDE_DIRS "")
-
-    # GLESv2
-    set(HAVE_GLESv2 TRUE)
-    set(GLESv2_FOUND TRUE)
-    if(NOT TARGET GLESv2::GLESv2)
-        add_library(GLESv2::GLESv2 INTERFACE IMPORTED)
-        target_link_libraries(GLESv2::GLESv2 INTERFACE "-framework OpenGLES")
-    endif()
-    set(GLESv2_LIBRARIES GLESv2::GLESv2)
-    set(GLESv2_INCLUDE_DIRS "")
-
-    # Resolv
-    # DNS resolver functions are provided by libSystem, so no extra library is needed.
-    set(WrapResolv_FOUND TRUE)
-    if(NOT TARGET WrapResolv::WrapResolv)
-        add_library(WrapResolv::WrapResolv INTERFACE IMPORTED)
-    endif()
-    set(WrapResolv_LIBRARIES WrapResolv::WrapResolv)
-    set(WrapResolv_INCLUDE_DIRS "")
-
-    # Rt
-    set(WrapRt_FOUND TRUE)
-    if(NOT TARGET WrapRt::WrapRt)
-        add_library(WrapRt::WrapRt INTERFACE IMPORTED)
-    endif()
-    set(WrapRt_LIBRARIES WrapRt::WrapRt)
-    set(WrapRt_INCLUDE_DIRS "")
 endif()
 
 find_package(OpenSSL REQUIRED)
@@ -76,7 +29,6 @@ find_package(Qt6
         Xml
         Sql
         Concurrent
-        Qml
         Core5Compat
     REQUIRED
 )

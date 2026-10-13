@@ -480,14 +480,6 @@ function(nx_subtract_lists minuend subtrahend)
     nx_expose_to_parent_scope(${minuend})
 endfunction()
 
-function(nx_remove_proprietary_docs input output)
-    execute_process(COMMAND
-        ${PYTHON_EXECUTABLE} ${open_build_utils_dir}/remove_proprietary_docs.py
-        ${input} ${output})
-
-    nx_store_known_file(${output})
-endfunction()
-
 function(nx_check_package_paths_changes package_type)
     foreach(package ${ARGN})
         string(TOUPPER "${package_type}_${package}_ROOT" package_path_variable_name)
@@ -670,18 +662,12 @@ function(nx_json_get_array json_variable_name)
 endfunction()
 
 function(nx_download_from_artifactory url file)
-    cmake_parse_arguments(DOWNLOAD "" "USER;PASSWORD;RESULT" "" ${ARGN})
-
-    if(DEFINED DOWNLOAD_USER AND DEFINED DOWNLOAD_PASSWORD)
-        set(auth_args USERPWD "${DOWNLOAD_USER}:${DOWNLOAD_PASSWORD}")
-    else()
-        set(auth_args)
-    endif()
+    cmake_parse_arguments(DOWNLOAD "" "RESULT" "" ${ARGN})
 
     set(result FALSE)
 
     message(STATUS "Downloading ${file} from ${url}")
-    file(DOWNLOAD ${url}.sha256 ${file}.sha256 STATUS status TIMEOUT 30 ${auth_args})
+    file(DOWNLOAD ${url}.sha256 ${file}.sha256 STATUS status TIMEOUT 30)
     if(status MATCHES "^0;.*")
         file(READ ${file}.sha256 sha256)
         file(REMOVE ${file}.sha256)
@@ -701,7 +687,7 @@ function(nx_download_from_artifactory url file)
             file(DOWNLOAD ${url} ${file}.tmp
                 EXPECTED_HASH SHA256=${sha256}
                 STATUS status
-                TIMEOUT 30 ${auth_args})
+                TIMEOUT 30)
 
             if(status MATCHES "^0;.*")
                 file(RENAME ${file}.tmp ${file})
@@ -711,23 +697,6 @@ function(nx_download_from_artifactory url file)
         endif()
     endif()
 
-    if(DEFINED DOWNLOAD_RESULT)
-        set(${DOWNLOAD_RESULT} ${result} PARENT_SCOPE)
-    endif()
-endfunction()
-
-function(nx_download_from_nx_artifactory url_path file)
-    cmake_parse_arguments(DOWNLOAD "" "RESULT" "" ${ARGN})
-
-    set(auth_args)
-    if(DEFINED ENV{NX_ARTIFACTORY_USERNAME})
-        list(APPEND auth_args USER "$ENV{NX_ARTIFACTORY_USERNAME}")
-    endif()
-    if(DEFINED ENV{NX_ARTIFACTORY_PASSWORD})
-        list(APPEND auth_args PASSWORD "$ENV{NX_ARTIFACTORY_PASSWORD}")
-    endif()
-
-    nx_download_from_artifactory(${artifactoryUrl}/${url_path} ${file} ${auth_args} RESULT result)
     if(DEFINED DOWNLOAD_RESULT)
         set(${DOWNLOAD_RESULT} ${result} PARENT_SCOPE)
     endif()

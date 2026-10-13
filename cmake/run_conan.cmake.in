@@ -6,15 +6,13 @@ cmake_minimum_required(VERSION 3.20)
 
 include(CMakeParseArguments)
 
-set(ENV{CONAN_USER_HOME} "@CONAN_USER_HOME@")
+set(ENV{CONAN_HOME} "@CONAN_HOME@")
 set(CONAN_EXECUTABLE "@CONAN_EXECUTABLE@")
 set(CMAKE_SOURCE_DIR "@CMAKE_SOURCE_DIR@")
 set(CMAKE_BINARY_DIR "@CMAKE_BINARY_DIR@")
 
 set(installSystemRequirements "OFF" CACHE INTERNAL "")
 
-set(conanNxRemote "@conanNxRemote@")
-set(conanLockExportDir "@distribution_output_dir@")
 set(conanFlags @flags@)
 
 if(installSystemRequirements)
@@ -38,7 +36,7 @@ function(run_conan)
         COMMAND
             ${CONAN_EXECUTABLE} install ${CMAKE_SOURCE_DIR}
             ${conanFlags}
-            --install-folder ${CMAKE_BINARY_DIR}
+            --output-folder ${CMAKE_BINARY_DIR}
             ${ARGV}
         COMMAND_ECHO STDERR
         RESULT_VARIABLE result
@@ -53,16 +51,6 @@ endfunction()
 
 run_conan()
 
-# TODO: Remove the second attempt with `--update` flag when the project is switched to Conan 2.
-# Conan 2 can hold multiple revisions in the local cache, thus it does not need this workaround to
-# replace downloaded recipe revisions.
-if(CONAN_FAILED)
-    message(WARNING "Conan failed to install dependencies. Retrying with `--update`.")
-    run_conan(--update)
-endif()
-
 if(CONAN_FAILED)
     message(FATAL_ERROR "Conan failed to install dependencies.")
 endif()
-
-file(COPY "${CMAKE_BINARY_DIR}/conan.lock" DESTINATION "${conanLockExportDir}/")

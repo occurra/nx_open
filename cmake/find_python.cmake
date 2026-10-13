@@ -11,7 +11,7 @@ function(verify_python_version_is_compatible)
         ERROR_STRIP_TRAILING_WHITESPACE
     )
 
-    if (NOT "${PYTHON_VERSION}" MATCHES "Python 3\.(8|9|10|11|12|13)(\..*)?")
+    if (NOT "${PYTHON_VERSION}" MATCHES "Python 3\.(12|13|14)(\..*)?")
         set(PYTHON_EXECUTABLE PYTHON_EXECUTABLE-NOTFOUND PARENT_SCOPE)
     endif()
 endfunction()
@@ -67,12 +67,12 @@ function(find_compatible_python_version)
         endif()
     endforeach()
 
-    message(FATAL_ERROR "Python 3.8/9/10/11/12 executable not found.")
+    message(FATAL_ERROR "Python 3.12/3.13/3.14 executable not found.")
 endfunction()
 
 if(NOT PYTHON_EXECUTABLE)
     find_compatible_python_version(
-        python3.12 python3.11 python3.10 python3.9 python3.8 python3 python)
+        python3.14 python3.13 python3.12 python3 python)
 endif()
 
 message(STATUS "Found python executable: '${PYTHON_EXECUTABLE}'.")

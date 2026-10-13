@@ -31,6 +31,10 @@ function(nx_setup_ninja_preprocessor)
                 "${CMAKE_CURRENT_LIST_DIR}/ninja_launcher.${scriptExtension}.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/ninja_launcher.${scriptExtension}"
                 @ONLY)
+            file(CHMOD
+                "${CMAKE_CURRENT_BINARY_DIR}/ninja_launcher.${scriptExtension}"
+                PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                    GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
             set(launcher_name  "${CMAKE_CURRENT_BINARY_DIR}/ninja_launcher.${scriptExtension}")
         else()

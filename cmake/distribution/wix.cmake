@@ -1,21 +1,9 @@
 ## Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-include(windows_signing)
-if(NOT openSourceBuild)
-    include(openssl_signing)
-endif()
-
-# Windows distributions use custom qt.conf due to different directory structure.
-set(qt_conf_path "${open_source_root}/vms/distribution/wix/qt.conf")
 set(full_release_version "${releaseVersion.full}")
 set(bin_source_dir ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
-set(customInstallerIcon "${customization_dir}/icons/windows/installer_icon.ico")
-if(EXISTS "${customInstallerIcon}")
-   set(installerIcon ${customInstallerIcon})
-else()
-   set(installerIcon "${customization_dir}/icons/all/favicon.ico")
-endif()
+set(installerIcon "${brandingDir}/installer_icon.ico")
 
 function(nx_wix_generate_localization_file)
     message(STATUS "Generate Wix localization file")

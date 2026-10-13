@@ -3,7 +3,7 @@
 include_guard(GLOBAL)
 
 include(utils)
-include(${PROJECT_SOURCE_DIR}/cmake/windows_signing.cmake)
+include(windows_signing)
 
 find_program(heat_executable heat HINTS ${CONAN_WIX_ROOT}/bin NO_DEFAULT_PATH)
 if(NOT heat_executable)
