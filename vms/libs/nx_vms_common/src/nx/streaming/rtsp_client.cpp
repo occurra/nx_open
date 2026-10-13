@@ -1,5 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
+#include <QtCore/QDateTime>
+#include <QtCore/QLocale>
+#include <QtCore/QThread>
 #include <QtCore/QtGlobal>
 
 #if defined(Q_OS_LINUX)
@@ -16,7 +19,6 @@ extern "C" {
 #include <string_view>
 
 #include <network/tcp_connection_priv.h>
-#include <network/tcp_connection_processor.h>
 #include <nx/branding.h>
 #include <nx/network/http/auth_tools.h>
 #include <nx/network/http/custom_headers.h>
@@ -32,9 +34,7 @@ extern "C" {
 #include <nx/utils/std/algorithm.h>
 #include <nx/utils/std_string_utils.h>
 #include <nx/utils/uuid.h>
-#include <nx/vms/auth/time_based_nonce_provider.h>
 #include <rtsp/srtp_encryptor.h>
-#include <utils/common/sleep.h>
 #include <utils/common/synctime.h>
 
 static const int TCP_RECEIVE_TIMEOUT_MS = 1000 * 5;
@@ -88,6 +88,13 @@ void configureUdpSocket(
         socket->setRecvBufferSize(recvBufferSize);
     socket->setNonBlockingMode(true);
 };
+
+nx::String generateTimeBasedNonce()
+{
+    microseconds nonceTime = QnSyncTime::currentTimePoint();
+    const auto nonce = nx::String::number((qint64) nonceTime.count(), 16);
+    return nonce;
+}
 
 } // namespace
 
@@ -504,10 +511,101 @@ void QnRtspClient::parseRangeHeader(const QString& rangeStr)
     }
 }
 
-void QnRtspClient::setTcpSocket(std::unique_ptr<nx::network::AbstractStreamSocket> socket)
+void QnRtspClient::parseRtpInfoHeader(const QString& rtpInfo, const QString& dateHeader)
+{
+    if (rtpInfo.isEmpty())
+        return;
+
+    // Use the camera's Date header as the NTP reference. This reflects the camera's
+    // own clock, so timestamps match the camera's capture time (not server time).
+    // Fall back to server time only if the camera doesn't provide a Date header.
+    int64_t referenceTimeUs = 0;
+    if (!dateHeader.isEmpty())
+    {
+        // RTSP Date format: "Tue, Mar 31 2026 01:09:39 GMT" or RFC 2616 variants.
+        const QDateTime dt = QDateTime::fromString(dateHeader.trimmed(), Qt::RFC2822Date);
+        if (dt.isValid())
+        {
+            referenceTimeUs = dt.toMSecsSinceEpoch() * 1000LL;
+        }
+        else
+        {
+            // Try common RTSP date formats that Qt's RFC2822 doesn't cover.
+            // Hikvision uses: "Tue, Mar 31 2026 01:09:39 GMT"
+            const QDateTime dt2 = QLocale::c().toDateTime(
+                dateHeader.trimmed().replace(" GMT", ""),
+                "ddd, MMM dd yyyy HH:mm:ss");
+            if (dt2.isValid())
+                referenceTimeUs = dt2.toMSecsSinceEpoch() * 1000LL;
+        }
+        if (referenceTimeUs > 0)
+            NX_DEBUG(this, "RTP-Info: using camera Date header as time reference: %1", dateHeader);
+    }
+
+    if (referenceTimeUs <= 0)
+    {
+        referenceTimeUs = QnSyncTime::currentUSecsSinceEpoch();
+        NX_DEBUG(this, "RTP-Info: no valid Date header, falling back to server time");
+    }
+
+    // RTP-Info may contain comma-separated entries, one per track.
+    // Each entry: url=<url>;seq=<seq>;rtptime=<rtptime>
+    const auto entries = rtpInfo.split(',', Qt::SkipEmptyParts);
+    for (const auto& entry: entries)
+    {
+        uint32_t rtptime = 0;
+        bool hasRtptime = false;
+        QString trackUrl;
+
+        const auto params = entry.split(';', Qt::SkipEmptyParts);
+        for (const auto& param: params)
+        {
+            const auto kv = param.trimmed();
+            if (kv.startsWith("rtptime=", Qt::CaseInsensitive))
+            {
+                rtptime = kv.mid(8).toUInt(&hasRtptime);
+            }
+            else if (kv.startsWith("url=", Qt::CaseInsensitive))
+            {
+                trackUrl = kv.mid(4).trimmed();
+            }
+        }
+
+        if (!hasRtptime)
+            continue;
+
+        // Find the matching SDP track by URL suffix and set a synthetic sender report.
+        for (auto& track: m_sdpTracks)
+        {
+            if (!track.ioDevice)
+                continue;
+            // Match by track control URL suffix (e.g. "trackID=1").
+            if (!trackUrl.isEmpty() && !trackUrl.endsWith(track.sdpMedia.control))
+                continue;
+
+            nx::rtp::RtcpSenderReport sr;
+            sr.ntpTimestamp = referenceTimeUs;
+            sr.rtpTimestamp = rtptime;
+            track.ioDevice->setSenderReport(sr);
+            NX_DEBUG(
+                this,
+                "RTP-Info: seeded sender report for track %1, rtptime=%2, utc=%3us",
+                track.sdpMedia.control,
+                rtptime,
+                referenceTimeUs);
+            break;
+        }
+    }
+}
+
+void QnRtspClient::setTcpSocket(
+    std::unique_ptr<nx::network::AbstractStreamSocket> socket,
+    const nx::Url& url)
 {
     NX_MUTEX_LOCKER lock(&m_socketMutex);
     m_tcpSock = std::move(socket);
+    if (!url.isEmpty())
+        m_url = url;
 }
 
 CameraDiagnostics::Result QnRtspClient::open(const nx::Url& url, qint64 startTime)
@@ -559,8 +657,7 @@ CameraDiagnostics::Result QnRtspClient::open(const nx::Url& url, qint64 startTim
         setTcpSocket(
             nx::network::SocketFactory::createStreamSocket(
                 nx::network::ssl::kAcceptAnyCertificate,
-                isSslRequired,
-                m_natTraversal));
+                isSslRequired));
 
         m_tcpSock->setRecvTimeout(TCP_RECEIVE_TIMEOUT_MS);
         const nx::network::SocketAddress targetAddress =
@@ -785,7 +882,7 @@ void QnRtspClient::fillRequestAuthorization(nx::network::http::Request* request)
         header::DigestAuthorization authorization;
         header::WWWAuthenticate authHeader(header::AuthScheme::digest);
         authHeader.params["realm"] = nx::network::AppInfo::realm();
-        authHeader.params["nonce"] = TimeBasedNonceProvider::generateTimeBasedNonce();
+        authHeader.params["nonce"] = generateTimeBasedNonce();
 
         const auto calcRes = calcDigestResponse(
             request->requestLine.method,
@@ -864,19 +961,23 @@ CameraDiagnostics::Result QnRtspClient::sendOptions()
         NX_DEBUG(this, "OPTIONS request failed for URL %1", request.requestLine.url);
 
     QString allowedMethods = extractRtspParam(QLatin1String(response), QLatin1String("Public:"));
-    m_keepAliveSupported = allowedMethods.contains("GET_PARAMETER");
-    if (!m_keepAliveSupported)
+    // Always keep the session alive — use GET_PARAMETER if supported,
+    // fall back to OPTIONS (universally supported by all RTSP servers).
+    // Without keepalive, cameras with short session timeouts (~60s)
+    // drop the connection and we have to reconnect repeatedly.
+    m_useGetParameterKeepAlive = allowedMethods.contains("GET_PARAMETER");
+    if (!m_useGetParameterKeepAlive)
     {
         NX_DEBUG(
             this,
-            "GET_PARAMETER method not allowed, disable keep alive, public methods: %1",
+            "GET_PARAMETER not available, using OPTIONS for keep alive, public methods: %1",
             allowedMethods);
     }
 
     if (m_format == Format::Auto)
     {
         QString server = extractRtspParam(QLatin1String(response), QLatin1String("Server:"));
-        if (server.contains(nx::branding::vmsName()))
+        if (server.contains(nx::branding::company()))
             setAdditionAttribute(Qn::EC2_INTERNAL_RTP_FORMAT, "1");
         else
             removeAdditionAttribute(Qn::EC2_INTERNAL_RTP_FORMAT);
@@ -1116,9 +1217,7 @@ bool QnRtspClient::sendSetup()
             // but it's required according to RTSP standard.
             setupUrl = nx::Url(
                 m_contentBase
-                + ((m_contentBase.endsWith(lit("/")) || relativeSetupUrl.isEmpty()) //
-                       ? lit("")
-                       : lit("/"))
+                + ((m_contentBase.endsWith("/") || relativeSetupUrl.isEmpty()) ? "" : "/")
                 + relativeSetupUrl.toString());
         }
         const bool isTransportProbe =
@@ -1387,6 +1486,13 @@ bool QnRtspClient::sendPlay(qint64 startPos, qint64 endPos, double scale)
     if (!tmp.isEmpty())
         m_videoLayout = tmp; // refactor here: add all attributes to list
 
+    // Parse RTP-Info header to seed initial RTP→UTC mapping. Cameras that don't
+    // send RTCP Sender Reports (common with Hikvision over TCP) rely on this.
+    // Use the camera's Date header as the time reference (not server clock).
+    parseRtpInfoHeader(
+        extractRtspParam(QLatin1String(response), QLatin1String("RTP-Info:")),
+        extractRtspParam(QLatin1String(response), QLatin1String("Date:")));
+
     if (response.startsWith("RTSP/1.0 200"))
     {
         updateTransportHeader(response);
@@ -1421,7 +1527,7 @@ bool QnRtspClient::sendTeardown()
 
 void QnRtspClient::sendKeepAliveIfNeeded()
 {
-    if (m_config.disableKeepAlive || !m_keepAliveSupported)
+    if (m_config.disableKeepAlive)
         return;
 
     if (milliseconds(m_keepAliveTime.elapsed()) < m_keepAliveTimeOut * kKeepAliveGuardInterval)
@@ -1441,7 +1547,8 @@ bool QnRtspClient::sendKeepAlive()
         m_keepAliveTimeOut,
         m_url);
     nx::network::http::Request request;
-    request.requestLine.method = kGetParameterCommand;
+    request.requestLine.method =
+        m_useGetParameterKeepAlive ? kGetParameterCommand : kOptionsCommand;
     request.requestLine.url = m_url;
     request.requestLine.version = nx::network::rtsp::rtsp_1_0;
     addCommonHeaders(request.headers);
@@ -1449,10 +1556,10 @@ bool QnRtspClient::sendKeepAlive()
     return sendRequestInternal(std::move(request));
 }
 
-void QnRtspClient::sendBinaryResponse(const quint8* buffer, int size)
+bool QnRtspClient::sendBinaryResponse(const quint8* buffer, int size)
 {
     if (!m_tcpSock)
-        return;
+        return false;
 
     if (size > int(sizeof(FrameHeader)) && buffer[0] == '$')
     {
@@ -1468,7 +1575,7 @@ void QnRtspClient::sendBinaryResponse(const quint8* buffer, int size)
                     this,
                     "Failed to encrypt outgoing RTSP interleaved packet on channel %1",
                     channelNumber);
-                return;
+                return false;
             }
 
             const int encryptedPayloadSize = encrypted.size() - sizeof(FrameHeader);
@@ -1481,12 +1588,13 @@ void QnRtspClient::sendBinaryResponse(const quint8* buffer, int size)
                 "Send encrypted RTSP packet channel=%1 size=%2",
                 channelNumber,
                 encrypted.size());
-            m_tcpSock->send(encrypted.constData(), encrypted.size());
-            return;
+            return m_tcpSock->send(encrypted.constData(), encrypted.size()) > 0;
         }
     }
 
-    m_tcpSock->send(buffer, size);
+    // A dead or silently-dropped peer makes send() return <= 0 (a send timeout included), which
+    // the caller uses to notice the camera stopped reading; > 0 means the bytes went out.
+    return m_tcpSock->send(buffer, size) > 0;
 }
 
 void QnRtspClient::processTextData(const QByteArray& textData)
@@ -1891,7 +1999,7 @@ bool QnRtspClient::readTextResponse(QByteArray& response)
             int oldIgnoreDataSize = ignoreDataSize;
             ignoreDataSize += bytesRead;
             if (oldIgnoreDataSize / 64000 != ignoreDataSize / 64000)
-                QnSleep::msleep(1);
+                QThread::msleep(1);
             needMoreData = m_responseBufferLen == 0;
         }
         else
@@ -2371,12 +2479,6 @@ void QnRtspClient::addRequestHeader(
 QElapsedTimer QnRtspClient::lastReceivedDataTimer() const
 {
     return m_lastReceivedDataTimer;
-}
-
-void QnRtspClient::setCloudConnectEnabled(bool enabled)
-{
-    m_natTraversal = enabled ? nx::network::NatTraversalSupport::enabled
-                             : nx::network::NatTraversalSupport::disabled;
 }
 
 void QnRtspClient::setIgnoreQopInDigest(bool value)

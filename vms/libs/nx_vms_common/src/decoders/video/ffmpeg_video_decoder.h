@@ -40,7 +40,7 @@ public:
     QnFfmpegVideoDecoder(const QnFfmpegVideoDecoder&) = delete;
     QnFfmpegVideoDecoder& operator=(const QnFfmpegVideoDecoder&) = delete;
     ~QnFfmpegVideoDecoder();
-    bool decode(const QnConstCompressedVideoDataPtr& data, CLVideoDecoderOutputPtr* const outFrame)
+    bool decode(const QnConstCompressedVideoDataPtr& data, CLVideoDecoderOutput* outFrame)
         override;
 
     virtual void setLightCpuMode(DecodeMode val) override;
@@ -53,6 +53,7 @@ public:
     double getSampleAspectRatio() const override;
     void setMultiThreadDecodePolicy(MultiThreadDecodePolicy mtDecodingPolicy) override;
     virtual bool resetDecoder(const QnConstCompressedVideoDataPtr& data) override;
+    virtual void flushBuffers() override;
     int getLastDecodeResult() const override { return m_lastDecodeResult; }
     void setGreyOnlyMode(bool value) override;
 

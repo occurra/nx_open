@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <limits>
 #include <optional>
 #include <vector>
 
@@ -12,7 +13,6 @@ extern "C" {
 }
 
 #include <core/resource/avi/avi_archive_metadata.h>
-#include <export/signer.h>
 #include <nx/media/ffmpeg/io_context.h>
 #include <nx/media/media_data_packet.h>
 #include <nx/utils/cryptographic_hash.h>
@@ -42,6 +42,12 @@ public:
      */
     bool setContainer(const QString& value);
     QString container() { return m_container; };
+
+    /**
+     * Whether container stores codec configuration in a moov atom rather than
+     * in-band, which constrains what a direct stream copy may carry.
+     */
+    static bool isMoovFormat(const QString& container);
     void setFormatOption(const QString& option, const QString& value);
     AVCodecParameters* getVideoCodecParameters() const;
     AVCodecParameters* getAudioCodecParameters() const;
@@ -58,7 +64,8 @@ public:
      */
     bool process(const QnConstAbstractMediaDataPtr& media);
     bool finalize();
-    void getResult(nx::utils::ByteArray* const result);
+    void getResult(nx::utils::ByteArray* const result, bool clearResult = true);
+    void getResult(nx::Buffer* result, bool clearResult = true);
 
     //! Adds tag to the file. Maximum length of tags and allowed names are format dependent
     /*!
@@ -66,8 +73,6 @@ public:
         \return true on success
     */
     bool addTag(const char* name, const char* value);
-
-    QByteArray getSignature(QnLicensePool* licensePool, const nx::Uuid& serverId);
 
     struct PacketTimestamp
     {
@@ -81,6 +86,13 @@ public:
     const QList<int>& getPacketsSize();
     bool isCodecSupported(AVCodecID id) const;
     void setStartTimeOffset(int64_t value);
+    /**
+     * Restarts the output timeline: the next muxed packet gets pts equal to
+     * baseUs (rescaled to each stream's time base) and subsequent packets
+     * continue from it. Opens a deliberate timestamp gap on seek so the
+     * receiver can tell post-seek packets from the pre-seek flush.
+     */
+    void rebaseOutputTimestamps(std::chrono::microseconds baseUs);
     const Config& config() const { return m_config; }
 
     void addVideoStreamFilter(std::unique_ptr<AbstractMediaDataFilter> filter);
@@ -100,7 +112,6 @@ private:
     bool m_initializedVideo = false; //< Incoming video packets will be ignored.
     bool m_packetizedMode = false;
 
-    MediaSigner m_mediaSigner;
     AVCodecParameters* m_videoCodecParameters = nullptr;
     AVCodecParameters* m_audioCodecParameters = nullptr;
     AVFormatContext* m_formatCtx = nullptr;
@@ -108,6 +119,8 @@ private:
 
     QString m_container;
     TimestampCorrector m_timestampCorrector;
+    /** Largest output timestamp handed to the ffmpeg muxer; see rebaseOutputTimestamps(). */
+    int64_t m_lastOutputTimestampUs = std::numeric_limits<int64_t>::min();
     PacketTimestamp m_lastPacketTimestamp;
     int m_rtpMtu = MTU_SIZE;
     std::optional<int64_t> m_firstVideoTimestamp;

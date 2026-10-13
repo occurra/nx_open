@@ -7,9 +7,9 @@
 #include <QtCore/QIODevice>
 #include <QtCore/QString>
 
-#include <common/common_globals.h>
 #include <core/resource/resource_media_layout.h>
 #include <nx/media/video_data_packet.h>
+#include <nx/vms/api/types/resource_types.h>
 
 extern "C" {
 #include <libavformat/avio.h>
@@ -66,7 +66,7 @@ static const QByteArray gop_size("gop_size");
  * Selects media stream parameters based on codec, resolution and quality
  */
 QnCodecParams::Value NX_VMS_COMMON_API
-    suggestMediaStreamParams(AVCodecID codec, Qn::StreamQuality quality);
+    suggestMediaStreamParams(AVCodecID codec, nx::vms::api::StreamQuality quality);
 
 /**
  * Suggest media bitrate based on codec, resolution and quality
@@ -74,5 +74,5 @@ QnCodecParams::Value NX_VMS_COMMON_API
 int NX_VMS_COMMON_API suggestBitrate(
     AVCodecID codec,
     QSize resolution,
-    Qn::StreamQuality quality,
+    nx::vms::api::StreamQuality quality,
     const char* codecName = nullptr);

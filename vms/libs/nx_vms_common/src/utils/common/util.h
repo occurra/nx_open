@@ -26,7 +26,15 @@ NX_VMS_COMMON_API QString closeDirPathUnix(QString path);
 // static const qint64 MAX_FIRST_GOP_DURATION = 1000 * 1000 * 10;
 #define MAX_FIRST_GOP_FRAMES 250ll
 
-#define MAX_FRAME_DURATION_MS (5ll * 1000)
+// Inter-frame jump beyond which a stream is treated as discontinuous: the
+// timestamp corrector collapses the gap to "last pts + 1 ms" and the archive
+// reader's realtime pacing skips it instead of sleeping through it. Lowered
+// from 5 s to 1.1 s so multi-second recording holes between archive segments
+// (VMS-114) - e.g. a ~4 s camera dropout - are skipped transparently rather
+// than freezing playback for the gap. Still well above the frame interval of
+// any normal recording camera (> ~0.9 fps), so regular cadence is never
+// mistaken for a discontinuity.
+#define MAX_FRAME_DURATION_MS (1100ll)
 #define MAX_FRAME_DURATION std::chrono::milliseconds(MAX_FRAME_DURATION_MS)
 
 #define MIN_FRAME_DURATION_USEC 16667ll

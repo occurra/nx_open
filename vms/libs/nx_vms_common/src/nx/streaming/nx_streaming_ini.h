@@ -57,6 +57,31 @@ struct NxStreamingIniConfig: public nx::kit::IniConfig
         "clock used for metadata and the server clock is bigger than this value plus\n"
         "forceCameraTimeThresholdMs then the server will bind the camera metadata clock to the\n"
         "server one. Otherwise the camera metadata clock will be used");
+
+    NX_INI_INT(
+        130,
+        noUtcResyncThresholdMs,
+        "resyncThresholdMs equivalent for a camera that provides no UTC time at all (no RTCP\n"
+        "Sender Report and no ONVIF timestamp extension). Such a stream is bound to the server\n"
+        "clock; this smaller threshold keeps that binding tight so two lanes of the same camera\n"
+        "cannot drift far apart. Larger values allow more drift; smaller values re-anchor more\n"
+        "often, which steps the timeline forward more frequently.");
+
+    NX_INI_INT(
+        75,
+        noUtcSecondaryStreamSyncThresholdMs,
+        "For a camera without UTC time, the maximum a dependent lane (the secondary stream, or\n"
+        "an audio/metadata track) may differ from the primary lane's reconstructed current time\n"
+        "before it is re-bound to it. Keeps overlay metadata produced on one lane aligned with\n"
+        "video viewed on the other.");
+
+    NX_INI_INT(
+        1'000,
+        noUtcBurstWindowMs,
+        "For a camera without UTC time, the window after stream open during which the\n"
+        "server-clock anchor is re-derived on every packet. A camera often dumps its buffered\n"
+        "GOP backlog as a burst right after open; without this the anchor would be baked onto a\n"
+        "stale backlog frame and run permanently ahead.");
 };
 
 NX_VMS_COMMON_API NxStreamingIniConfig& nxStreamingIni();

@@ -9,37 +9,32 @@
 #include <QtCore/QDataStream>
 #include <QtCore/QSharedPointer>
 
-#include <analytics/common/object_metadata.h>
-#include <analytics/common/object_metadata_v0.h>
-#include <analytics/common/object_metadata_v3.h>
-#include <core/resource/avi/avi_resource.h>
-#include <core/resource/media_resource.h>
 #include <core/resource/resource_media_layout.h>
 #include <core/resource/storage_plugin_factory.h>
 #include <core/resource/storage_resource.h>
-#include <core/storage/file_storage/layout_storage_resource.h>
-#include <export/sign_helper.h>
-#include <motion/light_motion_archive_connection.h>
+#include <nx/codec/aac/aac.h>
 #include <nx/codec/h263/h263_utils.h>
 #include <nx/codec/h264/common.h>
 #include <nx/codec/nal_units.h>
-#include <nx/fusion/model_functions.h>
 #include <nx/media/av_codec_helper.h>
 #include <nx/media/codec_parameters.h>
 #include <nx/media/config.h>
 #include <nx/media/ffmpeg/av_packet.h>
 #include <nx/media/ffmpeg/ffmpeg_utils.h>
 #include <nx/media/ffmpeg_helper.h>
+#include <nx/media/meta_data_packet.h>
 #include <nx/media/video_data_packet.h>
 #include <nx/utils/log/log.h>
 #include <nx/vms/api/data/storage_init_result.h>
 #include <nx/vms/common/application_context.h>
-#include <recording/helpers/recording_context_helpers.h>
 #include <utils/common/util.h>
 #include <utils/media/ffmpeg_io_context.h>
 
 extern "C" {
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/frame.h>
 } // extern "C"
 
 using namespace nx::vms::common;
@@ -72,6 +67,21 @@ static bool isH264IFrame(const QnAbstractMediaDataPtr& data)
     return false;
 }
 
+/**
+ * Converts a value in the time base m_firstDts uses - the video stream's, or the
+ * first stream's when the file carries no video - into microseconds. Every stream
+ * of an MPEG-TS file shares one time base, so either basis gives the same answer.
+ */
+static qint64 firstDtsToUs(const AVFormatContext* context, int videoIndex, qint64 ticks)
+{
+    if (!context || context->nb_streams == 0 || ticks == 0)
+        return 0;
+
+    const int index =
+        (videoIndex >= 0 && (unsigned int) videoIndex < context->nb_streams) ? videoIndex : 0;
+    return av_rescale_q(ticks, context->streams[index]->time_base, AVRational{1, 1000000});
+}
+
 static void updateKeyFrameFlagH263(QnAbstractMediaDataPtr& data)
 {
     nx::media::h263::PictureHeader header;
@@ -81,6 +91,13 @@ static void updateKeyFrameFlagH263(QnAbstractMediaDataPtr& data)
             QnAbstractMediaData::MediaFlag::MediaFlags_AVKey,
             nx::media::h263::isKeyFrame(header.pictureType));
     }
+}
+
+// Data-stream codecs the delegate surfaces: KLV analytics metadata and the
+// BIN_DATA archive encryption key tag. Other data streams are skipped.
+static bool isSupportedDataCodec(AVCodecID codecId)
+{
+    return codecId == AV_CODEC_ID_SMPTE_KLV || codecId == AV_CODEC_ID_BIN_DATA;
 }
 
 } // namespace
@@ -133,19 +150,109 @@ CodecParametersConstPtr QnAviArchiveDelegate::getCodecContext(AVStream* stream)
     return m_contexts[stream->index];
 }
 
-template<typename OldMetadataPacket>
-void convertMetadataFromOldFormat(QnCompressedMetadata* packet)
+void QnAviArchiveDelegate::fillAudioParamsFromPacket(AVStream* stream, const AVPacket* packet)
 {
-    auto buffer = QByteArray::fromRawData(packet->data(), int(packet->dataSize()));
-    bool success = false;
-    using namespace nx::common::metadata;
-    auto oldPacket =
-        QnUbjson::deserialized<OldMetadataPacket>(buffer, OldMetadataPacket(), &success);
-    if (!success)
-        return; //< Don't try to convert;
+    if (!stream || !packet || stream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
+        return; //< Not audio.
 
-    ObjectMetadataPacket newPacket = oldPacket.toMetadataPacket();
-    packet->setData(QnUbjson::serialized(newPacket));
+    AVCodecParameters* codecpar = stream->codecpar;
+
+    // The params are already known on the normal open path.
+    const bool needParams = codecpar->sample_rate <= 0;
+
+    // MPEG-TS carries AAC as ADTS, whose configuration is in-band, so the demuxer
+    // leaves extradata empty even after a full find_stream_info. The MP4 muxer
+    // needs that configuration up front as an AudioSpecificConfig blob, so a
+    // direct stream copy of archive audio into MP4 cannot open without it. The
+    // ADTS header carries everything the ASC needs, so build it here.
+    const bool needExtradata = codecpar->codec_id == AV_CODEC_ID_AAC
+        && codecpar->extradata_size == 0 && !codecpar->extradata;
+
+    if (!needParams && !needExtradata)
+        return;
+
+    if (codecpar->codec_id == AV_CODEC_ID_AAC)
+    {
+        bool filled = false;
+        if (needParams)
+        {
+            // FFmpeg's AAC parser deliberately refuses to report sample_rate/channels
+            // (with HE-AAC, SBR doubles the rate and parametric stereo changes the
+            // channel count, so the ADTS header alone is ambiguous - see libavcodec
+            // aac_ac3_parser.c), and a decoder needs a multi-packet run. Parse the ADTS
+            // header directly with our helper instead - the same values the AAC RTP
+            // parser feeds to CodecParameters.
+            AACCodec aac;
+            if (aac.decodeFrame(packet->data, packet->data + packet->size)
+                && aac.m_sample_rate > 0)
+            {
+                codecpar->sample_rate = aac.m_sample_rate;
+                av_channel_layout_default(&codecpar->ch_layout, aac.m_channels);
+                codecpar->format = AV_SAMPLE_FMT_FLTP; //< AAC decodes to planar float.
+                filled = true;
+            }
+        }
+
+        if (needExtradata)
+        {
+            AdtsHeader adts;
+            QByteArray asc;
+            if (adts.decodeFromFrame(packet->data, packet->size)
+                && adts.encodeToFfmpegExtradata(&asc) && !asc.isEmpty())
+            {
+                // Freed by avcodec_parameters_free, so it must be av_malloc'ed.
+                auto* extradata = (uint8_t*) av_mallocz(asc.size() + AV_INPUT_BUFFER_PADDING_SIZE);
+                if (extradata)
+                {
+                    memcpy(extradata, asc.constData(), asc.size());
+                    codecpar->extradata = extradata;
+                    codecpar->extradata_size = (int) asc.size();
+                    filled = true;
+                }
+            }
+        }
+
+        if (filled && stream->index < m_contexts.size())
+            m_contexts[stream->index] = CodecParametersConstPtr(nullptr);
+        return;
+    }
+
+    if (!needParams)
+        return;
+
+    // Other audio codecs (AC-3, DTS, ...): their parser does fill sample_rate and
+    // channel layout from the frame header.
+    const AVCodec* codec = avcodec_find_decoder(codecpar->codec_id);
+    AVCodecParserContext* parser = av_parser_init(codecpar->codec_id);
+    AVCodecContext* context = codec ? avcodec_alloc_context3(codec) : nullptr;
+    if (codec && parser && context)
+    {
+        uint8_t* outData = nullptr;
+        int outSize = 0;
+        av_parser_parse2(
+            parser,
+            context,
+            &outData,
+            &outSize,
+            packet->data,
+            packet->size,
+            AV_NOPTS_VALUE,
+            AV_NOPTS_VALUE,
+            0);
+        if (context->sample_rate > 0)
+        {
+            codecpar->sample_rate = context->sample_rate;
+            av_channel_layout_copy(&codecpar->ch_layout, &context->ch_layout);
+            if (codecpar->format == AV_SAMPLE_FMT_NONE && codec->sample_fmts)
+                codecpar->format = codec->sample_fmts[0];
+            if (stream->index < m_contexts.size())
+                m_contexts[stream->index] = CodecParametersConstPtr(nullptr);
+        }
+    }
+    if (context)
+        avcodec_free_context(&context);
+    if (parser)
+        av_parser_close(parser);
 }
 
 bool QnAviArchiveDelegate::readFailed() const
@@ -222,13 +329,17 @@ QnAbstractMediaDataPtr QnAviArchiveDelegate::getNextData()
 
             case AVMEDIA_TYPE_AUDIO:
             {
-                if (packet->stream_index != m_audioStreamIndex
-                    || stream->codecpar->ch_layout.nb_channels < 1)
+                if (packet->stream_index != m_audioStreamIndex)
                     continue;
 
                 qint64 timestamp = packetTimestamp(*packet);
                 if (!hasVideo() && m_lastSeekTime != AV_NOPTS_VALUE && timestamp < m_lastSeekTime)
                     continue; // seek is broken for audio only media streams
+
+                // Fast-open mode may leave the audio codecpar without
+                // sample_rate/ch_layout; recover them from this packet so the
+                // context handed downstream is complete.
+                fillAudioParamsFromPacket(stream, packet);
 
                 QnWritableCompressedAudioData* audioData =
                     new QnWritableCompressedAudioData(packet->size, getCodecContext(stream));
@@ -241,44 +352,19 @@ QnAbstractMediaDataPtr QnAviArchiveDelegate::getNextData()
                 audioData->m_data.write((const char*) packet->data, packet->size);
                 break;
             }
-            case AVMEDIA_TYPE_SUBTITLE:
+            case AVMEDIA_TYPE_DATA:
             {
-                using namespace nx::common::metadata;
-                QnAbstractCompressedMetadataPtr metadata;
-                const auto version = m_metadata.metadataStreamVersion;
-                if (version >= QnAviArchiveMetadata::kMetadataStreamVersion_4)
-                {
-                    const auto packetData = QByteArray((const char*) packet->data, packet->size);
-                    metadata = nx::recording::helpers::deserializeMetaDataPacket(packetData);
-                }
-                else if (version >= QnAviArchiveMetadata::kMetadataStreamVersion_2)
-                {
-                    const auto packetData = QByteArray((const char*) packet->data, packet->size);
-                    metadata = nx::recording::helpers::deserializeMetaDataPacket(packetData);
-                    if (auto objects = std::dynamic_pointer_cast<QnCompressedMetadata>(metadata))
-                        convertMetadataFromOldFormat<ObjectMetadataPacketV3>(objects.get());
-                }
-                else
-                {
-                    auto objectDetection = std::make_shared<QnCompressedMetadata>(
-                        MetadataType::ObjectDetection,
-                        packet->size);
-
-                    objectDetection->m_data.write((const char*) packet->data, packet->size);
-                    if (m_metadata.metadataStreamVersion == 0)
-                        convertMetadataFromOldFormat<ObjectMetadataPacketV0>(
-                            objectDetection.get());
-
-                    metadata = objectDetection;
-                }
-
-                if (!metadata)
-                {
-                    NX_DEBUG(this, "Failed to read a metadata packet");
+                const auto dataCodec = stream->codecpar->codec_id;
+                if (!isSupportedDataCodec(dataCodec))
                     continue;
-                }
 
+                auto metadata =
+                    std::make_shared<QnCompressedMetadata>(MetadataType::object, packet->size);
+                metadata->m_data.write((const char*) packet->data, packet->size);
                 metadata->timestamp = packetTimestamp(*packet);
+                // Carry the codec so the reader can tell the crypto key-tag PID
+                // (BIN_DATA) from the analytics metadata PID (SMPTE_KLV).
+                metadata->compressionType = dataCodec;
                 data = QnAbstractMediaDataPtr(metadata);
                 break;
             }
@@ -301,7 +387,7 @@ QnAbstractMediaDataPtr QnAviArchiveDelegate::getNextData()
         break;
     }
 
-    if (data->dataType != QnAbstractMediaData::GENERIC_METADATA)
+    if (data->dataType != QnAbstractMediaData::METADATA)
         data->compressionType = stream->codecpar->codec_id;
 
     // ffmpeg sets key frame flag for every received h263 frames (bug?), update flag manually.
@@ -346,7 +432,7 @@ qint64 QnAviArchiveDelegate::seekWithFallback(qint64 time, bool findIFrame)
             NX_DEBUG(
                 this,
                 "Cannot reopen file after faulty seek. Resource URL: %1",
-                nx::utils::url::hidePassword(m_resource->getUrl()));
+                nx::utils::url::hidePassword(m_url));
 
             return kSeekError;
         }
@@ -373,10 +459,19 @@ qint64 QnAviArchiveDelegate::seek(qint64 time, bool findIFrame)
     const auto timeToSeek = qMax(time - m_startTimeUs, 0ll);
     if (m_hasVideo)
     {
+        // av_seek_frame wants a position on the file's own timeline, which begins
+        // at m_firstDts rather than at zero - either because the caller declared a
+        // recording offset (setFirstDtsUs) or because the MPEG-TS muxer slid the
+        // file forward to keep timestamps non-negative. packetTimestamp() subtracts
+        // m_firstDts on the way out, so a target expressed in emitted time has to
+        // be put back onto the file's timeline here. Files whose media starts at
+        // zero have m_firstDts == 0 and are unaffected.
+        const auto target =
+            timeToSeek + firstDtsToUs(m_formatContext, m_firstVideoIndex, m_firstDts);
         const auto result = av_seek_frame(
             m_formatContext,
             /*stream_index*/ -1,
-            timeToSeek,
+            target,
             findIFrame ? AVSEEK_FLAG_BACKWARD : AVSEEK_FLAG_ANY);
 
         if (result < 0)
@@ -384,8 +479,8 @@ qint64 QnAviArchiveDelegate::seek(qint64 time, bool findIFrame)
             NX_DEBUG(
                 this,
                 "Cannot seek into position %1. Resource URL: %2, av_seek_frame result: %3.",
-                timeToSeek,
-                nx::utils::url::hidePassword(m_resource->getUrl()),
+                target,
+                nx::utils::url::hidePassword(m_url),
                 result);
             return kSeekError;
         }
@@ -401,12 +496,64 @@ qint64 QnAviArchiveDelegate::seek(qint64 time, bool findIFrame)
     return time;
 }
 
+qint64 QnAviArchiveDelegate::seekToByteOffset(qint64 byteOffset)
+{
+    if (!m_streamsFound)
+        return kSeekError;
+
+    std::fill(m_keyFrameFound.begin(), m_keyFrameFound.end(), false);
+
+    const int result =
+        av_seek_frame(m_formatContext, /*stream_index*/ -1, byteOffset, AVSEEK_FLAG_BYTE);
+    if (result < 0)
+    {
+        NX_DEBUG(
+            this,
+            "Cannot byte-seek to %1. Resource URL: %2, av_seek_frame result: %3.",
+            byteOffset,
+            nx::utils::url::hidePassword(m_url),
+            result);
+        return kSeekError;
+    }
+
+    // Timestamp is unknown until the next packet is read; do not pretend to
+    // know it. The pump in QnArchiveStreamReader will pick it up from the
+    // first frame returned by getNextData().
+    m_lastSeekTime = AV_NOPTS_VALUE;
+    m_eofReached = false;
+    return 0;
+}
+
+void QnAviArchiveDelegate::setFirstDtsUs(qint64 firstDtsUs)
+{
+    m_declaredFirstDtsUs = firstDtsUs;
+    if (!m_formatContext || m_formatContext->nb_streams == 0)
+        return;
+
+    // packetTimestamp() subtracts m_firstDts from a packet's own timestamp, so it
+    // has to be in that packet's stream time base. Every stream of an MPEG-TS file
+    // shares one, so the video stream's (or the first stream's, for audio-only) is
+    // the right basis.
+    const int index =
+        (m_firstVideoIndex >= 0 && (unsigned int) m_firstVideoIndex < m_formatContext->nb_streams)
+        ? m_firstVideoIndex
+        : 0;
+    const AVRational timeBase = m_formatContext->streams[index]->time_base;
+
+    m_firstDts = av_rescale_q(firstDtsUs, AVRational{1, 1000000}, timeBase);
+    NX_VERBOSE(
+        this,
+        "PTS base declared as %1 us (%2 in stream time base)",
+        firstDtsUs,
+        m_firstDts);
+}
+
 bool QnAviArchiveDelegate::reopen()
 {
     auto storage = m_storage;
     close();
     m_storage = storage;
-    if (!open(m_resource, m_archiveIntegrityWatcher))
+    if (!open(m_url))
         return false;
 
     return true;
@@ -417,37 +564,15 @@ bool QnAviArchiveDelegate::checkStorage()
     if (m_storage)
         return true;
 
-    m_storage = QnStorageResourcePtr(
-        appContext()->storagePluginFactory()->createStorage(m_resource->getUrl()));
-
-    auto aviResource = m_resource.dynamicCast<QnAviResource>();
-    if (aviResource)
-    {
-        auto aviStorage = aviResource->getStorage().dynamicCast<QnLayoutFileStorageResource>();
-        auto fileStorage = m_storage.dynamicCast<QnLayoutFileStorageResource>();
-        if (fileStorage && aviStorage)
-            fileStorage->usePasswordToRead(aviStorage->password());
-    }
-
+    m_storage = QnStorageResourcePtr(appContext()->storagePluginFactory()->createStorage(m_url));
     return (bool) m_storage;
 }
 
-bool QnAviArchiveDelegate::open(
-    const QnResourcePtr& resource,
-    AbstractArchiveIntegrityWatcher* archiveIntegrityWatcher)
-{
-    return open(resource, resource->getUrl(), archiveIntegrityWatcher);
-}
-
-bool QnAviArchiveDelegate::open(
-    const QnResourcePtr& resource,
-    const QString& url,
-    AbstractArchiveIntegrityWatcher* archiveIntegrityWatcher)
+bool QnAviArchiveDelegate::open(const QString& url)
 {
     NX_MUTEX_LOCKER lock(&m_openMutex); // need refactor. Now open may be called from UI thread!!!
 
-    m_archiveIntegrityWatcher = archiveIntegrityWatcher;
-    m_resource = resource;
+    m_url = url;
     if (m_formatContext == nullptr)
     {
         m_eofReached = false;
@@ -463,33 +588,6 @@ bool QnAviArchiveDelegate::open(
                 hidePassword(url),
                 hidePassword(m_storage->getUrl()));
 
-            if (m_storage->getStatus() == nx::vms::api::ResourceStatus::online
-                && m_archiveIntegrityWatcher)
-            {
-                NX_DEBUG(
-                    this,
-                    "%1: File %2 is missing but the storage %3 is online. Forcing storage reinitialization",
-                    __func__,
-                    hidePassword(url),
-                    hidePassword(m_storage->getUrl()));
-
-                if (const auto initResult = m_storage->initOrUpdate();
-                    initResult != nx::vms::api::StorageInitResult::ok)
-                {
-                    NX_DEBUG(
-                        this,
-                        "%1: Storage %2 initialization status is %3",
-                        __func__,
-                        hidePassword(m_storage->getUrl()),
-                        initResult);
-
-                    return false;
-                }
-            }
-
-            if (m_archiveIntegrityWatcher)
-                m_archiveIntegrityWatcher->fileMissing(url);
-
             return false;
         }
 
@@ -497,6 +595,23 @@ bool QnAviArchiveDelegate::open(
         NX_ASSERT(m_formatContext != nullptr);
         if (m_formatContext == nullptr)
             return false;
+
+        if (m_fastStreamFind)
+        {
+            // Persistent AVFormatContext limits that bound how much
+            // avformat_open_input and avformat_find_stream_info read (VMS-171).
+            //
+            // probesize: PAT is in the first TS packet and PMT follows within a
+            //   few; the codec type comes from the PMT stream_type and the
+            //   keyframe's VPS/SPS/PPS are recovered later by the Annex-B->MP4
+            //   converter - so a few KB suffices (64 KB leaves headroom above the
+            //   format-probe minimum) vs the default 5 MB.
+            // skip_estimate_duration_from_pts: skip the end-of-file duration seek;
+            //   the duration is unused (the caller sets the start time and takes
+            //   keyframe offsets from the .idx).
+            m_formatContext->probesize = 64 * 1024;
+            m_formatContext->skip_estimate_duration_from_pts = 1;
+        }
 
         m_IOContext = nx::utils::media::createFfmpegIOContext(m_storage, url, QIODevice::ReadOnly);
         if (!m_IOContext)
@@ -525,7 +640,20 @@ bool QnAviArchiveDelegate::open(
         fillVideoLayout();
     }
     m_keyFrameFound.resize(m_formatContext->nb_streams, false);
-    return findStreams();
+    if (!findStreams())
+        return false;
+
+    // Default to the first audio track. The stream_index gate in getNextData()
+    // exists to pick one track among several, not to mute the file - but leaving
+    // the index unset left every consumer that does not call setAudioChannel()
+    // silently audio-less. On the archive path that also starved
+    // fillAudioParamsFromPacket(), so a fast-opened segment could only report the
+    // unfilled container codecpar and the WebRTC session died on it (VMS-191).
+    // An explicit setAudioChannel() still overrides this.
+    if (m_audioStreamIndex < 0)
+        setAudioChannel(0);
+
+    return true;
 }
 
 bool QnAviArchiveDelegate::opened() const
@@ -597,13 +725,6 @@ void QnAviArchiveDelegate::fillVideoLayout()
     if (m_useAbsolutePos)
     {
         m_startTimeUs = 1000ll * m_metadata.startTimeMs;
-        if (m_startTimeUs >= UTC_TIME_DETECTION_THRESHOLD)
-        {
-            m_resource->addFlags(Qn::utc | Qn::exported);
-            if (qSharedPointerDynamicCast<QnLayoutFileStorageResource>(m_storage))
-                m_resource->addFlags(
-                    Qn::sync | Qn::periods | Qn::motion); // use sync for exported layout only
-        }
     }
 }
 
@@ -627,6 +748,13 @@ bool QnAviArchiveDelegate::findStreams()
     if (m_streamsFound)
         return true;
 
+    // The open-time probe limits (probesize, skip_estimate_duration_from_pts) are
+    // set in open() before avformat_open_input. find_stream_info gets its own brake
+    // here: the interrupt callback aborts its packet-reading analysis loop right
+    // away, keeping whatever streams avformat_open_input's probe already registered
+    // (codec params it leaves unfilled are recovered later, per-packet). Scoped -
+    // set here, cleared immediately after - so it never touches the frame reads
+    // that follow. Measured worth on H.265+AAC segments: ~20 ms -> ~1 ms.
     if (m_fastStreamFind)
     {
         m_formatContext->interrupt_callback.callback = &interruptDetailFindStreamInfo;
@@ -639,15 +767,25 @@ bool QnAviArchiveDelegate::findStreams()
         m_streamsFound = avformat_find_stream_info(m_formatContext, nullptr) >= 0;
     }
 
-    m_firstDts = 0;
+    // A base declared through setFirstDtsUs is authoritative, so leave m_firstDts
+    // alone: findStreams() runs again on every reopen() - which seek() performs on
+    // a file without video, and seekWithFallback() after a faulty seek - and would
+    // otherwise discard the declaration and go back to guessing from start_time.
+    const bool deriveFirstDts = m_declaredFirstDtsUs == qint64(AV_NOPTS_VALUE);
+    if (deriveFirstDts)
+        m_firstDts = 0;
+
     if (m_streamsFound)
     {
         m_durationUs = m_formatContext->duration;
         initLayoutStreams();
-        if (m_firstVideoIndex >= 0)
-            m_firstDts = m_formatContext->streams[m_firstVideoIndex]->start_time;
-        if (m_firstDts == qint64(AV_NOPTS_VALUE))
-            m_firstDts = 0;
+        if (deriveFirstDts)
+        {
+            if (m_firstVideoIndex >= 0)
+                m_firstDts = m_formatContext->streams[m_firstVideoIndex]->start_time;
+            if (m_firstDts == qint64(AV_NOPTS_VALUE))
+                m_firstDts = 0;
+        }
 
         if (m_formatContext->duration_estimation_method == AVFMT_DURATION_FROM_BITRATE)
             NX_DEBUG(this, "File duration can be not accurate!");
@@ -672,7 +810,7 @@ void QnAviArchiveDelegate::initLayoutStreams()
 
     std::set<int> videoStreams;
     std::set<int> audioStreams;
-    std::set<int> subtitleStreams;
+    std::set<int> dataStreams;
     for (unsigned i = 0; i < m_formatContext->nb_streams; i++)
     {
         AVStream* strm = m_formatContext->streams[i];
@@ -702,8 +840,9 @@ void QnAviArchiveDelegate::initLayoutStreams()
                 audioStreams.insert(i);
                 break;
 
-            case AVMEDIA_TYPE_SUBTITLE:
-                subtitleStreams.insert(i);
+            case AVMEDIA_TYPE_DATA:
+                if (isSupportedDataCodec(strm->codecpar->codec_id))
+                    dataStreams.insert(i);
                 break;
             default:
                 break;
@@ -714,7 +853,7 @@ void QnAviArchiveDelegate::initLayoutStreams()
         m_indexToChannel[streamIndex] = channel++;
     for (auto& streamIndex: audioStreams)
         m_indexToChannel[streamIndex] = channel++;
-    for (auto& streamIndex: subtitleStreams)
+    for (auto& streamIndex: dataStreams)
         m_indexToChannel[streamIndex] = channel++;
 
     m_audioLayout.reset(new AudioLayout(m_formatContext));
@@ -722,23 +861,6 @@ void QnAviArchiveDelegate::initLayoutStreams()
 
 bool QnAviArchiveDelegate::initMetadata()
 {
-    auto aviRes = m_resource.dynamicCast<QnAviResource>();
-    if (aviRes && aviRes->hasAviMetadata())
-    {
-        m_metadata = aviRes->aviMetadata();
-        return true;
-    }
-
-    m_metadata = QnAviArchiveMetadata::loadFromFile(m_formatContext);
-    if (m_archiveIntegrityWatcher
-        && !m_archiveIntegrityWatcher->fileRequested(m_metadata, m_resource->getUrl()))
-    {
-        return false;
-    }
-
-    if (aviRes)
-        aviRes->setAviMetadata(m_metadata);
-
     return true;
 }
 
@@ -822,16 +944,6 @@ void QnAviArchiveDelegate::setStorage(const QnStorageResourcePtr& storage)
 void QnAviArchiveDelegate::setFastStreamFind(bool value)
 {
     m_fastStreamFind = value;
-}
-
-QnAbstractMotionArchiveConnectionPtr QnAviArchiveDelegate::getMotionConnection(int channel)
-{
-    QnAviResourcePtr aviResource = m_resource.dynamicCast<QnAviResource>();
-    if (!aviResource)
-        return QnAbstractMotionArchiveConnectionPtr();
-    const QnMetaDataLightVector& motionData = aviResource->getMotionBuffer(channel);
-    return QnAbstractMotionArchiveConnectionPtr(
-        new QnLightMotionArchiveConnection(motionData, channel));
 }
 
 QIODevice* QnAviArchiveDelegate::ioDevice() const

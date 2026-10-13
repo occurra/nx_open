@@ -6,8 +6,6 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-#include <export/sign_helper.h>
-#include <nx/fusion/model_functions.h>
 #include <nx/reflect/json.h>
 #include <nx/utils/log/log.h>
 
@@ -107,18 +105,18 @@ const char* getTagName(Tag tag, const QString& formatName)
     return getTagName(tag, QnAviArchiveMetadata::Format::custom);
 }
 
-QByteArray tagValueRaw(const AVFormatContext* context, Tag tag, const QString& format)
+std::string tagValueRaw(const AVFormatContext* context, Tag tag, const QString& format)
 {
     AVDictionaryEntry* entry = av_dict_get(context->metadata, getTagName(tag, format), 0, 0);
     if (entry && entry->value)
         return entry->value;
 
-    return QByteArray();
+    return std::string();
 }
 
 QString tagValue(const AVFormatContext* context, Tag tag, const QString& format)
 {
-    return QString::fromUtf8(tagValueRaw(context, tag, format));
+    return QString::fromStdString(tagValueRaw(context, tag, format));
 }
 
 // TODO: #rvasilenko We have two independent and non-standard ways to (de)serialize such layout.
@@ -133,7 +131,7 @@ bool deserializeLayout(const QString& layout, QnAviArchiveMetadata& metadata)
         {
             NX_WARNING(
                 typeid(QnAviArchiveMetadata),
-                lit("Invalid layout string stored at file metadata: \"%1\"").arg(layout));
+                QString("Invalid layout string stored at file metadata: \"%1\"").arg(layout));
             return false;
         }
         if (i == 0)
@@ -153,7 +151,7 @@ bool deserializeLayout(const QString& layout, QnAviArchiveMetadata& metadata)
             {
                 NX_WARNING(
                     typeid(QnAviArchiveMetadata),
-                    lit("Invalid layout string stored at file metadata: %1"),
+                    "Invalid layout string stored at file metadata: %1",
                     layout);
                 return false;
             }
@@ -216,29 +214,24 @@ static int getVideoRotation(const AVFormatContext* context)
 
 } // namespace
 
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(QnAviArchiveMetadata, (json), QnAviArchiveMetadata_Fields)
-
 QnAviArchiveMetadata QnAviArchiveMetadata::loadFromFile(const AVFormatContext* context)
 {
     // Prevent standard tag name parsing in 'avi' format.
     const QString format = QString::fromLatin1(context->iformat->name).split(QLatin1Char(','))[0];
 
     const auto metadata = tagValueRaw(context, CustomTag, format);
-    QnAviArchiveMetadata result = QJson::deserialized<QnAviArchiveMetadata>(metadata);
-    auto [validate, success] =
-        nx::reflect::json::deserialize<QnAviArchiveMetadata>(metadata.toStdString());
-    // FIXME: #sivanov Switch to nx_reflect in master branch.
-    NX_ASSERT(result == validate, "Fusion vs reflect serialization mismatch");
+    auto [result, success] = nx::reflect::json::deserialize<QnAviArchiveMetadata>(metadata);
 
     if (result.version >= kVersionBeforeTheIntegrityCheck)
         return result;
 
     // All following code is actual only to support files exported by VMS 2.6 and older.
 
-    result.signature = tagValueRaw(context, SignatureTag, format);
+    result.signature = QByteArray::fromStdString(tagValueRaw(context, SignatureTag, format));
 
     // Check time zone in the sign's 4-th column.
-    QList<QByteArray> tmp = result.signature.split(QnSignHelper::getSignPatternDelim());
+    char SIGN_TEXT_DELIMITER('\\');
+    QList<QByteArray> tmp = result.signature.split(SIGN_TEXT_DELIMITER);
     if (tmp.size() > 4)
     {
         bool deserialized = false;
@@ -259,8 +252,9 @@ QnAviArchiveMetadata QnAviArchiveMetadata::loadFromFile(const AVFormatContext* c
         result.videoLayoutSize = QSize();
 
     result.startTimeMs = tagValue(context, StartTimeTag, format).toLongLong();
-    result.dewarpingParams = nx::vms::api::dewarping::MediaData::fromByteArray(
-        tagValueRaw(context, DewarpingTag, format));
+    nx::reflect::json::deserialize<nx::vms::api::dewarping::MediaData>(
+        tagValueRaw(context, DewarpingTag, format),
+        &result.dewarpingParams);
 
     return result;
 }
@@ -282,12 +276,7 @@ bool QnAviArchiveMetadata::saveToFile(AVFormatContext* context, Format format)
         NX_WARNING(this, "Error writing metadata %1: %2", getTagName(tag, format), errCode);
     };
 
-    // FIXME: #sivanov Switch to nx_reflect in master branch.
-    setValueLogged(CustomTag, QJson::serialized<QnAviArchiveMetadata>(*this));
-    QByteArray validate = QByteArray::fromStdString(nx::reflect::json::serialize(*this));
-    NX_ASSERT(
-        QJson::deserialized<QnAviArchiveMetadata>(validate) == *this,
-        "Fusion vs reflect serialization mismatch");
+    setValueLogged(CustomTag, QByteArray::fromStdString(nx::reflect::json::serialize(*this)));
 
     // Other tags are not supported in mp4 format.
     if (format == Format::mp4)
@@ -310,7 +299,7 @@ bool QnAviArchiveMetadata::saveToFile(AVFormatContext* context, Format format)
     {
         setValueLogged(
             DewarpingTag,
-            QJson::serialized<nx::vms::api::dewarping::MediaData>(dewarpingParams));
+            QByteArray::fromStdString(nx::reflect::json::serialize(dewarpingParams)));
     }
 
     return isSuccessful;

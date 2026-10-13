@@ -8,10 +8,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QElapsedTimer>
 
-#include <analytics/common/object_metadata.h>
 #include <decoders/video/ffmpeg_video_decoder.h>
-#include <nx/analytics/export_caching_metadata_consumer.h>
-#include <nx/analytics/metadata_cache.h>
 #include <nx/core/transcoding/filters/filter_chain.h>
 #include <nx/media/ffmpeg/frame_info.h>
 #include <nx/media/video_data_packet.h>
@@ -46,7 +43,7 @@ public:
         int fixedFrameRate = 0;
         // Set codec-specific params for output stream.
         QnCodecParams::Value params;
-        Qn::StreamQuality quality = Qn::StreamQuality::normal;
+        nx::vms::api::StreamQuality quality = nx::vms::api::StreamQuality::normal;
         // It used to skip some video frames inside GOP when transcoding is used.
         int64_t startTimeUs = 0;
         // Set this to true if stream will mux into RTP.
@@ -73,9 +70,6 @@ public:
 
     //! Returns picture size (in pixels) of output video stream
     QSize getOutputResolution() const;
-
-    // Process metadata, required for the pixelation filter, object info filter and motion filter.
-    void processMetadata(const QnConstAbstractCompressedMetadataPtr& metadata);
 
 private:
     int transcodePacketImpl(
@@ -107,9 +101,6 @@ private:
     nx::metric::Storage* m_metrics = nullptr;
     std::map<qint64, qint64> m_frameNumToPts;
     std::optional<int64_t> m_lastEncodedPts;
-    nx::analytics::ExportCachingMetadataConsumer<nx::common::metadata::ObjectMetadataPacketPtr>
-        m_metadataObjectsCache;
-    nx::analytics::ExportCachingMetadataConsumer<QnConstMetaDataV1Ptr> m_metadataMotionCache;
     nx::Uuid m_deviceId;
 };
 

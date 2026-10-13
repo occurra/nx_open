@@ -20,8 +20,7 @@ namespace {
 
 bool isMoovFormat(const QString& container)
 {
-    return container.compare("mp4", Qt::CaseInsensitive) == 0
-        || container.compare("ismv", Qt::CaseInsensitive) == 0;
+    return FfmpegMuxer::isMoovFormat(container);
 }
 
 // Container-specific ordered audio codec preferences.
@@ -56,7 +55,7 @@ QString codecNameForId(AVCodecID c)
 bool QnFfmpegTranscoder::setVideoCodec(
     AVCodecID codec,
     TranscodeMethod method,
-    Qn::StreamQuality quality,
+    nx::vms::api::StreamQuality quality,
     const QSize& sourceResolition,
     const QSize& resolution,
     int bitrate,
@@ -444,8 +443,20 @@ bool QnFfmpegTranscoder::open(
             if (audio->context)
                 avcodec_parameters_copy(codecpar, audio->context->getAvCodecParameters());
         }
+        NX_DEBUG(
+            this,
+            "Adding audio to muxer: codec %1, sampleRate %2, channels %3, "
+            "extradataSize %4, transcoding %5",
+            codecpar->codec_id,
+            codecpar->sample_rate,
+            codecpar->ch_layout.nb_channels,
+            codecpar->extradata_size,
+            (bool) m_mediaTranscoder.audioTranscoder());
         if (!m_muxer.addAudio(codecpar))
+        {
+            NX_WARNING(this, "Failed to add audio stream to the muxer");
             return false;
+        }
     }
 
     std::optional<QnAviArchiveMetadata> metadata;
@@ -465,7 +476,10 @@ bool QnFfmpegTranscoder::open(
     }
 
     if (!m_muxer.open(metadata))
+    {
+        NX_WARNING(this, "Failed to open the muxer for container %1", m_muxer.container());
         return false;
+    }
 
     m_initialized = true;
     return true;
