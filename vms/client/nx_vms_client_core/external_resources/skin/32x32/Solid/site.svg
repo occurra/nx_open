@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
-<g>
-<path id="Primary" fill-rule="evenodd" clip-rule="evenodd" d="M16.0007 5.14522L29.7335 19.9344L28.2679 21.2953L16.0007 8.08445L3.7335 21.2953L2.26791 19.9344L16.0007 5.14522Z" fill="#D3D8DE" class="Primary"/>
-<path id="Secondary" d="M6.0007 20.372L16.0007 9.61485L26.0007 20.372V27.5C26.0007 27.7761 25.7768 28 25.5007 28H6.5007C6.22456 28 6.0007 27.7761 6.0007 27.5V20.372Z" fill="#B0B9C4" class="Secondary"/>
-</g>
-</svg>

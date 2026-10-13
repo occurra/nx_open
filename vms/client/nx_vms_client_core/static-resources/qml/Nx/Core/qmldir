@@ -1,8 +1,0 @@
-module Nx.Core
-
-DebugRect 1.0 DebugRect.qml
-NxObject 1.0 NxObject.qml
-
-CoreUtils 1.0 utils.js
-MathUtils 1.0 math_utils.js
-Utils3D 1.0 utils_3d.js
