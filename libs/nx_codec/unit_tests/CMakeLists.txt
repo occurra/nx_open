@@ -3,7 +3,5 @@
 nx_add_test(nx_codec_ut
     PUBLIC_LIBS
         nx_codec
-    PROJECT VMS
-    COMPONENT Server
     FOLDER common/tests
 )
