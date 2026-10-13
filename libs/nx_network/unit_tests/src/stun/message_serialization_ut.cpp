@@ -4,7 +4,6 @@
 
 #include <gtest/gtest.h>
 
-#include <nx/network/cloud/data/bind_data.h>
 #include <nx/network/stun/message_parser.h>
 #include <nx/network/stun/message_serializer.h>
 #include <nx/utils/auth/utils.h>
@@ -226,48 +225,6 @@ TEST(StunMessageSerialization, CustomIndication)
     ASSERT_EQ(attr2->getString(), Buffer("ua2val"));
 }
 
-TEST(StunMessageSerialization, serialization2)
-{
-    Message message(Header(MessageClass::request, MethodType::bindingMethod));
-
-    const std::string userName("sdfno234sdf");
-    const std::string nonce("kdfgjn234df");
-
-    // message.newAttribute<stun::extension::attrs::SystemId>(userName);
-    const std::string testData("sdfr234dfg");
-    message.newAttribute<stun::extension::attrs::ServerId>(testData);
-
-    size_t bytesRead = 0;
-
-    // serializing message
-    Buffer buffer;
-    {
-        buffer.reserve(100);
-        MessageSerializer serializer;
-        serializer.setMessage(&message);
-        ASSERT_EQ(
-            nx::network::server::SerializerState::done,
-            serializer.serialize(&buffer, &bytesRead));
-    }
-
-    // deserializing message and checking that it equals to the one before serialization
-    MessageParser parser;
-    Message checkMessage;
-    parser.setMessage(&checkMessage);
-    ASSERT_EQ(nx::network::server::ParserState::done, parser.parse(buffer, &bytesRead));
-    const auto attr = checkMessage.getAttribute<stun::extension::attrs::ServerId>();
-    ASSERT_EQ(testData, attr->getBuffer());
-
-    Buffer buffer1;
-    buffer1.reserve(100);
-    MessageSerializer serializer1;
-    serializer1.setMessage(&checkMessage);
-    ASSERT_EQ(
-        nx::network::server::SerializerState::done,
-        serializer1.serialize(&buffer1, &bytesRead));
-    ASSERT_EQ(buffer1, buffer);
-}
-
 TEST(StunMessageSerialization, serialization3)
 {
     stun::Message response(
@@ -304,8 +261,6 @@ TEST(StunMessageSerialization, Authentification)
     std::string user("user"), key("key");
 
     Message request(Header(MessageClass::request, MethodType::bindingMethod));
-    // const nx::Buffer testData("sdfr234dfg");
-    // request.newAttribute<stun::extension::attrs::ServerId>(testData);
     request.header.transactionId = nx::utils::fromHex(DEFAULT_TID);
     request.insertIntegrity(user, key);
 

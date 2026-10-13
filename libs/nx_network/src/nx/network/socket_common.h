@@ -25,11 +25,6 @@ struct sockaddr_in6;
 class QHostAddress;
 class QString;
 
-// Needed for compatibility with nx_fusion.
-// Luckily, custom nx_fusion serialization support does not require dependency on nx_fusion itself.
-class QJsonValue;
-class QnJsonContext;
-
 namespace nx { class Url; }
 
 namespace nx::network {
@@ -39,14 +34,7 @@ class DnsResolver;
 enum class TransportProtocol
 {
     udp,
-    tcp,
-    udt
-};
-
-enum class NatTraversalSupport
-{
-    disabled,
-    enabled,
+    tcp
 };
 
 enum class IpVersion
@@ -59,13 +47,6 @@ static const size_t kUDPHeaderSize = 8;
 static const size_t kIPHeaderSize = 20;
 static const size_t kMaxUDPDatagramSize = 64 * 1024 - kUDPHeaderSize - kIPHeaderSize;
 static const size_t kTypicalMtuSize = 1500;
-
-enum InitializationFlags
-{
-    none = 0,
-    disableUdt = 0x01,
-    disableCloudConnect = 0x02
-};
 
 NX_NETWORK_API bool socketCannotRecoverFromError(SystemError::ErrorCode sysErrorCode);
 
@@ -140,6 +121,7 @@ public:
 
     bool isLocalNetwork() const;
     bool isIpv4LinkLocalNetwork() const;
+    bool isIpv6LinkLocalNetwork() const;
 
     /**
      * @return true if object was constructed using the ipv4 or ipv6 constructor. Returns false
@@ -296,12 +278,6 @@ public:
 NX_NETWORK_API void PrintTo(const SocketAddress& val, ::std::ostream* os);
 
 NX_REFLECTION_INSTRUMENT(SocketAddress, (address)(port))
-
-NX_NETWORK_API void serialize(
-    QnJsonContext*,
-    const nx::network::SocketAddress& value,
-    QJsonValue* target);
-NX_NETWORK_API bool deserialize(QnJsonContext*, const QJsonValue& source, SocketAddress* value);
 
 //-------------------------------------------------------------------------------------------------
 

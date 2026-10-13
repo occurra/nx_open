@@ -44,7 +44,7 @@ public:
     ~SocketGlobals()
     {
         if (m_deinitialized)
-            SocketGlobalsHolder::instance()->initialize(/*initializePeerId*/ true);
+            SocketGlobalsHolder::instance()->initialize();
     }
 
 protected:

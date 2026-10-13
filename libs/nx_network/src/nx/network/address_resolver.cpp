@@ -5,11 +5,9 @@
 #include <future>
 
 #include <nx/network/socket_global.h>
-#include <nx/network/stun/extension/stun_extension_types.h>
 #include <nx/utils/log/log.h>
 #include <nx/utils/thread/barrier_handler.h>
 
-#include "cloud/cloud_address_resolver.h"
 #include "resolve/predefined_host_resolver.h"
 #include "resolve/text_ip_address_resolver.h"
 
@@ -22,10 +20,6 @@ AddressResolver::AddressResolver()
     auto predefinedHostResolver = std::make_unique<PredefinedHostResolver>();
     m_predefinedHostResolver = predefinedHostResolver.get();
     m_nonBlockingResolvers.push_back(std::move(predefinedHostResolver));
-
-    auto cloudAddressResolver = std::make_unique<CloudAddressResolver>();
-    m_cloudAddressResolver = cloudAddressResolver.get();
-    m_nonBlockingResolvers.push_back(std::move(cloudAddressResolver));
 }
 
 void AddressResolver::addFixedAddress(const HostAddress& hostName, const HostAddress& target)
@@ -58,14 +52,13 @@ void AddressResolver::removeFixedAddress(
 void AddressResolver::resolveAsync(
     const HostAddress& hostAddr,
     ResolveHandler handler,
-    NatTraversalSupport natTraversalSupport,
     int ipVersion,
     void* requestId)
 {
     if (hostAddr.isIpAddress())
     {
         std::deque<AddressEntry> result;
-        result.push_back(AddressEntry(AddressType::direct, hostAddr));
+        result.push_back(AddressEntry(hostAddr));
         return handler(SystemError::noError, std::move(result));
     }
 
@@ -75,11 +68,10 @@ void AddressResolver::resolveAsync(
     std::string hostname = hostAddr.toString();
 
     ResolveResult resolved;
-    if (resolveNonBlocking(hostname, natTraversalSupport, ipVersion, &resolved))
+    if (resolveNonBlocking(hostname, ipVersion, &resolved))
         return handler(SystemError::noError, std::move(resolved.entries));
 
-    // Cloud addresses are already resolved in resolveNonBlocking.
-    // So, further resolving with DNS only.
+    // Further resolving with DNS only.
 
     NX_MUTEX_LOCKER lk(&m_mutex);
 
@@ -115,10 +107,7 @@ void AddressResolver::resolveAsync(
     dnsResolve(info, &lk, ipVersion);
 }
 
-std::deque<AddressEntry> AddressResolver::resolveSync(
-    const HostAddress& hostname,
-    NatTraversalSupport natTraversalSupport,
-    int ipVersion)
+std::deque<AddressEntry> AddressResolver::resolveSync(const HostAddress& hostname, int ipVersion)
 {
     std::promise<std::pair<SystemError::ErrorCode, std::deque<AddressEntry>>> promise;
     auto handler = [&](SystemError::ErrorCode code, std::deque<AddressEntry> entries)
@@ -126,7 +115,7 @@ std::deque<AddressEntry> AddressResolver::resolveSync(
         promise.set_value({code, std::move(entries)});
     };
 
-    resolveAsync(hostname, std::move(handler), natTraversalSupport, ipVersion);
+    resolveAsync(hostname, std::move(handler), ipVersion);
     const auto result = promise.get_future().get();
     SystemError::setLastErrorCode(result.first);
     return result.second;
@@ -167,21 +156,6 @@ bool AddressResolver::isRequestIdKnown(void* requestId) const
 {
     NX_MUTEX_LOCKER lk(&m_mutex);
     return m_requests.count(requestId);
-}
-
-bool AddressResolver::isCloudHostname(std::string_view hostname) const
-{
-    return m_cloudAddressResolver->isCloudHostname(hostname);
-}
-
-bool AddressResolver::isCloudHostname(const QString& hostname) const
-{
-    return isCloudHostname(hostname.toStdString());
-}
-
-bool AddressResolver::isCloudHostname(const char* hostname) const
-{
-    return isCloudHostname(std::string_view(hostname));
 }
 
 void AddressResolver::pleaseStop(nx::MoveOnlyFunc<void()> handler)
@@ -253,19 +227,11 @@ AddressResolver::RequestInfo::RequestInfo(std::string hostname, ResolveHandler h
 
 bool AddressResolver::resolveNonBlocking(
     const std::string& hostname,
-    NatTraversalSupport natTraversalSupport,
     int ipVersion,
     ResolveResult* resolved)
 {
     for (const auto& nonBlockingResolver: m_nonBlockingResolvers)
     {
-        // TODO: Remove following if.
-        if (natTraversalSupport == NatTraversalSupport::disabled
-            && dynamic_cast<CloudAddressResolver*>(nonBlockingResolver.get()) != nullptr)
-        {
-            continue;
-        }
-
         const SystemError::ErrorCode resolveResult =
             nonBlockingResolver->resolve(hostname, ipVersion, resolved);
         if (resolveResult == SystemError::noError)
@@ -290,7 +256,7 @@ void AddressResolver::dnsResolve(HaInfoIterator info, nx::Locker<nx::Mutex>* lk,
 
             std::deque<AddressEntry> entries;
             for (auto& entry: ips)
-                entries.emplace_back(AddressType::direct, std::move(entry));
+                entries.emplace_back(std::move(entry));
 
             reportResult(info, code, std::move(entries));
         },

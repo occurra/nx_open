@@ -181,7 +181,6 @@ public:
                 // destroyed right after from it's AIO thread.
                 m_addressResolverIsInUse = false;
             },
-            NatTraversalSupport::disabled,
             m_ipVersion,
             this);
     }

@@ -12,8 +12,8 @@ typedef ULONG in_addr_t;
 
 #include <gtest/gtest.h>
 
-#include <nx/fusion/serialization/json.h>
 #include <nx/network/socket_common.h>
+#include <nx/reflect/json.h>
 #include <nx/utils/string.h>
 #include <nx/utils/url.h>
 
@@ -326,17 +326,6 @@ TEST_F(SocketAddress, fromUserInput)
     ASSERT_EQ(socketAddressFromUserInput(":7001").isNull(), true);
     ASSERT_EQ(socketAddressFromUserInput("localhost").isNull(), false);
     ASSERT_EQ(socketAddressFromUserInput("localhost:7001").isNull(), false);
-}
-
-TEST_F(SocketAddress, compatible_with_nx_fusion)
-{
-    ASSERT_EQ(
-        R"({"address":"localhost","port":12345})",
-        QJson::serialized(nx::network::SocketAddress("localhost", 12345)));
-
-    nx::network::SocketAddress value;
-    ASSERT_TRUE(QJson::deserialize(nx::Buffer(R"({"address":"localhost","port":12345})"), &value));
-    ASSERT_EQ(nx::network::SocketAddress("localhost", 12345), value);
 }
 
 //-------------------------------------------------------------------------------------------------

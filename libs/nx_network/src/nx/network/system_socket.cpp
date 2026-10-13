@@ -226,7 +226,7 @@ bool Socket<SocketInterfaceToImplement>::close()
 #ifdef _WIN32
     return ::closesocket(fd) == 0;
 #else
-    if (nx::build_info::isMacOsX() || nx::build_info::isIos())
+    if (nx::build_info::isMacOsX())
     {
         // On macOS, closing a socket is not instantaneous (e.g. multicast UDP).
         std::thread(
@@ -659,7 +659,6 @@ bool CommunicatingSocket<SocketInterfaceToImplement>::connect(
 
     auto resolvedEntries = SocketGlobals::addressResolver().resolveSync(
         remoteAddress.address.toString(),
-        NatTraversalSupport::disabled,
         this->m_ipVersion);
     if (resolvedEntries.empty())
         return false;
@@ -2000,10 +1999,8 @@ bool UDPSocket::setDestAddr(const SocketAddress& endpoint)
     }
     else
     {
-        auto resolvedEntries = SocketGlobals::addressResolver().resolveSync(
-            endpoint.address.toString(),
-            NatTraversalSupport::disabled,
-            m_ipVersion);
+        auto resolvedEntries =
+            SocketGlobals::addressResolver().resolveSync(endpoint.address.toString(), m_ipVersion);
         if (resolvedEntries.empty())
             return false;
 

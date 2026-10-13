@@ -11,7 +11,6 @@
 #include <nx/network/http/chunked_stream_parser.h>
 #include <nx/network/http/http_types.h>
 #include <nx/network/http/writable_message_body.h>
-#include <nx/telemetry/http_span.h>
 #include <nx/utils/interruption_flag.h>
 
 #include "abstract_http_request_handler.h"
@@ -199,8 +198,6 @@ private:
     std::optional<SystemError::ErrorCode> m_markedForClosure;
     std::unique_ptr<aio::AsyncChannelBridge> m_bridge;
     nx::utils::InterruptionFlag m_destructionFlag;
-    nx::telemetry::HttpSpan m_telemetrySpan;
-
     void extractClientEndpoint(const HttpHeaders& headers);
     void extractClientEndpointFromXForwardedHeader(const HttpHeaders& headers);
     void extractClientEndpointFromForwardedHeader(const HttpHeaders& headers);

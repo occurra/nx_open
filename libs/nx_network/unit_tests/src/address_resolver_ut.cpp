@@ -98,87 +98,6 @@ protected:
 
 } // namespace
 
-// TODO: #akolesnikov The following test does not belong here.
-// It actually checks how socket use AddressResolver, not how AddressResolver works.
-// So, this test should belong to some stream socket acceptance test group.
-
-TEST_F(AddressResolverDeprecatedTests, HostNameResolve2)
-{
-    if (SocketFactory::isStreamSocketTypeEnforced())
-        return;
-
-    HostAddress resolvedAddress;
-
-    m_startedConnectionsCount = CONCURRENT_CONNECTIONS;
-    {
-        std::unique_lock<std::mutex> lk(m_mutex);
-        for (int i = 0; i < CONCURRENT_CONNECTIONS; ++i)
-            startAnotherSocketNonSafe();
-    }
-
-    int canCancelIndex = 0;
-    int cancelledConnectionsCount = 0;
-    std::unique_lock<std::mutex> lk(m_mutex);
-    while ((m_completedConnectionsCount + cancelledConnectionsCount) < TOTAL_CONNECTIONS)
-    {
-        std::unique_ptr<AbstractStreamSocket> connectionToCancel;
-        if (m_connections.size() > 1 && (canCancelIndex < m_startedConnectionsCount))
-        {
-            auto connectionToCancelIter = m_connections.begin();
-            size_t index = nx::utils::random::number<size_t>(0, m_connections.size() - 1);
-            std::advance(connectionToCancelIter, index);
-            connectionToCancel = std::move(*connectionToCancelIter);
-            m_connections.erase(connectionToCancelIter);
-            canCancelIndex += /*index +*/ 1;
-        }
-        lk.unlock();
-        if (connectionToCancel)
-        {
-            connectionToCancel->pleaseStopSync();
-            connectionToCancel.reset();
-            ++cancelledConnectionsCount;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        lk.lock();
-    }
-
-    std::string ipStr = resolvedAddress.toString();
-    static_cast<void>(ipStr);
-    ASSERT_TRUE(m_connections.empty());
-}
-
-TEST_F(AddressResolverDeprecatedTests, cancellation)
-{
-    const auto doNone = [&](SystemError::ErrorCode, std::deque<AddressEntry>) {};
-
-    const std::vector<nx::network::HostAddress> kTestAddresses = {
-        nx::network::HostAddress("example.com"),
-        nx::network::HostAddress("7C6BA51F-317E-461E-B47D-17A14CB751B0.com"),
-        nx::network::HostAddress(
-            nx::format("%1.%2")
-                .args(
-                    nx::Uuid::createUuid().toSimpleString(),
-                    nx::Uuid::createUuid().toSimpleString())
-                .toStdString()),
-    };
-
-    for (size_t timeout = 0; timeout <= 500; timeout *= 2)
-    {
-        for (const auto& address: kTestAddresses)
-        {
-            SocketGlobals::addressResolver()
-                .resolveAsync(address, doNone, NatTraversalSupport::enabled, AF_INET, this);
-            if (timeout)
-                std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
-            SocketGlobals::addressResolver().cancel(this);
-            if (!timeout)
-                timeout = 1;
-        }
-    }
-}
-
-//-------------------------------------------------------------------------------------------------
-
 class AddressResolver: public ::testing::Test
 {
 public:
@@ -212,8 +131,7 @@ protected:
     void whenResolve()
     {
         ResolveResultFull resolveResult;
-        std::get<1>(resolveResult) =
-            m_resolver.resolveSync(m_hostNameToResolve, m_natTraversalSupport, m_ipVersionToUse);
+        std::get<1>(resolveResult) = m_resolver.resolveSync(m_hostNameToResolve, m_ipVersionToUse);
         std::get<0>(resolveResult) = SystemError::getLastOSErrorCode();
         m_resolveResults.push(std::move(resolveResult));
     }
@@ -221,15 +139,6 @@ protected:
     void whenResolve(const std::string& hostName)
     {
         m_hostNameToResolve = hostName;
-        m_natTraversalSupport = NatTraversalSupport::disabled;
-
-        whenResolve();
-    }
-
-    void whenResolveWithCloudEnabled(const std::string& hostName)
-    {
-        m_hostNameToResolve = hostName;
-        m_natTraversalSupport = NatTraversalSupport::enabled;
 
         whenResolve();
     }
@@ -254,7 +163,7 @@ protected:
             entries.end(),
             [hostAddress](const AddressEntry& entry)
             {
-                return entry.type == AddressType::direct && entry.host == hostAddress;
+                return entry.host == hostAddress;
             });
         ASSERT_TRUE(entryIter != entries.end());
     }
@@ -276,7 +185,6 @@ protected:
         thenResolveSucceeded();
 
         ASSERT_EQ(1U, std::get<1>(m_prevResolveResult).size());
-        ASSERT_EQ(AddressType::direct, std::get<1>(m_prevResolveResult).front().type);
         ASSERT_EQ(*m_dnsEntry, std::get<1>(m_prevResolveResult).front().host);
     }
 
@@ -306,29 +214,6 @@ protected:
 
     network::AddressResolver& resolver() { return m_resolver; }
 
-    void givenResolvePausedInHandler()
-    {
-        m_hostNameToResolve = nx::utils::generateRandomName(7);
-        emulateHostnameResolvableByDnsResolver();
-
-        m_handlerCompleted = false;
-
-        std::promise<void> aboutToPause;
-        m_resolver.resolveAsync(
-            m_hostNameToResolve,
-            [this, &aboutToPause](auto&&...)
-            {
-                aboutToPause.set_value();
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                m_handlerCompleted = true;
-            },
-            NatTraversalSupport::enabled,
-            AF_INET,
-            this);
-
-        aboutToPause.get_future().wait();
-    }
-
     void whenCancelResolve() { m_resolver.cancel(this); }
 
     void thenCancelBlockedUntilHandlerCompletion() { ASSERT_TRUE(m_handlerCompleted); }
@@ -344,7 +229,6 @@ private:
     nx::utils::SyncQueue<ResolveResultFull> m_resolveResults;
     ResolveResultFull m_prevResolveResult;
     std::atomic<bool> m_handlerCompleted{false};
-    NatTraversalSupport m_natTraversalSupport = NatTraversalSupport::disabled;
 
     void generateRandomDnsEntry()
     {
@@ -402,20 +286,6 @@ TEST_F(AddressResolver, localhost_is_resolved_properly_ipv6)
     andResolvedTo(HostAddress(in6addr_loopback, 0));
 }
 
-TEST_F(AddressResolver, cloud_address_is_not_reported_if_not_asked)
-{
-    const auto cloudHostname = nx::Uuid::createUuid().toSimpleStdString();
-
-    whenResolveWithCloudEnabled(cloudHostname);
-    thenResolveSucceeded();
-    andResolvedTo(AddressEntry(AddressType::cloud, HostAddress(cloudHostname)));
-
-    // Resolving without cloud support.
-    // The cached resolve result should be invalidated since we changed the query.
-    whenResolve(cloudHostname);
-    thenResolveFailed(SystemError::hostNotFound);
-}
-
 TEST_F(AddressResolver, resolving_same_name_with_different_ip_version)
 {
     whenResolve("localhost");
@@ -430,13 +300,6 @@ TEST_F(AddressResolver, resolving_same_name_with_different_ip_version)
     andResolvedTo(HostAddress(in6addr_loopback, 0));
 }
 
-TEST_F(AddressResolver, cancel_waits_for_handler_completion)
-{
-    givenResolvePausedInHandler();
-    whenCancelResolve();
-    thenCancelBlockedUntilHandlerCompletion();
-}
-
 TEST_F(AddressResolver, dns_record_update_is_seen)
 {
     emulateHostnameResolvableByDnsResolver();
@@ -444,25 +307,6 @@ TEST_F(AddressResolver, dns_record_update_is_seen)
 
     whenDnsRecordIsUpdated();
     waitUntilHostnameIsResolvedCorrectly();
-}
-
-TEST_F(AddressResolver, isCloudHostname)
-{
-    const auto guid1 = nx::Uuid::createUuid().toSimpleStdString();
-    const auto guid2 = nx::Uuid::createUuid().toSimpleStdString();
-
-    ASSERT_TRUE(resolver().isCloudHostname(guid1));
-    ASSERT_TRUE(resolver().isCloudHostname(guid1 + "." + guid2));
-    ASSERT_TRUE(resolver().isCloudHostname("foo." + guid1));
-    ASSERT_TRUE(resolver().isCloudHostname("foo.foo." + guid1));
-
-    ASSERT_FALSE(resolver().isCloudHostname(guid1 + ".com"));
-    ASSERT_FALSE(resolver().isCloudHostname("example.com"));
-    ASSERT_FALSE(resolver().isCloudHostname("a-b-c-d"));
-    ASSERT_FALSE(resolver().isCloudHostname(""));
-    ASSERT_FALSE(resolver().isCloudHostname("fe80::2090:f0b3:62de:53ca"));
-    ASSERT_FALSE(resolver().isCloudHostname("10.8.0.13"));
-    ASSERT_FALSE(resolver().isCloudHostname("cloud.nxvms.com"));
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -532,7 +376,6 @@ protected:
         resolver().resolveAsync(
             domainName,
             std::bind(&AddressResolverNameMapping::saveResolveResult, this, _1, _2),
-            NatTraversalSupport::disabled,
             AF_INET);
     }
 
@@ -556,8 +399,7 @@ protected:
 
     void assertFixedEndpointsCanStillBeResolved()
     {
-        const auto entries =
-            resolver().resolveSync(m_hostNameToResolve, NatTraversalSupport::disabled, AF_INET);
+        const auto entries = resolver().resolveSync(m_hostNameToResolve, AF_INET);
         ASSERT_EQ(entries.size(), m_fixedEntries.size());
         for (decltype(entries)::size_type i = 0; i < entries.size(); ++i)
         {
@@ -571,7 +413,6 @@ protected:
         ASSERT_EQ(SystemError::noError, std::get<0>(resolveResult));
         const auto& entries = std::get<1>(resolveResult);
         ASSERT_EQ(1U, entries.size());
-        ASSERT_EQ(AddressType::direct, entries[0].type);
         ASSERT_EQ(hostEndpoint.address, entries[0].host);
     }
 
@@ -595,7 +436,7 @@ private:
         int /*ipVersion*/,
         ResolveResult* resolved)
     {
-        resolved->entries.push_back({AddressType::direct, m_stubAddress});
+        resolved->entries.push_back({m_stubAddress});
         return SystemError::noError;
     }
 
@@ -658,29 +499,24 @@ const HostAddress AddressResolverNat64::kV6("2001:db8:0:2::1");
 
 TEST_F(AddressResolverNat64, IPv4) // NAT64 not in use, IP v4 is just converted for better speed.
 {
-    const auto entries =
-        SocketGlobals::addressResolver().resolveSync(kV4, NatTraversalSupport::disabled, AF_INET);
+    const auto entries = SocketGlobals::addressResolver().resolveSync(kV4, AF_INET);
     ASSERT_EQ(1U, entries.size());
 
-    ASSERT_EQ(AddressType::direct, entries.front().type);
     ASSERT_TRUE(entries.front().host.isIpAddress());
     ASSERT_EQ(kV4.ipV4()->s_addr, entries.front().host.ipV4()->s_addr);
 }
 
 TEST_F(AddressResolverNat64, IPv6) // NAT64 returns 2 addresses: mapped IP v6 and converted IP v4.
 {
-    const auto entries =
-        SocketGlobals::addressResolver().resolveSync(kV4, NatTraversalSupport::disabled, AF_INET6);
+    const auto entries = SocketGlobals::addressResolver().resolveSync(kV4, AF_INET6);
     ASSERT_EQ(2U, entries.size());
 
-    ASSERT_EQ(AddressType::direct, entries.front().type);
     ASSERT_TRUE(entries.front().host.isIpAddress());
 
     ASSERT_EQ(kV6.ipV6().first, entries.front().host.ipV6().first);
     // ASSERT_EQ(0, memcmp(&*kV6.ipV6().first, &*entries.front().host.ipV6().first,
     // sizeof(in6_addr)));
 
-    ASSERT_EQ(AddressType::direct, entries.back().type);
     ASSERT_TRUE(entries.back().host.isIpAddress());
     ASSERT_EQ(kV4.ipV6().first, entries.back().host.ipV6().first);
     // ASSERT_EQ(0, memcmp(&*kV4.ipV6().first, &*entries.back().host.ipV6().first,

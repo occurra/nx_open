@@ -4,7 +4,6 @@
 
 #include <nx/network/http/http_types.h>
 #include <nx/utils/string.h>
-#include <nx/utils/test_support/custom_gtest_printers.h>
 
 namespace nx::network::http::header {
 

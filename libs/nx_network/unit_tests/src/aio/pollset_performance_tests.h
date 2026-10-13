@@ -2,7 +2,14 @@
 
 #pragma once
 
+#include <chrono>
+#include <iostream>
+
 #include <gtest/gtest.h>
+
+#include <nx/network/aio/event_type.h>
+#include <nx/network/system_socket.h>
+#include <nx/utils/test_support/utils.h>
 
 namespace nx {
 namespace network {

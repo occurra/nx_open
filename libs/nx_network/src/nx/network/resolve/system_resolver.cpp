@@ -59,7 +59,7 @@ static void convertAddrInfo(addrinfo* addressInfo, std::deque<AddressEntry>* res
 
     for (auto& address: resolvedAddresses)
     {
-        resolvedEntries->push_back(AddressEntry(AddressType::direct, std::move(address)));
+        resolvedEntries->push_back(AddressEntry(std::move(address)));
     }
 }
 
@@ -81,13 +81,12 @@ SystemError::ErrorCode SystemResolver::resolve(
         {
             if (ipVersion == AF_INET)
             {
-                resolveResult->entries.push_back(
-                    {{AddressEntry(AddressType::direct, *HostAddress::localhost.ipV4())}});
+                resolveResult->entries.push_back({{AddressEntry(*HostAddress::localhost.ipV4())}});
             }
             else
             {
                 resolveResult->entries.push_back(
-                    {{AddressEntry(AddressType::direct, *HostAddress::localhost.ipV6().first)}});
+                    {{AddressEntry(*HostAddress::localhost.ipV6().first)}});
             }
             return SystemError::noError;
         }
@@ -230,8 +229,7 @@ void SystemResolver::ensureLocalHostCompatibility(std::deque<AddressEntry>* reso
     if (ipv4ResolvedLocalhost != resolvedAddresses->end()
         && ipv6ResolvedLocalhost == resolvedAddresses->end())
     {
-        resolvedAddresses->push_back(
-            AddressEntry(AddressType::direct, HostAddress(in6addr_loopback, 0)));
+        resolvedAddresses->push_back(AddressEntry(HostAddress(in6addr_loopback, 0)));
     }
 }
 

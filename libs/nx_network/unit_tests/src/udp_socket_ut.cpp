@@ -257,17 +257,6 @@ TEST_F(UdpSocketIpV6, TransferDns)
     udpSocketTransferTest("localhost");
 }
 
-TEST_F(UdpSocketIpV6, TransferNat64)
-{
-    HostAddress ip("12.34.56.78");
-    SocketGlobals::addressResolver().dnsResolver().addEtcHost(
-        ip.toString(),
-        {HostAddress::localhost});
-
-    udpSocketTransferTest(ip);
-    SocketGlobals::addressResolver().dnsResolver().removeEtcHost(ip.toString());
-}
-
 TEST_F(UdpSocket, resolve_error_is_reported_in_aio_thread)
 {
     whenSendDataToUnknownHost();

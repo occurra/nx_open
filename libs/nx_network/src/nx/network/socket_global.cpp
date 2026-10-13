@@ -9,14 +9,10 @@
 
 #include <nx/utils/debug.h>
 #include <nx/utils/string.h>
-#include <udt/udt.h>
 
 #include "address_resolver.h"
 #include "aio/aio_service.h"
-#include "aio/pollset_factory.h"
 #include "aio/timer.h"
-#include "cloud/cloud_connect_controller.h"
-#include "cloud/tunnel/outgoing_tunnel_pool.h" //< TODO: #akolesnikov Get rid of this dependency.
 #include "http/global_context.h"
 #include "nx_network_ini.h"
 #include "socket_factory.h"
@@ -77,22 +73,12 @@ public:
 };
 #endif
 
-class UdtInitializer
-{
-public:
-    UdtInitializer() { UDT::startup(); }
-
-    ~UdtInitializer() { UDT::cleanup(); }
-};
-
 } // namespace
 
 //-------------------------------------------------------------------------------------------------
 
 struct SocketGlobalsImpl
 {
-    int initializationFlags = 0;
-
     /** map<string representation, regexp> */
     std::map<std::string, QRegularExpression> hostDisabledProgrammatically;
     std::map<std::string, QRegularExpression> hostDisabledViaIni;
@@ -104,17 +90,12 @@ struct SocketGlobalsImpl
 #if defined(_WIN32)
     Win32SocketInitializer win32SocketInitializer;
 #endif
-    std::unique_ptr<UdtInitializer> udtInitializer;
-
     std::optional<nx::utils::debug::OnAboutToBlockHandler> onAboutToBlockHandler;
 
-    aio::PollSetFactory pollSetFactory;
     std::unique_ptr<AddressResolver> addressResolver;
     AioServiceGuard aioServiceGuard;
     std::unique_ptr<http::GlobalContext> httpGlobalContext;
     std::unique_ptr<aio::Timer> debugIniReloadTimer;
-
-    std::unique_ptr<cloud::CloudConnectController> cloudConnectController;
 
     nx::Mutex mutex;
 };
@@ -122,22 +103,16 @@ struct SocketGlobalsImpl
 //-------------------------------------------------------------------------------------------------
 // SocketGlobals
 
-SocketGlobals::SocketGlobals(int initializationFlags):
+SocketGlobals::SocketGlobals():
     m_implGuard(std::make_unique<SocketGlobalsImpl>()),
     m_impl(m_implGuard.get()),
     m_allocationAnalyzer(/*isEnabled*/ ini().traceIoObjectsLifetime)
 {
-    m_impl->initializationFlags = initializationFlags;
-    if (m_impl->initializationFlags & InitializationFlags::disableUdt)
-        m_impl->pollSetFactory.disableUdt();
-
     reloadIni();
 }
 
 SocketGlobals::~SocketGlobals()
 {
-    deinitializeCloudConnectivity();
-
     m_impl->debugIniReloadTimer->pleaseStopSync();
     m_impl->addressResolver->pleaseStopSync();
 
@@ -193,38 +168,22 @@ AddressResolver& SocketGlobals::addressResolver()
     return *s_instance->m_impl->addressResolver;
 }
 
-cloud::CloudConnectController& SocketGlobals::cloud()
-{
-    return *s_instance->m_impl->cloudConnectController;
-}
-
-int SocketGlobals::initializationFlags()
-{
-    return s_instance->m_impl->initializationFlags;
-}
-
 static nx::Mutex& socketGlobalsMutexInstance()
 {
     static nx::Mutex mtx;
     return mtx;
 }
 
-void SocketGlobals::init(const ArgumentParser& arguments, int initializationFlags)
+void SocketGlobals::init(const ArgumentParser& arguments)
 {
     NX_MUTEX_LOCKER lock(&socketGlobalsMutexInstance());
 
     if (++s_counter == 1) //< First in.
     {
         s_initState = InitState::inintializing; //< Allow creating Pollables in constructor.
-        s_instance = new SocketGlobals(initializationFlags);
+        s_instance = new SocketGlobals();
 
         s_instance->initializeNetworking(arguments);
-
-        // TODO: #akolesnikov Disable cloud based on initializationFlags.
-        std::string customCloudHost;
-        arguments.read("cloud-host", &customCloudHost);
-        s_instance->initializeCloudConnectivity(customCloudHost);
-
         s_initState = InitState::done;
 
         lock.unlock();
@@ -232,13 +191,9 @@ void SocketGlobals::init(const ArgumentParser& arguments, int initializationFlag
     }
 }
 
-void SocketGlobals::init(int initializationFlags, const std::string& customCloudHost)
+void SocketGlobals::init()
 {
-    ArgumentParser args;
-    if (!customCloudHost.empty())
-        args.parse({nx::format("--cloud-host=%1").args(customCloudHost)});
-
-    init(args, initializationFlags);
+    init(ArgumentParser());
 }
 
 void SocketGlobals::deinit()
@@ -268,35 +223,15 @@ bool SocketGlobals::isInitialized()
     return s_instance != nullptr;
 }
 
-void SocketGlobals::switchCloudHost(const std::string& customCloudHost)
-{
-    const std::string ownPeerId = cloud().outgoingTunnelPool().ownPeerId();
-    s_instance->deinitializeCloudConnectivity();
-    s_instance->initializeCloudConnectivity(customCloudHost);
-    cloud().outgoingTunnelPool().setOwnPeerId(ownPeerId);
-}
-
 void SocketGlobals::printArgumentsHelp(std::ostream* outputStream)
 {
-    (*outputStream) << "  --ip-version=, -ip               Ip version to use. 4 or 6" << std::endl
-                    << "  --enforce-socket={socket type}   tcp, udt, cloud" << std::endl;
-    cloud::CloudConnectController::printArgumentsHelp(outputStream);
+    (*outputStream) << "  --ip-version=, -ip               Ip version to use. 4 or 6" << std::endl;
 }
 
 void SocketGlobals::applyArguments(const ArgumentParser& arguments)
 {
     if (const auto value = arguments.get("ip-version", "ip"))
         SocketFactory::setIpVersion(value->toStdString());
-
-    if (const auto value = arguments.get("enforce-socket", "socket"))
-        SocketFactory::enforceStreamSocketType(value->toStdString());
-
-    cloud().applyArguments(arguments);
-}
-
-bool SocketGlobals::isUdtEnabled() const
-{
-    return (m_impl->initializationFlags & InitializationFlags::disableUdt) == 0;
 }
 
 void SocketGlobals::blockHost(const std::string& regexpString)
@@ -389,9 +324,6 @@ void SocketGlobals::reloadIni()
 
 void SocketGlobals::initializeNetworking(const ArgumentParser& arguments)
 {
-    if (isUdtEnabled())
-        m_impl->udtInitializer = std::make_unique<UdtInitializer>();
-
     int aioThreadCount = 0;
     arguments.read("aio-thread-count", &aioThreadCount);
     bool enableAioThreadWatcher = false;
@@ -409,36 +341,22 @@ void SocketGlobals::initializeNetworking(const ArgumentParser& arguments)
     m_impl->debugIniReloadTimer = std::make_unique<aio::Timer>();
 }
 
-void SocketGlobals::initializeCloudConnectivity(const std::string& customCloudHost)
-{
-    m_impl->cloudConnectController = std::make_unique<cloud::CloudConnectController>(
-        customCloudHost,
-        &m_impl->aioServiceGuard.aioService(),
-        m_impl->addressResolver.get());
-}
-
-void SocketGlobals::deinitializeCloudConnectivity()
-{
-    m_impl->cloudConnectController.reset();
-}
-
 //-------------------------------------------------------------------------------------------------
 
-SocketGlobalsHolder::SocketGlobalsHolder(int initializationFlags):
-    SocketGlobalsHolder({}, initializationFlags)
+SocketGlobalsHolder::SocketGlobalsHolder():
+    SocketGlobalsHolder(ArgumentParser())
 {
 }
 
-SocketGlobalsHolder::SocketGlobalsHolder(const ArgumentParser& arguments, int initializationFlags):
-    m_args(arguments),
-    m_initializationFlags(initializationFlags)
+SocketGlobalsHolder::SocketGlobalsHolder(const ArgumentParser& arguments):
+    m_args(arguments)
 {
     if (s_holderInstance)
         NX_ERROR(this, "Singleton is created more than once.");
     else
         s_holderInstance = this;
 
-    initialize(/*initializePeerId*/ false);
+    initialize();
 }
 
 SocketGlobalsHolder::~SocketGlobalsHolder()
@@ -447,15 +365,9 @@ SocketGlobalsHolder::~SocketGlobalsHolder()
         s_holderInstance = nullptr;
 }
 
-void SocketGlobalsHolder::initialize(bool initializePeerId)
+void SocketGlobalsHolder::initialize()
 {
-    m_socketGlobalsGuard =
-        std::make_unique<SocketGlobals::InitGuard>(m_args, m_initializationFlags);
-
-    // TODO: #akolesnikov It is not clear why following call is in reinitialize,
-    // but not in initial initialization. Remove it from here.
-    if (initializePeerId)
-        SocketGlobals::cloud().outgoingTunnelPool().assignOwnPeerId("re", nx::Uuid::createUuid());
+    m_socketGlobalsGuard = std::make_unique<SocketGlobals::InitGuard>(m_args);
 }
 
 void SocketGlobalsHolder::uninitialize()
@@ -463,10 +375,10 @@ void SocketGlobalsHolder::uninitialize()
     m_socketGlobalsGuard.reset();
 }
 
-void SocketGlobalsHolder::reinitialize(bool initializePeerId)
+void SocketGlobalsHolder::reinitialize()
 {
     uninitialize();
-    initialize(initializePeerId);
+    initialize();
 }
 
 SocketGlobalsHolder* SocketGlobalsHolder::instance()
