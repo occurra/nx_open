@@ -1,0 +1,17 @@
+* text=auto eol=lf
+# Windows-specific files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.def text eol=crlf
+*.ps1 text eol=crlf
+*.vcproj text eol=crlf
+*.wxs text eol=crlf
+# Binary files
+*.exe binary
+*.ico binary
+*.icns binary
+*.png binary
+# Svg images should be auto-collapsed to simplify review.
+*.svg gitlab-generated
+# All translations should be auto-collapsed except source string changes.
+**/translations/**/*.ts gitlab-generated
