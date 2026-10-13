@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=@customization.vmsName@
-Comment=@clientDisplayName@
-Exec=/opt/@customization.companyId@/client/@releaseVersion.full@/bin/applauncher
-Icon=vmsclient-@customization@.png
-Terminal=false
-Type=Application
-StartupNotify=true
-StartupWMClass=@customization.brand@
