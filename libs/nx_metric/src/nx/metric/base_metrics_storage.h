@@ -14,8 +14,14 @@ namespace nx::metric {
 /*
  * Helper function to check whether type is a map or QMap
  */
-template<class, class = std::void_t<>> struct isMap: std::false_type {};
-template<class T> struct isMap<T, std::void_t<typename T::key_type>>: std::true_type {};
+template<class, class = std::void_t<>>
+struct isMap: std::false_type
+{
+};
+template<class T>
+struct isMap<T, std::void_t<typename T::key_type>>: std::true_type
+{
+};
 
 struct ParameterSet
 {
@@ -31,9 +37,11 @@ struct ParameterSet
             if (brief)
                 result.insert(param->name(), param->toJson(brief));
             else
-                result.insert(param->name(), QJsonObject{
-                    {"value", param->toJson(brief)},
-                    {"description", param->description()}});
+                result.insert(
+                    param->name(),
+                    QJsonObject{
+                        {"value", param->toJson(brief)},
+                        {"description", param->description()}});
         }
         return result;
     }
@@ -42,7 +50,8 @@ protected:
     struct BaseParam
     {
         BaseParam(ParameterSet* paramSet, const QString& name, const QString& description):
-            m_name(name), m_description(description)
+            m_name(name),
+            m_description(description)
         {
             paramSet->m_params.push_back(this);
         }
@@ -53,12 +62,13 @@ protected:
         virtual QJsonValue toJson(bool brief) const = 0;
         const QString& name() const { return m_name; }
         const QString& description() const { return m_description; }
+
     private:
         const QString m_name;
         const QString m_description;
     };
 
-    template <typename T>
+    template<typename T>
     struct Param final: BaseParam
     {
         using BaseParam::BaseParam;
@@ -68,14 +78,14 @@ protected:
 
         virtual QJsonValue toJson([[maybe_unused]] bool brief) const override
         {
-            if constexpr(isMap<T>::value)
+            if constexpr (isMap<T>::value)
             {
                 QVariantMap result;
                 for (auto itr = m_value.begin(); itr != m_value.end(); ++itr)
                     result.insert(itr.key(), itr.value());
                 return QJsonObject::fromVariantMap((result));
             }
-            else if constexpr(std::is_base_of<ParameterSet, T>::value)
+            else if constexpr (std::is_base_of<ParameterSet, T>::value)
             {
                 return m_value.toJson(brief);
             }
@@ -84,8 +94,9 @@ protected:
                 return QJsonValue(m_value);
             }
         }
+
     private:
-        T  m_value{};
+        T m_value{};
     };
 
 private:

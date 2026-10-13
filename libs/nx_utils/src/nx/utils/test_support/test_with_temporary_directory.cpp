@@ -4,9 +4,9 @@
 
 #include <QtCore/QDir>
 
-#include "test_options.h"
-
 #include <nx/utils/log/log.h>
+
+#include "test_options.h"
 
 namespace nx::utils::test {
 
@@ -22,8 +22,8 @@ QString calculateTestDirectory(const QString& tmpDir)
     // TestWithTemporaryDirectory instances in a single test do not collide.
     static std::atomic<int> sequence{0};
 
-    const QString moduleSuffix = QString("/%1_%2.tst")
-        .arg(TestOptions::moduleName()).arg(++sequence);
+    const QString moduleSuffix =
+        QString("/%1_%2.tst").arg(TestOptions::moduleName()).arg(++sequence);
 
     // Global temp dir is used if available. Module name is used as a subfolder.
     if (auto globalTmpDir = TestOptions::temporaryDirectoryPath(); !globalTmpDir.isEmpty())
@@ -35,9 +35,7 @@ QString calculateTestDirectory(const QString& tmpDir)
 
 } // namespace
 
-TestWithTemporaryDirectory::TestWithTemporaryDirectory(
-    const QString& tmpDir)
-    :
+TestWithTemporaryDirectory::TestWithTemporaryDirectory(const QString& tmpDir):
     m_tmpDir(calculateTestDirectory(tmpDir))
 {
     // Auto-clean temporary folder contents before testing.

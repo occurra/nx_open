@@ -13,14 +13,19 @@ namespace nx::reflect {
 
 namespace detail {
 
-template <typename T>
+template<typename T>
 class HasToBase64
 {
     typedef char one;
-    struct two { char x[2]; };
+    struct two
+    {
+        char x[2];
+    };
 
-    template <typename C> static one test(std::decay_t<decltype(std::declval<C>().toBase64())>*);
-    template <typename C> static two test(...);
+    template<typename C>
+    static one test(std::decay_t<decltype(std::declval<C>().toBase64())>*);
+    template<typename C>
+    static two test(...);
 
 public:
     static constexpr bool value = sizeof(test<T>(0)) == sizeof(char);
@@ -41,7 +46,8 @@ std::string toStringSfinae(T&& value)
 {
     if constexpr (std::is_same_v<std::decay_t<T>, std::string>)
         return std::forward<T>(value);
-    else if constexpr (detail::HasToBase64V<std::decay_t<T>> && (flags & Flags::disableToBase64) == 0)
+    else if constexpr (
+        detail::HasToBase64V<std::decay_t<T>> && (flags & Flags::disableToBase64) == 0)
         // NOTE: Making sure there is no infinite recursion
         // if T::toBase64() returns T (like QByteArray),
         return toStringSfinae<Flags::disableToBase64>(value.toBase64());

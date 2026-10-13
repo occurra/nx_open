@@ -74,7 +74,8 @@ bool TestHttpServer::registerStaticProcessor(
     const Method& method)
 {
     return registerRequestProcessor(
-        path, [=]()
+        path,
+        [=]()
         {
             return std::make_unique<nx::network::http::server::handler::StaticData>(
                 mimeType,
@@ -95,11 +96,7 @@ bool TestHttpServer::registerFileProvider(
 
     std::stringstream s;
     s << contentFile.rdbuf();
-    return registerStaticProcessor(
-        httpPath,
-        nx::Buffer(s.str()),
-        mimeType,
-        method);
+    return registerStaticProcessor(httpPath, nx::Buffer(s.str()), mimeType, method);
 }
 
 bool TestHttpServer::registerContentProvider(
@@ -172,8 +169,7 @@ void TestHttpServer::installIntermediateRequestHandler(
 // class RandomlyFailingHttpConnection
 
 RandomlyFailingHttpConnection::RandomlyFailingHttpConnection(
-    std::unique_ptr<AbstractStreamSocket> sock)
-    :
+    std::unique_ptr<AbstractStreamSocket> sock):
     BaseType(std::move(sock)),
     m_requestsToAnswer(nx::utils::random::number<int>(0, 3))
 {
@@ -200,21 +196,19 @@ void RandomlyFailingHttpConnection::processMessage(nx::network::http::Message /*
     }
     else
     {
-        const auto bytesToSend = nx::utils::random::number<std::size_t>(0, m_responseBuffer.size());
+        const auto bytesToSend =
+            nx::utils::random::number<std::size_t>(0, m_responseBuffer.size());
         if (bytesToSend == 0)
             return closeConnection(SystemError::noError);
         dataToSend = m_responseBuffer.substr(0, bytesToSend);
     }
 
-    sendData(
-        dataToSend,
-        std::bind(&RandomlyFailingHttpConnection::onResponseSent, this, _1));
+    sendData(dataToSend, std::bind(&RandomlyFailingHttpConnection::onResponseSent, this, _1));
 }
 
-void RandomlyFailingHttpConnection::onResponseSent(
-    SystemError::ErrorCode /*sysErrorCode*/)
+void RandomlyFailingHttpConnection::onResponseSent(SystemError::ErrorCode /*sysErrorCode*/)
 {
-    //closeConnection(sysErrorCode);
+    // closeConnection(sysErrorCode);
 }
 
 //-------------------------------------------------------------------------------------------------

@@ -12,8 +12,7 @@ PreloadedTranslationReference::PreloadedTranslationReference()
 
 PreloadedTranslationReference::PreloadedTranslationReference(
     TranslationManager* manager,
-    const QString& locale)
-    :
+    const QString& locale):
     m_manager(manager),
     m_locale(locale)
 {
@@ -27,8 +26,7 @@ PreloadedTranslationReference::~PreloadedTranslationReference()
 }
 
 PreloadedTranslationReference::PreloadedTranslationReference(
-    const PreloadedTranslationReference& other)
-    :
+    const PreloadedTranslationReference& other):
     m_manager(other.m_manager),
     m_locale(other.m_locale)
 {

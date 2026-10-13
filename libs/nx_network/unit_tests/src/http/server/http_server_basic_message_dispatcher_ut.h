@@ -17,14 +17,10 @@ struct RequestContext
     RequestPathParams requestPathParams;
 };
 
-class DummyHandler:
-    public nx::network::http::RequestHandlerWithContext
+class DummyHandler: public nx::network::http::RequestHandlerWithContext
 {
 public:
-    DummyHandler(
-        const std::string& pathTemplate,
-        std::deque<RequestContext>* requests)
-        :
+    DummyHandler(const std::string& pathTemplate, std::deque<RequestContext>* requests):
         m_pathTemplate(pathTemplate),
         m_requests(requests)
     {
@@ -34,9 +30,8 @@ public:
         nx::network::http::RequestContext requestContext,
         nx::network::http::RequestProcessedHandler completionHandler) override
     {
-        m_requests->push_back({
-            m_pathTemplate,
-            std::exchange(requestContext.requestPathParams, {})});
+        m_requests->push_back(
+            {m_pathTemplate, std::exchange(requestContext.requestPathParams, {})});
 
         completionHandler(StatusCode::ok);
     }
@@ -54,14 +49,10 @@ using OnRequestProcessedHandler = std::function<void(
 } // namespace detail
 
 template<typename MessageDispatcherType>
-class HttpServerBasicMessageDispatcher:
-    public ::testing::Test
+class HttpServerBasicMessageDispatcher: public ::testing::Test
 {
 public:
-    ~HttpServerBasicMessageDispatcher()
-    {
-        m_timer.pleaseStopSync();
-    }
+    ~HttpServerBasicMessageDispatcher() { m_timer.pleaseStopSync(); }
 
 protected:
     virtual void SetUp() override
@@ -89,7 +80,10 @@ protected:
         m_messageDispatcher->registerRequestProcessorFunc(
             kAnyMethod,
             path,
-            [this](auto&&... args) { slowHandlerFunc(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                slowHandlerFunc(std::forward<decltype(args)>(args)...);
+            });
     }
 
     void invokeHandler(const std::string& path, const Method& method)
@@ -103,10 +97,7 @@ protected:
         m_messageDispatcher.reset();
     }
 
-    void assertNoHandlerIsRunning()
-    {
-        ASSERT_EQ(0, m_runningHandlerCounter);
-    }
+    void assertNoHandlerIsRunning() { ASSERT_EQ(0, m_runningHandlerCounter); }
 
     void assertHandlerIsFound(
         const std::string& path,
@@ -121,15 +112,9 @@ protected:
         const std::string& path,
         const Method& method = nx::network::http::Method::get)
     {
-        ASSERT_FALSE(
-            m_messageDispatcher->dispatchRequest(
-                RequestContext(
-                    {},
-                    {},
-                    SocketAddress(),
-                    {},
-                    prepareDummyRequest(method, path)),
-                [](auto&&...) {}));
+        ASSERT_FALSE(m_messageDispatcher->dispatchRequest(
+            RequestContext({}, {}, SocketAddress(), {}, prepareDummyRequest(method, path)),
+            [](auto&&...) {}));
     }
 
     void assertDefaultHandlerFound(
@@ -143,15 +128,14 @@ protected:
 
     void assertRequestIsDispatched(const std::string& path, const Method& method)
     {
-        ASSERT_TRUE(
-            m_messageDispatcher->dispatchRequest(
-                RequestContext(
-                    ConnectionAttrs{},
-                    std::weak_ptr<http::HttpServerConnection>{},
-                    SocketAddress(),
-                    {},
-                    prepareDummyRequest(method, path)),
-                [](auto&&...) {}));
+        ASSERT_TRUE(m_messageDispatcher->dispatchRequest(
+            RequestContext(
+                ConnectionAttrs{},
+                std::weak_ptr<http::HttpServerConnection>{},
+                SocketAddress(),
+                {},
+                prepareDummyRequest(method, path)),
+            [](auto&&...) {}));
     }
 
     detail::RequestContext issuedRequest()
@@ -167,11 +151,9 @@ private:
     std::atomic<int> m_runningHandlerCounter = 0;
     aio::Timer m_timer;
 
-    std::unique_ptr<detail::DummyHandler> handlerFactoryFunc(
-        const std::string& path)
+    std::unique_ptr<detail::DummyHandler> handlerFactoryFunc(const std::string& path)
     {
-        return std::make_unique<detail::DummyHandler>(
-            path, &m_dispatchedPathQueue);
+        return std::make_unique<detail::DummyHandler>(path, &m_dispatchedPathQueue);
     }
 
     void slowHandlerFunc(
@@ -194,8 +176,7 @@ private:
         nx::network::http::Request request;
         request.requestLine.method = method;
         request.requestLine.version = nx::network::http::http_1_1;
-        request.requestLine.url =
-            nx::Url(nx::utils::buildString("http://127.0.0.1:7001", path));
+        request.requestLine.url = nx::Url(nx::utils::buildString("http://127.0.0.1:7001", path));
         return request;
     }
 };
@@ -260,9 +241,11 @@ TYPED_TEST_P(HttpServerBasicMessageDispatcher, waits_for_handler_completion_befo
 }
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(HttpServerBasicMessageDispatcher);
-REGISTER_TYPED_TEST_SUITE_P(HttpServerBasicMessageDispatcher,
+REGISTER_TYPED_TEST_SUITE_P(
+    HttpServerBasicMessageDispatcher,
     handler_found_by_exatch_match,
-    handler_not_found, default_handler_is_used,
+    handler_not_found,
+    default_handler_is_used,
     default_handler_has_lowest_priority,
     register_handler_for_specific_method,
     waits_for_handler_completion_before_destruction);

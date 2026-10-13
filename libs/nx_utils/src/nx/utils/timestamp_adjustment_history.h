@@ -27,9 +27,7 @@ public:
      * @param offset Offset that should be applied to sourceTimestamp to obtain
      *     corresponding target clock timestamp.
      */
-    void record(
-        std::chrono::microseconds sourceTimestamp,
-        std::chrono::microseconds offset);
+    void record(std::chrono::microseconds sourceTimestamp, std::chrono::microseconds offset);
 
     /**
      * @return Latest known source timestamp, if any.

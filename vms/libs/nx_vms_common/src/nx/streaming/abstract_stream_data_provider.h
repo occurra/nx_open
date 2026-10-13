@@ -14,11 +14,11 @@ class QnAbstractStreamDataProvider;
 class QnResource;
 class QnAbstractMediaDataReceptor;
 
-#define CL_MAX_DATASIZE (10*1024*1024) // assume we can never get compressed data with  size greater than this
+#define CL_MAX_DATASIZE \
+    (10 * 1024 * 1024) // assume we can never get compressed data with  size greater than this
 #define CL_MAX_CHANNEL_NUMBER (10)
 
-class NX_VMS_COMMON_API QnAbstractStreamDataProvider:
-    public QnLongRunnable
+class NX_VMS_COMMON_API QnAbstractStreamDataProvider: public QnLongRunnable
 {
     Q_OBJECT
 public:
@@ -34,7 +34,7 @@ public:
     virtual void subscribe(QnAbstractMediaDataReceptor* dp) { addDataProcessor(dp); }
     virtual void unsubscribe(QnAbstractMediaDataReceptor* dp) { removeDataProcessor(dp); }
 
-    virtual bool isReverseMode() const { return false;}
+    virtual bool isReverseMode() const { return false; }
 
     void setNeedSleep(bool sleep);
 
@@ -44,7 +44,10 @@ public:
     virtual void setRole(Qn::ConnectionRole role);
     Qn::ConnectionRole getRole() const;
 
-    virtual QnConstResourceVideoLayoutPtr getVideoLayout() const { return QnConstResourceVideoLayoutPtr(); }
+    virtual QnConstResourceVideoLayoutPtr getVideoLayout() const
+    {
+        return QnConstResourceVideoLayoutPtr();
+    }
     virtual bool hasVideo() const { return true; }
     virtual bool needConfigureProvider() const;
     virtual void startIfNotRunning() { start(); }

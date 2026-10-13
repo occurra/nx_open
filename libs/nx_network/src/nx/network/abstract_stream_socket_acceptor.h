@@ -10,8 +10,7 @@
 namespace nx {
 namespace network {
 
-class NX_NETWORK_API AbstractStreamSocketAcceptor:
-    public aio::BasicPollable
+class NX_NETWORK_API AbstractStreamSocketAcceptor: public aio::BasicPollable
 {
 public:
     /**

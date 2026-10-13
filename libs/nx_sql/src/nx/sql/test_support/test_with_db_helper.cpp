@@ -27,7 +27,8 @@ TestWithDbHelper::TestWithDbHelper(QString tmpDir):
     m_dbConnectionOptions.maxConnectionCount =
         m_dbConnectionOptions.driverType == RdbmsDriverType::sqlite ? 1 : 7;
 
-    if (m_dbConnectionOptions.dbName.isEmpty() && m_dbConnectionOptions.driverType == RdbmsDriverType::sqlite)
+    if (m_dbConnectionOptions.dbName.isEmpty()
+        && m_dbConnectionOptions.driverType == RdbmsDriverType::sqlite)
     {
         static std::atomic<int> sequence{0};
         m_dbConnectionOptions.dbName =
@@ -51,8 +52,7 @@ nx::sql::ConnectionOptions& TestWithDbHelper::dbConnectionOptions()
     return m_dbConnectionOptions;
 }
 
-void TestWithDbHelper::setDbConnectionOptions(
-    const nx::sql::ConnectionOptions& connectionOptions)
+void TestWithDbHelper::setDbConnectionOptions(const nx::sql::ConnectionOptions& connectionOptions)
 {
     sDbConnectionOptions = connectionOptions;
 }
@@ -65,10 +65,13 @@ void TestWithDbHelper::cleanDatabase()
         if (!dbConnectionHolder.open())
             throw Exception(dbConnectionHolder.lastError());
 
-        const bool result = SqlQueryExecutionHelper::execSQLScript(nx::format(R"sql(
+        const bool result = SqlQueryExecutionHelper::execSQLScript(
+            nx::format(R"sql(
                 DROP DATABASE %1;
                 CREATE DATABASE %1;
-            )sql").args(m_dbConnectionOptions.dbName).toUtf8(),
+            )sql")
+                .args(m_dbConnectionOptions.dbName)
+                .toUtf8(),
             *dbConnectionHolder.dbConnection());
         if (!result)
             throw Exception(DBResultCode::ioError);

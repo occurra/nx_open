@@ -10,12 +10,36 @@ namespace nx::media::h264 {
 
 enum NALUnitType
 {
-    nuUnspecified, nuSliceNonIDR, nuSliceA, nuSliceB, nuSliceC,  // 0..4
-    nuSliceIDR, nuSEI, nuSPS, nuPPS, nuDelimiter,                // 5..9
-    nuEOSeq, nuEOStream, nuFillerData, nuSPSExt, nuReserved1,    // 10..14
-    nuReserved2, nuReserved3, nuReserved4, nuReserved5, nuSliceWithoutPartitioning,  // 15..19
-    nuReserved6, nuReserved7, nuReserved8, nuReserved9, // 20..23
-    STAP_A_PACKET, STAP_B_PACKET, MTAP16_PACKET, MTAP24_PACKET, FU_A_PACKET, FU_B_PACKET,
+    nuUnspecified,
+    nuSliceNonIDR,
+    nuSliceA,
+    nuSliceB,
+    nuSliceC, // 0..4
+    nuSliceIDR,
+    nuSEI,
+    nuSPS,
+    nuPPS,
+    nuDelimiter, // 5..9
+    nuEOSeq,
+    nuEOStream,
+    nuFillerData,
+    nuSPSExt,
+    nuReserved1, // 10..14
+    nuReserved2,
+    nuReserved3,
+    nuReserved4,
+    nuReserved5,
+    nuSliceWithoutPartitioning, // 15..19
+    nuReserved6,
+    nuReserved7,
+    nuReserved8,
+    nuReserved9, // 20..23
+    STAP_A_PACKET,
+    STAP_B_PACKET,
+    MTAP16_PACKET,
+    MTAP24_PACKET,
+    FU_A_PACKET,
+    FU_B_PACKET,
     nuDummy
 };
 
@@ -40,17 +64,15 @@ public:
     uint8_t* m_nalBuffer = nullptr;
     int m_nalBufferLen = 0;
 
-    virtual ~NALUnit() {
-        delete [] m_nalBuffer;
-    }
+    virtual ~NALUnit() { delete[] m_nalBuffer; }
     static bool isSliceNal(uint8_t nalUnitType);
     int deserialize(uint8_t* buffer, uint8_t* end);
     virtual int serializeBuffer(uint8_t* dstBuffer, uint8_t* dstEnd, bool writeStartCode) const;
     virtual int serialize(uint8_t* dstBuffer);
-    //void setBuffer(uint8_t* buffer, uint8_t* end);
-    void decodeBuffer(const uint8_t* buffer,const uint8_t* end);
+    // void setBuffer(uint8_t* buffer, uint8_t* end);
+    void decodeBuffer(const uint8_t* buffer, const uint8_t* end);
 
-    const nx::utils::BitStreamReader& getBitReader() const {return bitReader;}
+    const nx::utils::BitStreamReader& getBitReader() const { return bitReader; }
 
 protected:
     nx::utils::BitStreamReader bitReader;

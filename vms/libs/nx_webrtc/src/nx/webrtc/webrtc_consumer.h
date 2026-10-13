@@ -24,12 +24,12 @@ using namespace nx::network;
 class NX_WEBRTC_API Consumer
 {
 public:
-
-    enum StreamStatus: int
+    enum StreamStatus : int
     {
         wait = http::StatusCode::_continue, //< Don't know result at this moment.
         success = http::StatusCode::ok, //< Success.
-        reconnect = http::StatusCode::movedPermanently, //< Stream is possible only after reconnect.
+        reconnect =
+            http::StatusCode::movedPermanently, //< Stream is possible only after reconnect.
         nodata = http::StatusCode::notFound, //< No provider for this timestamp, can't seek.
     };
     using StatusHandler = std::function<void(nx::Uuid deviceId, StreamStatus)>;
@@ -45,10 +45,7 @@ public:
     bool handleSrtp(std::vector<uint8_t> buffer);
     void seek(nx::Uuid deviceId, int64_t timestampUs, StatusHandler handler);
     void startProvidersIfNeeded();
-    void changeQuality(
-        nx::Uuid deviceId,
-        nx::vms::api::StreamIndex stream,
-        StatusHandler handler);
+    void changeQuality(nx::Uuid deviceId, nx::vms::api::StreamIndex stream, StatusHandler handler);
     void pause(nx::Uuid deviceId, StatusHandler handler);
     void resume(nx::Uuid deviceId, StatusHandler handler);
     void nextFrame(nx::Uuid deviceId, StatusHandler handler);
@@ -69,6 +66,7 @@ private:
     void runInMuxingThread(std::function<void()>&& func);
     void stopUnsafe();
     void sendMediaBuffer();
+
 private:
     // Main.
     nx::vms::server::MediaQueue m_mediaQueue;
@@ -77,7 +75,7 @@ private:
     Session* m_session = nullptr;
     Streamer* m_streamer = nullptr;
     int64_t m_lastReportedTimestampUs = AV_NOPTS_VALUE;
-    std::chrono::milliseconds m_sendTimestampInterval {1000};
+    std::chrono::milliseconds m_sendTimestampInterval{1000};
     bool m_enableMetadata = false;
     bool m_sendInProgress = false;
 };

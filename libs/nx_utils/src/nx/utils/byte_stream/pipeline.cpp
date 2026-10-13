@@ -28,16 +28,13 @@ void AbstractInputConverter::setInput(AbstractInput* inputStream)
 
 int CompositeConverter::write(const void* data, size_t size)
 {
-    return m_outputConverter
-        ? m_outputConverter->write(data, size)
-        : m_outputStream->write(data, size);
+    return m_outputConverter ? m_outputConverter->write(data, size)
+                             : m_outputStream->write(data, size);
 }
 
 int CompositeConverter::read(void* data, size_t size)
 {
-    return m_inputConverter
-        ? m_inputConverter->read(data, size)
-        : m_inputStream->read(data, size);
+    return m_inputConverter ? m_inputConverter->read(data, size) : m_inputStream->read(data, size);
 }
 
 void CompositeConverter::setOutput(AbstractOutput* output)
@@ -80,9 +77,7 @@ void CompositeConverter::setOutputConverter(AbstractOutputConverter* outputConve
 
 //-------------------------------------------------------------------------------------------------
 
-OutputConverterToInputAdapter::OutputConverterToInputAdapter(
-    AbstractOutputConverter* converter)
-    :
+OutputConverterToInputAdapter::OutputConverterToInputAdapter(AbstractOutputConverter* converter):
     m_converter(converter)
 {
     m_converter->setOutput(this);
@@ -188,7 +183,7 @@ int Pipe::write(const void* data, size_t count)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
 
-    if ((m_maxSize > 0) && ((std::size_t)m_buffer.size() >= m_maxSize))
+    if ((m_maxSize > 0) && ((std::size_t) m_buffer.size() >= m_maxSize))
         return StreamIoError::wouldBlock;
 
     m_buffer.append(static_cast<const char*>(data), (int) count);
@@ -252,15 +247,14 @@ RandomDataSource::RandomDataSource():
 
 int RandomDataSource::read(void* data, size_t count)
 {
-    const std::size_t bytesToRead =
-        std::min<std::size_t>(
-            count,
-            random::number<std::size_t>(m_readSizeRange.first, m_readSizeRange.second));
+    const std::size_t bytesToRead = std::min<std::size_t>(
+        count,
+        random::number<std::size_t>(m_readSizeRange.first, m_readSizeRange.second));
     char* charData = static_cast<char*>(data);
     std::generate(charData, charData + bytesToRead, rand);
     return (int) bytesToRead;
 }
 
-} // namespace pipeline
+} // namespace bstream
 } // namespace utils
 } // namespace nx

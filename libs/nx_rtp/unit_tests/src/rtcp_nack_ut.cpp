@@ -14,10 +14,20 @@ TEST(RtcpNackReport, readWrite)
         uint8_t data[] = {
             0x81, //< First byte.
             kRtcpGenericFeedback, //< Payload type.
-            0x0, 0x3, //< Length.
-            0x1, 0x2, 0x3, 0x4, //< Source SSRC.
-            0x5, 0x6, 0x7, 0x8, //< Sender SSRC.
-            0x10, 0x0, 0x0, 0x0 //< Lost: {0x1000}.
+            0x0,
+            0x3, //< Length.
+            0x1,
+            0x2,
+            0x3,
+            0x4, //< Source SSRC.
+            0x5,
+            0x6,
+            0x7,
+            0x8, //< Sender SSRC.
+            0x10,
+            0x0,
+            0x0,
+            0x0 //< Lost: {0x1000}.
         };
 
         RtcpNackReport report;
@@ -49,10 +59,20 @@ TEST(RtcpNackReport, readWrite)
         uint8_t data[] = {
             0x81, //< First byte.
             kRtcpGenericFeedback, //< Payload type.
-            0x0, 0x3, //< Length.
-            0x1, 0x2, 0x3, 0x4, //< Source SSRC.
-            0x5, 0x6, 0x7, 0x8, //< Sender SSRC.
-            0x10, 0x0, 0xff, 0xff //< Lost: {0x1000 - 0x1010}.
+            0x0,
+            0x3, //< Length.
+            0x1,
+            0x2,
+            0x3,
+            0x4, //< Source SSRC.
+            0x5,
+            0x6,
+            0x7,
+            0x8, //< Sender SSRC.
+            0x10,
+            0x0,
+            0xff,
+            0xff //< Lost: {0x1000 - 0x1010}.
         };
 
         RtcpNackReport report;
@@ -82,11 +102,24 @@ TEST(RtcpNackReport, readWrite)
         uint8_t data[] = {
             0x81, //< First byte.
             kRtcpGenericFeedback, //< Payload type.
-            0x0, 0x4, //< Length.
-            0x1, 0x2, 0x3, 0x4, //< Source SSRC.
-            0x5, 0x6, 0x7, 0x8, //< Sender SSRC.
-            0x10, 0x0, 0xff, 0xff, //< Lost: {0x1000 - 0x1010}.
-            0x10, 0x30, 0xff, 0xff //< Lost: {0x1030 - 0x1040}.
+            0x0,
+            0x4, //< Length.
+            0x1,
+            0x2,
+            0x3,
+            0x4, //< Source SSRC.
+            0x5,
+            0x6,
+            0x7,
+            0x8, //< Sender SSRC.
+            0x10,
+            0x0,
+            0xff,
+            0xff, //< Lost: {0x1000 - 0x1010}.
+            0x10,
+            0x30,
+            0xff,
+            0xff //< Lost: {0x1030 - 0x1040}.
         };
 
         RtcpNackReport report;
@@ -120,11 +153,24 @@ TEST(RtcpNackReport, readWrite)
         uint8_t data[] = {
             0x81, //< First byte.
             kRtcpGenericFeedback, //< Payload type.
-            0x0, 0x4, //< Length.
-            0x1, 0x2, 0x3, 0x4, //< Source SSRC.
-            0x5, 0x6, 0x7, 0x8, //< Sender SSRC.
-            0x10, 0x0, 0x0, 0x0, //< Lost: {0x1000}.
-            0x10, 0x30, 0x0, 0x0 //< Lost: {0x1030}.
+            0x0,
+            0x4, //< Length.
+            0x1,
+            0x2,
+            0x3,
+            0x4, //< Source SSRC.
+            0x5,
+            0x6,
+            0x7,
+            0x8, //< Sender SSRC.
+            0x10,
+            0x0,
+            0x0,
+            0x0, //< Lost: {0x1000}.
+            0x10,
+            0x30,
+            0x0,
+            0x0 //< Lost: {0x1030}.
         };
 
         RtcpNackReport report;
@@ -154,11 +200,24 @@ TEST(RtcpNackReport, readWrite)
         uint8_t data[] = {
             0x81, //< First byte.
             kRtcpGenericFeedback, //< Payload type.
-            0x0, 0x4, //< Length.
-            0x1, 0x2, 0x3, 0x4, //< Source SSRC.
-            0x5, 0x6, 0x7, 0x8, //< Sender SSRC.
-            0x10, 0x1, 0x0, 0x0, //< Lost: {0x1001}.
-            0x10, 0x0, 0x0, 0x0 //< Lost: {0x1000}.
+            0x0,
+            0x4, //< Length.
+            0x1,
+            0x2,
+            0x3,
+            0x4, //< Source SSRC.
+            0x5,
+            0x6,
+            0x7,
+            0x8, //< Sender SSRC.
+            0x10,
+            0x1,
+            0x0,
+            0x0, //< Lost: {0x1001}.
+            0x10,
+            0x0,
+            0x0,
+            0x0 //< Lost: {0x1000}.
         };
 
         RtcpNackReport report;

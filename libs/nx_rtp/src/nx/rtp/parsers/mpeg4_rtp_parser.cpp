@@ -7,7 +7,8 @@
 
 namespace {
 
-static constexpr uint8_t kStartCodeVos[] = {0x00, 0x00, 0x01, 0xB0}; //< Video object sequence startcode.
+static constexpr uint8_t kStartCodeVos[] =
+    {0x00, 0x00, 0x01, 0xB0}; //< Video object sequence startcode.
 static constexpr uint8_t kStartCodeGop[] = {0x00, 0x00, 0x01, 0xB3}; //< Group of VOPs startcode.
 
 bool isKeyFrame(const uint8_t* data, int64_t size)
@@ -15,10 +16,10 @@ bool isKeyFrame(const uint8_t* data, int64_t size)
     int startCodeSize = sizeof(kStartCodeVos);
     return size >= startCodeSize
         && (memcmp(data, kStartCodeVos, startCodeSize) == 0
-        || memcmp(data, kStartCodeGop, startCodeSize) == 0);
+            || memcmp(data, kStartCodeGop, startCodeSize) == 0);
 }
 
-}
+} // namespace
 
 namespace nx::rtp {
 
@@ -37,10 +38,10 @@ void Mpeg4Parser::updateCodecParameters(const uint8_t* data, int size, bool extr
     auto vol = nx::media::mpeg4::findAndParseVolHeader(data, size);
     if (vol.has_value()
         && (m_width != vol->video_object_layer_width
-        || m_height != vol->video_object_layer_height))
+            || m_height != vol->video_object_layer_height))
     {
-        auto codecParameters = std::make_shared<CodecParameters>(
-            m_codecParameters->getAvCodecParameters());
+        auto codecParameters =
+            std::make_shared<CodecParameters>(m_codecParameters->getAvCodecParameters());
         codecParameters->getAvCodecParameters()->width = vol->video_object_layer_width;
         codecParameters->getAvCodecParameters()->height = vol->video_object_layer_height;
         if (extradata)
@@ -61,7 +62,10 @@ void Mpeg4Parser::setSdpInfo(const Sdp::Media& sdp)
         if (parameter.startsWith("config"))
         {
             QByteArray config = QByteArray::fromHex(parameter.mid(sizeof("config=")).toUtf8());
-            updateCodecParameters((const uint8_t*)config.data(), config.size(), /*extradata*/ true);
+            updateCodecParameters(
+                (const uint8_t*) config.data(),
+                config.size(),
+                /*extradata*/ true);
         }
     }
 }
@@ -88,7 +92,7 @@ Result Mpeg4Parser::processData(
     }
     m_packet->width = m_width;
     m_packet->height = m_height;
-    m_packet->m_data.write((char*)rtpBufferBase + bufferOffset, bytesRead);
+    m_packet->m_data.write((char*) rtpBufferBase + bufferOffset, bytesRead);
     if (m_codecParameters)
         m_packet->context = m_codecParameters;
 

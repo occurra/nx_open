@@ -4,8 +4,8 @@
 
 #include <core/resource/camera_resource.h>
 #include <nx/sdk/helpers/uuid_helper.h>
-#include <nx/utils/random.h>
 #include <nx/utils/log/log.h>
+#include <nx/utils/random.h>
 
 #include "webrtc_session.h"
 
@@ -23,19 +23,19 @@ const std::string& toSdpAttribute(Purpose purpose)
 {
     switch (purpose)
     {
-    case Purpose::send:
-        return kSendOnlyAttr;
-    case Purpose::recv:
-        return kRecvOnlyAttr;
-    case Purpose::sendrecv:
-    default:
-        return kSendRecvAttr;
+        case Purpose::send:
+            return kSendOnlyAttr;
+        case Purpose::recv:
+            return kRecvOnlyAttr;
+        case Purpose::sendrecv:
+        default:
+            return kSendRecvAttr;
     }
 }
 
 Track* Tracks::videoTrack(nx::Uuid deviceId) const
 {
-    for (const auto& [_,track]: m_tracks)
+    for (const auto& [_, track]: m_tracks)
     {
         if (track->deviceId == deviceId && track->trackType == TrackType::video)
             return track.get();
@@ -74,14 +74,15 @@ Track* Tracks::track(uint32_t ssrc) const
     return it != m_tracks.end() ? it->second.get() : nullptr;
 }
 
-Tracks::Tracks(Session* session)
-    : m_session(session)
+Tracks::Tracks(Session* session):
+    m_session(session)
 {
 }
 
 void Tracks::addTrack(std::unique_ptr<Track> track)
 {
-    do {
+    do
+    {
         track->ssrc = nx::utils::random::number<uint32_t>();
     } while (m_tracks.find(track->ssrc) != m_tracks.end());
     track->purpose = m_session->purpose();
@@ -183,8 +184,8 @@ std::string Tracks::getSdpForTrack(const Track* track, uint16_t /*port*/) const
     }
     // Mux rtcp and rtp stream.
     sdp += "a=rtcp-mux" ENDL;
-    /* 'actpass' due to bug in old Chromium. Actually, for incoming connection, should be 'passive':
-     * https://datatracker.ietf.org/doc/html/rfc4145#section-4 */
+    /* 'actpass' due to bug in old Chromium. Actually, for incoming connection, should be
+     * 'passive': https://datatracker.ietf.org/doc/html/rfc4145#section-4 */
     sdp += "a=setup:actpass" ENDL;
     // 'ssrc' of track used by Chromium's demuxer. Not sure about 'cname'.
     sdp += "a=ssrc:" + std::to_string(track->ssrc) + " cname:" + track->cname + ENDL;
@@ -192,7 +193,7 @@ std::string Tracks::getSdpForTrack(const Track* track, uint16_t /*port*/) const
     sdp += "a=rtcp-fb:" + std::to_string(track->payloadType) + " nack" ENDL;
 
     // Mid in RTP extension is not used now.
-    //sdp += "a=extmap:1 urn:ietf:params:rtp-hdrext:sdes:mid" ENDL;
+    // sdp += "a=extmap:1 urn:ietf:params:rtp-hdrext:sdes:mid" ENDL;
     return sdp;
 }
 
@@ -205,8 +206,7 @@ std::string TracksForSend::getSdpForTrack(const Track* track, uint16_t port) con
         return {};
     }
     bool isVideo = track->trackType == TrackType::video;
-    return encoder->getSdpMedia(
-        isVideo, track->mid, port, /*ssl*/ true).toStdString()
+    return encoder->getSdpMedia(isVideo, track->mid, port, /*ssl*/ true).toStdString()
         + base_type::getSdpForTrack(track, port);
 }
 
@@ -216,21 +216,21 @@ std::string TracksForRecv::getSdpForTrack(const Track* track, uint16_t port) con
     if (track->trackType == TrackType::video)
     {
         result = NX_FMT(
-            "m=video %1 RTP/AVP %2\r\n"
-            "a=rtpmap:%2 H264/90000\r\n"
-            "a=fmtp:%2 packetization-mode=1\r\n",
-            port,
-            track->payloadType)
-            .toStdString();
+                     "m=video %1 RTP/AVP %2\r\n"
+                     "a=rtpmap:%2 H264/90000\r\n"
+                     "a=fmtp:%2 packetization-mode=1\r\n",
+                     port,
+                     track->payloadType)
+                     .toStdString();
     }
     else
     {
         result = NX_FMT(
-            "m=audio %1 RTP/AVP %2\r\n"
-            "a=rtpmap:%2 PCMU/8000\r\n",
-            port,
-            track->payloadType)
-            .toStdString();
+                     "m=audio %1 RTP/AVP %2\r\n"
+                     "a=rtpmap:%2 PCMU/8000\r\n",
+                     port,
+                     track->payloadType)
+                     .toStdString();
     }
     // Full intra request: https://datatracker.ietf.org/doc/html/rfc5104#section-4.3.1
     // `ccm` mean `Codec Control Message`.
@@ -238,11 +238,13 @@ std::string TracksForRecv::getSdpForTrack(const Track* track, uint16_t port) con
     return result + base_type::getSdpForTrack(track, port);
 }
 
-TracksForSend::TracksForSend(Session* session) : Tracks(session)
+TracksForSend::TracksForSend(Session* session):
+    Tracks(session)
 {
 }
 
-TracksForRecv::TracksForRecv(Session* session) : Tracks(session)
+TracksForRecv::TracksForRecv(Session* session):
+    Tracks(session)
 {
 }
 

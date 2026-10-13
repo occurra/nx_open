@@ -37,5 +37,5 @@ void AudioLayout::addTrack(const CodecParametersConstPtr& codecParams, const QSt
 
 const std::vector<AudioLayout::AudioTrack>& AudioLayout::tracks() const
 {
-     return m_audioTracks;
+    return m_audioTracks;
 }

@@ -4,7 +4,7 @@
 
 #include <nx/utils/zlib.h>
 
-static inline uLong zlib_crc32(uLong crc, const Bytef *buf, uInt len)
+static inline uLong zlib_crc32(uLong crc, const Bytef* buf, uInt len)
 {
     return crc32(crc, buf, len);
 }

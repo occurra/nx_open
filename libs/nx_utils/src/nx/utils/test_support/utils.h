@@ -11,71 +11,77 @@
 /**
  * Analogue of gtest's ASSERT_EQ but supports placing in non-void methods (throws on failure).
  */
-#define NX_GTEST_ASSERT_EQ(expected, actual) do \
-{ \
-    bool resultE31cf27915b242999a4e22c7757d94de = false; \
-    [&]() -> void \
+#define NX_GTEST_ASSERT_EQ(expected, actual) \
+    do \
     { \
-        ASSERT_EQ(expected, actual); \
-        resultE31cf27915b242999a4e22c7757d94de = true; \
-    }(); \
-    if (!resultE31cf27915b242999a4e22c7757d94de) \
+        bool resultE31cf27915b242999a4e22c7757d94de = false; \
+        [&]() -> void \
+        { \
+            ASSERT_EQ(expected, actual); \
+            resultE31cf27915b242999a4e22c7757d94de = true; \
+        }(); \
+        if (!resultE31cf27915b242999a4e22c7757d94de) \
+        { \
+            throw std::runtime_error( \
+                "This is work around ASSERT_* inability to be used " \
+                "in non-void method. Just ignore..."); \
+        } \
+    } while (0)
+
+#define NX_GTEST_ASSERT_TRUE(expected) \
+    do \
     { \
-        throw std::runtime_error( \
-            "This is work around ASSERT_* inability to be used " \
-            "in non-void method. Just ignore..."); \
-    } \
-} while (0)
+        NX_GTEST_ASSERT_EQ(true, expected); \
+    } while (0)
 
-#define NX_GTEST_ASSERT_TRUE(expected) do \
-{ \
-    NX_GTEST_ASSERT_EQ(true, expected); \
-} while (0)
-
-#define NX_GTEST_ASSERT_FALSE(expected) do \
-{ \
-    NX_GTEST_ASSERT_EQ(false, expected); \
-} while (0)
-
-#define NX_GTEST_ASSERT_GT(actual, expected) do \
-{ \
-    NX_GTEST_ASSERT_TRUE(actual > expected); \
-} while (0)
-
-#define NX_GTEST_ASSERT_LT(actual, expected) do \
-{ \
-    NX_GTEST_ASSERT_TRUE(actual < expected); \
-} while (0)
-
-#define NX_GTEST_ASSERT_ANY_OF(expectedValues, actual) do \
-{ \
-    const auto& actualValue = actual; \
-    bool foundMatchingValue = std::apply( \
-        [&actualValue](const auto&... values) { \
-            return ((actualValue == values) || ...); \
-        }, \
-        std::make_tuple expectedValues \
-    ); \
-    ASSERT_TRUE(foundMatchingValue); \
-} while (0)
-
-#define NX_GTEST_ASSERT_NO_THROW(expression) do \
-{ \
-    try \
+#define NX_GTEST_ASSERT_FALSE(expected) \
+    do \
     { \
-        expression; \
-    } \
-    catch (std::exception& e) \
+        NX_GTEST_ASSERT_EQ(false, expected); \
+    } while (0)
+
+#define NX_GTEST_ASSERT_GT(actual, expected) \
+    do \
     { \
-        ASSERT_TRUE(false) << e.what(); \
-    } \
-} while (0)
+        NX_GTEST_ASSERT_TRUE(actual > expected); \
+    } while (0)
+
+#define NX_GTEST_ASSERT_LT(actual, expected) \
+    do \
+    { \
+        NX_GTEST_ASSERT_TRUE(actual < expected); \
+    } while (0)
+
+#define NX_GTEST_ASSERT_ANY_OF(expectedValues, actual) \
+    do \
+    { \
+        const auto& actualValue = actual; \
+        bool foundMatchingValue = std::apply( \
+            [&actualValue](const auto&... values) \
+            { \
+                return ((actualValue == values) || ...); \
+            }, \
+            std::make_tuple expectedValues); \
+        ASSERT_TRUE(foundMatchingValue); \
+    } while (0)
+
+#define NX_GTEST_ASSERT_NO_THROW(expression) \
+    do \
+    { \
+        try \
+        { \
+            expression; \
+        } \
+        catch (std::exception & e) \
+        { \
+            ASSERT_TRUE(false) << e.what(); \
+        } \
+    } while (0)
 
 #define NX_GTEST_WRAP(expr) \
-[&]() \
-{ \
-    expr; \
-}()
+    [&]() \
+    { \
+        expr; \
+    }()
 
-#define NX_GTEST_ASSERT_NE(expected, actual) \
-    NX_GTEST_WRAP(ASSERT_NE(expected, actual))
+#define NX_GTEST_ASSERT_NE(expected, actual) NX_GTEST_WRAP(ASSERT_NE(expected, actual))

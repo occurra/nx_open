@@ -12,7 +12,7 @@ namespace nx::utils {
  * implementing change notifications of properties calculated on-demand, i.e the ones which value
  * is not explicitly presented.
  */
-template <typename T>
+template<typename T>
 class [[nodiscard]] ScopedChangeNotifier
 {
 public:
@@ -21,8 +21,7 @@ public:
 
     explicit ScopedChangeNotifier(
         const ValueGetter& valueGetter,
-        const NotificationCallback& notificationCallback)
-        :
+        const NotificationCallback& notificationCallback):
         m_valueGetter(valueGetter),
         m_notificationCallback(notificationCallback),
         m_initialValue(m_valueGetter())

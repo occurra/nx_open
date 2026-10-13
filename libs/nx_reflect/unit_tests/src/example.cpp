@@ -22,10 +22,10 @@ NX_REFLECTION_INSTRUMENT(Address, (city)(streetAddress)(zip))
 
 //-------------------------------------------------------------------------------------------------
 
-//NX_ENUM_CLASS(Race,
-//    caucasian,
-//    african,
-//    unknown)
+// NX_ENUM_CLASS(Race,
+//     caucasian,
+//     african,
+//     unknown)
 
 enum class Race
 {
@@ -38,9 +38,12 @@ std::string toString(Race race)
 {
     switch (race)
     {
-        case Race::caucasian: return "caucasian";
-        case Race::african: return "african";
-        case Race::unknown: return "unknown";
+        case Race::caucasian:
+            return "caucasian";
+        case Race::african:
+            return "african";
+        case Race::unknown:
+            return "unknown";
     }
     return "invalid";
 }
@@ -76,9 +79,7 @@ NX_REFLECTION_INSTRUMENT(Person, (name)(age)(address)(race)(properties))
 
 bool operator==(const Person& left, const Person& right)
 {
-    return left.name == right.name
-        && left.age == right.age
-        && left.race == right.race
+    return left.name == right.name && left.age == right.age && left.race == right.race
         && left.properties == right.properties;
 }
 
@@ -90,8 +91,8 @@ bool operator==(const Person& left, const Person& right)
 
 #include <gtest/gtest.h>
 
-#include <nx/reflect/json/serializer.h>
 #include <nx/reflect/json/deserializer.h>
+#include <nx/reflect/json/serializer.h>
 
 namespace nx::reflect::test {
 
@@ -124,8 +125,7 @@ TEST(example, json)
 
 namespace {
 
-class FieldEnumerator:
-    public GenericVisitor<FieldEnumerator>
+class FieldEnumerator: public GenericVisitor<FieldEnumerator>
 {
 public:
     template<typename WrappedField>
@@ -134,10 +134,7 @@ public:
         m_fieldNames.push_back(field.name());
     }
 
-    std::vector<std::string> finish()
-    {
-        return std::exchange(m_fieldNames, {});
-    }
+    std::vector<std::string> finish() { return std::exchange(m_fieldNames, {}); }
 
 private:
     std::vector<std::string> m_fieldNames;

@@ -6,14 +6,13 @@
 
 #include <QtCore/QString>
 
-#include <rapidjson/document.h>
-#include <rapidjson/pointer.h>
-#include <rapidjson/writer.h>
-
 #include <nx/reflect/instrument.h>
 #include <nx/reflect/json.h>
 #include <nx/utils/buffer.h>
 #include <nx/utils/std_string_utils.h>
+#include <rapidjson/document.h>
+#include <rapidjson/pointer.h>
+#include <rapidjson/writer.h>
 
 namespace nx::utils::rapidjson {
 
@@ -35,14 +34,12 @@ template<typename T>
 concept RapidjsonIteratorType = IsArrayIterator<T> || IsObjectIterator<T>;
 
 template<typename T>
-concept ArrayPredicateType = requires(T t, ArrayIterator& valueIt)
-{
+concept ArrayPredicateType = requires(T t, ArrayIterator& valueIt) {
     { t(valueIt) } -> convertible_to<bool>;
 };
 
 template<typename T>
-concept ObjectPredicateType = requires(T t, ObjectIterator& memberIt)
-{
+concept ObjectPredicateType = requires(T t, ObjectIterator& memberIt) {
     { t(memberIt) } -> convertible_to<bool>;
 };
 
@@ -70,7 +67,8 @@ struct TypeHelper
 
         OutputType result;
         nx::reflect::json::DeserializationContext ctx{
-            *jsonNode, (int) nx::reflect::json::DeserializationFlag::none};
+            *jsonNode,
+            (int) nx::reflect::json::DeserializationFlag::none};
         if (!nx::reflect::json::deserialize<OutputType>(ctx, &result))
             return std::nullopt;
         return result;
@@ -179,17 +177,15 @@ void addToRes(OneOrMore<Count, T>& res, T value)
 }
 
 template<typename T>
-concept ConvertedToRapidjsonValue = requires(T t)
-{
+concept ConvertedToRapidjsonValue = requires(T t) {
     { ::rapidjson::Value{std::move(t)} };
 };
 
 template<typename T>
 concept ConvertedToRapidjsonValueWithAllocator =
-    requires(T t, ::rapidjson::Document::AllocatorType& alloc)
-{
-    { ::rapidjson::Value{std::move(t), alloc} };
-};
+    requires(T t, ::rapidjson::Document::AllocatorType& alloc) {
+        { ::rapidjson::Value{std::move(t), alloc} };
+    };
 
 struct NX_UTILS_API ValueHelper
 {
@@ -199,7 +195,8 @@ struct NX_UTILS_API ValueHelper
     ValueHelper(const QString& val, ::rapidjson::Document::AllocatorType& alloc);
 
     template<class T>
-    ValueHelper(T&& val, ::rapidjson::Document::AllocatorType& alloc): allocator(alloc)
+    ValueHelper(T&& val, ::rapidjson::Document::AllocatorType& alloc):
+        allocator(alloc)
     {
         if constexpr (std::is_same_v<T, ::rapidjson::Value*>)
         {
@@ -301,7 +298,10 @@ struct ValuePtrHelper
 {
     using IteratorType = Type;
 
-    ValuePtrHelper(::rapidjson::Value* v): m_ptr(v) {}
+    ValuePtrHelper(::rapidjson::Value* v):
+        m_ptr(v)
+    {
+    }
 
     bool isValid() const
     {
@@ -370,7 +370,8 @@ struct ValuePtrHelper
     }
 
     template<ElementWithExistingName AddingBehavior>
-    bool add(::rapidjson::Value&& name,
+    bool add(
+        ::rapidjson::Value&& name,
         ::rapidjson::Value&& value,
         ::rapidjson::Document::AllocatorType& alloc) const
         requires(IsObjectIterator<IteratorType>)
@@ -454,12 +455,14 @@ public:
 
     ReturnType result = {};
 
-    ModifyValue(ValueHelper&& val): m_val(std::move(val)) {}
+    ModifyValue(ValueHelper&& val):
+        m_val(std::move(val))
+    {
+    }
 
     template<RapidjsonIteratorType IteratorType>
     void execute(IteratorType& it, const ValuePtrHelper<IteratorType>& ptrHelper)
     {
-
         addToRes<returnCount>(result, ptrHelper.set(it, std::move(m_val.get<returnCount>())));
         ++it;
     }
@@ -486,20 +489,27 @@ public:
 
     ReturnType result = {};
 
-    AddValueToArray(ValueHelper&& val): m_val(std::move(val)) {}
+    AddValueToArray(ValueHelper&& val):
+        m_val(std::move(val))
+    {
+    }
 
     template<RapidjsonIteratorType IteratorType>
     void execute(IteratorType& it, const ValuePtrHelper<IteratorType>& ptrHelper)
     {
         ArrayPtrHelper curr{ptrHelper.get(it)};
-        addToRes<returnCount>(result, curr.add(std::move(m_val.get<returnCount>()), m_val.allocator));
+        addToRes<returnCount>(
+            result,
+            curr.add(std::move(m_val.get<returnCount>()), m_val.allocator));
         ++it;
     }
 
     void execute(const ::rapidjson::Pointer& path, ::rapidjson::Value* root)
     {
         ArrayPtrHelper curr = path.Get(*root);
-        addToRes<returnCount>(result, curr.add(std::move(m_val.get<returnCount>()), m_val.allocator));
+        addToRes<returnCount>(
+            result,
+            curr.add(std::move(m_val.get<returnCount>()), m_val.allocator));
     }
 
 private:
@@ -515,7 +525,11 @@ public:
 
     ReturnType result = {};
 
-    AddValueToObject(ValueHelper&& name, ValueHelper&& val): m_name(std::move(name)), m_val(std::move(val)) {}
+    AddValueToObject(ValueHelper&& name, ValueHelper&& val):
+        m_name(std::move(name)),
+        m_val(std::move(val))
+    {
+    }
 
     template<RapidjsonIteratorType IteratorType>
     void execute(IteratorType& it, const ValuePtrHelper<IteratorType>& ptrHelper)
@@ -526,8 +540,7 @@ public:
             curr.add<AddingBehavior>(
                 std::move(m_name.get<returnCount>()),
                 std::move(m_val.get<returnCount>()),
-                m_val.allocator)
-        );
+                m_val.allocator));
         ++it;
     }
 
@@ -539,8 +552,7 @@ public:
             curr.add<AddingBehavior>(
                 std::move(m_name.get<returnCount>()),
                 std::move(m_val.get<returnCount>()),
-                m_val.allocator)
-        );
+                m_val.allocator));
     }
 
 private:
@@ -549,8 +561,7 @@ private:
 };
 
 template<typename T>
-concept CustomActionFuncType = requires(T t, ::rapidjson::Value* name, ::rapidjson::Value* value)
-{
+concept CustomActionFuncType = requires(T t, ::rapidjson::Value* name, ::rapidjson::Value* value) {
     { t(name, value) } -> convertible_to<bool>;
 };
 
@@ -564,7 +575,10 @@ public:
     ReturnType result = {};
 
     template<CustomActionFuncType CustomActionFunc>
-    CustomAction(const CustomActionFunc& action): m_customAction(action) {}
+    CustomAction(const CustomActionFunc& action):
+        m_customAction(action)
+    {
+    }
 
     template<RapidjsonIteratorType IteratorType>
     void execute(IteratorType& it, const ValuePtrHelper<IteratorType>& ptrHelper)
@@ -600,8 +614,14 @@ public:
         bool isValid() const { return isCondition() || pointer().IsValid(); }
 
         template<PredicateType Predicate>
-        Token(Predicate pred): token(std::move(pred)) {}
-        Token(std::string_view stringToken): token(Pointer(stringToken.data(), stringToken.size())) {}
+        Token(Predicate pred):
+            token(std::move(pred))
+        {
+        }
+        Token(std::string_view stringToken):
+            token(Pointer(stringToken.data(), stringToken.size()))
+        {
+        }
     };
 
 public:
@@ -675,16 +695,16 @@ namespace predicate {
 class NX_UTILS_API All
 {
 public:
-    bool operator()(const auto&) const
-    {
-        return true;
-    }
+    bool operator()(const auto&) const { return true; }
 };
 
 class NX_UTILS_API NameContains
 {
 public:
-    explicit NameContains(std::string_view namePart): m_namePart(namePart) {}
+    explicit NameContains(std::string_view namePart):
+        m_namePart(namePart)
+    {
+    }
 
     bool operator()(const ObjectIterator& root) const;
 
@@ -695,7 +715,10 @@ private:
 class NX_UTILS_API HasMember
 {
 public:
-    explicit HasMember(std::string_view name): m_name(name) {}
+    explicit HasMember(std::string_view name):
+        m_name(name)
+    {
+    }
 
     bool operator()(const ArrayIterator& root) const
     {
@@ -733,22 +756,15 @@ private:
 class NX_UTILS_API IsEmpty
 {
 public:
-    bool operator()(const ArrayIterator& root) const
-    {
-        return root->Empty();
-    }
+    bool operator()(const ArrayIterator& root) const { return root->Empty(); }
 
-    bool operator()(const ObjectIterator& root) const
-    {
-        return root->value.ObjectEmpty();
-    }
+    bool operator()(const ObjectIterator& root) const { return root->value.ObjectEmpty(); }
 };
 
 } // namespace predicate
 
 template<typename T>
-concept ActionType = requires(T t, const ::rapidjson::Pointer& path, ::rapidjson::Value* root)
-{
+concept ActionType = requires(T t, const ::rapidjson::Pointer& path, ::rapidjson::Value* root) {
     { t.execute(path, root) };
     { t.result } -> convertible_to<typename T::ReturnType>;
 };
@@ -842,7 +858,13 @@ public:
             return 0;
         details::EraseValue<details::ReturnCount::All> action;
         applyActionWithCondition(parsedPath, m_curr, &action);
-        return std::count_if(action.result.begin(), action.result.end(), [](const auto& t) { return t; });
+        return std::count_if(
+            action.result.begin(),
+            action.result.end(),
+            [](const auto& t)
+            {
+                return t;
+            });
     }
 
     template<class T, PredicateType... Predicates>
@@ -858,7 +880,7 @@ public:
     }
 
     template<class T, PredicateType... Predicates>
-    int modifyAllValues(T&& newValue,std::string_view path, Predicates... preds)
+    int modifyAllValues(T&& newValue, std::string_view path, Predicates... preds)
     {
         details::Path parsedPath{path, preds...};
         if (!parsedPath.isValid())
@@ -866,12 +888,17 @@ public:
         details::ModifyValue<details::ReturnCount::All> action{
             details::ValueHelper(std::move(newValue), m_data->GetAllocator())};
         applyActionWithCondition(parsedPath, m_curr, &action);
-        return std::count_if(action.result.begin(), action.result.end(),
-            [](const auto& t) { return t; });
+        return std::count_if(
+            action.result.begin(),
+            action.result.end(),
+            [](const auto& t)
+            {
+                return t;
+            });
     }
 
     template<class T, PredicateType... Predicates>
-    bool addValueToArray(T&& newValue,std::string_view path, Predicates... preds)
+    bool addValueToArray(T&& newValue, std::string_view path, Predicates... preds)
     {
         details::Path parsedPath{path, preds...};
         if (!parsedPath.isValid())
@@ -883,7 +910,7 @@ public:
     }
 
     template<class T, PredicateType... Predicates>
-    int addValueToArrayAll(T&& newValue,std::string_view path, Predicates... preds)
+    int addValueToArrayAll(T&& newValue, std::string_view path, Predicates... preds)
     {
         details::Path parsedPath{path, preds...};
         if (!parsedPath.isValid())
@@ -891,8 +918,13 @@ public:
         details::AddValueToArray<details::ReturnCount::All> action{
             details::ValueHelper(std::move(newValue), m_data->GetAllocator())};
         applyActionWithCondition(parsedPath, m_curr, &action);
-        return std::count_if(action.result.begin(), action.result.end(),
-            [](const auto& t) { return t; });
+        return std::count_if(
+            action.result.begin(),
+            action.result.end(),
+            [](const auto& t)
+            {
+                return t;
+            });
     }
 
     /*
@@ -910,10 +942,12 @@ public:
     template<
         ElementWithExistingName AddingBehavior = ElementWithExistingName::replace,
         class T,
-        PredicateType... Predicates
-    >
+        PredicateType... Predicates>
     bool addValueToObject(
-        const std::string& name, T&& newValue,std::string_view path, Predicates... preds)
+        const std::string& name,
+        T&& newValue,
+        std::string_view path,
+        Predicates... preds)
     {
         details::Path parsedPath{path, preds...};
         if (!parsedPath.isValid())
@@ -928,10 +962,12 @@ public:
     template<
         ElementWithExistingName AddingBehavior = ElementWithExistingName::replace,
         class T,
-        PredicateType... Predicates
-    >
+        PredicateType... Predicates>
     int addValueToObjectAll(
-        const std::string& name, T&& newValue,std::string_view path, Predicates... preds)
+        const std::string& name,
+        T&& newValue,
+        std::string_view path,
+        Predicates... preds)
     {
         details::Path parsedPath{path, preds...};
         if (!parsedPath.isValid())
@@ -940,13 +976,20 @@ public:
             details::ValueHelper(name, m_data->GetAllocator()),
             details::ValueHelper(std::move(newValue), m_data->GetAllocator())};
         applyActionWithCondition(parsedPath, m_curr, &action);
-        return std::count_if(action.result.begin(), action.result.end(),
-            [](const auto& t) { return t; });
+        return std::count_if(
+            action.result.begin(),
+            action.result.end(),
+            [](const auto& t)
+            {
+                return t;
+            });
     }
 
     template<details::CustomActionFuncType CustomActionFunc, PredicateType... Predicates>
     bool applyActionToValue(
-        const CustomActionFunc& customAction,std::string_view path, Predicates... preds)
+        const CustomActionFunc& customAction,
+        std::string_view path,
+        Predicates... preds)
     {
         details::Path parsedPath{path, preds...};
         if (!parsedPath.isValid())
@@ -958,15 +1001,22 @@ public:
 
     template<details::CustomActionFuncType CustomActionFunc, PredicateType... Predicates>
     int applyActionToValues(
-        const CustomActionFunc& customAction,std::string_view path, Predicates... preds)
+        const CustomActionFunc& customAction,
+        std::string_view path,
+        Predicates... preds)
     {
         details::Path parsedPath{path, preds...};
         if (!parsedPath.isValid())
             return 0;
         details::CustomAction<details::ReturnCount::All> action{customAction};
         applyActionWithCondition(parsedPath, m_curr, &action);
-        return std::count_if(action.result.begin(), action.result.end(),
-            [](const auto& t) { return t; });
+        return std::count_if(
+            action.result.begin(),
+            action.result.end(),
+            [](const auto& t)
+            {
+                return t;
+            });
     }
 
     std::string toStdString() const;
@@ -975,7 +1025,8 @@ public:
 
 private:
     Processor(const Processor& processor, ::rapidjson::Value* newCurr):
-        m_data(processor.m_data), m_curr(newCurr)
+        m_data(processor.m_data),
+        m_curr(newCurr)
     {
     }
 
@@ -1015,10 +1066,8 @@ private:
     }
 
     template<ActionType Action>
-    void applyActionWithCondition(
-        details::Path path,
-        ::rapidjson::Value* parent,
-        Action* action) const
+    void applyActionWithCondition(details::Path path, ::rapidjson::Value* parent, Action* action)
+        const
     {
         if (!parent)
             return;

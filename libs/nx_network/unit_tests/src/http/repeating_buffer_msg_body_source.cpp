@@ -6,8 +6,7 @@ namespace nx::network::http {
 
 RepeatingBufferMsgBodySource::RepeatingBufferMsgBodySource(
     const std::string& mimeType,
-    nx::Buffer buffer)
-    :
+    nx::Buffer buffer):
     m_mimeType(mimeType),
     m_buffer(std::move(buffer))
 {
@@ -24,9 +23,7 @@ std::optional<uint64_t> RepeatingBufferMsgBodySource::contentLength() const
 }
 
 void RepeatingBufferMsgBodySource::readAsync(
-    nx::MoveOnlyFunc<
-        void(SystemError::ErrorCode, nx::Buffer)
-    > completionHandler)
+    nx::MoveOnlyFunc<void(SystemError::ErrorCode, nx::Buffer)> completionHandler)
 {
     completionHandler(SystemError::noError, m_buffer);
 }

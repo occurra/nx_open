@@ -54,9 +54,9 @@ protected:
     void generateDocumentation(const QString& caption, const QString& description = {});
 
     /**
-    * Write any unsaved changes and reload any settings that have been changed in the meantime by
-    * another application.
-    */
+     * Write any unsaved changes and reload any settings that have been changed in the meantime by
+     * another application.
+     */
     void sync();
 
     QByteArray securityKey() const;

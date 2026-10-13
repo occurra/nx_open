@@ -18,7 +18,7 @@ using namespace nx::core::access;
 
 SystemContext::SystemContext(Mode mode, nx::Uuid peerId, QObject* parent):
     QObject(parent),
-    d(new Private{.mode=mode, .peerId=peerId})
+    d(new Private{.mode = mode, .peerId = peerId})
 {
     d->licensePool = std::make_unique<QnLicensePool>(this);
     d->resourcePool = std::make_unique<QnResourcePool>(this);
@@ -50,9 +50,8 @@ SystemContext::SystemContext(Mode mode, nx::Uuid peerId, QObject* parent):
     d->showreelManager = std::make_unique<ShowreelManager>();
     d->eventRuleManager = std::make_unique<nx::vms::event::RuleManager>();
     d->analyticsDescriptorContainer = std::make_unique<taxonomy::DescriptorContainer>(this);
-    d->analyticsTaxonomyStateWatcher = std::make_unique<taxonomy::StateWatcher>(
-        d->analyticsDescriptorContainer.get(),
-        this);
+    d->analyticsTaxonomyStateWatcher =
+        std::make_unique<taxonomy::StateWatcher>(d->analyticsDescriptorContainer.get(), this);
 
     d->metrics = std::make_shared<nx::metric::Storage>();
     d->lookupListManager = std::make_unique<LookupListManager>();
@@ -78,11 +77,11 @@ SystemContext::SystemContext(Mode mode, nx::Uuid peerId, QObject* parent):
 
     if (d->httpClientPool)
     {
-        d->httpClientPool->setDefaultTimeouts(nx::network::http::AsyncClient::Timeouts{
-            .sendTimeout = ::rest::kDefaultVmsApiTimeout,
-            .responseReadTimeout = ::rest::kDefaultVmsApiTimeout,
-            .messageBodyReadTimeout = ::rest::kDefaultVmsApiTimeout
-        });
+        d->httpClientPool->setDefaultTimeouts(
+            nx::network::http::AsyncClient::Timeouts{
+                .sendTimeout = ::rest::kDefaultVmsApiTimeout,
+                .responseReadTimeout = ::rest::kDefaultVmsApiTimeout,
+                .messageBodyReadTimeout = ::rest::kDefaultVmsApiTimeout});
     }
 
     d->cameraNamesWatcher = std::make_unique<QnCameraNamesWatcher>((this));
@@ -109,7 +108,7 @@ void SystemContext::enableNetworking(AbstractCertificateVerifier* certificateVer
     d->certificateVerifier = certificateVerifier;
     // TODO: #sivanov Uncomment this code when destruction order will be fixed in both desktop and
     // mobile clients and a server (most probably when NetworkModule class will be cleaned up).
-    //if (certificateVerifier)
+    // if (certificateVerifier)
     //{
     //    connect(certificateVerifier, &QObject::destroyed, this,
     //        [this]() { NX_ASSERT(false, "Invalid destruction order"); });
@@ -267,7 +266,7 @@ LookupListManager* SystemContext::lookupListManager() const
     return d->lookupListManager.get();
 }
 
-//FIXME: #sivanov Old rules engine, should be cleaned up also.
+// FIXME: #sivanov Old rules engine, should be cleaned up also.
 nx::vms::event::RuleManager* SystemContext::eventRuleManager() const
 {
     return d->eventRuleManager.get();

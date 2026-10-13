@@ -156,8 +156,8 @@ TEST(FfmpegVideoTranscoder, FlushBFrames)
     ASSERT_TRUE(mkvFile.open(QIODevice::ReadOnly));
     QByteArray mkvByteArray = mkvFile.readAll();
 
-    auto ioInput = nx::media::ffmpeg::fromBuffer(
-        (const uint8_t*)mkvByteArray.data(), mkvByteArray.size());
+    auto ioInput =
+        nx::media::ffmpeg::fromBuffer((const uint8_t*) mkvByteArray.data(), mkvByteArray.size());
 
     ASSERT_TRUE(ioInput);
     nx::media::ffmpeg::Demuxer demuxer;
@@ -166,14 +166,15 @@ TEST(FfmpegVideoTranscoder, FlushBFrames)
     int inputFrames = 0;
     int outFrames = 0;
     std::unique_ptr<QnFfmpegVideoTranscoder> transcoder;
-    while(true)
+    while (true)
     {
         auto videoData = demuxer.getNextData();
         if (!videoData)
             break;
 
         if (!transcoder)
-            transcoder = createTranscoder(std::dynamic_pointer_cast<QnCompressedVideoData>(videoData));
+            transcoder =
+                createTranscoder(std::dynamic_pointer_cast<QnCompressedVideoData>(videoData));
         ASSERT_TRUE(transcoder != nullptr);
 
         QnAbstractMediaDataPtr result;

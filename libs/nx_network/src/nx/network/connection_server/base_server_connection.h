@@ -33,17 +33,15 @@ static constexpr size_t kReadBufferCapacity = 16 * 1024;
  * aio thread)
  * NOTE: It is allowed to free instance within event handler
  */
-class NX_NETWORK_API BaseServerConnection:
-    public aio::BasicPollable
+class NX_NETWORK_API BaseServerConnection: public aio::BasicPollable
 {
     using base_type = aio::BasicPollable;
 
 public:
-    using OnConnectionClosedHandler = nx::MoveOnlyFunc<void(
-        SystemError::ErrorCode /*closeReason*/, bool /*connectionDestroyed*/)>;
+    using OnConnectionClosedHandler = nx::MoveOnlyFunc<
+        void(SystemError::ErrorCode /*closeReason*/, bool /*connectionDestroyed*/)>;
 
-    BaseServerConnection(
-        std::unique_ptr<AbstractStreamSocket> streamSocket);
+    BaseServerConnection(std::unique_ptr<AbstractStreamSocket> streamSocket);
 
     virtual void bindToAioThread(aio::AbstractAioThread* aioThread) override;
 
@@ -148,8 +146,7 @@ public:
     virtual void readyToSendData() = 0;
 };
 
-class NX_NETWORK_API BaseServerConnectionWrapper:
-    public BaseServerConnection
+class NX_NETWORK_API BaseServerConnectionWrapper: public BaseServerConnection
 {
 public:
     BaseServerConnectionWrapper(

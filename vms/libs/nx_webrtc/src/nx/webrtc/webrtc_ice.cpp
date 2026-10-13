@@ -42,7 +42,7 @@ void Ice::sendStunError(const stun::Message& message)
 bool Ice::handleStun(const uint8_t* data, int size)
 {
     // 1. Parse
-    nx::Buffer buffer((const char*)data, size);
+    nx::Buffer buffer((const char*) data, size);
     stun::Message message;
     stun::MessageParser stunParser;
     stunParser.setFingerprintRequired(true);
@@ -56,7 +56,7 @@ bool Ice::handleStun(const uint8_t* data, int size)
 
     // 2. Check
     if ((message.header.messageClass != stun::MessageClass::request
-        && message.header.messageClass != stun::MessageClass::successResponse)
+         && message.header.messageClass != stun::MessageClass::successResponse)
         || message.header.method != stun::MethodType::bindingMethod)
     {
         NX_VERBOSE(this, "STUN binding message wrong header");
@@ -69,15 +69,21 @@ bool Ice::handleStun(const uint8_t* data, int size)
     // Next 2 checks are not exactly valid due to client role is unimplemented.
     if (!!iceControlling == !!iceControlled)
     {
-        NX_VERBOSE(this, "STUN unexpected 'ice-controlling' and 'ice-controlled': %1 vs %2",
-            !!iceControlling, !!iceControlled);
+        NX_VERBOSE(
+            this,
+            "STUN unexpected 'ice-controlling' and 'ice-controlled': %1 vs %2",
+            !!iceControlling,
+            !!iceControlled);
     }
 
     bool controlling = (iceControlling == nullptr);
     if (controlling && !!useCandidate)
     {
-        NX_VERBOSE(this, "STUN unexpected 'controlling' and 'use-candidate': %1 vs %2",
-            controlling, !!useCandidate);
+        NX_VERBOSE(
+            this,
+            "STUN unexpected 'controlling' and 'use-candidate': %1 vs %2",
+            controlling,
+            !!useCandidate);
     }
     auto priority = message.getAttribute<stun::attrs::Priority>();
     if (!priority && message.header.messageClass == stun::MessageClass::request)
@@ -128,13 +134,19 @@ bool Ice::handleStun(const uint8_t* data, int size)
     }
     else if (m_sessionDescription->id != leftUsername)
     {
-        NX_DEBUG(this, "STUN heartbeat with mismatch USERNAME: %1 vs %2", m_sessionDescription->id, leftUsername);
+        NX_DEBUG(
+            this,
+            "STUN heartbeat with mismatch USERNAME: %1 vs %2",
+            m_sessionDescription->id,
+            leftUsername);
         sendStunError(message);
         return false;
     }
     if (m_sessionDescription->remoteUfrag != rightUsername)
     {
-        NX_DEBUG(this, "STUN session: right username mismatch: %1 vs %2",
+        NX_DEBUG(
+            this,
+            "STUN session: right username mismatch: %1 vs %2",
             rightUsername,
             m_sessionDescription->remoteUfrag);
         sendStunError(message);
@@ -164,7 +176,8 @@ bool Ice::handleStun(const uint8_t* data, int size)
 
     if (iceRemoteAddress().address.ipV4())
         response.newAttribute<stun::attrs::XorMappedAddress>(
-            iceRemoteAddress().port, ntohl(iceRemoteAddress().address.ipV4()->s_addr));
+            iceRemoteAddress().port,
+            ntohl(iceRemoteAddress().address.ipV4()->s_addr));
 
     if (controlling)
         response.newAttribute<stun::attrs::UseCandidate>();
@@ -191,13 +204,15 @@ void Ice::writeDataChannelPacket(const uint8_t* data, int size)
 {
     nx::Buffer buffer((const char*) data, size);
 
-    m_pollable.dispatch([this, buffer = std::move(buffer)]()
+    m_pollable.dispatch(
+        [this, buffer = std::move(buffer)]()
         {
             if (m_stage == Stage::streaming && m_sessionDescription)
             {
                 // TODO probably mutex in DTLS can be removed.
-                if (Dtls::Status::error == m_sessionDescription->dtls->writePacket(
-                    (const uint8_t*) buffer.data(), buffer.size(), this))
+                if (Dtls::Status::error
+                    == m_sessionDescription->dtls
+                           ->writePacket((const uint8_t*) buffer.data(), buffer.size(), this))
                 {
                     NX_DEBUG(
                         this,
@@ -231,11 +246,10 @@ bool Ice::handleDtls(const uint8_t* data, int size)
 
         m_stage = Stage::streaming;
 
-        /* Some peers (at least Firefox) make successfully STUN handshake into several ICE candidates
-         * in parallel, and then choose one of them to make DTLS handshake.
-         * This one chosen with remote peer can mismatch with one who first locked session
-         * on the server side.
-         * So, lock session afterward, on successful DTLS handshake.
+        /* Some peers (at least Firefox) make successfully STUN handshake into several ICE
+         * candidates in parallel, and then choose one of them to make DTLS handshake. This one
+         * chosen with remote peer can mismatch with one who first locked session on the server
+         * side. So, lock session afterward, on successful DTLS handshake.
          * */
         NX_CRITICAL(!m_session.lock());
         auto sessionPtr = m_sessionPool->getSession(m_sessionDescription->id);
@@ -400,7 +414,7 @@ void Ice::sendNextBufferUnsafe()
         if (auto session = m_session.lock())
         {
             if (session->consumer() && m_dataChannel.outputQueueSize() == 0)
-               session->consumer()->onDataSent(/*success*/ true);
+                session->consumer()->onDataSent(/*success*/ true);
         }
         return;
     }

@@ -11,11 +11,13 @@ void watchOnPropertyChanges(
 {
     const auto metaObject = sender->metaObject();
     const auto propertyNames = nx::utils::propertyNames(
-        sender, PropertyAccess::anyAccess, /*includeBaseProperties*/ false, /*hasNotifySignal*/ true);
+        sender,
+        PropertyAccess::anyAccess,
+        /*includeBaseProperties*/ false,
+        /*hasNotifySignal*/ true);
     for (const auto& propertyName: propertyNames)
     {
-        const auto metaProperty =
-            metaObject->property(metaObject->indexOfProperty(propertyName));
+        const auto metaProperty = metaObject->property(metaObject->indexOfProperty(propertyName));
 
         QObject::connect(sender, metaProperty.notifySignal(), receiver, receiverMetaMethod);
     }

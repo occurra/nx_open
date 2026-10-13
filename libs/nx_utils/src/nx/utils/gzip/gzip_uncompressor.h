@@ -17,6 +17,7 @@ public:
         gzip,
         deflate
     };
+
 public:
     Uncompressor(
         const std::shared_ptr<AbstractByteStreamFilter>& nextFilter = nullptr,

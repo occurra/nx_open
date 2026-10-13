@@ -13,15 +13,13 @@ namespace nx::sql::detail::test {
 
 namespace {
 
-class QueryExecutorStub:
-    public AbstractExecutor
+class QueryExecutorStub: public AbstractExecutor
 {
 public:
     QueryExecutorStub(
         QueryType queryType,
         const std::string& queryAggregationKey = std::string(),
-        std::function<void()> onQueryExecuted = nullptr)
-        :
+        std::function<void()> onQueryExecuted = nullptr):
         m_queryType(queryType),
         m_queryAggregationKey(queryAggregationKey),
         m_onQueryExecuted(std::move(onQueryExecuted))
@@ -41,29 +39,18 @@ public:
         return DBResultCode::ok;
     }
 
-    virtual void reportErrorWithoutExecution(DBResult /*errorCode*/) override
-    {
-    }
+    virtual void reportErrorWithoutExecution(DBResult /*errorCode*/) override {}
 
-    virtual QueryType queryType() const override
-    {
-        return m_queryType;
-    }
+    virtual QueryType queryType() const override { return m_queryType; }
 
-    virtual std::string aggregationKey() const override
-    {
-        return m_queryAggregationKey;
-    }
+    virtual std::string aggregationKey() const override { return m_queryAggregationKey; }
 
-    virtual void setOnBeforeDestruction(
-        nx::MoveOnlyFunc<void()> handler) override
+    virtual void setOnBeforeDestruction(nx::MoveOnlyFunc<void()> handler) override
     {
         m_onBeforeDestructionHandler.swap(handler);
     }
 
-    virtual void setExternalTransaction(Transaction* /*transaction*/) override
-    {
-    }
+    virtual void setExternalTransaction(Transaction* /*transaction*/) override {}
 
 private:
     const QueryType m_queryType;
@@ -74,58 +61,28 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class DbConnectionStub:
-    public AbstractDbConnection
+class DbConnectionStub: public AbstractDbConnection
 {
 public:
-    virtual bool open() override
-    {
-        return true;
-    }
+    virtual bool open() override { return true; }
 
-    virtual void close() override
-    {
-    }
+    virtual void close() override {}
 
-    virtual bool begin() override
-    {
-        return true;
-    }
+    virtual bool begin() override { return true; }
 
-    virtual bool commit() override
-    {
-        return true;
-    }
+    virtual bool commit() override { return true; }
 
-    virtual bool rollback() override
-    {
-        return true;
-    }
+    virtual bool rollback() override { return true; }
 
-    virtual DBResult lastError() override
-    {
-        return DBResultCode::ok;
-    }
+    virtual DBResult lastError() override { return DBResultCode::ok; }
 
-    virtual std::unique_ptr<AbstractSqlQuery> createQuery() override
-    {
-        return nullptr;
-    }
+    virtual std::unique_ptr<AbstractSqlQuery> createQuery() override { return nullptr; }
 
-    virtual RdbmsDriverType driverType() const override
-    {
-        return RdbmsDriverType::sqlite;
-    }
+    virtual RdbmsDriverType driverType() const override { return RdbmsDriverType::sqlite; }
 
-    virtual QSqlDatabase* qtSqlConnection() override
-    {
-        return nullptr;
-    }
+    virtual QSqlDatabase* qtSqlConnection() override { return nullptr; }
 
-    virtual bool tableExist(std::string_view)
-    {
-        return true;
-    }
+    virtual bool tableExist(std::string_view) { return true; }
 };
 
 } // namespace
@@ -134,14 +91,10 @@ public:
 
 constexpr std::chrono::milliseconds kQueryTimeout = std::chrono::milliseconds(10);
 
-class QueryQueue:
-    public ::testing::Test
+class QueryQueue: public ::testing::Test
 {
 protected:
-    void setAggregationLimit()
-    {
-        m_queryQueue.setAggregationLimit(11);
-    }
+    void setAggregationLimit() { m_queryQueue.setAggregationLimit(11); }
 
     void setConcurrentModificationQueryLimit(int limit)
     {
@@ -152,14 +105,15 @@ protected:
     {
         m_queryQueue.setItemStayTimeout(kQueryTimeout);
         m_queryQueue.setOnItemStayTimeout(
-            [this](auto&&... args) { processTimedOutQuery(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                processTimedOutQuery(std::forward<decltype(args)>(args)...);
+            });
     }
 
     void raiseSelectQueryPriority()
     {
-        m_queryQueue.setQueryPriority(
-            QueryType::lookup,
-            detail::QueryQueue::kDefaultPriority + 1);
+        m_queryQueue.setQueryPriority(QueryType::lookup, detail::QueryQueue::kDefaultPriority + 1);
     }
 
     // Returns number of posted queries.
@@ -168,29 +122,24 @@ protected:
         const int queryCount = 17;
         for (int i = 0; i < queryCount; ++i)
         {
-            const auto queryType = nx::utils::random::choice(
-                {QueryType::modification, QueryType::lookup});
+            const auto queryType =
+                nx::utils::random::choice({QueryType::modification, QueryType::lookup});
             pushQuery(queryType);
         }
 
         return queryCount;
     }
 
-    void addSelectQuery()
-    {
-        pushQuery(QueryType::lookup);
-    }
+    void addSelectQuery() { pushQuery(QueryType::lookup); }
 
-    void addMultipleModificationQueries(
-        const std::string& queryAggregationKey = std::string())
+    void addMultipleModificationQueries(const std::string& queryAggregationKey = std::string())
     {
         const int queryCount = 10;
         for (int i = 0; i < queryCount; ++i)
             pushQuery(QueryType::modification, queryAggregationKey);
     }
 
-    void addMultipleSelectQueries(
-        const std::string& queryAggregationKey = std::string())
+    void addMultipleSelectQueries(const std::string& queryAggregationKey = std::string())
     {
         const int queryCount = 10;
         for (int i = 0; i < queryCount; ++i)
@@ -203,10 +152,7 @@ protected:
             pushQuery(QueryType::modification, "aggregation_key");
     }
 
-    void whenQueryTimeoutPasses()
-    {
-        std::this_thread::sleep_for(kQueryTimeout * 2);
-    }
+    void whenQueryTimeoutPasses() { std::this_thread::sleep_for(kQueryTimeout * 2); }
 
     void whenQueryTimedOut()
     {
@@ -216,20 +162,11 @@ protected:
         m_timedOutQueries.pop();
     }
 
-    void whenPopWithTimeout()
-    {
-        m_prevPopResult = m_queryQueue.pop(std::chrono::milliseconds(1));
-    }
+    void whenPopWithTimeout() { m_prevPopResult = m_queryQueue.pop(std::chrono::milliseconds(1)); }
 
-    void whenPopQueries()
-    {
-        m_prevPopResult = m_queryQueue.pop();
-    }
+    void whenPopQueries() { m_prevPopResult = m_queryQueue.pop(); }
 
-    void whenReleasePoppedQueries()
-    {
-        m_prevPopResult = std::nullopt;
-    }
+    void whenReleasePoppedQueries() { m_prevPopResult = std::nullopt; }
 
     void whenExecuteQueries()
     {
@@ -259,21 +196,18 @@ protected:
     {
         m_queryQueue.setItemStayTimeout(std::chrono::hours(1));
         m_queryQueue.setOnItemStayTimeout(
-            [this](auto&&... args) { processTimedOutQuery(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                processTimedOutQuery(std::forward<decltype(args)>(args)...);
+            });
 
         m_queryQueue.push(std::make_unique<QueryExecutorStub>(QueryType::modification));
         ASSERT_TRUE(static_cast<bool>(m_queryQueue.pop()));
     }
 
-    void thenEmptyValueIsReturned()
-    {
-        ASSERT_FALSE(static_cast<bool>(m_prevPopResult));
-    }
+    void thenEmptyValueIsReturned() { ASSERT_FALSE(static_cast<bool>(m_prevPopResult)); }
 
-    void thenQueryIsProvided()
-    {
-        ASSERT_TRUE(static_cast<bool>(m_prevPopResult));
-    }
+    void thenQueryIsProvided() { ASSERT_TRUE(static_cast<bool>(m_prevPopResult)); }
 
     void thenQueriesAggregatedBeforeReturning()
     {
@@ -281,20 +215,26 @@ protected:
         andQueryAggregatesMultipleQueries();
     }
 
-    void thenAggregatedQueriesOfSpecificTypeAreProvided(
-        QueryType expectedQueryType)
+    void thenAggregatedQueriesOfSpecificTypeAreProvided(QueryType expectedQueryType)
     {
         whenExecuteQueries();
 
-        const auto expectedQueryCount =
-            std::count_if(
-                m_queryTypes.begin(), m_queryTypes.end(),
-                [expectedQueryType](QueryType type) { return type == expectedQueryType; });
+        const auto expectedQueryCount = std::count_if(
+            m_queryTypes.begin(),
+            m_queryTypes.end(),
+            [expectedQueryType](QueryType type)
+            {
+                return type == expectedQueryType;
+            });
 
         ASSERT_EQ(expectedQueryCount, m_executedQueries.size());
-        ASSERT_TRUE(std::ranges::all_of(
-            m_executedQueries,
-            [expectedQueryType](QueryType type) { return type == expectedQueryType; }));
+        ASSERT_TRUE(
+            std::ranges::all_of(
+                m_executedQueries,
+                [expectedQueryType](QueryType type)
+                {
+                    return type == expectedQueryType;
+                }));
     }
 
     void thenProvidedQueryCountIsNotGreaterThanAggregationLimit()
@@ -327,10 +267,7 @@ protected:
         ASSERT_EQ(QueryType::lookup, (*query)->queryType());
     }
 
-    detail::QueryQueue& queryQueue()
-    {
-        return m_queryQueue;
-    }
+    detail::QueryQueue& queryQueue() { return m_queryQueue; }
 
 private:
     std::optional<std::unique_ptr<AbstractExecutor>> m_prevPopResult;
@@ -344,21 +281,17 @@ private:
         m_timedOutQueries.push(query->queryType());
     }
 
-    void pushQuery(
-        QueryType queryType,
-        const std::string& queryAggregationKey = std::string())
+    void pushQuery(QueryType queryType, const std::string& queryAggregationKey = std::string())
     {
-        m_queryQueue.push(std::make_unique<QueryExecutorStub>(
-            queryType,
-            queryAggregationKey,
-            std::bind(&QueryQueue::recordQueryExecution, this, queryType)));
+        m_queryQueue.push(
+            std::make_unique<QueryExecutorStub>(
+                queryType,
+                queryAggregationKey,
+                std::bind(&QueryQueue::recordQueryExecution, this, queryType)));
         m_queryTypes.push_back(queryType);
     }
 
-    void recordQueryExecution(QueryType queryType)
-    {
-        m_executedQueries.push_back(queryType);
-    }
+    void recordQueryExecution(QueryType queryType) { m_executedQueries.push_back(queryType); }
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -456,8 +389,7 @@ TEST_F(QueryQueue, pending_query_count_is_reported_correctly)
 
 namespace {
 
-class DummyExecutor:
-    public BaseExecutor
+class DummyExecutor: public BaseExecutor
 {
 protected:
     using BaseExecutor::BaseExecutor;
@@ -473,8 +405,7 @@ protected:
 
 } // namespace
 
-class QueryQueueManualLoadTest:
-    public QueryQueue
+class QueryQueueManualLoadTest: public QueryQueue
 {
 public:
     QueryQueueManualLoadTest()
@@ -489,13 +420,23 @@ protected:
     void createPopThreads(int count)
     {
         for (int i = 0; i < count; ++i)
-            m_popThreads.push_back(std::thread([this]() { popThreadMain(); }));
+            m_popThreads.push_back(
+                std::thread(
+                    [this]()
+                    {
+                        popThreadMain();
+                    }));
     }
 
     void createPushThreads(int count)
     {
         for (int i = 0; i < count; ++i)
-            m_pushThreads.push_back(std::thread([this]() { pushThreadMain(); }));
+            m_pushThreads.push_back(
+                std::thread(
+                    [this]()
+                    {
+                        pushThreadMain();
+                    }));
     }
 
 private:
@@ -512,9 +453,10 @@ private:
     {
         while (!m_terminated)
         {
-            queryQueue().push(std::make_unique<DummyExecutor>(
-                (rand() & 1) ? QueryType::lookup : QueryType::modification,
-                (rand() & 1) ? "key" : ""));
+            queryQueue().push(
+                std::make_unique<DummyExecutor>(
+                    (rand() & 1) ? QueryType::lookup : QueryType::modification,
+                    (rand() & 1) ? "key" : ""));
             ++m_tasksPushed;
         }
     }
@@ -542,8 +484,8 @@ TEST_F(
     for (;;)
     {
         std::this_thread::sleep_for(std::chrono::seconds(5));
-        std::cout << "tasks pushed/popped: " << std::setw(7)
-            << m_tasksPushed <<"/"<< m_tasksPopped << std::endl;
+        std::cout << "tasks pushed/popped: " << std::setw(7) << m_tasksPushed << "/"
+                  << m_tasksPopped << std::endl;
     }
 }
 

@@ -26,11 +26,9 @@ public:
 
     bool isActive() const;
 
-    void addOnSuccessfulCommitHandler(
-        nx::MoveOnlyFunc<void()> func);
+    void addOnSuccessfulCommitHandler(nx::MoveOnlyFunc<void()> func);
 
-    void addOnTransactionCompletionHandler(
-        nx::MoveOnlyFunc<void(DBResult)> func);
+    void addOnTransactionCompletionHandler(nx::MoveOnlyFunc<void(DBResult)> func);
 
 private:
     AbstractDbConnection* const m_connection;

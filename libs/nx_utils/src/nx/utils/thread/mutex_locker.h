@@ -10,8 +10,8 @@ template<typename Mutex>
 class NX_UTILS_API Locker
 {
 public:
-    typedef void(Mutex::*LockMethod)(
-        const char* /*sourceFile*/, int /*sourceLine*/, int /*lockId*/);
+    typedef void (
+        Mutex::*LockMethod)(const char* /*sourceFile*/, int /*sourceLine*/, int /*lockId*/);
 
     Locker(Mutex* const mutex, LockMethod lockMethod, const char* sourceFile, int sourceLine):
         m_mutex(mutex),
@@ -45,18 +45,14 @@ public:
             unlock();
 
         std::swap(m_mutex, rhs.m_mutex);
-        std::swap(m_lockMethod, rhs.m_lockMethod),
-        std::swap(m_sourceFile, rhs.m_sourceFile);
+        std::swap(m_lockMethod, rhs.m_lockMethod), std::swap(m_sourceFile, rhs.m_sourceFile);
         std::swap(m_sourceLine, rhs.m_sourceLine);
         std::swap(m_relockCount, rhs.m_relockCount);
         std::swap(m_isLocked, rhs.m_isLocked);
         return *this;
     }
 
-    Mutex* mutex() const
-    {
-        return m_mutex;
-    }
+    Mutex* mutex() const { return m_mutex; }
 
     void relock()
     {
@@ -71,10 +67,7 @@ public:
         m_isLocked = false;
     }
 
-    bool isLocked() const
-    {
-        return m_isLocked;
-    }
+    bool isLocked() const { return m_isLocked; }
 
 private:
     Mutex* m_mutex;
@@ -95,10 +88,7 @@ public:
         m_locker->unlock();
     }
 
-    ~Unlocker()
-    {
-        m_locker->relock();
-    }
+    ~Unlocker() { m_locker->relock(); }
 
     Unlocker(Unlocker&& rhs) = delete;
     Unlocker& operator=(Unlocker&& rhs) = delete;

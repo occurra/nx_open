@@ -24,12 +24,9 @@ struct NX_NETWORK_API RequestStatistics
     std::map<int /*HTTP status*/, int /*count*/> statuses;
 };
 
-#define RequestStatistics_server_Fields\
-    (maxRequestProcessingTimeUsec)\
-    (averageRequestProcessingTimeUsec)\
-    (requestProcessingTimePercentilesUsec)\
-    (requestsServedPerMinute)\
-    (statuses)
+#define RequestStatistics_server_Fields \
+    (maxRequestProcessingTimeUsec)(averageRequestProcessingTimeUsec)( \
+        requestProcessingTimePercentilesUsec) (requestsServedPerMinute) (statuses)
 
 NX_REFLECTION_INSTRUMENT(RequestStatistics, RequestStatistics_server_Fields)
 
@@ -40,19 +37,15 @@ NX_REFLECTION_INSTRUMENT(RequestStatistics, RequestStatistics_server_Fields)
  * NOTE: Inheritance from network::server::Statistics and RequestStatistics are for aggregating
  * statistics for all HTTP requests.
  */
-struct NX_NETWORK_API HttpStatistics:
-    public network::server::Statistics,
-    public RequestStatistics
+struct NX_NETWORK_API HttpStatistics: public network::server::Statistics, public RequestStatistics
 {
     std::map<std::string /*requestLine*/, RequestStatistics> requests;
 
     using RequestStatistics::operator=;
 };
 
-#define HttpStatistics_server_Fields\
-    Statistics_server_Fields\
-    RequestStatistics_server_Fields\
-    (requests)
+#define HttpStatistics_server_Fields \
+    Statistics_server_Fields RequestStatistics_server_Fields(requests)
 
 NX_REFLECTION_INSTRUMENT(HttpStatistics, HttpStatistics_server_Fields)
 
@@ -102,8 +95,7 @@ private:
 /**
  * Sums up statistics from multiple sources.
  */
-class NX_NETWORK_API SummingStatisticsProvider:
-    public AbstractHttpStatisticsProvider
+class NX_NETWORK_API SummingStatisticsProvider: public AbstractHttpStatisticsProvider
 {
 public:
     SummingStatisticsProvider(std::vector<const AbstractHttpStatisticsProvider*> providers);

@@ -4,7 +4,6 @@
 
 #include <memory>
 
-
 #include "abstract_pollset.h"
 
 namespace nx {
@@ -12,14 +11,10 @@ namespace network {
 namespace aio {
 
 template<typename OldPollSetIterator>
-class PollSetIteratorWrapper:
-    public AbstractPollSetIterator
+class PollSetIteratorWrapper: public AbstractPollSetIterator
 {
 public:
-    PollSetIteratorWrapper(
-        OldPollSetIterator iterator,
-        OldPollSetIterator endIterator)
-        :
+    PollSetIteratorWrapper(OldPollSetIterator iterator, OldPollSetIterator endIterator):
         m_iterator(std::move(iterator)),
         m_endIterator(std::move(endIterator)),
         m_beforeFirstPosition(true)
@@ -39,20 +34,11 @@ public:
         return m_iterator != m_endIterator;
     }
 
-    virtual Pollable* socket() override
-    {
-        return m_iterator.socket();
-    }
+    virtual Pollable* socket() override { return m_iterator.socket(); }
 
-    virtual const Pollable* socket() const override
-    {
-        return m_iterator.socket();
-    }
+    virtual const Pollable* socket() const override { return m_iterator.socket(); }
 
-    virtual aio::EventType eventReceived() const override
-    {
-        return m_iterator.eventType();
-    }
+    virtual aio::EventType eventReceived() const override { return m_iterator.eventType(); }
 
 private:
     OldPollSetIterator m_iterator;
@@ -61,8 +47,7 @@ private:
 };
 
 template<typename OldPollSetImplementation>
-class PollSetWrapper:
-    public AbstractPollSet
+class PollSetWrapper: public AbstractPollSet
 {
 public:
     template<typename... Args>
@@ -71,15 +56,9 @@ public:
     {
     }
 
-    virtual bool isValid() const override
-    {
-        return m_oldPollSet.isValid();
-    }
+    virtual bool isValid() const override { return m_oldPollSet.isValid(); }
 
-    virtual void interrupt() override
-    {
-        return m_oldPollSet.interrupt();
-    }
+    virtual void interrupt() override { return m_oldPollSet.interrupt(); }
 
     virtual bool add(Pollable* const sock, EventType eventType, void* userData) override
     {
@@ -91,10 +70,7 @@ public:
         return m_oldPollSet.remove(sock, eventType);
     }
 
-    virtual size_t size() const override
-    {
-        return m_oldPollSet.size();
-    }
+    virtual size_t size() const override { return m_oldPollSet.size(); }
 
     virtual int poll(int millisToWait = kInfiniteTimeout) override
     {

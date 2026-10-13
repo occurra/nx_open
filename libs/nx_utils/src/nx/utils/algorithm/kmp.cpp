@@ -83,10 +83,7 @@ std::vector<int> KmpSearcher::computePrefixTable(std::string_view str)
 
 //-------------------------------------------------------------------------------------------------
 
-KmpReplacer::KmpReplacer(
-    std::string before,
-    std::string after)
-    :
+KmpReplacer::KmpReplacer(std::string before, std::string after):
     m_searcher(std::move(before)),
     m_after(std::move(after))
 {
@@ -104,9 +101,8 @@ std::string KmpReplacer::process(std::string textPart)
 
         if (posFound == std::string::npos && m_searcher.potentialOccurrenceLag() == 0)
         {
-            return std::move(textToReturn) +
-                std::exchange(m_cache, std::string()) +
-                std::move(textPart);
+            return std::move(textToReturn) + std::exchange(m_cache, std::string())
+                + std::move(textPart);
         }
 
         if (posFound == std::string::npos)
@@ -124,7 +120,8 @@ std::string KmpReplacer::process(std::string textPart)
         textPart = textPart.substr(pos);
 
         textToReturn.replace(
-            textToReturn.size() - m_searcher.str().size(), m_searcher.str().size(),
+            textToReturn.size() - m_searcher.str().size(),
+            m_searcher.str().size(),
             m_after);
     }
 
@@ -146,9 +143,7 @@ std::string::size_type kmpFindNext(
     return text.size() - result;
 }
 
-std::vector<std::string::size_type> kmpFindAll(
-    std::string_view text,
-    std::string_view before)
+std::vector<std::string::size_type> kmpFindAll(std::string_view text, std::string_view before)
 {
     std::vector<std::string::size_type> result;
 
@@ -166,20 +161,14 @@ std::vector<std::string::size_type> kmpFindAll(
     return result;
 }
 
-void kmpReplace(
-    std::string* text,
-    const std::string& before,
-    const std::string& after)
+void kmpReplace(std::string* text, const std::string& before, const std::string& after)
 {
     KmpReplacer replacer(before, after);
     *text = replacer.process(*text);
     *text += replacer.process(std::string());
 }
 
-std::string kmpReplaced(
-    std::string text,
-    const std::string& before,
-    const std::string& after)
+std::string kmpReplaced(std::string text, const std::string& before, const std::string& after)
 {
     kmpReplace(&text, before, after);
     return text;

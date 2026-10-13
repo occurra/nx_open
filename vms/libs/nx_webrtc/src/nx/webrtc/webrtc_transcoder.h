@@ -4,7 +4,7 @@
 
 #include <nx/utils/scope_guard.h>
 #include <nx/vms/api/data/webrtc_tracker_settings.h>
-//#include <providers/live_stream_provider.h>
+// #include <providers/live_stream_provider.h>
 #include <rtsp/rtp_universal_encoder.h>
 #include <rtsp/rtsp_ffmpeg_encoder.h>
 
@@ -40,12 +40,8 @@ public:
     QnUniversalRtpEncoder* encoderBySsrc(uint32_t ssrc) const;
 
     // API for Consumer.
-    QnUniversalRtpEncoder* setDataPacket(
-        nx::Uuid deviceId,
-        QnConstAbstractMediaDataPtr media);
-    bool getNextPacket(
-        QnUniversalRtpEncoder* rtpEncoder,
-        nx::utils::ByteArray& buffer);
+    QnUniversalRtpEncoder* setDataPacket(nx::Uuid deviceId, QnConstAbstractMediaDataPtr media);
+    bool getNextPacket(QnUniversalRtpEncoder* rtpEncoder, nx::utils::ByteArray& buffer);
     bool isEof(nx::Uuid deviceId, QnUniversalRtpEncoder* rtpEncoder) const;
     FfmpegMuxer::PacketTimestamp getLastTimestamps() const;
     int64_t getLastTimestampMs() const { return m_lastTimestampMs; } //< Required for reconnection.
@@ -64,9 +60,8 @@ private:
     bool createMseEncoder(AVCodecParameters* videoParameters, AVCodecParameters* audioParameters);
     bool checkForMseEof(QnConstAbstractMediaDataPtr media);
     bool constructMimeType();
-    QnUniversalRtpEncoder* getRtpEncoder(
-        nx::Uuid deviceId,
-        QnAbstractMediaData::DataType type) const;
+    QnUniversalRtpEncoder* getRtpEncoder(nx::Uuid deviceId, QnAbstractMediaData::DataType type)
+        const;
 
 private:
     Session* m_session;

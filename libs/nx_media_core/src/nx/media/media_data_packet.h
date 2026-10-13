@@ -41,8 +41,7 @@ constexpr auto nxReflectVisitAllEnumItems(MediaQuality*, Visitor&& visitor)
         Item{MEDIA_Quality_Auto, "auto"},
         Item{MEDIA_Quality_CustomResolution, "custom"},
         Item{MEDIA_Quality_LowIframesOnly, "low-iframes-only"},
-        Item{MEDIA_Quality_None, ""}
-    );
+        Item{MEDIA_Quality_None, ""});
 }
 
 NX_MEDIA_CORE_API bool isLowMediaQuality(MediaQuality q);
@@ -56,53 +55,53 @@ using QnEmptyMediaDataPtr = std::shared_ptr<QnEmptyMediaData>;
 
 struct NX_MEDIA_CORE_API QnAbstractMediaData: public QnAbstractDataPacket
 {
-
 public:
-    NX_REFLECTION_ENUM_IN_CLASS(MediaFlag,
-        MediaFlags_None                 = 0x00000,
+    NX_REFLECTION_ENUM_IN_CLASS(
+        MediaFlag,
+        MediaFlags_None = 0x00000,
         // KeyFrame, must be equal to AV_PKT_FLAG_KEY from avcodec.h,
         // checked via static_assert below.
-        MediaFlags_AVKey                = 0x00001,
-        MediaFlags_AfterEOF             = 0x00002,
-        MediaFlags_BOF                  = 0x00004,
-        MediaFlags_LIVE                 = 0x00008,
+        MediaFlags_AVKey = 0x00001,
+        MediaFlags_AfterEOF = 0x00002,
+        MediaFlags_BOF = 0x00004,
+        MediaFlags_LIVE = 0x00008,
         // The frame should not be displayed.
-        MediaFlags_Ignore               = 0x00010,
+        MediaFlags_Ignore = 0x00010,
 
-        MediaFlags_ReverseReordered     = 0x00020,
-        MediaFlags_ReverseBlockStart    = 0x00040,
-        MediaFlags_Reverse              = 0x00080,
+        MediaFlags_ReverseReordered = 0x00020,
+        MediaFlags_ReverseBlockStart = 0x00040,
+        MediaFlags_Reverse = 0x00080,
 
-        MediaFlags_LowQuality           = 0x00100,
-        MediaFlags_StillImage           = 0x00200,
+        MediaFlags_LowQuality = 0x00100,
+        MediaFlags_StillImage = 0x00200,
 
         // Switch archive to a new server.
-        MediaFlags_NewServer            = 0x00400,
-        MediaFlags_newCodecParams       = 0x00800,
+        MediaFlags_NewServer = 0x00400,
+        MediaFlags_newCodecParams = 0x00800,
         // Fast channel zapping flag.
-        MediaFlags_FCZ                  = 0x01000,
+        MediaFlags_FCZ = 0x01000,
 
-        MediaFlags_ReplacedVideo        = 0x02000,
+        MediaFlags_ReplacedVideo = 0x02000,
 
         // Hardware decoding is used.
-        MediaFlags_HWDecodingUsed       = 0x04000,
+        MediaFlags_HWDecodingUsed = 0x04000,
         // Ignore syncplay mode.
-        MediaFlags_PlayUnsync           = 0x08000,
+        MediaFlags_PlayUnsync = 0x08000,
         // Ignore packet at all.
-        MediaFlags_Skip                 = 0x10000,
-        MediaFlags_AlwaysSave           = 0x20000,
+        MediaFlags_Skip = 0x10000,
+        MediaFlags_AlwaysSave = 0x20000,
 
         // The only intention for packets with such a flag is to be shown to the user in the Live
         // mode. They are not going to be recorded.
-        MediaFlags_LiveOnly             = 0x40000,
+        MediaFlags_LiveOnly = 0x40000,
 
         // Best shot packets. They can be pipelined with some delay from live. Will not be recorded
         // to mkv files. Will not be reordered in AbstractDataReorderer.
-        MediaFlags_MetaDataBestShot     = 0x80000,
+        MediaFlags_MetaDataBestShot = 0x80000,
 
         // Media packet from old archive version that should be BOM decoded before decryption
         // This flag can be removed in a 5.3
-        MediaFlags_BomDecoding         = 0x100000,
+        MediaFlags_BomDecoding = 0x100000,
 
         // Flag indicates that motion sensitivity should be temporary increased in region
         // where object metadata was recently received.
@@ -110,20 +109,19 @@ public:
 
         // Flag indicates to the first frame after a removed portion of the stream (e.g. when
         // clearing the media queue due to overflow).
-        MediaFlags_Discontinuity        = 0x400000
-    )
+        MediaFlags_Discontinuity = 0x400000)
 
     Q_DECLARE_FLAGS(MediaFlags, MediaFlag)
 
-    NX_REFLECTION_ENUM_IN_CLASS(DataType,
+    NX_REFLECTION_ENUM_IN_CLASS(
+        DataType,
         UNKNOWN = -1,
         VIDEO = 0,
         AUDIO,
         CONTAINER,
         EMPTY_DATA,
         META_V1, //< Deprecated. Don't use it. Use MetadataType instead.
-        GENERIC_METADATA
-    )
+        GENERIC_METADATA)
 
 public:
     QnAbstractMediaData(DataType _dataType);
@@ -165,7 +163,6 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(QnAbstractMediaData::MediaFlags)
 
 struct NX_MEDIA_CORE_API QnEmptyMediaData: public QnAbstractMediaData
 {
-
 public:
     QnEmptyMediaData();
 

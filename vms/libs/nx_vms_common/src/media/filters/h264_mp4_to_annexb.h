@@ -10,7 +10,7 @@
 
 #include "abstract_media_data_filter.h"
 
-//!Converts h.264/h.265 stream from avc file format (mpeg4 part 15) to mpeg 4 annex b
+//! Converts h.264/h.265 stream from avc file format (mpeg4 part 15) to mpeg 4 annex b
 /*!
     Takes sequence header from media packet's extradata and inserts it before first packet.
     If source stream is not h.264/h.265 or is already in Annex B format, this class just forwards
@@ -19,7 +19,7 @@
 class NX_VMS_COMMON_API H2645Mp4ToAnnexB: public AbstractMediaDataFilter
 {
 public:
-    //!Implementation of AbstractMediaDataFilter::processData
+    //! Implementation of AbstractMediaDataFilter::processData
     virtual QnConstAbstractDataPacketPtr processData(
         const QnConstAbstractDataPacketPtr& data) override;
 

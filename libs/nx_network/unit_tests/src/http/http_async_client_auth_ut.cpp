@@ -1,10 +1,10 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
+#include "http_async_client_auth_ut.h"
+
 #include <gtest/gtest.h>
 
 #include <nx/network/url/url_builder.h>
-
-#include "http_async_client_auth_ut.h"
 
 namespace nx::network::http::test {
 
@@ -52,7 +52,6 @@ void AuthHttpServer::processConnection(AbstractStreamSocket* connection)
     ASSERT_EQ(0, rc) << "System error: " << SystemError::getLastOSErrorText();
 }
 
-
 std::vector<nx::Buffer> AuthHttpServer::receivedRequests()
 {
     return m_receivedRequests;
@@ -72,20 +71,18 @@ nx::Buffer AuthHttpServer::nextResponse()
         case NextResponse::unauthorized:
             m_nextRepsonse = NextResponse::success;
 
-            response =
-                "HTTP/1.1 401 Unauthorized\r\n"
-                "Content-Length: 0\r\n";
-           for(const auto& authData: m_authHeaders)
-               response.append(authData.header);
+            response = "HTTP/1.1 401 Unauthorized\r\n"
+                       "Content-Length: 0\r\n";
+            for (const auto& authData: m_authHeaders)
+                response.append(authData.header);
             response.append("\r\n");
 
             break;
         case NextResponse::success:
             m_nextRepsonse = NextResponse::unauthorized;
-            response =
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Length: 0\r\n"
-                "\r\n";
+            response = "HTTP/1.1 200 OK\r\n"
+                       "Content-Length: 0\r\n"
+                       "\r\n";
             break;
         default:
             NX_ASSERT(false);
@@ -113,7 +110,6 @@ void AuthHttpServer::sendResponse(AbstractStreamSocket* connection)
     ASSERT_EQ(response.size(), connection->send(response.data(), response.size()));
 }
 
-
 //-------------------------------------------------------------------------------------------------
 
 HttpClientAsyncAuthorization::HttpClientAsyncAuthorization():
@@ -133,25 +129,26 @@ void HttpClientAsyncAuthorization::givenHttpServerWithAuthorization(
     m_httpServer = std::make_unique<AuthHttpServer>();
     ASSERT_TRUE(m_httpServer->bindAndListen(SocketAddress::anyPrivateAddress));
 
-    for (auto &headerAndResponse: authData)
+    for (auto& headerAndResponse: authData)
         m_httpServer->appendAuthHeader(std::move(headerAndResponse));
     m_httpServer->start();
 }
 
 void HttpClientAsyncAuthorization::whenClientSendHttpRequestAndIsRequiredToUse(
-    AuthType auth, const char *username)
+    AuthType auth,
+    const char* username)
 {
     m_httpClient->setAuthType(auth);
     if (username == nullptr)
         username = kDefaultUsername;
 
     const auto url = url::Builder()
-        .setScheme(http::kUrlSchemeName)
-        .setEndpoint(m_httpServer->endpoint())
-        .setPath(kTestPath)
-        .setUserName(username)
-        .setPassword(kDefaultPassword)
-        .toUrl();
+                         .setScheme(http::kUrlSchemeName)
+                         .setEndpoint(m_httpServer->endpoint())
+                         .setPath(kTestPath)
+                         .setUserName(username)
+                         .setPassword(kDefaultPassword)
+                         .toUrl();
 
     std::promise<void> done;
     m_httpClient->post(
@@ -167,8 +164,7 @@ void HttpClientAsyncAuthorization::whenClientSendHttpRequestAndIsRequiredToUse(
     done.get_future().wait();
 }
 
-void HttpClientAsyncAuthorization::thenClientRequestContainsAuthAttrs(
-    const char* expectedAttrs)
+void HttpClientAsyncAuthorization::thenClientRequestContainsAuthAttrs(const char* expectedAttrs)
 {
     const auto requests = m_httpServer->receivedRequests();
     ASSERT_EQ(2, requests.size());
@@ -202,11 +198,13 @@ void HttpClientAsyncAuthorization::thenClientGotResponseWithCode(int expectedHtt
 }
 
 void HttpClientAsyncAuthorization::thenLastRequestAuthorizedOnServerAsUser(
-    const std::string &username)
+    const std::string& username)
 {
     std::ostringstream usernameSubstring;
     usernameSubstring << "username=\"" << username << "\"";
-    ASSERT_NE(nx::Buffer::npos, m_httpServer->receivedRequests().back().find(usernameSubstring.str()));
+    ASSERT_NE(
+        nx::Buffer::npos,
+        m_httpServer->receivedRequests().back().find(usernameSubstring.str()));
 }
 
 const AuthHttpServer::AuthHeader basic = {AuthType::authBasic, kDefaultBasicHeader};
@@ -214,7 +212,9 @@ const AuthHttpServer::AuthHeader digest = {AuthType::authDigest, kDefaultDigestH
 const auto basicResponse = kResponseForDefaultBasicHeader;
 const auto digestResponse = kResponseForDefaultDigestHeader;
 
-INSTANTIATE_TEST_SUITE_P(HttpClientAsyncAuthorizationInstance, HttpClientAsyncAuthorization,
+INSTANTIATE_TEST_SUITE_P(
+    HttpClientAsyncAuthorizationInstance,
+    HttpClientAsyncAuthorization,
     ::testing::Values(
         TestParams{{basic}, AuthType::authBasicAndDigest, /* expected */ basicResponse, 200},
         TestParams{{digest}, AuthType::authBasicAndDigest, /* expected */ digestResponse, 200},
@@ -224,13 +224,20 @@ INSTANTIATE_TEST_SUITE_P(HttpClientAsyncAuthorizationInstance, HttpClientAsyncAu
         TestParams{{basic, digest}, AuthType::authDigest, /* expected */ digestResponse, 200},
 
         // Should always prefer digest to basic:
-        TestParams{{basic, digest}, AuthType::authBasicAndDigest, /* expected */ digestResponse, 200},
-        TestParams{{digest, basic}, AuthType::authBasicAndDigest, /* expected */ digestResponse, 200},
+        TestParams{
+            {basic, digest},
+            AuthType::authBasicAndDigest,
+            /* expected */ digestResponse,
+            200},
+        TestParams{
+            {digest, basic},
+            AuthType::authBasicAndDigest,
+            /* expected */ digestResponse,
+            200},
 
         // Is not allowed to auth:
         TestParams{{digest}, AuthType::authBasic, /* expected */ nullptr, 401},
-        TestParams{{basic}, AuthType::authDigest, /* expected */ nullptr, 401}
-    ));
+        TestParams{{basic}, AuthType::authDigest, /* expected */ nullptr, 401}));
 
 TEST_P(HttpClientAsyncAuthorization, AuthSelection)
 {

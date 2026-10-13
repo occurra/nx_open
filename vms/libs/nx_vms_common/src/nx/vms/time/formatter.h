@@ -88,9 +88,7 @@ public:
 };
 
 template<typename ValueType>
-QString toString(
-    const ValueType& value,
-    FormatterPtr formatter = Formatter::system())
+QString toString(const ValueType& value, FormatterPtr formatter = Formatter::system())
 {
     return formatter->toString(value);
 }
@@ -106,9 +104,8 @@ QString toString(
 
 NX_VMS_COMMON_API qint64 systemDisplayOffset();
 
-NX_VMS_COMMON_API QString getFormatString(
-    Format format,
-    FormatterPtr formatter = Formatter::system());
+NX_VMS_COMMON_API QString
+    getFormatString(Format format, FormatterPtr formatter = Formatter::system());
 
 NX_VMS_COMMON_API bool is24HoursTimeFormat(FormatterPtr formatter = Formatter::system());
 

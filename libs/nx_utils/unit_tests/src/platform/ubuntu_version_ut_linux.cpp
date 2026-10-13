@@ -1,7 +1,9 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
 #include <array>
+
 #include <gtest/gtest.h>
+
 #include <nx/utils/platform/ubuntu_version_linux.h>
 
 namespace nx::utils::test {
@@ -9,7 +11,7 @@ namespace nx::utils::test {
 TEST(ubuntuVersion, fromCodeName_success)
 {
     const auto ubuntuBasedOsReleaseFile =
-R"rel(
+        R"rel(
 NAME="Linux Mint"
 VERSION="18.3 (Sylvia)"
 ID=linuxmint
@@ -23,8 +25,8 @@ VERSION_CODENAME=sylvia
 UBUNTU_CODENAME=xenial
 )rel";
 
-const auto ubuntu1604OsReleaseFile =
-R"rel(
+    const auto ubuntu1604OsReleaseFile =
+        R"rel(
 NAME="Ubuntu"
 VERSION="16.04.5 LTS (Xenial Xerus)"
 ID=ubuntu
@@ -38,8 +40,8 @@ VERSION_CODENAME=xenial
 UBUNTU_CODENAME=xenial
 )rel";
 
-const auto ubuntu1804OsReleaseFile =
-R"rel(
+    const auto ubuntu1804OsReleaseFile =
+        R"rel(
 NAME="Ubuntu"
 VERSION="18.04.1 LTS (Bionic Beaver)"
 ID=ubuntu
@@ -74,7 +76,7 @@ UBUNTU_CODENAME=bionic
 TEST(ubuntuVersion, fromCodeName_failure)
 {
     const auto invalidOsReleaseFiles = {
-R"rel(
+        R"rel(
 NAME="Linux Mint"
 VERSION="18.3 (Sylvia)"
 ID=linuxmint
@@ -88,7 +90,7 @@ VERSION_CODENAME=sylvia
 UBUNTUCODENAME=xenial
 )rel",
 
-R"rel(
+        R"rel(
 NAME="Ubuntu"
 VERSION="16.04.5 LTS (Xenial Xerus)"
 ID=ubuntu
@@ -101,7 +103,7 @@ BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
 VERSION_CODENAME=xenial
 )rel",
 
-R"rel(
+        R"rel(
 NAME="Ubuntu"
 VERSION="18.04.1 LTS (Bionic Beaver)"
 ID=ubuntu
@@ -114,20 +116,20 @@ BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
 PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
 VERSION_CODENAME=bionic
 UBUNTU_CODENAME bionic
-)rel"
-    };
+)rel"};
 
-    for (const auto &contents: invalidOsReleaseFiles)
+    for (const auto& contents: invalidOsReleaseFiles)
     {
-        ASSERT_TRUE(ubuntuVersionFromCodeName(
-            osReleaseContentsValueByKey(contents, "ubuntu_codename")).isEmpty());
+        ASSERT_TRUE(
+            ubuntuVersionFromCodeName(osReleaseContentsValueByKey(contents, "ubuntu_codename"))
+                .isEmpty());
     }
 }
 
 TEST(ubuntuVersion, osReleaseContentsValueByKey_success)
 {
     const auto osReleaseContents =
-R"rel(
+        R"rel(
 NAME="Linux Mint"
 VERSION="18.3 (Sylvia)"
 ID=linuxmint
@@ -149,7 +151,7 @@ UBUNTU_CODENAME=xenial
 TEST(ubuntuVersion, ubuntuCodenameIsAbsent)
 {
     const auto ubuntu1404OsReleaseContentsWithoutUbuntuCodename =
-R"rel(
+        R"rel(
 NAME="Ubuntu"
 VERSION="14.04.4 LTS, Trusty Tahr"
 ID=ubuntu

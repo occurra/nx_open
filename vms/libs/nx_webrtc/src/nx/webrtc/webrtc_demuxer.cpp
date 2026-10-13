@@ -13,7 +13,8 @@
 
 namespace nx::webrtc {
 
-Demuxer::Demuxer(const Tracks* tracks): m_tracks(tracks)
+Demuxer::Demuxer(const Tracks* tracks):
+    m_tracks(tracks)
 {
 }
 
@@ -41,7 +42,8 @@ void Demuxer::setSdp(const std::string& value)
     for (const auto& i: sdp.media)
     {
         nx::rtp::StreamParserPtr parser;
-        // TODO should check mediaType too. SDP parser parse `codecName` of `m=application` track as PCMU.
+        // TODO should check mediaType too. SDP parser parse `codecName` of `m=application` track
+        // as PCMU.
         if (i.mediaType == nx::rtp::Sdp::MediaType::Video)
         {
             NX_VERBOSE(this, "Check video codec: %1", i.rtpmap.codecName.toStdString());
@@ -74,11 +76,15 @@ void Demuxer::setSdp(const std::string& value)
                 int bitRatePos = i.rtpmap.codecName.indexOf(QLatin1Char('-'));
                 if (bitRatePos == -1)
                 {
-                    NX_VERBOSE(this, "For G726 codec bitrate is not specified: %1", i.rtpmap.codecName.toStdString());
+                    NX_VERBOSE(
+                        this,
+                        "For G726 codec bitrate is not specified: %1",
+                        i.rtpmap.codecName.toStdString());
                     continue;
                 }
                 QString bitsPerSample = i.rtpmap.codecName.mid(bitRatePos + 1);
-                auto audioParser = std::make_unique<nx::rtp::SimpleAudioParser>(AV_CODEC_ID_ADPCM_G726);
+                auto audioParser =
+                    std::make_unique<nx::rtp::SimpleAudioParser>(AV_CODEC_ID_ADPCM_G726);
                 audioParser->setBitsPerSample(bitsPerSample.toInt() / 8);
                 parser = std::move(audioParser);
             }
@@ -94,7 +100,10 @@ void Demuxer::setSdp(const std::string& value)
         }
         if (!parser)
         {
-            NX_VERBOSE(this, "Can't create parser for codec: %1", i.rtpmap.codecName.toStdString());
+            NX_VERBOSE(
+                this,
+                "Can't create parser for codec: %1",
+                i.rtpmap.codecName.toStdString());
             continue;
         }
 
@@ -126,8 +135,12 @@ void Demuxer::setSdp(const std::string& value)
                 std::move(timeHelper)));
         if (!result.second)
         {
-            NX_DEBUG(this, "Track with ssrc: %1 ptype: %2 codec: %3 is not inserted",
-                i.ssrc, i.payloadType, i.rtpmap.codecName);
+            NX_DEBUG(
+                this,
+                "Track with ssrc: %1 ptype: %2 codec: %3 is not inserted",
+                i.ssrc,
+                i.payloadType,
+                i.rtpmap.codecName);
         }
         m_reorderers[i.ssrc];
     }
@@ -200,8 +213,9 @@ bool Demuxer::processRtp(const nx::utils::ByteArray& array)
             if (nack)
             {
                 nx::Buffer buffer(nack->serialized(), 0);
-                NX_ASSERT(nack->serialize((uint8_t*) buffer.data(), buffer.size()) ==
-                    (int) buffer.size());
+                NX_ASSERT(
+                    nack->serialize((uint8_t*) buffer.data(), buffer.size())
+                    == (int) buffer.size());
                 encryptPacket(buffer);
                 m_feedbacks.emplace_back(std::move(buffer));
             }
@@ -239,7 +253,9 @@ bool Demuxer::processRtcp(const nx::utils::ByteArray& array)
                 parser->second.senderReport = senderReport;
             nx::Buffer output(nx::rtp::kRtcpReceiverReportLength, 0);
             int outBufSize = nx::rtp::buildReceiverReport(
-                (uint8_t*) output.data(), output.size(), parser->second.senderSsrc);
+                (uint8_t*) output.data(),
+                output.size(),
+                parser->second.senderSsrc);
             NX_ASSERT(outBufSize == nx::rtp::kRtcpReceiverReportLength);
 
             encryptPacket(output);
@@ -270,24 +286,23 @@ bool Demuxer::demux(const char* data, size_t size)
 
     auto& buffer = parser->second.buffer;
     auto oldSize = buffer.size();
-    buffer.insert(
-        buffer.end(),
-        (const uint8_t*) data,
-        (const uint8_t*) data + size);
+    buffer.insert(buffer.end(), (const uint8_t*) data, (const uint8_t*) data + size);
 
     bool packetLoss = false, gotData = false;
 
-    parser->second.parser.processData(
-        buffer.data(), oldSize, buffer.size() - oldSize, packetLoss, gotData);
+    parser->second.parser
+        .processData(buffer.data(), oldSize, buffer.size() - oldSize, packetLoss, gotData);
     if (gotData)
     {
         nx::rtp::RtcpSenderReport senderReport;
         auto media = parser->second.parser.nextData(senderReport);
-        media->timestamp = parser->second.timeHelper->getTime(
-            qnSyncTime->currentTimePoint(),
-            std::chrono::microseconds(media->timestamp),
-            parser->second.parser.isUtcTime(),
-            true).count();
+        media->timestamp = parser->second.timeHelper
+                               ->getTime(
+                                   qnSyncTime->currentTimePoint(),
+                                   std::chrono::microseconds(media->timestamp),
+                                   parser->second.parser.isUtcTime(),
+                                   true)
+                               .count();
         // TODO emit network issues like in server_rtsp_stream_provider.cpp.
         // TODO Separate timestamp-related code.
         m_frames.emplace_back(std::move(media));

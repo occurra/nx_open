@@ -6,8 +6,7 @@
 
 namespace nx::network::http::server::rest::test {
 
-class RestPathMatcher:
-    public ::testing::Test
+class RestPathMatcher: public ::testing::Test
 {
 protected:
     void assertPathRegistered(const std::string& restPath, int val)
@@ -34,10 +33,7 @@ protected:
         ASSERT_EQ(expectedPathTemplate, result->pathTemplate);
     }
 
-    void assertPathNotMatched(const std::string& path)
-    {
-        ASSERT_FALSE(m_dictionary.match(path));
-    }
+    void assertPathNotMatched(const std::string& path) { ASSERT_FALSE(m_dictionary.match(path)); }
 
 private:
     rest::PathMatcher<int> m_dictionary;
@@ -51,7 +47,11 @@ TEST_F(RestPathMatcher, find_handler)
     assertPathRegistered(users, 2);
 
     assertPathMatches("/account/vpupkin/systems", 1, {{"accountId", "vpupkin"}}, systems);
-    assertPathMatches("/account/vpu-p%2Fk.i_n/systems", 1, {{"accountId", "vpu-p/k.i_n"}}, systems);
+    assertPathMatches(
+        "/account/vpu-p%2Fk.i_n/systems",
+        1,
+        {{"accountId", "vpu-p/k.i_n"}},
+        systems);
     assertPathMatches("/systems/sys1/users", 2, {{"systemId", "sys1"}}, users);
 }
 
@@ -60,7 +60,10 @@ TEST_F(RestPathMatcher, find_handler_url_encoded)
     const std::string systems{"/account/{accountId}/systems"};
     assertPathRegistered(systems, 1);
     assertPathMatches(
-        "/account/vasya%2Fpupkin/systems", 1, {{"accountId", "vasya/pupkin"}}, systems);
+        "/account/vasya%2Fpupkin/systems",
+        1,
+        {{"accountId", "vasya/pupkin"}},
+        systems);
 }
 
 TEST_F(RestPathMatcher, find_handler_multiple_params)
@@ -71,7 +74,8 @@ TEST_F(RestPathMatcher, find_handler_multiple_params)
     assertPathMatches(
         "/account/akolesnikov/system/la_office_test/info",
         3,
-        {{"accountId", "akolesnikov"}, {"systemName", "la_office_test"}}, info);
+        {{"accountId", "akolesnikov"}, {"systemName", "la_office_test"}},
+        info);
 }
 
 TEST_F(RestPathMatcher, find_case_insensitive)
@@ -122,7 +126,8 @@ TEST_F(RestPathMatcher, characters_supported_in_parameter_name)
     assertPathMatches(
         "/account/vpupkin/systems",
         1,
-        {{kParamName, "vpupkin"}}, systemsWithBigParam);
+        {{kParamName, "vpupkin"}},
+        systemsWithBigParam);
 }
 
 TEST_F(RestPathMatcher, sub_resource_path_is_not_matched_as_parent_resource_name)
@@ -132,7 +137,11 @@ TEST_F(RestPathMatcher, sub_resource_path_is_not_matched_as_parent_resource_name
 
     assertPathNotMatched("/account/vpupkin/systems");
     assertPathMatches("/account/vpupkin", 1, {{"accountId", "vpupkin"}}, "/account/{accountId}");
-    assertPathMatches("/account/vpupkin/bills/", 2, {{"accountId", "vpupkin"}}, "/account/{accountId}/bills/");
+    assertPathMatches(
+        "/account/vpupkin/bills/",
+        2,
+        {{"accountId", "vpupkin"}},
+        "/account/{accountId}/bills/");
 }
 
-} // nx::network::http::server::rest::test
+} // namespace nx::network::http::server::rest::test

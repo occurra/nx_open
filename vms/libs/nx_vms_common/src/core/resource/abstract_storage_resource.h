@@ -7,8 +7,9 @@
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
 
-#include "resource.h"
 #include <nx/vms/api/data/storage_init_result.h>
+
+#include "resource.h"
 
 class NX_VMS_COMMON_API QnAbstractStorageResource: public QnResource
 {
@@ -17,76 +18,78 @@ class NX_VMS_COMMON_API QnAbstractStorageResource: public QnResource
 public:
     enum cap
     {
-        ListFile        = 0x0001,                   // capable of listing files
-        RemoveFile      = 0x0002,                   // capable of removing files
-        ReadFile        = 0x0004,                   // capable of reading files
-        WriteFile       = 0x0008,                   // capable of writing files
-        DBReady         = 0x0010                    // capable of DB hosting
+        ListFile = 0x0001, // capable of listing files
+        RemoveFile = 0x0002, // capable of removing files
+        ReadFile = 0x0004, // capable of reading files
+        WriteFile = 0x0008, // capable of writing files
+        DBReady = 0x0010 // capable of DB hosting
     };
 
-class NX_VMS_COMMON_API FileInfo
-{
+    class NX_VMS_COMMON_API FileInfo
+    {
+    public:
+        explicit FileInfo(
+            const QString& uri,
+            qint64 size,
+            bool isDir = false,
+            bool isSymLink = false);
+
+        explicit FileInfo(const QFileInfo& qfi);
+        FileInfo() = default;
+
+        bool operator==(const FileInfo& other) const;
+
+        static FileInfo fromQFileInfo(const QFileInfo& fi);
+
+        bool isDir() const;
+        bool isSymLink() const;
+
+        QString absoluteFilePath() const;
+        QString absoluteDirPath() const;
+
+        QString fileName() const;
+        QString baseName() const;
+
+        qint64 size() const;
+        QDateTime created() const;
+        QString extension() const;
+
+        QString toString() const;
+
+        void setPath(const QString& path);
+
+    private:
+        QString m_fpath;
+        qint64 m_size = 0;
+        bool m_isDir = false;
+        bool m_isSymLink = false;
+        std::shared_ptr<QFileInfo> m_qFileInfo;
+    };
+
+    typedef QList<FileInfo> FileInfoList;
+
+    static FileInfoList FIListFromQFIList(const QFileInfoList& list);
+
 public:
-    explicit FileInfo(
-        const QString& uri,
-        qint64 size,
-        bool isDir = false,
-        bool isSymLink = false);
+    static const qint64 kUnknownSize = -1; /**< Size of the storage cannot be calculated. */
+    static const qint64 kSizeDetectionOmitted = -2; /**< Size calculating was skipped. */
 
-    explicit FileInfo(const QFileInfo& qfi);
-    FileInfo() = default;
-
-    bool operator==(const FileInfo& other) const;
-
-    static FileInfo fromQFileInfo(const QFileInfo &fi);
-
-    bool isDir() const;
-    bool isSymLink() const;
-
-    QString absoluteFilePath() const;
-    QString absoluteDirPath() const;
-
-    QString fileName() const;
-    QString baseName() const;
-
-    qint64 size() const;
-    QDateTime created() const;
-    QString extension() const;
-
-    QString toString() const;
-
-    void setPath(const QString& path);
-
-private:
-    QString m_fpath;
-    qint64 m_size = 0;
-    bool m_isDir = false;
-    bool m_isSymLink = false;
-    std::shared_ptr<QFileInfo> m_qFileInfo;
-};
-
-typedef QList<FileInfo> FileInfoList;
-
-static FileInfoList FIListFromQFIList(const QFileInfoList& list);
-
-public:
-    static const qint64 kUnknownSize = -1;                  /**< Size of the storage cannot be calculated. */
-    static const qint64 kSizeDetectionOmitted = -2;         /**< Size calculating was skipped. */
-
-    virtual QIODevice *open(const QString &fileName, QIODevice::OpenMode openMode) = 0;
+    virtual QIODevice* open(const QString& fileName, QIODevice::OpenMode openMode) = 0;
 
     /**
-    *   \return storage capabilities ('cap' flags)
-    */
+     *   \return storage capabilities ('cap' flags)
+     */
     virtual int getCapabilities() const = 0;
 
     /**
-     * \returns                         Storage free space in bytes, or <tt>kUnknownSize</tt> if this function is not supported.
+     * \returns                         Storage free space in bytes, or <tt>kUnknownSize</tt> if
+     * this function is not supported.
      */
     virtual qint64 getFreeSpace() = 0;
 
     /**
-     * \returns                         Storage total space in bytes, or <tt>kUnknownSize</tt> if this function is not supported.
+     * \returns                         Storage total space in bytes, or <tt>kUnknownSize</tt> if
+     * this function is not supported.
      */
     virtual qint64 getTotalSpace() const = 0;
 
@@ -108,7 +111,8 @@ public:
     virtual bool removeDir(const QString& url) = 0;
 
     /**
-     * This function is used when server restarts. Unfinished files are re-read, written again (under a new name), then renamed.
+     * This function is used when server restarts. Unfinished files are re-read, written again
+     * (under a new name), then renamed.
      *
      * \param oldName
      * \param newName

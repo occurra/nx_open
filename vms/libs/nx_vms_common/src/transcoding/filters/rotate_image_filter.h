@@ -8,8 +8,8 @@
 
 #include "abstract_image_filter.h"
 
-NX_VMS_COMMON_API CLVideoDecoderOutputPtr rotateImage(
-    const CLConstVideoDecoderOutputPtr& frame, int angle);
+NX_VMS_COMMON_API CLVideoDecoderOutputPtr
+    rotateImage(const CLConstVideoDecoderOutputPtr& frame, int angle);
 
 class NX_VMS_COMMON_API QnRotateImageFilter: public QnAbstractImageFilter
 {
@@ -21,6 +21,7 @@ public:
     virtual QSize updatedResolution(const QSize& srcSize) override;
 
     int angle() const { return m_angle; }
+
 private:
     int m_angle;
 };

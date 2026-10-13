@@ -8,17 +8,16 @@ using namespace nx::rtp;
 
 TEST(Sdp, h264AndMpa)
 {
-    QString sdpString =
-        "v=0\r\n"
-        "s=PNO-9080R\r\n"
-        "c=IN IP4 127.0.0.1\r\n"
-        "m=video 0 RTP/AVP 96\r\n"
-        "a=control:trackID=0\r\n"
-        "a=rtpmap:96 H264/90000\r\n"
-        "a=fmtp:96 packetization-mode=1\r\n"
-        "m=audio 0 RTP/AVP 14\r\n"
-        "a=control:trackID=1\r\n"
-        "a=rtpmap:14 MPA/90000\r\n\r\n";
+    QString sdpString = "v=0\r\n"
+                        "s=PNO-9080R\r\n"
+                        "c=IN IP4 127.0.0.1\r\n"
+                        "m=video 0 RTP/AVP 96\r\n"
+                        "a=control:trackID=0\r\n"
+                        "a=rtpmap:96 H264/90000\r\n"
+                        "a=fmtp:96 packetization-mode=1\r\n"
+                        "m=audio 0 RTP/AVP 14\r\n"
+                        "a=control:trackID=1\r\n"
+                        "a=rtpmap:14 MPA/90000\r\n\r\n";
     Sdp sdp;
     sdp.parse(sdpString);
     ASSERT_EQ(sdp.media.size(), 2);
@@ -41,12 +40,11 @@ TEST(Sdp, h264AndMpa)
 
 TEST(Sdp, jpeg)
 {
-    QString sdpString =
-        "v=0\r\n"
-        "s=PNO-9080R\r\n"
-        "c=IN IP4 127.0.0.1\r\n"
-        "m=video 0 RTP/AVP 26\r\n"
-        "a=control:trackID=0\r\n\r\n";
+    QString sdpString = "v=0\r\n"
+                        "s=PNO-9080R\r\n"
+                        "c=IN IP4 127.0.0.1\r\n"
+                        "m=video 0 RTP/AVP 26\r\n"
+                        "a=control:trackID=0\r\n\r\n";
 
     Sdp sdp;
     sdp.parse(sdpString);
@@ -59,7 +57,8 @@ TEST(Sdp, jpeg)
 
 TEST(Sdp, h264AndMetadata)
 {
-    QString sdpString1 = "v=0\r\n"
+    QString sdpString1 =
+        "v=0\r\n"
         "o=- 1533155478115363 1 IN IP4 192.168.0.123\r\n"
         "s=RTSP/RTP stream\r\n"
         "i=h264\r\n"
@@ -96,7 +95,9 @@ TEST(Sdp, h264AndMetadata)
     ASSERT_EQ(sdp.media[0].fmtp.params.size(), 3);
     ASSERT_EQ(sdp.media[0].fmtp.params[0], "packetization-mode=1");
     ASSERT_EQ(sdp.media[0].fmtp.params[1], "profile-level-id=640028");
-    ASSERT_EQ(sdp.media[0].fmtp.params[2], "sprop-parameter-sets=Z2QAKK2EBUViuKxUdCAqKxXFYqOhAVFYrisVHQgKisVxWKjoQFRWK4rFR0ICorFcVio6ECSFITk8nyfk/k/J8nm5s00IEkKQnJ5Pk/J/J+T5PNzZprQFAW0qQAAAAwCAAAAPGBAAD0JAAAiVQve+F4RCNQAAAAE=,aO48sA==");
+    ASSERT_EQ(
+        sdp.media[0].fmtp.params[2],
+        "sprop-parameter-sets=Z2QAKK2EBUViuKxUdCAqKxXFYqOhAVFYrisVHQgKisVxWKjoQFRWK4rFR0ICorFcVio6ECSFITk8nyfk/k/J8nm5s00IEkKQnJ5Pk/J/J+T5PNzZprQFAW0qQAAAAwCAAAAPGBAAD0JAAAiVQve+F4RCNQAAAAE=,aO48sA==");
 
     ASSERT_EQ(sdp.media[1].payloadType, 98);
     ASSERT_EQ(sdp.media[1].mediaType, Sdp::MediaType::Metadata);
@@ -150,7 +151,9 @@ TEST(Sdp, h264AndAudio)
     ASSERT_EQ(3, sdp.media[0].fmtp.params.size());
     ASSERT_EQ("packetization-mode=1", sdp.media[0].fmtp.params[0]);
     ASSERT_EQ("profile-level-id=4D401E", sdp.media[0].fmtp.params[1]);
-    ASSERT_EQ("sprop-parameter-sets=Z01AHppkBQF/y/+AEAANtwEBAUAAAPoAAA2sOhgdgB167y40MDsAOvXeXCg=,aO48gA==", sdp.media[0].fmtp.params[2]);
+    ASSERT_EQ(
+        "sprop-parameter-sets=Z01AHppkBQF/y/+AEAANtwEBAUAAAPoAAA2sOhgdgB167y40MDsAOvXeXCg=,aO48gA==",
+        sdp.media[0].fmtp.params[2]);
     ASSERT_EQ(4040, sdp.media[0].serverPort);
 
     ASSERT_EQ(97, sdp.media[1].payloadType);
@@ -250,7 +253,9 @@ TEST(Sdp, h264AndAudioChooseBackchannelCodec)
         ASSERT_EQ(3, sdp.media[0].fmtp.params.size());
         ASSERT_EQ("packetization-mode=1", sdp.media[0].fmtp.params[0]);
         ASSERT_EQ("profile-level-id=420032", sdp.media[0].fmtp.params[1]);
-        ASSERT_EQ("sprop-parameter-sets=Z0IAMpY1QFQBf03BQEFQAAADABAAAAMDKEAA,aM4xsgA=", sdp.media[0].fmtp.params[2]);
+        ASSERT_EQ(
+            "sprop-parameter-sets=Z0IAMpY1QFQBf03BQEFQAAADABAAAAMDKEAA,aM4xsgA=",
+            sdp.media[0].fmtp.params[2]);
         ASSERT_EQ(0, sdp.media[0].serverPort);
 
         ASSERT_EQ(97, sdp.media[1].payloadType);

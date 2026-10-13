@@ -24,7 +24,11 @@ class NX_VMS_COMMON_API QnFfmpegTranscoder
 {
 public:
     static const int MTU_SIZE = 1412;
-    enum TranscodeMethod {TM_DirectStreamCopy, TM_FfmpegTranscode};
+    enum TranscodeMethod
+    {
+        TM_DirectStreamCopy,
+        TM_FfmpegTranscode
+    };
 
     struct Config
     {
@@ -39,11 +43,14 @@ public:
     FfmpegMuxer& muxer() { return m_muxer; };
     const FfmpegMuxer& muxer() const { return m_muxer; };
     /*
-    * Prepare to transcode. If 'direct stream copy' is used, function got not empty video and audio data
-    * Destination codecs MUST be used from source data codecs. If 'direct stream copy' is false, video or audio may be empty
-    * @return Returns true if no error or false otherwise
-    */
-    bool open(const QnConstCompressedVideoDataPtr& video, const QnConstCompressedAudioDataPtr& audio);
+     * Prepare to transcode. If 'direct stream copy' is used, function got not empty video and
+     * audio data Destination codecs MUST be used from source data codecs. If 'direct stream copy'
+     * is false, video or audio may be empty
+     * @return Returns true if no error or false otherwise
+     */
+    bool open(
+        const QnConstCompressedVideoDataPtr& video,
+        const QnConstCompressedAudioDataPtr& audio);
 
     // Direct stream copy of one stream only to support usage as muxer in QnUniversalRtpEncoder.
     bool open(const AVCodecParameters* codecParameters);
@@ -51,19 +58,21 @@ public:
 
     using BeforeOpenCallback = nx::MoveOnlyFunc<void(
         QnFfmpegTranscoder* transcoder,
-        const QnConstCompressedVideoDataPtr & video,
-        const QnConstCompressedAudioDataPtr & audio)>;
+        const QnConstCompressedVideoDataPtr& video,
+        const QnConstCompressedAudioDataPtr& audio)>;
     void setBeforeOpenCallback(BeforeOpenCallback callback);
 
     /*
-    * Set ffmpeg video codec and params
-    * @return Returns OperationResult::Success if no error or error code otherwise
-    * @param codec codec to transcode
-    * @param method how to transcode: no transcode, software, GPU e.t.c
-    * @resolution output resolution. If not valid, than source resolution will be used. Not used if transcode method TM_NoTranscode
-    * @param bitrate Bitrate after transcode. By default bitrate is autodetected. Not used if transcode method TM_NoTranscode
-    * @param addition codec params. Not used if transcode method TM_NoTranscode
-    */
+     * Set ffmpeg video codec and params
+     * @return Returns OperationResult::Success if no error or error code otherwise
+     * @param codec codec to transcode
+     * @param method how to transcode: no transcode, software, GPU e.t.c
+     * @resolution output resolution. If not valid, than source resolution will be used. Not used
+     * if transcode method TM_NoTranscode
+     * @param bitrate Bitrate after transcode. By default bitrate is autodetected. Not used if
+     * transcode method TM_NoTranscode
+     * @param addition codec params. Not used if transcode method TM_NoTranscode
+     */
     bool setVideoCodec(
         AVCodecID codec,
         TranscodeMethod method,
@@ -74,25 +83,29 @@ public:
         QnCodecParams::Value params = QnCodecParams::Value());
 
     /*
-    * Set ffmpeg audio codec and params
-    * @return Returns OperationResult::Success if no error or error code otherwise
-    * @param codec codec to transcode
-    * @param directStreamCopy if true - do not transcode audio data, only put it to destination container
-    * @param bitrate Bitrate after transcode. By default bitrate is autodetected
-    * @param addition codec params. Not used if directStreamCopy = true
-    */
+     * Set ffmpeg audio codec and params
+     * @return Returns OperationResult::Success if no error or error code otherwise
+     * @param codec codec to transcode
+     * @param directStreamCopy if true - do not transcode audio data, only put it to destination
+     * container
+     * @param bitrate Bitrate after transcode. By default bitrate is autodetected
+     * @param addition codec params. Not used if directStreamCopy = true
+     */
     bool setAudioCodec(AVCodecID codec, TranscodeMethod method);
 
     /*p
-    * Transcode media data and write it to specified nx::utils::ByteArray
-    * @param result transcoded data block. If NULL, only decoding is done
-    * @return Returns OperationResult::Success if no error or error code otherwise
-    */
-    int transcodePacket(const QnConstAbstractMediaDataPtr& media, nx::utils::ByteArray* const result);
-    //!Flushes codec buffer and finalizes stream. No \a QnFfmpegTranscoder::transcodePacket is allowed after this call
+     * Transcode media data and write it to specified nx::utils::ByteArray
+     * @param result transcoded data block. If NULL, only decoding is done
+     * @return Returns OperationResult::Success if no error or error code otherwise
+     */
+    int transcodePacket(
+        const QnConstAbstractMediaDataPtr& media,
+        nx::utils::ByteArray* const result);
+    //! Flushes codec buffer and finalizes stream. No \a QnFfmpegTranscoder::transcodePacket is
+    //! allowed after this call
     /*
-    * @return Returns OperationResult::Success if no error or error code otherwise
-    */
+     * @return Returns OperationResult::Success if no error or error code otherwise
+     */
     int finalize(nx::utils::ByteArray* const result);
 
 private:

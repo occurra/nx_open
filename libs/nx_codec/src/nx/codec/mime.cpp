@@ -16,7 +16,7 @@ namespace nx::media {
 
 namespace {
 
-template <int Size>
+template<int Size>
 std::string dumpBytesOmitted(const void* ptr, bool withDots)
 {
     uint8_t data[Size];
@@ -48,11 +48,13 @@ std::string getMimeType(const AVCodecParameters* codecpar)
     switch (codecpar->codec_id)
     {
         // Video codecs.
-        // Support only H.264 and H.265. Note that MSE also supports VP8/VP9 packed into WebM container.
+        // Support only H.264 and H.265. Note that MSE also supports VP8/VP9 packed into WebM
+        // container.
         case AV_CODEC_ID_H264:
         {
             std::vector<uint8_t> data = nx::media::nal::readH264SeqHeaderFromExtraData(
-                codecpar->extradata, codecpar->extradata_size);
+                codecpar->extradata,
+                codecpar->extradata_size);
             if (data.empty())
             {
                 // After transcoding, extradata is already in annex-b format.
@@ -65,12 +67,18 @@ std::string getMimeType(const AVCodecParameters* codecpar)
             const uint8_t* dataStart = data.data();
             const uint8_t* dataEnd = dataStart + data.size();
             const auto nalu = nx::media::nal::findNextNAL(dataStart, dataEnd);
-            if (nalu && dataEnd - nalu >= 4 && nx::media::h264::decodeType(nalu[0]) == nx::media::h264::NALUnitType::nuSPS)
+            if (nalu && dataEnd - nalu >= 4
+                && nx::media::h264::decodeType(nalu[0]) == nx::media::h264::NALUnitType::nuSPS)
             {
                 constexpr size_t kAvc1BufferSize = 12;
                 result.resize(kAvc1BufferSize);
                 const auto len = snprintf(
-                    result.data(), result.size(), "avc1.%02x%02x%02x", nalu[1], nalu[2], nalu[3]);
+                    result.data(),
+                    result.size(),
+                    "avc1.%02x%02x%02x",
+                    nalu[1],
+                    nalu[2],
+                    nalu[3]);
                 NX_ASSERT(len == kAvc1BufferSize - 1); //< No trailing zero.
                 result.resize(len);
             }
@@ -125,7 +133,10 @@ std::string getMimeType(const AVCodecParameters* codecpar)
         case AV_CODEC_ID_EAC3:
             return "ec-3";
         default:
-            NX_ASSERT(false, "Extradata should not be filled for this codec: %1", codecpar->codec_id);
+            NX_ASSERT(
+                false,
+                "Extradata should not be filled for this codec: %1",
+                codecpar->codec_id);
             break;
     }
     return result;

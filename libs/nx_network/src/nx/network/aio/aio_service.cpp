@@ -67,9 +67,7 @@ void AIOService::stopMonitoring(Pollable* const sock, aio::EventType eventType)
     if (!aioThread)
         return; //< Not bound to a thread. Socket is definitely not monitored.
 
-    aioThread->stopMonitoring(
-        sock,
-        eventType);
+    aioThread->stopMonitoring(sock, eventType);
 }
 
 void AIOService::registerTimer(
@@ -77,11 +75,7 @@ void AIOService::registerTimer(
     std::chrono::milliseconds timeoutMillis,
     AIOEventHandler* const eventHandler)
 {
-    startMonitoring(
-        sock,
-        aio::etTimedOut,
-        eventHandler,
-        timeoutMillis);
+    startMonitoring(sock, aio::etTimedOut, eventHandler, timeoutMillis);
 }
 
 bool AIOService::isSocketBeingMonitored(Pollable* sock)
@@ -105,9 +99,7 @@ void AIOService::post(nx::MoveOnlyFunc<void()> handler)
     threadToUse->post(nullptr, std::move(handler));
 }
 
-void AIOService::dispatch(
-    Pollable* sock,
-    nx::MoveOnlyFunc<void()> handler)
+void AIOService::dispatch(Pollable* sock, nx::MoveOnlyFunc<void()> handler)
 {
     sock->impl()->aioThread->load()->dispatch(sock, std::move(handler));
 }
@@ -135,9 +127,13 @@ std::vector<AbstractAioThread*> AIOService::getAllAioThreads() const
 {
     std::vector<AbstractAioThread*> result;
     std::transform(
-        m_aioThreadPool.begin(), m_aioThreadPool.end(),
+        m_aioThreadPool.begin(),
+        m_aioThreadPool.end(),
         std::back_inserter(result),
-        [](const auto& thread) { return thread.get(); });
+        [](const auto& thread)
+        {
+            return thread.get();
+        });
     return result;
 }
 
@@ -172,7 +168,7 @@ void AIOService::initializeAioThreadPool(unsigned int threadCount, bool enableAi
     if (m_aioThreadWatcher)
     {
         std::vector<const AbstractAioThread*> threadsToWatch;
-        for(const auto& t: m_aioThreadPool)
+        for (const auto& t: m_aioThreadPool)
             threadsToWatch.push_back(t.get());
         m_aioThreadWatcher->startWatcherThread(threadsToWatch);
     }
@@ -182,10 +178,8 @@ AbstractAioThread* AIOService::findLeastUsedAioThread() const
 {
     aio::AioThread* threadToUse = nullptr;
 
-    for (auto
-        threadIter = m_aioThreadPool.cbegin();
-        threadIter != m_aioThreadPool.cend();
-        ++threadIter)
+    for (auto threadIter = m_aioThreadPool.cbegin(); threadIter != m_aioThreadPool.cend();
+         ++threadIter)
     {
         if (threadToUse && threadToUse->socketsHandled() < (*threadIter)->socketsHandled())
             continue;
@@ -230,9 +224,13 @@ AioStatistics AIOService::statistics() const
         };
 
         std::transform(
-            stuckThreads.begin(), stuckThreads.end(),
+            stuckThreads.begin(),
+            stuckThreads.end(),
             std::back_inserter(statistics.stuckThreadData->threadIds),
-            [](auto stuckThread){ return stuckThread.aioThread->systemThreadId(); });
+            [](auto stuckThread)
+            {
+                return stuckThread.aioThread->systemThreadId();
+            });
     }
 
     for (const auto& thread: m_aioThreadPool)

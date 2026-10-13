@@ -9,23 +9,23 @@
 #include <nx/media/meta_data_packet.h>
 #include <nx/utils/byte_array.h>
 
-constexpr auto MAX_ALLOWED_FRAME_SIZE = 1024*1024*10;
+constexpr auto MAX_ALLOWED_FRAME_SIZE = 1024 * 1024 * 10;
 
-//!Contains video data specific fields. Video data buffer stored in a child class
+//! Contains video data specific fields. Video data buffer stored in a child class
 class NX_MEDIA_CORE_API QnCompressedVideoData: public QnAbstractMediaData
 {
 public:
     int width;
     int height;
-    //bool keyFrame;
-    //int flags;
-    //bool ignore;
+    // bool keyFrame;
+    // int flags;
+    // bool ignore;
     FrameMetadata metadata;
     qint64 pts;
 
-    QnCompressedVideoData( CodecParametersConstPtr ctx = CodecParametersConstPtr(nullptr) );
+    QnCompressedVideoData(CodecParametersConstPtr ctx = CodecParametersConstPtr(nullptr));
 
-    //!Implementation of QnAbstractMediaData::clone
+    //! Implementation of QnAbstractMediaData::clone
     /*!
         Does nothing. Overridden method MUST return \a QnWritableCompressedVideoData
     */
@@ -37,8 +37,7 @@ public:
 typedef std::shared_ptr<QnCompressedVideoData> QnCompressedVideoDataPtr;
 typedef std::shared_ptr<const QnCompressedVideoData> QnConstCompressedVideoDataPtr;
 
-
-//!Stores video data buffer using \a nx::utils::ByteArray
+//! Stores video data buffer using \a nx::utils::ByteArray
 class NX_MEDIA_CORE_API QnWritableCompressedVideoData: public QnCompressedVideoData
 {
 public:
@@ -47,11 +46,11 @@ public:
     /** Default FFMpeg alignment and padding are used. */
     QnWritableCompressedVideoData(size_t capacity = 0, CodecParametersConstPtr ctx = {});
 
-    //!Implementation of QnAbstractMediaData::clone
+    //! Implementation of QnAbstractMediaData::clone
     virtual QnWritableCompressedVideoData* clone() const override;
-    //!Implementation of QnAbstractMediaData::data
+    //! Implementation of QnAbstractMediaData::data
     virtual const char* data() const override;
-    //!Implementation of QnAbstractMediaData::dataSize
+    //! Implementation of QnAbstractMediaData::dataSize
     virtual size_t dataSize() const override;
 
     virtual void setData(nx::utils::ByteArray&& buffer) override;

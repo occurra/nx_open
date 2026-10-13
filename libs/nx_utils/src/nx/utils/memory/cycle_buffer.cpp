@@ -15,13 +15,17 @@ QnMediaCyclicBuffer::QnMediaCyclicBuffer(size_type bufferSize, int align):
     {
         NX_CRITICAL(bufferSize >= align);
         m_buffer = (value_type*) qMallocAligned(bufferSize, align);
-        NX_CRITICAL(m_buffer, "Failed to allocate buffer (size: %1, align: %2)", bufferSize, align);
+        NX_CRITICAL(
+            m_buffer,
+            "Failed to allocate buffer (size: %1, align: %2)",
+            bufferSize,
+            align);
     }
 }
 
 bool QnMediaCyclicBuffer::resize(size_type size)
 {
-    value_type* buffer = (value_type*)qMallocAligned(size, m_align);
+    value_type* buffer = (value_type*) qMallocAligned(size, m_align);
     NX_ASSERT(buffer, "Failed to allocate buffer (size: %1, align: %2)", size, m_align);
 
     if (buffer != nullptr)
@@ -66,20 +70,25 @@ void QnMediaCyclicBuffer::pop_front(size_type size)
         m_offset -= m_maxSize;
 }
 
-const QnMediaCyclicBuffer::value_type* QnMediaCyclicBuffer::unfragmentedData(size_type pos, size_type size)
+const QnMediaCyclicBuffer::value_type* QnMediaCyclicBuffer::unfragmentedData(
+    size_type pos,
+    size_type size)
 {
     if (size == -1)
         size = m_size;
     NX_CRITICAL(pos + size <= m_size);
     size_type reqPos = (m_offset + pos) % m_maxSize;
-    if (reqPos + size > m_maxSize) {
+    if (reqPos + size > m_maxSize)
+    {
         reallocateBuffer();
         reqPos = pos;
     }
     return m_buffer + reqPos;
 }
 
-std::vector<QnMediaCyclicBuffer::Range> QnMediaCyclicBuffer::fragmentedData(size_type pos, size_type size) const
+std::vector<QnMediaCyclicBuffer::Range> QnMediaCyclicBuffer::fragmentedData(
+    size_type pos,
+    size_type size) const
 {
     if (size == -1)
         size = m_size;
@@ -98,26 +107,30 @@ std::vector<QnMediaCyclicBuffer::Range> QnMediaCyclicBuffer::fragmentedData(size
 
 void QnMediaCyclicBuffer::reallocateBuffer()
 {
-    if (m_offset + m_size <= m_maxSize) {
+    if (m_offset + m_size <= m_maxSize)
+    {
         memmove(m_buffer, m_buffer + m_offset, m_size);
     }
-    else {
+    else
+    {
         int frontDataSize = (m_offset + m_size) - m_maxSize;
         int backDataSize = m_maxSize - m_offset;
 
-        if (frontDataSize < backDataSize) {
+        if (frontDataSize < backDataSize)
+        {
             value_type* tmpBuffer = new value_type[frontDataSize];
             memcpy(tmpBuffer, m_buffer, frontDataSize);
             memmove(m_buffer, m_buffer + m_offset, backDataSize);
             memcpy(m_buffer + backDataSize, tmpBuffer, frontDataSize);
-            delete [] tmpBuffer;
+            delete[] tmpBuffer;
         }
-        else {
+        else
+        {
             value_type* tmpBuffer = new value_type[backDataSize];
             memcpy(tmpBuffer, m_buffer + m_offset, backDataSize);
             memmove(m_buffer + backDataSize, m_buffer, m_size - backDataSize);
             memcpy(m_buffer, tmpBuffer, backDataSize);
-            delete [] tmpBuffer;
+            delete[] tmpBuffer;
         }
     }
     m_offset = 0;

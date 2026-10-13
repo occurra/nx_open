@@ -6,9 +6,10 @@
 #include <cstdint>
 #include <deque>
 
+#include <nx/utils/system_network_headers.h>
+
 #include <nx/utils/qnbytearrayref.h>
 #include <nx/utils/string.h>
-#include <nx/utils/system_network_headers.h>
 
 #include "parse_utils.h"
 
@@ -55,9 +56,8 @@ nx::network::server::ParserState MessageParser::parse(
         if (m_state == State::done || m_state == State::failed)
         {
             // Parsing completed or failed. Anyway, current message cannot be continued.
-            auto result = m_state == State::done
-                ? server::ParserState::done
-                : server::ParserState::failed;
+            auto result =
+                m_state == State::done ? server::ParserState::done : server::ParserState::failed;
 
             if (m_fingerprintRequired && !m_fingerprintFound)
                 result = server::ParserState::failed;
@@ -104,7 +104,7 @@ void MessageParser::setFingerprintRequired(bool val)
 }
 
 // Parsing for each specific type
-template <typename XorAddressType>
+template<typename XorAddressType>
 Attribute* parseXorAddress(const nx::Buffer& transactionId, const nx::Buffer& stunAttribute)
 {
     if (stunAttribute.size() < 8 || stunAttribute.front() != 0)
@@ -141,7 +141,8 @@ Attribute* parseXorAddress(const nx::Buffer& transactionId, const nx::Buffer& st
         if (stunAttribute.size() != kXorAddressValueSize)
             return NULL;
 
-        // The RFC doesn't indicate how to concatenate, I just assume it with the natural byte order
+        // The RFC doesn't indicate how to concatenate, I just assume it with the natural byte
+        // order
         std::uint16_t xor_comp;
         // XOR with high part of MAGIC_COOKIE
         xor_comp = buffer.NextUint16(&ok);
@@ -157,8 +158,7 @@ Attribute* parseXorAddress(const nx::Buffer& transactionId, const nx::Buffer& st
             xor_comp = buffer.NextUint16(&ok);
             NX_ASSERT(ok);
             attribute->address.ipv6.words[i + 2] =
-                xor_comp ^ *reinterpret_cast< const std::uint16_t* >(
-                    transactionId.data() + i * 2);
+                xor_comp ^ *reinterpret_cast<const std::uint16_t*>(transactionId.data() + i * 2);
         }
     }
 
@@ -168,7 +168,8 @@ Attribute* parseXorAddress(const nx::Buffer& transactionId, const nx::Buffer& st
 Attribute* MessageParser::parseErrorCode()
 {
     // Checking for the reserved bits
-    if (*reinterpret_cast<const std::uint16_t*>(m_attribute.value.data()) != 0 || m_attribute.value.size() < 4)
+    if (*reinterpret_cast<const std::uint16_t*>(m_attribute.value.data()) != 0
+        || m_attribute.value.size() < 4)
         return NULL;
     nx::ConstBufferRefType refBuffer(m_attribute.value);
     MessageParserBuffer buffer(refBuffer);
@@ -221,11 +222,10 @@ Attribute* MessageParser::parseFingerprint()
     NX_ASSERT(ok);
 
     // XOR back the value that we get from our CRC32 value
-    uint32_t crc32 =
-        ((xor_crc_32 & 0x000000ff) ^ STUN_FINGERPRINT_XORMASK[0]) |
-        ((xor_crc_32 & 0x0000ff00) ^ STUN_FINGERPRINT_XORMASK[1]) |
-        ((xor_crc_32 & 0x00ff0000) ^ STUN_FINGERPRINT_XORMASK[2]) |
-        ((xor_crc_32 & 0xff000000) ^ STUN_FINGERPRINT_XORMASK[3]);
+    uint32_t crc32 = ((xor_crc_32 & 0x000000ff) ^ STUN_FINGERPRINT_XORMASK[0])
+        | ((xor_crc_32 & 0x0000ff00) ^ STUN_FINGERPRINT_XORMASK[1])
+        | ((xor_crc_32 & 0x00ff0000) ^ STUN_FINGERPRINT_XORMASK[2])
+        | ((xor_crc_32 & 0xff000000) ^ STUN_FINGERPRINT_XORMASK[3]);
 
     return new FingerPrint(crc32);
 }
@@ -378,7 +378,10 @@ int MessageParser::parseHeaderTransactionID(MessageParserBuffer& buffer)
 {
     NX_ASSERT(m_legacyState == LegacyState::HEADER_TRANSACTION_ID);
     bool ok;
-    buffer.readNextBytesToBuffer(m_header.transactionId.data(), m_header.transactionId.size(), &ok);
+    buffer.readNextBytesToBuffer(
+        m_header.transactionId.data(),
+        m_header.transactionId.size(),
+        &ok);
     if (!ok)
     {
         return IN_PROGRESS;
@@ -426,13 +429,10 @@ int MessageParser::parseAttributeValueNotAdd(MessageParserBuffer& buffer)
     buffer.readNextBytesToBuffer(m_attribute.value.data(), m_attribute.length, &ok);
     if (!ok)
         return IN_PROGRESS;
-    //skipping padding (valueWithPaddingLength-m_attribute.length) bytes
-    //TODO #akolesnikov add skipBytes method to buffer
+    // skipping padding (valueWithPaddingLength-m_attribute.length) bytes
+    // TODO #akolesnikov add skipBytes method to buffer
     char paddingBuf[4];
-    buffer.readNextBytesToBuffer(
-        paddingBuf,
-        valueWithPaddingLength - m_attribute.length,
-        &ok);
+    buffer.readNextBytesToBuffer(paddingBuf, valueWithPaddingLength - m_attribute.length, &ok);
     if (!ok)
         return IN_PROGRESS;
     // Modify the left message length field : total size
@@ -486,7 +486,8 @@ int MessageParser::parseAttributeFingerprintLength(MessageParserBuffer& buffer)
 int MessageParser::parseAttributeFingerprintValue(MessageParserBuffer& buffer)
 {
     int ret = parseAttributeValueNotAdd(buffer);
-    if (ret != SECTION_FINISH) return ret;
+    if (ret != SECTION_FINISH)
+        return ret;
     else
     {
         // Based on RFC , it says we MUST ignore the message following by message
@@ -505,10 +506,8 @@ int MessageParser::parseAttributeFingerprintValue(MessageParserBuffer& buffer)
     }
 }
 
-std::tuple<nx::ConstBufferRefType, std::optional<server::ParserState>>
-    MessageParser::getDataToParse(
-        nx::ConstBufferRefType* input,
-        std::size_t* bytesProcessed)
+std::tuple<nx::ConstBufferRefType, std::optional<server::ParserState>> MessageParser::
+    getDataToParse(nx::ConstBufferRefType* input, std::size_t* bytesProcessed)
 {
     if (!NX_ASSERT(m_cache.size() < m_bytesToCache))
         return {{}, {nx::network::server::ParserState::failed}};
@@ -572,8 +571,8 @@ void MessageParser::parseInternal(
 
         case State::attrHeader:
         {
-            const bool res = parseAttributeType(buffer) == SECTION_FINISH &&
-                parseAttributeLength(buffer) == SECTION_FINISH;
+            const bool res = parseAttributeType(buffer) == SECTION_FINISH
+                && parseAttributeLength(buffer) == SECTION_FINISH;
             *bytes_transferred += buffer.position();
             m_messageBytesParsed += buffer.position();
             if (!res)
@@ -587,7 +586,8 @@ void MessageParser::parseInternal(
 
             m_bytesToCache = m_attribute.length;
             if ((m_bytesToCache & 0x03) > 0)
-                m_bytesToCache = (m_bytesToCache & ~0x03) + 4; // Taking into account 32-bit boundary padding.
+                m_bytesToCache =
+                    (m_bytesToCache & ~0x03) + 4; // Taking into account 32-bit boundary padding.
             m_state = State::attrValue;
             if (m_bytesToCache > 0)
                 break;
@@ -615,7 +615,8 @@ void MessageParser::parseInternal(
             else
             {
                 // FINGERPRINT.
-                const attrs::FingerPrint* fingerprint = m_message->getAttribute<attrs::FingerPrint>();
+                const attrs::FingerPrint* fingerprint =
+                    m_message->getAttribute<attrs::FingerPrint>();
                 if (fingerprint->getCrc32() != m_currentMessageCrc32.checksum())
                 {
                     m_state = State::failed;
@@ -626,7 +627,8 @@ void MessageParser::parseInternal(
 
             m_bytesToCache = kAttrHeaderSize;
             m_state = m_messageBytesParsed < (m_header.length + kMessageHeaderSize)
-                ? State::attrHeader : State::done;
+                ? State::attrHeader
+                : State::done;
             break;
         }
 
@@ -635,8 +637,8 @@ void MessageParser::parseInternal(
             break;
     }
 
-    if (m_state != State::done && m_state != State::failed &&
-        m_messageBytesParsed + m_bytesToCache > kMessageHeaderSize + m_header.length)
+    if (m_state != State::done && m_state != State::failed
+        && m_messageBytesParsed + m_bytesToCache > kMessageHeaderSize + m_header.length)
     {
         // Packet length in the header is inconsistent with some attribute length.
         m_state = State::failed;
@@ -661,7 +663,8 @@ bool MessageParser::validateCachedData()
 
         if (m_cache.size() >= 8)
         {
-            // The magic cookie field MUST contain the fixed value 0x2112A442 in network byte order.
+            // The magic cookie field MUST contain the fixed value 0x2112A442 in network byte
+            // order.
             std::uint32_t magicCookie = 0;
             memcpy(&magicCookie, m_cache.data() + 4, sizeof(std::uint32_t));
             if (ntohl(magicCookie) != kMagicCookie)
@@ -677,4 +680,4 @@ void MessageParser::updateCurrentMessageCrc32(const char* buf, std::size_t size)
     m_currentMessageCrc32.process_bytes(buf, size);
 }
 
-} // nx::network::stun
+} // namespace nx::network::stun

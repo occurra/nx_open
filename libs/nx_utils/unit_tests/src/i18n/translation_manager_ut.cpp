@@ -15,16 +15,14 @@ namespace {
 class TranslationManagerOpen: public TranslationManager
 {
     using base_type = TranslationManager;
+
 public:
     static void setCurrentThreadLocale(QString locale)
     {
         base_type::setCurrentThreadLocale(locale);
     }
 
-    static void eraseCurrentThreadLocale()
-    {
-        base_type::eraseCurrentThreadLocale();
-    }
+    static void eraseCurrentThreadLocale() { base_type::eraseCurrentThreadLocale(); }
 };
 
 static const QString kSampleLocale = "en_US";

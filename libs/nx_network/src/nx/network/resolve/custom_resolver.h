@@ -10,8 +10,7 @@ namespace nx {
 namespace network {
 
 template<typename Func>
-class CustomResolver:
-    public AbstractResolver
+class CustomResolver: public AbstractResolver
 {
 public:
     CustomResolver(Func func):

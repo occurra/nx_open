@@ -10,13 +10,14 @@ namespace nx::media::h265 {
 
 struct NX_CODEC_API ShortTermReferencePictureSet
 {
-    bool read(nx::utils::BitStreamReader& reader,
+    bool read(
+        nx::utils::BitStreamReader& reader,
         uint32_t stRpsIdx,
         uint32_t max_dec_pic_buffering_minus1,
         uint32_t num_short_term_ref_pic_sets,
         const std::vector<ShortTermReferencePictureSet>& spsSets);
 
-        uint8_t inter_ref_pic_set_prediction_flag;
+    uint8_t inter_ref_pic_set_prediction_flag;
 
     // apply if inter_ref_pic_set_prediction_flag is set
     uint32_t delta_idx_minus1;

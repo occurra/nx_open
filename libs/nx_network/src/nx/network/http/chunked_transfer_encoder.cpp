@@ -20,21 +20,16 @@ nx::Buffer QnChunkedTransferEncoder::serializeSingleChunk(
     const auto dataSize = data.size();
 
     size_t totalExtensionsLength = 0;
-    for (auto val : chunkExtensions)
+    for (auto val: chunkExtensions)
     {
-        totalExtensionsLength +=
-        1                       // ";"
-        + val.first.size()
-        + 1                     // "="
-        + val.second.size();
+        totalExtensionsLength += 1 // ";"
+            + val.first.size() + 1 // "="
+            + val.second.size();
     }
 
     result.reserve(
-        sizeof(dataSize) * 2      //max len of hex representation of chunk size
-        + totalExtensionsLength
-        + sizeof("\r\n")
-        + dataSize
-        + sizeof("\r\n"));
+        sizeof(dataSize) * 2 // max len of hex representation of chunk size
+        + totalExtensionsLength + sizeof("\r\n") + dataSize + sizeof("\r\n"));
 
     // Writing chunk size (hex).
     result += nx::utils::toHex(dataSize);

@@ -5,8 +5,9 @@
 namespace nx::network::http::test {
 
 CustomLengthBody::CustomLengthBody(
-    std::string mimeType, nx::Buffer msgBody, std::optional<std::size_t> len)
-    :
+    std::string mimeType,
+    nx::Buffer msgBody,
+    std::optional<std::size_t> len):
     base_type(std::move(mimeType), std::move(msgBody)),
     m_len(len)
 {

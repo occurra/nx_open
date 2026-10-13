@@ -23,10 +23,7 @@ public:
         return nx::utils::systemUptime() >= *m_deadline;
     }
 
-    void forceExpire()
-    {
-        setRemainingTime({});
-    }
+    void forceExpire() { setRemainingTime({}); }
 
     void setRemainingTime(std::chrono::milliseconds value)
     {
@@ -38,7 +35,9 @@ public:
         if (!m_deadline)
             return std::chrono::milliseconds::max();
 
-        return std::max(*m_deadline - nx::utils::systemUptime(), std::chrono::milliseconds::zero());
+        return std::max(
+            *m_deadline - nx::utils::systemUptime(),
+            std::chrono::milliseconds::zero());
     }
 
 private:

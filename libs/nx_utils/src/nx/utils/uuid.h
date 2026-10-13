@@ -67,8 +67,9 @@ public:
     /** Constructs a random Uuid. */
     static Uuid createUuid();
 
-    /** Constructs a Uuid from pool of id's. Pool is determined by base id and individual offset. */
-    static Uuid createUuidFromPool(const QUuid &baseId, uint offset);
+    /** Constructs a Uuid from pool of id's. Pool is determined by base id and individual offset.
+     */
+    static Uuid createUuidFromPool(const QUuid& baseId, uint offset);
 
     /** Constructs a Uuid v7 with custom time. */
     static Uuid createUuidV7(std::chrono::milliseconds timeSinceEpoch);
@@ -83,8 +84,8 @@ public:
     static Uuid fromStringSafe(std::string_view uuid);
 
     /**
-     * Creates a fixed Uuid from any data. As a value of uuid the MD5 hash is taken so created uuids
-     * will be equal for equal strings given. Also there is a collision possibility.
+     * Creates a fixed Uuid from any data. As a value of uuid the MD5 hash is taken so created
+     * uuids will be equal for equal strings given. Also there is a collision possibility.
      */
     static Uuid fromArbitraryData(const QByteArray& data);
     static Uuid fromArbitraryData(const QString& data);
@@ -117,13 +118,14 @@ private:
 };
 
 NX_UTILS_API nx::reflect::DeserializationResult deserialize(
-    const nx::reflect::json_detail::DeserializationContext& context, Uuid* data);
+    const nx::reflect::json_detail::DeserializationContext& context,
+    Uuid* data);
 
 template<typename SerializationContext>
 inline void serialize(SerializationContext* context, const Uuid& value)
 {
-    context->composer.writeString(value.toStdString(
-        context->uuidWithBraces() ? QUuid::WithBraces : QUuid::WithoutBraces));
+    context->composer.writeString(
+        value.toStdString(context->uuidWithBraces() ? QUuid::WithBraces : QUuid::WithoutBraces));
 }
 
 NX_UTILS_API QString changedGuidByteOrder(const QString& guid);

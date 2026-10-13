@@ -7,6 +7,7 @@
 namespace nx::utils {
 
 QString NX_UTILS_API ubuntuVersionFromCodeName(const QString& codeName);
-QString NX_UTILS_API osReleaseContentsValueByKey(const QByteArray& osReleaseContents, const QString& key);
+QString NX_UTILS_API
+    osReleaseContentsValueByKey(const QByteArray& osReleaseContents, const QString& key);
 
 } // namespace nx::utils

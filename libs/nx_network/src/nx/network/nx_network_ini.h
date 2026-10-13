@@ -8,36 +8,55 @@ namespace nx::network {
 
 struct NX_NETWORK_API Ini: nx::kit::IniConfig
 {
-    Ini(): IniConfig("nx_network.ini") { reload(); }
+    Ini():
+        IniConfig("nx_network.ini")
+    {
+        reload();
+    }
 
     NX_INI_INT(0, aioThreadCount, "Number of AIO threads, 0 means the number of CPU cores.");
 
     NX_INI_FLAG(true, verifySslCertificates, "Enables SSL certificate validation in general.");
 
     // VMS-20300
-    NX_INI_FLAG(true, verifyVmsSslCertificates,
+    NX_INI_FLAG(
+        true,
+        verifyVmsSslCertificates,
         "[Feature] Verify vms server's self-signed SSL certificates. This option does not work if "
         "verifySslCertificates is disabled.");
 
-    NX_INI_FLAG(true, useDefaultSslCertificateVerificationByOs,
+    NX_INI_FLAG(
+        true,
+        useDefaultSslCertificateVerificationByOs,
         "Verify SSL certificates using OS CA by default if there is no specific certificate\n"
         "verification assumed (i.e. client-server, server-server or server-cloud connections)");
 
-    NX_INI_STRING("", sslKeyLogFile,
+    NX_INI_STRING(
+        "",
+        sslKeyLogFile,
         "File to store TLS keys used to decrypt traffic dumps. Same as SSLKEYLOGFILE environment "
         "variable in cURL or Chrome. Used by the function set with SSL_CTX_set_keylog_callback.");
 
-    NX_INI_FLAG(false, httpClientTraffic, "Trace HTTP traffic for nx::network::http::AsyncHttpClient");
+    NX_INI_FLAG(
+        false,
+        httpClientTraffic,
+        "Trace HTTP traffic for nx::network::http::AsyncHttpClient");
     NX_INI_STRING("", disableHosts, "Comma-separated list of forbidden IPs and domains");
 
-    NX_INI_INT(10'000'000, minSocketSendDurationUs,
+    NX_INI_INT(
+        10'000'000,
+        minSocketSendDurationUs,
         "Minimum duration of socket send() to log as WARNING, in microseconds. Lesser durations\n"
         "are logged as VERBOSE.");
 
-    NX_INI_FLAG(false, traceIoObjectsLifetime,
+    NX_INI_FLAG(
+        false,
+        traceIoObjectsLifetime,
         "Enables reporting creation stack traces of dangling HTTP clients during server shutdown");
 
-    NX_INI_FLAG(false, useRandomAioThreadForNewSockets,
+    NX_INI_FLAG(
+        false,
+        useRandomAioThreadForNewSockets,
         "Enables random selection of an AIO thread for newly created sockets. If disabled, the "
         "least used thread is selected.");
 };

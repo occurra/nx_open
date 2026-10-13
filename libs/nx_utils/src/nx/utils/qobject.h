@@ -35,7 +35,8 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(PropertyAccessFlags)
 
 /**
  * Returns list of the object property and dynamic property names or empty list if the object is
- * nullptr. By default QObject properties are excluded, set includeBaseProperties to true to include.
+ * nullptr. By default QObject properties are excluded, set includeBaseProperties to true to
+ * include.
  */
 template<class Base = QObject>
 inline QSet<QByteArray> propertyNames(
@@ -46,7 +47,7 @@ inline QSet<QByteArray> propertyNames(
 {
     static_assert(std::is_base_of<QObject, Base>());
 
-    if (!object )
+    if (!object)
         return {};
 
     const auto baseMetaObject = &Base::staticMetaObject;
@@ -58,7 +59,6 @@ inline QSet<QByteArray> propertyNames(
     const int offset = includeBaseProperties
         ? baseMetaObject->propertyOffset()
         : baseMetaObject->propertyOffset() + baseMetaObject->propertyCount();
-
 
     for (int i = offset; i < metaObject->propertyCount(); ++i)
     {
@@ -84,7 +84,6 @@ inline QSet<QByteArray> propertyNames(
 
     return result;
 }
-
 
 /** Connects all the sender properties notify signals with the receiver meta method. */
 void NX_UTILS_API watchOnPropertyChanges(

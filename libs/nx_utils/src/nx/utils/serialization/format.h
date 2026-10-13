@@ -11,7 +11,7 @@
 
 namespace Qn {
 
-enum class SerializationFormat: int
+enum class SerializationFormat : int
 {
     json = 0,
     ubjson = 1,
@@ -51,17 +51,16 @@ constexpr auto nxReflectVisitAllEnumItems(SerializationFormat*, Visitor&& visito
         Item{SerializationFormat::xml, "xml"},
         Item{SerializationFormat::compressedPeriods, "periods"},
         Item{SerializationFormat::urlQuery, "urlquery"},
-        Item{SerializationFormat::urlEncoded, "urlencoded"}
-    );
+        Item{SerializationFormat::urlEncoded, "urlencoded"});
 }
 
 NX_UTILS_API const char* serializationFormatToHttpContentType(SerializationFormat format);
 
-NX_UTILS_API SerializationFormat serializationFormatFromHttpContentType(
-    std::string_view httpContentType);
+NX_UTILS_API SerializationFormat
+    serializationFormatFromHttpContentType(std::string_view httpContentType);
 
-NX_UTILS_API SerializationFormat serializationFormatFromHttpContentType(
-    const QByteArray& httpContentType);
+NX_UTILS_API SerializationFormat
+    serializationFormatFromHttpContentType(const QByteArray& httpContentType);
 
 NX_UTILS_API QDebug operator<<(QDebug, const SerializationFormat&);
 

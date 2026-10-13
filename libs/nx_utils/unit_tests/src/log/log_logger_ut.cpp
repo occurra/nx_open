@@ -2,9 +2,9 @@
 
 #include <gtest/gtest.h>
 
-#include <nx/utils/log/log_logger.h>
-
 #include <QtCore/QDateTime>
+
+#include <nx/utils/log/log_logger.h>
 
 namespace nx::log::test {
 
@@ -12,12 +12,12 @@ TEST(LogLogger, Levels)
 {
     const auto buffer = new Buffer();
     int levelChangedCount = 0;
-    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount](){ ++levelChangedCount; };
+    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount]()
+    {
+        ++levelChangedCount;
+    };
 
-    Logger logger(
-        std::set<Filter>(),
-        Level::info,
-        std::unique_ptr<AbstractWriter>(buffer));
+    Logger logger(std::set<Filter>(), Level::info, std::unique_ptr<AbstractWriter>(buffer));
     logger.setOnLevelChanged(onLevelChanged);
     ASSERT_EQ(Level::info, logger.defaultLevel());
 
@@ -59,19 +59,25 @@ TEST(LogLogger, Levels)
     EXPECT_EQ(1, levelChangedCount);
 }
 
-static Tag makeTag(const char* tag) { return Tag(QString::fromUtf8(tag)); }
-static Filter makeFilter(const char* filter) { return Filter(QString::fromUtf8(filter)); }
+static Tag makeTag(const char* tag)
+{
+    return Tag(QString::fromUtf8(tag));
+}
+static Filter makeFilter(const char* filter)
+{
+    return Filter(QString::fromUtf8(filter));
+}
 
 TEST(LogLogger, Filters)
 {
     const auto buffer = new Buffer();
     int levelChangedCount = 0;
-    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount](){ ++levelChangedCount; };
+    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount]()
+    {
+        ++levelChangedCount;
+    };
 
-    Logger logger(
-        std::set<Filter>(),
-        Level::info,
-        std::unique_ptr<AbstractWriter>(buffer));
+    Logger logger(std::set<Filter>(), Level::info, std::unique_ptr<AbstractWriter>(buffer));
     logger.setOnLevelChanged(onLevelChanged);
     EXPECT_EQ(0, levelChangedCount);
     ASSERT_EQ((size_t) 0, logger.levelFilters().size());
@@ -107,8 +113,10 @@ TEST(LogLogger, Filters)
     logger.log(Level::debug, makeTag("nx::second::className4"), "ddd");
     ASSERT_EQ((size_t) 3, buffer->takeMessages().size());
 
-    logger.setLevelFilters(LevelFilters{
-        {makeFilter("nx::second"), Level::verbose}, {makeFilter("nx::third"), Level::none}});
+    logger.setLevelFilters(
+        LevelFilters{
+            {makeFilter("nx::second"), Level::verbose},
+            {makeFilter("nx::third"), Level::none}});
     ASSERT_EQ((size_t) 2, logger.levelFilters().size());
 
     EXPECT_TRUE(logger.isToBeLogged(Level::warning, makeTag("nx::first::className1")));
@@ -133,12 +141,12 @@ TEST(LogLogger, Format)
 {
     const auto buffer = new Buffer();
     int levelChangedCount = 0;
-    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount](){ ++levelChangedCount; };
+    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount]()
+    {
+        ++levelChangedCount;
+    };
 
-    Logger logger(
-        std::set<Filter>(),
-        Level::verbose,
-        std::unique_ptr<AbstractWriter>(buffer));
+    Logger logger(std::set<Filter>(), Level::verbose, std::unique_ptr<AbstractWriter>(buffer));
     logger.setOnLevelChanged(onLevelChanged);
     EXPECT_EQ(0, levelChangedCount);
 
@@ -154,13 +162,12 @@ TEST(LogLogger, Format)
     ASSERT_EQ(6U, messages.size());
 
     const auto today = QDateTime::currentDateTime().toString("yyyy-MM-dd");
-    const auto verifyMessage =
-        [&](size_t index, const QString& line)
-        {
-            const auto& message = messages[index];
-            EXPECT_TRUE(message.startsWith(today)) << message.toStdString();
-            EXPECT_TRUE(message.endsWith(line)) << message.toStdString();
-        };
+    const auto verifyMessage = [&](size_t index, const QString& line)
+    {
+        const auto& message = messages[index];
+        EXPECT_TRUE(message.startsWith(today)) << message.toStdString();
+        EXPECT_TRUE(message.endsWith(line)) << message.toStdString();
+    };
 
     verifyMessage(0, QLatin1String("VERBOSE : Message without tag"));
     verifyMessage(1, QLatin1String("ERROR nx::bbb::Object(2): Second message"));
@@ -176,12 +183,12 @@ TEST(LogLogger, default_log_level_trace_downgraded_to_verbose)
 {
     auto buffer = std::make_unique<Buffer>();
     int levelChangedCount = 0;
-    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount](){ ++levelChangedCount; };
+    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount]()
+    {
+        ++levelChangedCount;
+    };
 
-    Logger logger(
-        std::set<Filter>(),
-        Level::trace,
-        std::move(buffer));
+    Logger logger(std::set<Filter>(), Level::trace, std::move(buffer));
     logger.setOnLevelChanged(onLevelChanged);
     EXPECT_EQ(0, levelChangedCount);
 
@@ -200,12 +207,12 @@ TEST(LogLogger, log_level_trace_allowed_with_non_empty_level_filters)
     const auto buffer = buf.get();
 
     int levelChangedCount = 0;
-    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount](){ ++levelChangedCount; };
+    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount]()
+    {
+        ++levelChangedCount;
+    };
 
-    Logger logger(
-        std::set<Filter>(),
-        Level::trace,
-        std::move(buf));
+    Logger logger(std::set<Filter>(), Level::trace, std::move(buf));
     logger.setOnLevelChanged(onLevelChanged);
     EXPECT_EQ(0, levelChangedCount);
 
@@ -222,12 +229,12 @@ TEST(LogLogger, log_level_trace_ignored_with_empty_level_filters)
     const auto buffer = buf.get();
 
     int levelChangedCount = 0;
-    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount](){ ++levelChangedCount; };
+    const Logger::OnLevelChanged onLevelChanged = [&levelChangedCount]()
+    {
+        ++levelChangedCount;
+    };
 
-    Logger logger(
-        std::set<Filter>(),
-        Level::trace,
-        std::move(buf));
+    Logger logger(std::set<Filter>(), Level::trace, std::move(buf));
     logger.setOnLevelChanged(onLevelChanged);
     EXPECT_EQ(0, levelChangedCount);
 

@@ -10,7 +10,8 @@ class InvalidParameterException: public nx::utils::Exception
 {
 public:
     InvalidParameterException(const std::pair<QString, QString>& failedKeyValue):
-        m_param(failedKeyValue.first), m_value(failedKeyValue.second)
+        m_param(failedKeyValue.first),
+        m_value(failedKeyValue.second)
     {
     }
 
@@ -34,7 +35,10 @@ private:
 class InvalidJsonException: public nx::utils::Exception
 {
 public:
-    InvalidJsonException(const QString& message): m_message(message) {}
+    InvalidJsonException(const QString& message):
+        m_message(message)
+    {
+    }
     virtual QString message() const override { return m_message; }
 
 private:

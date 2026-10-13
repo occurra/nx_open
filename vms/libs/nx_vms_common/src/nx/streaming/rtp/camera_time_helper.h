@@ -54,7 +54,7 @@ public:
         const std::chrono::microseconds cameraTime,
         const bool isUtcTime,
         const bool isPrimaryStream,
-        EventCallback callback = [](CameraTimeHelper::EventType /*event*/){});
+        EventCallback callback = [](CameraTimeHelper::EventType /*event*/) {});
 
     void setResyncThreshold(std::chrono::milliseconds value) { m_resyncThreshold = value; }
     void setTimePolicy(TimePolicy policy);
@@ -74,7 +74,8 @@ private:
     const std::chrono::milliseconds m_streamsSyncThreshold;
     const std::chrono::milliseconds m_forceCameraTimeThreshold;
     const std::chrono::milliseconds m_maxExpectedMetadataDelay;
-    nx::utils::ElapsedTimer m_waitSenderReportTimer; //< need to wait Sender Report before sending BadCameraTime event
+    nx::utils::ElapsedTimer
+        m_waitSenderReportTimer; //< need to wait Sender Report before sending BadCameraTime event
     const std::string m_resourceId;
     const nx::rtp::Sdp::MediaType m_mediaType;
     TimePolicy m_timePolicy = TimePolicy::useCameraTimeIfCorrect;

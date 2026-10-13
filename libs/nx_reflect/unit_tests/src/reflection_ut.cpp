@@ -2,11 +2,11 @@
 
 #include <gtest/gtest.h>
 
+#include <nx/reflect/field_enumerator.h>
 #include <nx/reflect/generic_visitor.h>
 #include <nx/reflect/instrument.h>
-#include <nx/reflect/field_enumerator.h>
-#include <nx/reflect/json/serializer.h>
 #include <nx/reflect/json/deserializer.h>
+#include <nx/reflect/json/serializer.h>
 #include <nx/reflect/type_utils.h>
 
 #include "types.h"
@@ -29,7 +29,8 @@ TEST(Reflection, is_instrumented)
 TEST(Reflection, field_traverse)
 {
     const auto fieldNames = nx::reflect::listFieldNames<A>();
-    const auto expected = std::array<std::string_view, 6>{"num", "str", "b", "bs", "c", "keyToValue"};
+    const auto expected =
+        std::array<std::string_view, 6>{"num", "str", "b", "bs", "c", "keyToValue"};
     ASSERT_EQ(expected, fieldNames);
 }
 
@@ -46,8 +47,7 @@ public:
 
     bool operator==(const FooWithGetSetProperty& right) const
     {
-        return m_str == right.m_str
-            && m_n == right.m_n;
+        return m_str == right.m_str && m_n == right.m_n;
     }
 
 private:
@@ -57,8 +57,8 @@ private:
 
 NX_REFLECTION_INSTRUMENT_GSN(
     FooWithGetSetProperty,
-    ((&FooWithGetSetProperty::n, &FooWithGetSetProperty::setN, "intVal"))
-    ((&FooWithGetSetProperty::str, &FooWithGetSetProperty::setStr, "strVal")))
+    ((&FooWithGetSetProperty::n, &FooWithGetSetProperty::setN, "intVal"))(
+        (&FooWithGetSetProperty::str, &FooWithGetSetProperty::setStr, "strVal")))
 
 TEST(Reflection, struct_properties_represented_with_get_set_methods)
 {
@@ -100,8 +100,8 @@ private:
 
 NX_REFLECTION_INSTRUMENT_GSN(
     FooWithReadOnlyProperty,
-    ((&FooWithReadOnlyProperty::str, &FooWithReadOnlyProperty::setStr, "strVal"))
-    ((&FooWithReadOnlyProperty::readOnlyProperty, nx::reflect::none, "ro")))
+    ((&FooWithReadOnlyProperty::str, &FooWithReadOnlyProperty::setStr, "strVal"))(
+        (&FooWithReadOnlyProperty::readOnlyProperty, nx::reflect::none, "ro")))
 
 TEST(Reflection, struct_properties_read_only)
 {
@@ -138,8 +138,8 @@ private:
 
 NX_REFLECTION_INSTRUMENT_GSN(
     FooWithWriteOnlyProperty,
-    ((&FooWithWriteOnlyProperty::str, &FooWithWriteOnlyProperty::setStr, "strVal"))
-    ((nx::reflect::none, &FooWithWriteOnlyProperty::setWriteOnlyProperty, "wo")))
+    ((&FooWithWriteOnlyProperty::str, &FooWithWriteOnlyProperty::setStr, "strVal"))(
+        (nx::reflect::none, &FooWithWriteOnlyProperty::setWriteOnlyProperty, "wo")))
 
 TEST(Reflection, struct_properties_write_only)
 {
@@ -155,7 +155,8 @@ TEST(Reflection, struct_properties_write_only_json)
     foo.setWriteOnlyProperty("write only");
 
     FooWithWriteOnlyProperty deserialized;
-    ASSERT_TRUE(nx::reflect::json::deserialize(R"({"strVal":"abc","wo":"write only"})", &deserialized));
+    ASSERT_TRUE(
+        nx::reflect::json::deserialize(R"({"strVal":"abc","wo":"write only"})", &deserialized));
 
     ASSERT_EQ(foo, deserialized);
 }
@@ -247,10 +248,7 @@ struct AdvancedFoo
 
 // Reflect manually
 template<typename T, int n, typename Visitor, typename... Members>
-auto nxReflectVisitAllFields(
-    AdvancedFoo<T, n>* tag,
-    Visitor&& visitor,
-    Members&&... members)
+auto nxReflectVisitAllFields(AdvancedFoo<T, n>* tag, Visitor&& visitor, Members&&... members)
 {
     using Self = AdvancedFoo<T, n>;
     return nxReflectVisitAllFields(
@@ -262,9 +260,7 @@ auto nxReflectVisitAllFields(
 
 TEST(Reflection, instrumenting_template_with_non_type_parameters_manually)
 {
-    ASSERT_EQ(
-        R"({"bar":4})",
-        json::serialize(AdvancedFoo<Bor, 3>{4}));
+    ASSERT_EQ(R"({"bar":4})", json::serialize(AdvancedFoo<Bor, 3>{4}));
 }
 
 template<typename T>
@@ -281,10 +277,7 @@ struct AdvancedFoo<T, 2>: T
 
 // Reflect manually
 template<typename T, typename Visitor, typename... Members>
-auto nxReflectVisitAllFields(
-    AdvancedFoo<T, 2>* tag,
-    Visitor&& visitor,
-    Members&&... members)
+auto nxReflectVisitAllFields(AdvancedFoo<T, 2>* tag, Visitor&& visitor, Members&&... members)
 {
     using Self = AdvancedFoo<T, 2>;
     return nxReflectVisitAllFields(
@@ -298,14 +291,15 @@ auto nxReflectVisitAllFields(
 
 TEST(Reflection, instrumenting_complex_template_specialization_manually)
 {
-    ASSERT_EQ(
-        R"({"n":1,"bar":2,"x":3,"y":111})",
-        json::serialize(AdvancedFoo<Bor, 2>{{1}, 2, 3}));
+    ASSERT_EQ(R"({"n":1,"bar":2,"x":3,"y":111})", json::serialize(AdvancedFoo<Bor, 2>{{1}, 2, 3}));
 }
 
 //-------------------------------------------------------------------------------------------------
 
-struct NonInstrumentedDescendant: Bar { int foo = 0; };
+struct NonInstrumentedDescendant: Bar
+{
+    int foo = 0;
+};
 
 template<typename T>
 struct NonInstrumentedGenericFooDescendant: GenericFoo<T>
@@ -325,7 +319,10 @@ TEST(Reflection, non_instrumented_child_of_instrumented_base_is_converted_to_bas
 //-------------------------------------------------------------------------------------------------
 
 template<typename T>
-static constexpr bool FooTag(const T*) { return false; }
+static constexpr bool FooTag(const T*)
+{
+    return false;
+}
 
 struct TaggedFoo
 {
@@ -359,23 +356,40 @@ NX_REFLECTION_INSTRUMENT(Foo351, (x)(y)(z))
 
 namespace {
 
-template<typename T> struct TestTypeName {};
-template<> struct TestTypeName<int> { static constexpr char value[] = "int"; };
-template<> struct TestTypeName<double> { static constexpr char value[] = "double"; };
-template<> struct TestTypeName<TaggedFoo> { static constexpr char value[] = "TaggedFoo"; };
+template<typename T>
+struct TestTypeName
+{
+};
+template<>
+struct TestTypeName<int>
+{
+    static constexpr char value[] = "int";
+};
+template<>
+struct TestTypeName<double>
+{
+    static constexpr char value[] = "double";
+};
+template<>
+struct TestTypeName<TaggedFoo>
+{
+    static constexpr char value[] = "TaggedFoo";
+};
 
-template<typename... Args> static constexpr auto TestTypeNameV = TestTypeName<Args...>::value;
+template<typename... Args>
+static constexpr auto TestTypeNameV = TestTypeName<Args...>::value;
 
 } // namespace
 
 TEST(Reflection, iterating_fields)
 {
     std::ostringstream ss;
-    forEachField<Foo351>([&ss](const auto& field)
-    {
-        ss << field.name() << ":" <<
-            TestTypeNameV<typename std::decay_t<decltype(field)>::Type> << ",";
-    });
+    forEachField<Foo351>(
+        [&ss](const auto& field)
+        {
+            ss << field.name() << ":"
+               << TestTypeNameV<typename std::decay_t<decltype(field)>::Type> << ",";
+        });
 
     ASSERT_EQ("x:int,y:double,z:TaggedFoo,", ss.str());
 }
@@ -383,14 +397,15 @@ TEST(Reflection, iterating_fields)
 TEST(Reflection, detect_certain_field)
 {
     std::ostringstream ss;
-    forEachField<Foo351>([&ss](const auto& field)
-    {
-        if (isSameField(field, &Foo351::x))
+    forEachField<Foo351>(
+        [&ss](const auto& field)
         {
-            ss << field.name() << ":" <<
-                TestTypeNameV<typename std::decay_t<decltype(field)>::Type> << ",";
-        }
-    });
+            if (isSameField(field, &Foo351::x))
+            {
+                ss << field.name() << ":"
+                   << TestTypeNameV<typename std::decay_t<decltype(field)>::Type> << ",";
+            }
+        });
 
     ASSERT_EQ("x:int,", ss.str());
 }

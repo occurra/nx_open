@@ -20,18 +20,22 @@ using namespace nx::media::h265;
 void updatePTL(const ProfileTierLevel& ptl, HEVCDecoderConfigurationRecord& hvcc)
 {
     hvcc.general_profile_space = ptl.general.profile_space;
-    if (!hvcc.general_tier_flag && ptl.general.tier_flag) {
+    if (!hvcc.general_tier_flag && ptl.general.tier_flag)
+    {
         hvcc.general_level_idc = ptl.general.level_idc;
-    } else {
+    }
+    else
+    {
         hvcc.general_level_idc = std::max<uint8_t>(hvcc.general_level_idc, ptl.general.level_idc);
     }
     hvcc.general_tier_flag = hvcc.general_tier_flag || ptl.general.tier_flag;
-    hvcc.general_profile_idc = std::max<uint8_t>(hvcc.general_profile_idc, ptl.general.profile_idc);
+    hvcc.general_profile_idc =
+        std::max<uint8_t>(hvcc.general_profile_idc, ptl.general.profile_idc);
     hvcc.general_profile_compatibility_flags &= ptl.general.profile_compatibility_flags.to_ulong();
     hvcc.general_constraint_indicator_flags &= ptl.general.constraint_indicator_flags();
 }
 
-}
+} // namespace
 
 namespace nx::media::h265 {
 
@@ -42,9 +46,8 @@ std::vector<uint8_t> buildExtraDataAnnexB(const uint8_t* data, int32_t size)
     auto nalUnits = nx::media::nal::findNalUnitsAnnexB(data, size);
     for (const auto& nalu: nalUnits)
     {
-        NalUnitType unitType = (NalUnitType)((*nalu.data & kPayloadHeaderNalUnitTypeMask) >> 1);
-        if (unitType == NalUnitType::vpsNut
-            || unitType == NalUnitType::ppsNut
+        NalUnitType unitType = (NalUnitType) ((*nalu.data & kPayloadHeaderNalUnitTypeMask) >> 1);
+        if (unitType == NalUnitType::vpsNut || unitType == NalUnitType::ppsNut
             || unitType == NalUnitType::spsNut)
         {
             extraData.insert(extraData.end(), startcode.begin(), startcode.end());
@@ -64,7 +67,7 @@ std::vector<uint8_t> buildExtraDataMp4(const std::vector<nal::NalUnitInfo>& nalU
     HEVCDecoderConfigurationRecord hvcc;
     for (const auto& nalu: nalUnits)
     {
-        NalUnitType unitType = (NalUnitType)((*nalu.data & kPayloadHeaderNalUnitTypeMask) >> 1);
+        NalUnitType unitType = (NalUnitType) ((*nalu.data & kPayloadHeaderNalUnitTypeMask) >> 1);
         if (unitType == NalUnitType::vpsNut)
             hvcc.vps.push_back(std::vector<uint8_t>(nalu.data, nalu.data + nalu.size));
         if (unitType == NalUnitType::ppsNut)
@@ -95,7 +98,7 @@ std::vector<uint8_t> buildExtraDataMp4(const std::vector<nal::NalUnitInfo>& nalU
     hvcc.general_level_idc = 0;
     hvcc.general_profile_idc = 0;
     hvcc.general_profile_compatibility_flags = 0xffffffff;
-    hvcc.general_constraint_indicator_flags  = 0xffffffffffff;
+    hvcc.general_constraint_indicator_flags = 0xffffffffffff;
     hvcc.min_spatial_segmentation_idc = kMaxSpatialSefmentation + 1;
     hvcc.avgFrameRate = 0;
     hvcc.constantFrameRate = 0;
@@ -104,26 +107,27 @@ std::vector<uint8_t> buildExtraDataMp4(const std::vector<nal::NalUnitInfo>& nalU
 
     // VPS
     updatePTL(vps.profile_tier_level, hvcc);
-    hvcc.numTemporalLayers = std::max<uint8_t>(
-        hvcc.numTemporalLayers, vps.vps_max_sub_layers_minus1 + 1);
+    hvcc.numTemporalLayers =
+        std::max<uint8_t>(hvcc.numTemporalLayers, vps.vps_max_sub_layers_minus1 + 1);
 
     // SPS
     updatePTL(sps.profile_tier_level, hvcc);
     hvcc.min_spatial_segmentation_idc = std::min<uint16_t>(
-        hvcc.min_spatial_segmentation_idc, sps.vui_parameters.min_spatial_segmentation_idc);
+        hvcc.min_spatial_segmentation_idc,
+        sps.vui_parameters.min_spatial_segmentation_idc);
     hvcc.chromaFormat = sps.chroma_format_idc;
     hvcc.bitDepthLumaMinus8 = sps.bit_depth_luma_minus8;
     hvcc.bitDepthChromaMinus8 = sps.bit_depth_chroma_minus8;
-    hvcc.numTemporalLayers = std::max<uint8_t>(
-        hvcc.numTemporalLayers, sps.sps_max_sub_layers_minus1 + 1);
+    hvcc.numTemporalLayers =
+        std::max<uint8_t>(hvcc.numTemporalLayers, sps.sps_max_sub_layers_minus1 + 1);
     hvcc.temporalIdNested = sps.sps_temporal_id_nesting_flag;
 
-    //PPS
+    // PPS
     if (pps.entropy_coding_sync_enabled_flag && pps.tiles_enabled_flag)
         hvcc.parallelismType = 0; // mixed-type parallel decoding
     else if (pps.entropy_coding_sync_enabled_flag)
         hvcc.parallelismType = 3; // wavefront-based parallel decoding
-        else if (pps.tiles_enabled_flag)
+    else if (pps.tiles_enabled_flag)
         hvcc.parallelismType = 2; // tile-based parallel decoding
     else
         hvcc.parallelismType = 1;

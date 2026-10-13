@@ -29,15 +29,9 @@ public:
         m_itemStayTimeoutHandler = std::move(itemStayTimeoutHandler);
     }
 
-    void push(Item item)
-    {
-        m_items.push({std::move(item), std::chrono::steady_clock::now()});
-    }
+    void push(Item item) { m_items.push({std::move(item), std::chrono::steady_clock::now()}); }
 
-    QueueReaderId generateReaderId()
-    {
-        return m_items.generateReaderId();
-    }
+    QueueReaderId generateReaderId() { return m_items.generateReaderId(); }
 
     /**
      * Returns first item for which conditionFunc(...) condition is met.
@@ -73,8 +67,8 @@ public:
             if (!itemContext)
                 return std::nullopt;
 
-            if (m_itemStayTimeout &&
-                (std::chrono::steady_clock::now() - itemContext->insertionTime
+            if (m_itemStayTimeout
+                && (std::chrono::steady_clock::now() - itemContext->insertionTime
                     >= *m_itemStayTimeout))
             {
                 m_itemStayTimeoutHandler(std::move(itemContext->data));
@@ -88,18 +82,18 @@ public:
         std::optional<std::chrono::milliseconds> timeout = std::nullopt,
         QueueReaderId readerId = kInvalidQueueReaderId)
     {
-        return popIf([](const Item&) { return true; }, timeout, readerId);
+        return popIf(
+            [](const Item&)
+            {
+                return true;
+            },
+            timeout,
+            readerId);
     }
 
-    void retestPopIfCondition()
-    {
-        m_items.retestPopIfCondition();
-    }
+    void retestPopIfCondition() { m_items.retestPopIfCondition(); }
 
-    std::size_t size() const
-    {
-        return m_items.size();
-    }
+    std::size_t size() const { return m_items.size(); }
 
     void addReaderToTerminatedList(QueueReaderId readerId)
     {

@@ -23,9 +23,9 @@ using nx::kit::utils::isSpaceOrControlChar;
 namespace nx::utils {
 
 QString replaceCharacters(
-    const QString &string,
+    const QString& string,
     std::string_view symbols,
-    const QChar &replacement)
+    const QChar& replacement)
 {
     if (symbols.empty())
         return string;
@@ -33,7 +33,8 @@ QString replaceCharacters(
     bool mask[256];
     memset(mask, 0, sizeof(mask));
     for (const auto s: symbols)
-        mask[static_cast<int>(s)] = true; /* Static cast is here to silence GCC's -Wchar-subscripts. */
+        mask[static_cast<int>(s)] =
+            true; /* Static cast is here to silence GCC's -Wchar-subscripts. */
 
     QString result = string;
     for (int i = 0; i < result.size(); i++)
@@ -69,7 +70,7 @@ double parseDouble(const QString& string)
     return value;
 }
 
-QString xorEncrypt(const QString &plaintext, const QString &key)
+QString xorEncrypt(const QString& plaintext, const QString& key)
 {
     if (key.isEmpty())
         return plaintext;
@@ -83,7 +84,7 @@ QString xorEncrypt(const QString &plaintext, const QString &key)
     return QLatin1String(array.toBase64());
 }
 
-QString xorDecrypt(const QString &crypted, const QString &key)
+QString xorDecrypt(const QString& crypted, const QString& key)
 {
     if (key.isEmpty())
         return crypted;
@@ -96,7 +97,7 @@ QString xorDecrypt(const QString &crypted, const QString &key)
     return QString::fromUtf8(array);
 }
 
-QString extractFileExtension(const QString &string)
+QString extractFileExtension(const QString& string)
 {
     auto pos = string.lastIndexOf('.');
     if (pos < 0)
@@ -120,17 +121,16 @@ QString generateUniqueString(
     const QString& templateString)
 {
     QStringList lowerStrings;
-    for (const QString &string : usedStrings)
+    for (const QString& string: usedStrings)
         lowerStrings << string.toLower();
 
-    const QString escapedTemplate = replaceStrings(templateString,
-        {{"(", "\\("}, {")", "\\)"}});
+    const QString escapedTemplate = replaceStrings(templateString, {{"(", "\\("}, {")", "\\)"}});
     const QString stringPattern = escapedTemplate.arg("?([0-9]+)?").toLower();
     auto pattern = QRegularExpression(QRegularExpression::anchoredPattern(stringPattern));
 
     /* Prepare new name. */
     int number = 0;
-    for (const QString &string : lowerStrings)
+    for (const QString& string: lowerStrings)
     {
         auto result = pattern.match(string);
         if (!result.hasMatch())
@@ -178,13 +178,17 @@ QString generateUniqueString(
  * your changes will be included under this license, and we will add
  * your name to the list of contributors.
  */
-#define INCBUFVIEW() { ++pos; curr = ( pos < string.length() ) ? string[ pos ] : QChar(); }
+#define INCBUFVIEW() \
+    { \
+        ++pos; \
+        curr = (pos < string.length()) ? string[pos] : QChar(); \
+    }
 
-bool isNumberStart(const QChar &c)
+bool isNumberStart(const QChar& c)
 {
-/* We don't want to handle negative numbers as this leads to very strange
- * results. Think how "1-1" and "1-2" are going to be compared in this
- * case. */
+    /* We don't want to handle negative numbers as this leads to very strange
+     * results. Think how "1-1" and "1-2" are going to be compared in this
+     * case. */
 
     return
 #if 0
@@ -271,7 +275,7 @@ void ExtractTokenView(
     if (!isNumber && !isSpecial)
     {
         while (!isNumberStart(curr) && !QtMiscUtils::isAsciiLetterOrNumber(curr.toLatin1())
-            && pos < string.length())
+               && pos < string.length())
         {
             INCBUFVIEW();
         }
@@ -364,12 +368,12 @@ int naturalStringCompare(
         return 0;
 }
 
-bool naturalStringLess(const QString &lhs, const QString &rhs)
+bool naturalStringLess(const QString& lhs, const QString& rhs)
 {
     return naturalStringCompare(lhs, rhs, Qt::CaseInsensitive) < 0;
 }
 
-QStringList naturalStringSort(const QStringList &list, Qt::CaseSensitivity caseSensitive)
+QStringList naturalStringSort(const QStringList& list, Qt::CaseSensitivity caseSensitive)
 {
     QStringList result = list;
     if (caseSensitive == Qt::CaseSensitive)
@@ -408,7 +412,7 @@ void trimInPlace(QString* const str, const QString& symbols)
     *str = str->mid(startPos, endPos > startPos ? (endPos - startPos) : 0);
 }
 
-QString elideString(const QString &source, int maxLength, const QString &tail)
+QString elideString(const QString& source, int maxLength, const QString& tail)
 {
     if (source.length() <= maxLength)
         return source;
@@ -438,10 +442,10 @@ QString replaceStrings(
     }
     pattern.chop(1);
 
-    QRegularExpression re(pattern,
-        caseSensitivity == Qt::CaseInsensitive
-            ? QRegularExpression::CaseInsensitiveOption
-            : QRegularExpression::NoPatternOption);
+    QRegularExpression re(
+        pattern,
+        caseSensitivity == Qt::CaseInsensitive ? QRegularExpression::CaseInsensitiveOption
+                                               : QRegularExpression::NoPatternOption);
 
     QString result;
 
@@ -465,7 +469,7 @@ std::string generateRandomName(int length)
 }
 
 static const double kByteSuffixLimit = 1024;
-static const std::vector<char> kByteSuffexes = { 'K', 'M', 'G', 'T' };
+static const std::vector<char> kByteSuffexes = {'K', 'M', 'G', 'T'};
 
 // TODO: #sivanov Move out strings and logic to separate class.
 std::string bytesToString(uint64_t bytes, int precision)
@@ -473,8 +477,7 @@ std::string bytesToString(uint64_t bytes, int precision)
     double number = static_cast<double>(bytes);
     size_t suffix = 0;
 
-    while (number >= kByteSuffixLimit
-           && suffix < kByteSuffexes.size())
+    while (number >= kByteSuffixLimit && suffix < kByteSuffexes.size())
     {
         number /= kByteSuffixLimit;
         ++suffix;
@@ -485,7 +488,10 @@ std::string bytesToString(uint64_t bytes, int precision)
     if (suffix == 0)
         return nx::format("%1").arg(number, 0, 'g', precision).toStdString();
 
-    return nx::format("%1%2").arg(number, 0, 'g', precision).arg(kByteSuffexes[suffix - 1]).toStdString();
+    return nx::format("%1%2")
+        .arg(number, 0, 'g', precision)
+        .arg(kByteSuffexes[suffix - 1])
+        .toStdString();
 }
 
 uint64_t stringToBytes(std::string_view str, bool* isOk)
@@ -545,10 +551,10 @@ QString removeMnemonics(QString text)
 
 QString escapeMnemonics(QString text)
 {
-    return text.replace("&","&&");
+    return text.replace("&", "&&");
 }
 
-template <class T, class T2>
+template<class T, class T2>
 static QList<T> smartSplitInternal(
     const T& data,
     const T2 delimiter,
@@ -584,23 +590,14 @@ static QList<T> smartSplitInternal(
     return rez;
 }
 
-QList<QByteArray> smartSplit(
-    const QByteArray& data,
-    const char delimiter)
+QList<QByteArray> smartSplit(const QByteArray& data, const char delimiter)
 {
     return smartSplitInternal(data, delimiter, '\"', true);
 }
 
-QStringList smartSplit(
-    const QString& data,
-    const QChar delimiter,
-    Qt::SplitBehavior splitBehavior)
+QStringList smartSplit(const QString& data, const QChar delimiter, Qt::SplitBehavior splitBehavior)
 {
-    return smartSplitInternal(
-        data,
-        delimiter,
-        QChar(L'\"'),
-        splitBehavior == Qt::KeepEmptyParts);
+    return smartSplitInternal(data, delimiter, QChar(L'\"'), splitBehavior == Qt::KeepEmptyParts);
 }
 
 QByteArray trimAndUnquote(const QByteArray& v)
@@ -714,12 +711,12 @@ void truncateToNul(QString* s)
 
 std::string toHex(const void* buffer, const int size, const std::string& delimeter)
 {
-    const uint8_t* data = (const uint8_t*)buffer;
+    const uint8_t* data = (const uint8_t*) buffer;
     std::stringstream stream;
     stream << std::hex;
     for (int i = 0; i < size; ++i)
     {
-        stream << std::setfill('0') << std::setw(2) << (int)data[i];
+        stream << std::setfill('0') << std::setw(2) << (int) data[i];
         if (i + 1 < size)
             stream << delimeter;
     }

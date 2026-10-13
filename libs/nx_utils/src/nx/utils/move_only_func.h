@@ -14,8 +14,7 @@ namespace nx {
  * Can be used to store lambda which has std::unique_ptr as its capture.
  */
 template<class F>
-class MoveOnlyFunc:
-    private std::function<F>
+class MoveOnlyFunc: private std::function<F>
 {
     using base_type = std::function<F>;
 
@@ -44,8 +43,7 @@ class MoveOnlyFunc:
         }
 
         MoveOnlyFuncWrapper(MoveOnlyFuncWrapper&& rhs) noexcept(
-            std::is_nothrow_move_constructible_v<Func>)
-            :
+            std::is_nothrow_move_constructible_v<Func>):
             m_func(std::move(rhs.m_func))
         {
         }
@@ -59,8 +57,7 @@ class MoveOnlyFunc:
         }
 
         template<class... Args>
-        auto operator() (Args&&... args)
-            -> decltype(m_func(std::forward<Args>(args)...))
+        auto operator()(Args&&... args) -> decltype(m_func(std::forward<Args>(args)...))
         {
             return m_func(std::forward<Args>(args)...);
         }
@@ -105,37 +102,34 @@ public:
         return static_cast<const base_type&>(*this) == nullptr;
     }
 
-    void swap(MoveOnlyFunc& other)
-    {
-        base_type::swap(static_cast<base_type&>(other));
-    }
+    void swap(MoveOnlyFunc& other) { base_type::swap(static_cast<base_type&>(other)); }
 
     using std::function<F>::operator bool;
 };
 
-template<typename Function, typename ... Args>
-void moveAndCall(Function& function, Args&& ... args)
+template<typename Function, typename... Args>
+void moveAndCall(Function& function, Args&&... args)
 {
     const auto handler = std::move(function);
     function = nullptr;
-    handler(std::forward<Args>(args) ...);
+    handler(std::forward<Args>(args)...);
 }
 
-template<typename Function, typename ... Args>
-void moveAndCallOptional(Function& function, Args&& ... args)
+template<typename Function, typename... Args>
+void moveAndCallOptional(Function& function, Args&&... args)
 {
     if (!function)
         return;
 
-    moveAndCall(function, std::forward<Args>(args) ...);
+    moveAndCall(function, std::forward<Args>(args)...);
 }
 
-template<typename Function, typename ... Args>
-void swapAndCall(Function& function, Args&& ... args)
+template<typename Function, typename... Args>
+void swapAndCall(Function& function, Args&&... args)
 {
     Function functionLocal;
     function.swap(functionLocal);
-    functionLocal(std::forward<Args>(args) ...);
+    functionLocal(std::forward<Args>(args)...);
 }
 
 } // namespace nx

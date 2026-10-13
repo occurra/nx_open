@@ -16,8 +16,7 @@ namespace nx::sql::detail {
 QueryExecutionThread::QueryExecutionThread(
     const ConnectionOptions& connectionOptions,
     QueryExecutorQueue* queryExecutorQueue,
-    StatisticsCollector* statisticsCollector)
-    :
+    StatisticsCollector* statisticsCollector):
     base_type(connectionOptions, queryExecutorQueue),
     m_statisticsCollector(statisticsCollector)
 {
@@ -27,8 +26,7 @@ QueryExecutionThread::QueryExecutionThread(
     const ConnectionOptions& connectionOptions,
     QueryExecutorQueue* queryExecutorQueue,
     StatisticsCollector* statisticsCollector,
-    std::unique_ptr<AbstractDbConnection> connection)
-    :
+    std::unique_ptr<AbstractDbConnection> connection):
     base_type(connectionOptions, queryExecutorQueue),
     m_statisticsCollector(statisticsCollector),
     m_externalConnection(std::move(connection))
@@ -67,13 +65,16 @@ void QueryExecutionThread::setOnClosedHandler(nx::MoveOnlyFunc<void()> handler)
 void QueryExecutionThread::start(std::chrono::milliseconds connectDelay)
 {
     m_connectDelay = connectDelay;
-    m_queryExecutionThread = std::thread([this]() { queryExecutionThreadMain(); });
+    m_queryExecutionThread = std::thread(
+        [this]()
+        {
+            queryExecutionThreadMain();
+        });
 }
 
 void QueryExecutionThread::queryExecutionThreadMain()
 {
-    static constexpr std::chrono::milliseconds kTaskWaitTimeout =
-        std::chrono::milliseconds(50);
+    static constexpr std::chrono::milliseconds kTaskWaitTimeout = std::chrono::milliseconds(50);
 
     auto invokeOnClosedHandlerGuard = nx::utils::makeScopeGuard(
         [this]()
@@ -106,12 +107,14 @@ void QueryExecutionThread::queryExecutionThreadMain()
             queryExecutorQueue()->pop(kTaskWaitTimeout);
         if (!task)
         {
-            if (connectionOptions().inactivityTimeout > std::chrono::seconds::zero() &&
-                (std::chrono::steady_clock::now() - previousActivityTime >=
-                 connectionOptions().inactivityTimeout))
+            if (connectionOptions().inactivityTimeout > std::chrono::seconds::zero()
+                && (std::chrono::steady_clock::now() - previousActivityTime
+                    >= connectionOptions().inactivityTimeout))
             {
                 // Dropping connection by timeout.
-                NX_VERBOSE(this, "Closing DB connection by timeout (%1)",
+                NX_VERBOSE(
+                    this,
+                    "Closing DB connection by timeout (%1)",
                     connectionOptions().inactivityTimeout);
                 closeConnection(&dbConnectionHolder);
                 break;
@@ -130,7 +133,8 @@ void QueryExecutionThread::queryExecutionThreadMain()
 }
 
 void QueryExecutionThread::handleExecutionResult(
-    DBResult result, DbConnectionHolder* dbConnectionHolder)
+    DBResult result,
+    DbConnectionHolder* dbConnectionHolder)
 {
     switch (result.code)
     {
@@ -153,11 +157,14 @@ void QueryExecutionThread::handleExecutionResult(
                 break;
             }
 
-            if (m_numberOfFailedRequestsInARow >=
-                connectionOptions().maxErrorsInARowBeforeClosingConnection)
+            if (m_numberOfFailedRequestsInARow
+                >= connectionOptions().maxErrorsInARowBeforeClosingConnection)
             {
-                NX_WARNING(this, "Dropping DB connection due to %1 errors in a row. Last error %2",
-                    m_numberOfFailedRequestsInARow, result);
+                NX_WARNING(
+                    this,
+                    "Dropping DB connection due to %1 errors in a row. Last error %2",
+                    m_numberOfFailedRequestsInARow,
+                    result);
                 closeConnection(dbConnectionHolder);
                 break;
             }

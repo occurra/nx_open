@@ -17,7 +17,7 @@
 #include "format.h"
 
 // Uncomment to enable NX_CHECK condition time measurements:
-//#define NX_CHECK_MEASURE_TIME
+// #define NX_CHECK_MEASURE_TIME
 
 namespace nx {
 
@@ -41,18 +41,27 @@ namespace detail {
 
 static const bool assertHeavyConditionEnabled = ::nx::utils::ini().assertHeavyCondition;
 
-} // detail
+} // namespace detail
 
 /**
  * @return Always false.
  */
 template<typename... Args>
 bool assertFailure(
-    bool isCritical, const char* file, int line, const char* condition, Args... args)
+    bool isCritical,
+    const char* file,
+    int line,
+    const char* condition,
+    Args... args)
 {
-    // NOTE: If message is empty, an extra space will appear before newline, which is hard to avoid.
-    const auto out = NX_FMT("ASSERTION FAILED: %1:%2 (%3) %4",
-        file, line, condition, nx::format(std::forward<Args>(args)...));
+    // NOTE: If message is empty, an extra space will appear before newline, which is hard to
+    // avoid.
+    const auto out = NX_FMT(
+        "ASSERTION FAILED: %1:%2 (%3) %4",
+        file,
+        line,
+        condition,
+        nx::format(std::forward<Args>(args)...));
     return assertFailure(isCritical, out);
 }
 
@@ -79,9 +88,9 @@ public:
     TimeInfo* info(const char* file, int line);
     ~AssertTimer();
 
-    #ifdef NX_CHECK_MEASURE_TIME
-        static AssertTimer instance;
-    #endif
+#ifdef NX_CHECK_MEASURE_TIME
+    static AssertTimer instance;
+#endif
 
 private:
     std::mutex m_mutex;
@@ -91,25 +100,25 @@ private:
 } // namespace nx
 
 #if defined(NX_CHECK_MEASURE_TIME)
-    #define NX_CHECK(IS_CRITICAL, CONDITION, MESSAGE) ( \
-        [begin = std::chrono::steady_clock::now(), \
-            result = (CONDITION) || ::nx::assertFailure( \
-                IS_CRITICAL, __FILE__, __LINE__, #CONDITION, MESSAGE)]() \
-        { \
-            const auto time = std::chrono::steady_clock::now() - begin; \
-            static const auto info = nx::AssertTimer::instance.info(__FILE__, __LINE__); \
-            info->add(std::chrono::duration_cast<std::chrono::microseconds>(time)); \
-            return result; \
-        }() \
-    )
+    #define NX_CHECK(IS_CRITICAL, CONDITION, MESSAGE) \
+        ( \
+            [begin = std::chrono::steady_clock::now(), \
+             result = (CONDITION) \
+                 || ::nx::assertFailure(IS_CRITICAL, __FILE__, __LINE__, #CONDITION, MESSAGE)]() \
+            { \
+                const auto time = std::chrono::steady_clock::now() - begin; \
+                static const auto info = nx::AssertTimer::instance.info(__FILE__, __LINE__); \
+                info->add(std::chrono::duration_cast<std::chrono::microseconds>(time)); \
+                return result; \
+            }())
 #else
-    #define NX_CHECK(IS_CRITICAL, CONDITION, MESSAGE) ( \
-        [result = (CONDITION) || ::nx::assertFailure( \
-            IS_CRITICAL, __FILE__, __LINE__, #CONDITION, MESSAGE)]() \
-        { \
-            return result; \
-        }() \
-    )
+    #define NX_CHECK(IS_CRITICAL, CONDITION, MESSAGE) \
+        ( \
+            [result = (CONDITION) \
+                 || ::nx::assertFailure(IS_CRITICAL, __FILE__, __LINE__, #CONDITION, MESSAGE)]() \
+            { \
+                return result; \
+            }())
 #endif
 
 /**
@@ -150,8 +159,9 @@ private:
  *         NX_ASSERT_HEAVY_CONDITION(!getObjectFromDb().isEmpty());
  *     ```
  */
-#define NX_ASSERT_HEAVY_CONDITION(CONDITION, ...) do \
-{ \
-    if (::nx::detail::assertHeavyConditionEnabled) \
-        NX_CHECK(/*isCritical*/ false, CONDITION, ::nx::format(__VA_ARGS__)); \
-} while (0)
+#define NX_ASSERT_HEAVY_CONDITION(CONDITION, ...) \
+    do \
+    { \
+        if (::nx::detail::assertHeavyConditionEnabled) \
+            NX_CHECK(/*isCritical*/ false, CONDITION, ::nx::format(__VA_ARGS__)); \
+    } while (0)

@@ -67,7 +67,7 @@ public:
     virtual AudioLayoutConstPtr getDPAudioLayout() const;
     virtual bool hasVideo() const override;
     void renameFileOnDestroy(const QString& newFileName);
-    //void jumpWithMarker(qint64 usec, bool findIFrame, int marker);
+    // void jumpWithMarker(qint64 usec, bool findIFrame, int marker);
     void setMarker(int marker);
 
     /**
@@ -101,7 +101,12 @@ public:
      *     not be used during jump.
      * @return false if jump to the same usec and skipTime is already performing right now.
      */
-    virtual bool jumpToEx(qint64 usec, qint64 skipTime, bool bindPositionToPlaybackMask, qint64* outJumpTime, bool useDelegate = true) override;
+    virtual bool jumpToEx(
+        qint64 usec,
+        qint64 skipTime,
+        bool bindPositionToPlaybackMask,
+        qint64* outJumpTime,
+        bool useDelegate = true) override;
 
     virtual void setSkipFramesToTime(qint64 skipTime) override;
     virtual void nextFrame() override;
@@ -136,7 +141,10 @@ public:
      */
     virtual void setPlaybackMask(const QnTimePeriodList& playbackMask) override;
 
-    virtual void setQuality(MediaQuality quality, bool fastSwitch, const QSize& resolution = QSize()) override;
+    virtual void setQuality(
+        MediaQuality quality,
+        bool fastSwitch,
+        const QSize& resolution = QSize()) override;
     virtual MediaQuality getQuality() const override;
     virtual AVCodecID getTranscodingCodec() const override;
 
@@ -170,8 +178,7 @@ public:
     virtual void pleaseStop() override;
 
     virtual void setEndOfPlaybackHandler(std::function<void()> handler) override;
-    virtual void setErrorHandler(
-        std::function<void(const QString& errorString)> handler) override;
+    virtual void setErrorHandler(std::function<void(const QString& errorString)> handler) override;
 
     CameraDiagnostics::Result lastError() const;
 
@@ -183,7 +190,10 @@ public:
 protected:
     virtual bool init();
 
-    virtual qint64 contentLength() const { return m_delegate->endTime() - m_delegate->startTime(); }
+    virtual qint64 contentLength() const
+    {
+        return m_delegate->endTime() - m_delegate->startTime();
+    }
     bool initCodecs();
     bool openFormatContext();
     void setCurrentTime(qint64 value);
@@ -208,6 +218,7 @@ protected:
 
     volatile bool m_wakeup;
     qint64 m_tmpSkipFramesToTime;
+
 private:
     void setSpeedInternal(double speed, qint64 currentTimeHint = AV_NOPTS_VALUE);
     bool isCompatiblePacketForMask(const QnAbstractMediaDataPtr& mediaData) const;

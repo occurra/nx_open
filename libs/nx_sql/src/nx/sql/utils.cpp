@@ -53,8 +53,7 @@ std::optional<Info> fetchRdbmsInfo(QueryContext* qctx)
 
 namespace detail {
 
-std::optional<nx::utils::SoftwareVersion> parseVersion(
-    std::string_view text)
+std::optional<nx::utils::SoftwareVersion> parseVersion(std::string_view text)
 {
     const auto [tokens, count] = nx::utils::split_n<3>(text, '.');
 

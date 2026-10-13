@@ -53,8 +53,7 @@ private:
  * This allows to make life-times or writer and WritableMessageBody itself
  * totally independent.
  */
-class NX_NETWORK_API WritableMessageBody:
-    public AbstractMsgBodySourceWithCache
+class NX_NETWORK_API WritableMessageBody: public AbstractMsgBodySourceWithCache
 {
 public:
     WritableMessageBody(

@@ -42,10 +42,14 @@ static QString findCodecById(int num)
 {
     switch (num)
     {
-        case 0: return QString("PCMU");
-        case 8: return QString("PCMA");
-        case 26: return QString("JPEG");
-        default: return QString();
+        case 0:
+            return QString("PCMU");
+        case 8:
+            return QString("PCMA");
+        case 26:
+            return QString("JPEG");
+        default:
+            return QString();
     }
 }
 
@@ -126,7 +130,8 @@ Sdp::Media parseMedia(QStringList& lines, const Sdp::RtpMap& preferredMap)
         media.payloadType = trackParams[3].toInt();
 
     lines.pop_front();
-    for (; !lines.empty() && !lines.front().startsWith("m=", Qt::CaseInsensitive); lines.pop_front())
+    for (; !lines.empty() && !lines.front().startsWith("m=", Qt::CaseInsensitive);
+         lines.pop_front())
     {
         line = lines.front().trimmed();
         if (line.startsWith("a=", Qt::CaseInsensitive))
@@ -136,9 +141,10 @@ Sdp::Media parseMedia(QStringList& lines, const Sdp::RtpMap& preferredMap)
         {
             int payloadType = 0;
             Sdp::RtpMap rtpmap;
-            if (parseRtpMap(line, &rtpmap, &payloadType) &&
-                (media.payloadType == -1 || payloadType == media.payloadType // Ignore invalid rtpmap
-                 || rtpmap == preferredMap))
+            if (parseRtpMap(line, &rtpmap, &payloadType)
+                && (media.payloadType == -1
+                    || payloadType == media.payloadType // Ignore invalid rtpmap
+                    || rtpmap == preferredMap))
             {
                 media.rtpmap = rtpmap;
                 media.payloadType = payloadType;
@@ -179,7 +185,7 @@ void Sdp::parse(const QString& sdpData)
     media.clear();
     QHostAddress sessionConnectionAddress;
     QStringList lines = sdpData.split('\n');
-    while(!lines.isEmpty())
+    while (!lines.isEmpty())
     {
         QString line = lines.front().trimmed();
         if (line.startsWith("m=", Qt::CaseInsensitive))
@@ -198,7 +204,7 @@ void Sdp::parse(const QString& sdpData)
     }
     if (!sessionConnectionAddress.isNull())
     {
-        for(auto& mediaIter: media)
+        for (auto& mediaIter: media)
         {
             if (mediaIter.connectionAddress.isNull())
                 mediaIter.connectionAddress = sessionConnectionAddress;
@@ -208,7 +214,8 @@ void Sdp::parse(const QString& sdpData)
 
 QString Sdp::RtpMap::toString() const
 {
-    return nx::format("{codecName: %1; clockRate: %2; channels: %3}").args(codecName, clockRate, channels);
+    return nx::format("{codecName: %1; clockRate: %2; channels: %3}")
+        .args(codecName, clockRate, channels);
 }
 
 QString Sdp::Fmtp::toString() const
@@ -218,15 +225,11 @@ QString Sdp::Fmtp::toString() const
 
 QString Sdp::Media::toString() const
 {
-    return "{serverPort: " + QString::number(serverPort)
-        + "; payloadType: " + QString::number(payloadType)
-        + "; mediaType: " + nx::rtp::toString(mediaType)
-        + "; control: " + control
-        + "; sendOnly: " + QString::number(sendOnly)
-        + "; ssrc: " + QString::number(ssrc)
-        + "; rtpmap: " + rtpmap.toString()
-        + "; fmtp: " + fmtp.toString()
-        + "; sdpAttributes: [" + sdpAttributes.join(", ") + "]"
+    return "{serverPort: " + QString::number(serverPort) + "; payloadType: "
+        + QString::number(payloadType) + "; mediaType: " + nx::rtp::toString(mediaType)
+        + "; control: " + control + "; sendOnly: " + QString::number(sendOnly)
+        + "; ssrc: " + QString::number(ssrc) + "; rtpmap: " + rtpmap.toString()
+        + "; fmtp: " + fmtp.toString() + "; sdpAttributes: [" + sdpAttributes.join(", ") + "]"
         + "; connectionAddress: " + connectionAddress.toString() + "}";
 }
 

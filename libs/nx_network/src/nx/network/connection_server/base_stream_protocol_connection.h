@@ -31,19 +31,10 @@ namespace nx::network::server {
  *   but it is not recommended due to performance considerations!
  * NOTE: It is allowed to free instance within event handler.
  */
-template<
-    typename CustomConnection,
-    typename Message,
-    typename Parser,
-    typename Serializer
-> class BaseStreamProtocolConnection:
-    public BaseServerConnection
+template<typename CustomConnection, typename Message, typename Parser, typename Serializer>
+class BaseStreamProtocolConnection: public BaseServerConnection
 {
-    using self_type = BaseStreamProtocolConnection<
-        CustomConnection,
-        Message,
-        Parser,
-        Serializer>;
+    using self_type = BaseStreamProtocolConnection<CustomConnection, Message, Parser, Serializer>;
 
     using base_type = BaseServerConnection;
 
@@ -52,9 +43,7 @@ public:
 
     detail::ConnectionStatistics connectionStatistics;
 
-    BaseStreamProtocolConnection(
-        std::unique_ptr<AbstractStreamSocket> streamSocket)
-        :
+    BaseStreamProtocolConnection(std::unique_ptr<AbstractStreamSocket> streamSocket):
         base_type(std::move(streamSocket)),
         m_creationTimestamp(std::chrono::steady_clock::now())
     {
@@ -89,13 +78,9 @@ public:
     /**
      * Initiates asynchronous message send.
      */
-    void sendMessage(
-        Message msg,
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
+    void sendMessage(Message msg, nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
     {
-        auto newTask = std::make_unique<SendTask>(
-            std::move(msg),
-            std::move(handler));
+        auto newTask = std::make_unique<SendTask>(std::move(msg), std::move(handler));
         addNewTaskToQueue(std::move(newTask));
     }
 
@@ -104,13 +89,9 @@ public:
         sendMessage(std::move(msg), nullptr);
     }
 
-    void sendData(
-        nx::Buffer data,
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
+    void sendData(nx::Buffer data, nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
     {
-        auto newTask = std::make_unique<SendTask>(
-            std::move(data),
-            std::move(handler));
+        auto newTask = std::make_unique<SendTask>(std::move(data), std::move(handler));
         addNewTaskToQueue(std::move(newTask));
     }
 
@@ -121,12 +102,9 @@ public:
     {
         auto newTask = std::make_unique<SendTask>(
             data,
-            [bytesToSend = data->size(), handler = std::move(handler)](
-                auto resultCode)
+            [bytesToSend = data->size(), handler = std::move(handler)](auto resultCode)
             {
-                handler(
-                    resultCode,
-                    resultCode == SystemError::noError ? bytesToSend : -1);
+                handler(resultCode, resultCode == SystemError::noError ? bytesToSend : -1);
             });
         addNewTaskToQueue(std::move(newTask));
     }
@@ -173,8 +151,10 @@ protected:
         }
         else
         {
-            NX_ASSERT(false, nx::format("Unknown serializer state: %1")
-                .args(static_cast<int>(m_serializerState)));
+            NX_ASSERT(
+                false,
+                nx::format("Unknown serializer state: %1")
+                    .args(static_cast<int>(m_serializerState)));
         }
     }
 
@@ -187,8 +167,7 @@ protected:
             // If m_dataToParse is empty we report end of file to the parser.
             if (!invokeMessageParser())
                 return; //< TODO: #akolesnikov Ignore all following data and close the connection?
-        }
-        while (!m_dataToParse.empty());
+        } while (!m_dataToParse.empty());
 
         m_dataToParse = {};
     }
@@ -357,14 +336,14 @@ private:
     }
 
     /**
-     * @return False if it was interrupted. All further processing should be stopped until the next event.
+     * @return False if it was interrupted. All further processing should be stopped until the next
+     * event.
      */
     bool completeCurrentSendTask()
     {
         NX_ASSERT(!m_sendQueue.empty());
         // NOTE: Completion handler is allowed to delete this connection object.
-        auto sendCompletionHandler =
-            std::exchange(m_sendQueue.front().handler, nullptr);
+        auto sendCompletionHandler = std::exchange(m_sendQueue.front().handler, nullptr);
         m_serializer.setMessage(nullptr);
         m_sendQueue.pop_front();
 
@@ -412,8 +391,7 @@ private:
     {
         size_t bytesWritten = 0;
         m_serializerState = m_serializer.serialize(&m_writeBuffer, &bytesWritten);
-        if ((m_serializerState == SerializerState::needMoreBufferSpace) &&
-            (bytesWritten == 0))
+        if ((m_serializerState == SerializerState::needMoreBufferSpace) && (bytesWritten == 0))
         {
             // TODO: #akolesnikov Increase buffer.
             NX_ASSERT(false);
@@ -457,35 +435,23 @@ private:
  * Inherits BaseStreamProtocolConnection and delegates processMessage to the functor
  * set with StreamProtocolConnection::setMessageHandler.
  */
-template<
-    class Message,
-    class Parser,
-    class Serializer
-> class StreamProtocolConnection:
+template<class Message, class Parser, class Serializer>
+class StreamProtocolConnection:
     public BaseStreamProtocolConnection<
         StreamProtocolConnection<Message, Parser, Serializer>,
         Message,
         Parser,
         Serializer>
 {
-    using self_type = StreamProtocolConnection<
-        Message,
-        Parser,
-        Serializer>;
+    using self_type = StreamProtocolConnection<Message, Parser, Serializer>;
 
-    using base_type = BaseStreamProtocolConnection<
-        self_type,
-        Message,
-        Parser,
-        Serializer>;
+    using base_type = BaseStreamProtocolConnection<self_type, Message, Parser, Serializer>;
 
 public:
     using OnConnectionClosedHandler =
         nx::MoveOnlyFunc<void(SystemError::ErrorCode /*closeReason*/)>;
 
-    StreamProtocolConnection(
-        std::unique_ptr<AbstractStreamSocket> streamSocket)
-        :
+    StreamProtocolConnection(std::unique_ptr<AbstractStreamSocket> streamSocket):
         base_type(std::move(streamSocket))
     {
     }

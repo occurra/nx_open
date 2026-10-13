@@ -11,7 +11,7 @@ namespace nx::utils::thread {
 class NX_UTILS_API CustomRunnable: public QRunnable
 {
 public:
-    using Callback = std::function<void ()>;
+    using Callback = std::function<void()>;
 
     CustomRunnable(Callback&& callback);
 

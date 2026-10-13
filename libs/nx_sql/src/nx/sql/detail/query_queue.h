@@ -35,8 +35,7 @@ public:
      */
     std::size_t pendingQueryCount() const;
 
-    std::optional<value_type> pop(
-        std::optional<std::chrono::milliseconds> timeout = std::nullopt);
+    std::optional<value_type> pop(std::optional<std::chrono::milliseconds> timeout = std::nullopt);
 
     void setItemStayTimeout(std::optional<std::chrono::milliseconds> timeout);
 
@@ -122,8 +121,7 @@ private:
 
     void decreaseLimitCounters(AbstractExecutor* finishedQuery);
 
-    bool checkAndUpdateQueryLimits(
-        const std::unique_ptr<AbstractExecutor>& queryExecutor);
+    bool checkAndUpdateQueryLimits(const std::unique_ptr<AbstractExecutor>& queryExecutor);
 
     void removeExpiredElements(nx::Locker<nx::Mutex>* lock);
 

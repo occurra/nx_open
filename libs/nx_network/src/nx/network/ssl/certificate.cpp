@@ -8,26 +8,26 @@
 
 #ifdef ENABLE_SSL
 
-#include <fstream>
+    #include <fstream>
 
-#include <openssl/err.h>
-#include <openssl/x509v3.h>
+    #include <openssl/err.h>
+    #include <openssl/x509v3.h>
 
-#include <QtCore/QDir>
-#include <QtNetwork/QSslCertificate>
-#include <QtNetwork/QSslConfiguration>
-#include <QtNetwork/QSslKey>
+    #include <QtCore/QDir>
+    #include <QtNetwork/QSslCertificate>
+    #include <QtNetwork/QSslConfiguration>
+    #include <QtNetwork/QSslKey>
 
-#include <nx/utils/log/log.h>
-#include <nx/utils/random.h>
-#include <nx/utils/std/cppnx.h>
+    #include <nx/utils/log/log.h>
+    #include <nx/utils/random.h>
+    #include <nx/utils/std/cppnx.h>
+    #include <nx/utils/std_string_utils.h>
 
-#include <nx/utils/std_string_utils.h>
-#include "context.h"
+    #include "context.h"
 
-#if defined(Q_OS_IOS)
-    #include "certificate_mac.h"
-#endif
+    #if defined(Q_OS_IOS)
+        #include "certificate_mac.h"
+    #endif
 
 namespace {
 
@@ -61,10 +61,7 @@ public:
         return m_x509Store.get();
     }
 
-    bool isX509StoreUnused() const
-    {
-        return m_x509StoreUnused.load();
-    }
+    bool isX509StoreUnused() const { return m_x509StoreUnused.load(); }
 
     static CaStore& instance()
     {
@@ -121,9 +118,12 @@ static const BUF_MEM* bioBuffer(BIO* bio)
 {
     BUF_MEM* mem = nullptr;
     const auto error = BIO_get_mem_ptr(bio, &mem);
-    NX_ASSERT(error == 1 && mem && mem->length > 0,
+    NX_ASSERT(
+        error == 1 && mem && mem->length > 0,
         "BIO_get_mem_ptr(bio, &mem): result %1, mem: %2, mem->length: %3",
-        error, mem, mem ? mem->length : 0);
+        error,
+        mem,
+        mem ? mem->length : 0);
     return mem;
 }
 
@@ -146,13 +146,12 @@ static QByteArray pemByteArray(X509* x509)
 
 static std::chrono::system_clock::time_point timePoint(const ASN1_TIME* asn1Time)
 {
-    static const auto kZeroTime =
-        []()
-        {
-            auto zeroTime = nx::wrapUnique(ASN1_TIME_new(), &ASN1_TIME_free);
-            ASN1_TIME_set(zeroTime.get(), 0);
-            return zeroTime;
-        }();
+    static const auto kZeroTime = []()
+    {
+        auto zeroTime = nx::wrapUnique(ASN1_TIME_new(), &ASN1_TIME_free);
+        ASN1_TIME_set(zeroTime.get(), 0);
+        return zeroTime;
+    }();
     int days = 0;
     int seconds = 0;
     ASN1_TIME_diff(&days, &seconds, kZeroTime.get(), asn1Time);
@@ -171,14 +170,14 @@ static std::vector<uint8_t> bitStringToByteArray(const ASN1_BIT_STRING* s)
     return s ? std::vector<uint8_t>(s->data, s->data + s->length) : std::vector<uint8_t>();
 }
 
-static std::vector<unsigned char> fingerprint(const X509* x509, const EVP_MD *digest)
+static std::vector<unsigned char> fingerprint(const X509* x509, const EVP_MD* digest)
 {
     std::vector<unsigned char> result;
 
     unsigned char md[EVP_MAX_MD_SIZE];
     unsigned int len;
     if (X509_digest(x509, digest, md, &len))
-        result.assign(md, md+len);
+        result.assign(md, md + len);
 
     return result;
 }
@@ -188,7 +187,8 @@ static Certificate::KeyInformation fillPublicKeyInformation(EVP_PKEY* pkey)
     Certificate::KeyInformation result = {EVP_PKEY_base_id(pkey), {}, {}};
     switch (result.algorithmId)
     {
-        case EVP_PKEY_RSA: {
+        case EVP_PKEY_RSA:
+        {
             const RSA* rsa = EVP_PKEY_get0_RSA(pkey);
             result.modulus = bignumToByteArray(RSA_get0_n(rsa));
             result.rsa = {bignumToByteArray(RSA_get0_e(rsa)), RSA_bits(rsa)};
@@ -223,9 +223,7 @@ static void fillHostsFromSubjectAlternativeNames(const X509* x509, std::set<std:
             if (name->type == GEN_DNS)
             {
                 ASN1_IA5STRING* dnsName = name->d.dNSName;
-                if (dnsName
-                    && dnsName->type == V_ASN1_IA5STRING
-                    && dnsName->data
+                if (dnsName && dnsName->type == V_ASN1_IA5STRING && dnsName->data
                     && dnsName->length > 0)
                 {
                     hosts->insert(std::string((const char*) dnsName->data, dnsName->length));
@@ -250,7 +248,9 @@ static bool getSubjectAltNamesText(const X509* x509, std::string* result)
 {
     bool isOk = true;
     const auto bio = nx::wrapUnique(BIO_new(BIO_s_mem()), &BIO_free);
-    forEachSubjectAlternativeName(x509, [&bio, &isOk](GENERAL_NAME* name)
+    forEachSubjectAlternativeName(
+        x509,
+        [&bio, &isOk](GENERAL_NAME* name)
         {
             if (!isOk)
                 return;
@@ -310,7 +310,8 @@ bool operator==(const CertificateView& lhs, const CertificateView& rhs)
     return X509_cmp(lhs.x509(), rhs.x509()) == 0;
 }
 
-CertificateView::CertificateView(X509* x509): m_x509(x509)
+CertificateView::CertificateView(X509* x509):
+    m_x509(x509)
 {
 }
 
@@ -367,7 +368,8 @@ std::vector<CertificateView::Extension> CertificateView::extensions() const
         const auto bio = nx::wrapUnique(BIO_new(BIO_s_mem()), &BIO_free);
         X509V3_EXT_print(bio.get(), extention, /*flag*/ 0, /*indent*/ 0);
         const int critical = X509_EXTENSION_get_critical(extention);
-        result.push_back({method ? method->ext_nid : NID_undef, bioToString(bio.get()), critical != 0});
+        result.push_back(
+            {method ? method->ext_nid : NID_undef, bioToString(bio.get()), critical != 0});
     }
     return result;
 }
@@ -433,8 +435,7 @@ std::string CertificateView::printedText() const
 
 bool CertificateView::KeyInformation::operator==(const CertificateView::KeyInformation& rhs) const
 {
-    if (algorithmId == rhs.algorithmId
-        && modulus == rhs.modulus
+    if (algorithmId == rhs.algorithmId && modulus == rhs.modulus
         && rsa.has_value() == rhs.rsa.has_value())
     {
         return rsa->bits == rhs.rsa->bits && rsa->exponent == rhs.rsa->exponent;
@@ -450,9 +451,8 @@ bool CertificateView::KeyInformation::parsePem(const std::string& str)
     if (!NX_ASSERT(!!bio))
         return false;
 
-    auto pkey = nx::wrapUnique(
-        PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr),
-        EVP_PKEY_free);
+    auto pkey =
+        nx::wrapUnique(PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr), EVP_PKEY_free);
     if (!pkey)
     {
         NX_DEBUG(this, "Unable to parse public key from PEM");
@@ -462,15 +462,13 @@ bool CertificateView::KeyInformation::parsePem(const std::string& str)
     return true;
 }
 
-Certificate::Certificate(X509* x509)
-    :
+Certificate::Certificate(X509* x509):
     CertificateView(X509_dup(x509)),
     m_x509(CertificateView::x509(), &X509_free)
 {
 }
 
-Certificate::Certificate(const CertificateView& view)
-    :
+Certificate::Certificate(const CertificateView& view):
     CertificateView(X509_dup(view.x509())),
     m_x509(CertificateView::x509(), &X509_free)
 {
@@ -486,9 +484,10 @@ std::vector<Certificate> Certificate::parse(const std::string& pemString)
         return x509.certificates();
 
     // Report an error.
-    NX_ERROR(NX_SCOPE_TAG,
+    NX_ERROR(
+        NX_SCOPE_TAG,
         QString("Unable to parse the provided certificate.\nError: %1\nRaw certificate data:\n%2")
-        .arg(QString::fromStdString(parsingError), QString::fromStdString(pemString)));
+            .arg(QString::fromStdString(parsingError), QString::fromStdString(pemString)));
 
     return {};
 }
@@ -516,10 +515,12 @@ X509Certificate& X509Certificate::operator=(const X509Certificate& certificate)
 }
 
 bool X509Certificate::parsePem(
-    const std::string& pem, std::optional<int> maxChainLength, std::string* errorMessage)
+    const std::string& pem,
+    std::optional<int> maxChainLength,
+    std::string* errorMessage)
 {
     auto bio = nx::wrapUnique(
-        BIO_new_mem_buf(const_cast<void*>((const void*)pem.data()), pem.size()),
+        BIO_new_mem_buf(const_cast<void*>((const void*) pem.data()), pem.size()),
         &BIO_free);
 
     auto x509 = nx::wrapUnique(PEM_read_bio_X509_AUX(bio.get(), 0, 0, 0), &X509_free);
@@ -536,18 +537,21 @@ bool X509Certificate::parsePem(
     m_x509 = std::exchange(x509, nullptr);
 
     m_extraChainCerts.clear();
-    for (int i = 1; ; ++i)
+    for (int i = 1;; ++i)
     {
         x509 = nx::wrapUnique(PEM_read_bio_X509_AUX(bio.get(), 0, 0, 0), &X509_free);
         certSize = i2d_X509(x509.get(), 0);
         if (!x509 || certSize <= 0)
             return true;
 
-        NX_VERBOSE(this, "X.509 certificate from chain was loaded: %1. Chain length %2",
-            toString(x509.get()), i);
+        NX_VERBOSE(
+            this,
+            "X.509 certificate from chain was loaded: %1. Chain length %2",
+            toString(x509.get()),
+            i);
 
         chainSize += certSize;
-        if (maxChainLength && chainSize > * maxChainLength)
+        if (maxChainLength && chainSize > *maxChainLength)
         {
             NX_DEBUG(this, "Certificate chain is too long: %1 vs %2", chainSize, *maxChainLength);
             return true;
@@ -580,8 +584,11 @@ bool X509Certificate::isValid(const std::chrono::seconds& maxDuration) const
         return false;
     }
 
-    NX_VERBOSE(this, "Certificate is valid (from %1, to %2)",
-        toString(notBefore), toString(notAfter));
+    NX_VERBOSE(
+        this,
+        "Certificate is valid (from %1, to %2)",
+        toString(notBefore),
+        toString(notAfter));
     return true;
 }
 
@@ -613,8 +620,11 @@ bool X509Certificate::bindToContext(SSL_CTX* sslContext, std::string* errorMessa
     {
         if (errorMessage)
         {
-            nx::utils::buildString(errorMessage,
-                lastError(), " on binding to SSL context of certificate ", toString());
+            nx::utils::buildString(
+                errorMessage,
+                lastError(),
+                " on binding to SSL context of certificate ",
+                toString());
         }
         NX_DEBUG(this, "%1 on binding to SSL context of certificate %2", lastError(), *this);
         return false;
@@ -626,10 +636,17 @@ bool X509Certificate::bindToContext(SSL_CTX* sslContext, std::string* errorMessa
         {
             if (errorMessage)
             {
-                nx::utils::buildString(errorMessage,
-                    lastError(), " on loading of chained X.509: ", toString(x509.get()));
+                nx::utils::buildString(
+                    errorMessage,
+                    lastError(),
+                    " on loading of chained X.509: ",
+                    toString(x509.get()));
             }
-            NX_DEBUG(this, "%1 on loading of chained X.509: %2", lastError(), toString(x509.get()));
+            NX_DEBUG(
+                this,
+                "%1 on loading of chained X.509: %2",
+                lastError(),
+                toString(x509.get()));
             return false;
         }
 
@@ -662,8 +679,12 @@ std::string X509Certificate::toString(const X509* x509)
     if (!x509)
         return "null";
 
-    auto subject = nx::wrapUnique(X509_NAME_oneline(
-        X509_get_subject_name(x509), NULL, 0), [](char* ptr) { free(ptr); });
+    auto subject = nx::wrapUnique(
+        X509_NAME_oneline(X509_get_subject_name(x509), NULL, 0),
+        [](char* ptr)
+        {
+            free(ptr);
+        });
 
     if (!subject || !subject.get())
         return std::string("Unable to read certificate subject");
@@ -764,8 +785,11 @@ bool Pem::bindToContext(SSL_CTX* sslContext, std::string* errorMessage) const
     {
         if (errorMessage)
         {
-            nx::utils::buildString(errorMessage,
-                lastError(), " on using of private key of certificate ", m_certificate.toString());
+            nx::utils::buildString(
+                errorMessage,
+                lastError(),
+                " on using of private key of certificate ",
+                m_certificate.toString());
         }
         NX_DEBUG(this, "%1 on using of private key of certificate %2", lastError(), m_certificate);
         return false;
@@ -791,9 +815,7 @@ const X509Certificate& Pem::certificate() const
 
 bool Pem::loadPrivateKey(const std::string& pem, std::string* errorMessage)
 {
-    auto bio = nx::wrapUnique(
-        BIO_new_mem_buf(pem.data(), (int) pem.size()),
-        &BIO_free);
+    auto bio = nx::wrapUnique(BIO_new_mem_buf(pem.data(), (int) pem.size()), &BIO_free);
     if (!bio)
     {
         setErrorAndLog(errorMessage, "Failed to create BIO for the private key.");
@@ -825,23 +847,25 @@ static bool setIssuerOrSubject(X509* x509, const X509Name& issuerAndSubject, boo
     if (!NX_ASSERT(name, "Failed to create new X509_NAME"))
         return false;
 
-    const auto setField =
-        [name = name.get()](const std::string& field, const std::string& value)
-        {
-            return X509_NAME_add_entry_by_txt(
-                name,
-                field.c_str(),
-                MBSTRING_UTF8,
-                (unsigned char *) value.data(),
-                value.size(),
-                -1,
-                0);
-        };
+    const auto setField = [name = name.get()](const std::string& field, const std::string& value)
+    {
+        return X509_NAME_add_entry_by_txt(
+            name,
+            field.c_str(),
+            MBSTRING_UTF8,
+            (unsigned char*) value.data(),
+            value.size(),
+            -1,
+            0);
+    };
 
     for (const auto& [name, value]: issuerAndSubject.attrs)
     {
         if (!NX_ASSERT(
-            setField(name, value), "Failed to set X509_NAME %1 with value %2", name, value))
+                setField(name, value),
+                "Failed to set X509_NAME %1 with value %2",
+                name,
+                value))
         {
             return false;
         }
@@ -910,9 +934,7 @@ static bool setDnsName(X509* x509, const std::string& dnsName)
         }
         else
         {
-            auto octetString = nx::wrapUnique(
-                ASN1_OCTET_STRING_new(),
-                &ASN1_OCTET_STRING_free);
+            auto octetString = nx::wrapUnique(ASN1_OCTET_STRING_new(), &ASN1_OCTET_STRING_free);
             if (!NX_ASSERT(octetString, "Failed to create new ASN1_OCTET_STRING"))
                 return false;
 
@@ -1018,13 +1040,14 @@ bool generateKeyFiles(
         return false;
     }
     if (PEM_write_PrivateKey(
-        f,
-        key.get(),
-        /* default cipher for encrypting the key on disk */ nullptr,
-        /* passphrase required for decrypting the key on disk */ nullptr,
-        /* length of the passphrase string */ 0,
-        /* callback for requesting a password */ nullptr,
-        /* data to pass to the callback */ nullptr) != 1)
+            f,
+            key.get(),
+            /* default cipher for encrypting the key on disk */ nullptr,
+            /* passphrase required for decrypting the key on disk */ nullptr,
+            /* length of the passphrase string */ 0,
+            /* callback for requesting a password */ nullptr,
+            /* data to pass to the callback */ nullptr)
+        != 1)
     {
         fclose(f);
         NX_WARNING(typeid(Certificate), "PEM_write_PrivateKey() failed: %1", privateKeyFileName);
@@ -1075,11 +1098,11 @@ bool makeCertificateAndKeyFile(
     std::chrono::seconds notAfterAdjust)
 {
     std::string pem = makeCertificateAndKey(
-            issuerAndSubject,
-            hostName,
-            std::move(serialNumber),
-            notBeforeAdjust,
-            notAfterAdjust);
+        issuerAndSubject,
+        hostName,
+        std::move(serialNumber),
+        notBeforeAdjust,
+        notAfterAdjust);
     if (pem.empty())
         return false;
 
@@ -1131,13 +1154,18 @@ std::string makeCertificate(
 
     const time_t now = time(nullptr);
     auto x509 = nx::wrapUnique(X509_new(), &X509_free);
-    if (!x509
-        || !X509_set_version(x509.get(), 2) //< x509.v3
+    if (!x509 || !X509_set_version(x509.get(), 2) //< x509.v3
         || !ASN1_INTEGER_set(X509_get_serialNumber(x509.get()), *serialNumber)
         || !ASN1_TIME_adj(
-            X509_get_notBefore(x509.get()), now, /*offset_day*/ 0, notBeforeAdjust.count())
+            X509_get_notBefore(x509.get()),
+            now,
+            /*offset_day*/ 0,
+            notBeforeAdjust.count())
         || !ASN1_TIME_adj(
-            X509_get_notAfter(x509.get()), now, /*offset_day*/ 0, notAfterAdjust.count())
+            X509_get_notAfter(x509.get()),
+            now,
+            /*offset_day*/ 0,
+            notAfterAdjust.count())
         || !X509_set_pubkey(x509.get(), keyPair.get()))
     {
         NX_ASSERT(false, "Unable to generate X509 cert");
@@ -1159,8 +1187,7 @@ std::string makeCertificate(
         nullptr,
         0);
 
-    const auto addExt =
-        [&ctx, &x509](int nid, const char* value) -> bool
+    const auto addExt = [&ctx, &x509](int nid, const char* value) -> bool
     {
         auto ex = nx::wrapUnique(
             X509V3_EXT_conf_nid(nullptr, &ctx, nid, const_cast<char*>(value)),
@@ -1168,7 +1195,8 @@ std::string makeCertificate(
         if (ex && X509_add_ext(x509.get(), ex.get(), -1))
             return true;
 
-        NX_ASSERT(false,
+        NX_ASSERT(
+            false,
             "Failed to add %1 extension with value %2 to X509 certificate",
             OBJ_nid2ln(nid),
             value);
@@ -1188,8 +1216,7 @@ std::string makeCertificate(
         static const auto kKeyUsage =
             "digitalSignature,nonRepudiation,keyEncipherment,dataEncipherment,keyAgreement,"
             "keyCertSign";
-        if (!addExt(NID_key_usage, kKeyUsage)
-            || !addExt(NID_ext_key_usage, "serverAuth"))
+        if (!addExt(NID_key_usage, kKeyUsage) || !addExt(NID_ext_key_usage, "serverAuth"))
             return "";
     }
     else
@@ -1224,8 +1251,7 @@ std::string makeCertificate(
 
     std::string result;
     const auto bio = nx::wrapUnique(BIO_new(BIO_s_mem()), BIO_free);
-    if (!bio
-        || !PEM_write_bio_X509(bio.get(), x509.get())
+    if (!bio || !PEM_write_bio_X509(bio.get(), x509.get())
         || !PEM_write_bio_PrivateKey(bio.get(), keyPair.get(), 0, 0, 0, 0, 0)
         || (result = bioToString(bio.get())).empty())
     {
@@ -1236,10 +1262,11 @@ std::string makeCertificate(
 }
 
 bool useCertificate(
-    const Pem& pem, const X509Name& issuer, const std::chrono::seconds& maxDuration)
+    const Pem& pem,
+    const X509Name& issuer,
+    const std::chrono::seconds& maxDuration)
 {
-    return pem.certificate().isSignedBy(issuer)
-        && pem.certificate().isValid(maxDuration)
+    return pem.certificate().isSignedBy(issuer) && pem.certificate().isValid(maxDuration)
         && ssl::Context::instance()->setDefaultCertificate(pem);
 }
 
@@ -1257,8 +1284,11 @@ bool useOrCreateCertificate(
         return true;
     }
 
-    NX_INFO(typeid(Certificate), "Unable to load valid SSL certificate from file '%1'. "
-        "Generating a new one", filePath);
+    NX_INFO(
+        typeid(Certificate),
+        "Unable to load valid SSL certificate from file '%1'. "
+        "Generating a new one",
+        filePath);
 
     const auto certData = makeCertificateAndKey(
         issuer,
@@ -1273,10 +1303,14 @@ bool useOrCreateCertificate(
         // TODO: Switch to std::filesystem here.
         QFileInfo(QString::fromStdString(filePath)).absoluteDir().mkpath(".");
         QFile file(QString::fromStdString(filePath));
-        if (!file.open(QIODevice::WriteOnly) || file.write(certData.data(), certData.size()) != (int) certData.size())
+        if (!file.open(QIODevice::WriteOnly)
+            || file.write(certData.data(), certData.size()) != (int) certData.size())
         {
-            NX_ERROR(typeid(Certificate), "Unable to write SSL certificate to file %1: %2",
-                filePath, file.errorString());
+            NX_ERROR(
+                typeid(Certificate),
+                "Unable to write SSL certificate to file %1: %2",
+                filePath,
+                file.errorString());
         }
     }
 
@@ -1300,8 +1334,11 @@ bool loadCertificateFromFile(const std::string& filePath)
     QFile file(QString::fromStdString(filePath));
     if (!file.open(QIODevice::ReadOnly))
     {
-        NX_INFO(typeid(Certificate), "Failed to open certificate file '%1': %2",
-            filePath, file.errorString());
+        NX_INFO(
+            typeid(Certificate),
+            "Failed to open certificate file '%1': %2",
+            filePath,
+            file.errorString());
         return false;
     }
     auto certData = file.readAll().toStdString();
@@ -1336,8 +1373,11 @@ std::optional<Pem> readPemFile(const std::string& filePath)
     QFile file(QString::fromStdString(filePath));
     if (!file.open(QIODevice::ReadOnly))
     {
-        NX_INFO(typeid(Certificate), "Failed to open certificate file '%1': %2",
-            filePath, file.errorString());
+        NX_INFO(
+            typeid(Certificate),
+            "Failed to open certificate file '%1': %2",
+            filePath,
+            file.errorString());
         return std::nullopt;
     }
     auto pemStr = file.readAll().toStdString();
@@ -1354,20 +1394,22 @@ std::optional<Pem> readPemFile(const std::string& filePath)
 }
 
 bool verifyBySystemCertificates(
-    STACK_OF(X509)* chain, const std::string& hostName, std::string* outErrorMessage)
+    STACK_OF(X509) * chain,
+    const std::string& hostName,
+    std::string* outErrorMessage)
 {
     #if defined(Q_OS_IOS)
-        // QSslCertificate::verify does not work properly in iOS because iOS does not provide any
-        // API to extract trusted certificates from the OS, but they are required for Qt
-        // implementation of verification. We use a dedicated implementation for this case which
-        // uses a system API to verify the chain without extracting the certificate. Unfortunately
-        // that API does not provide a way to temporarily add a trusted root certificate. It can
-        // only be added to the system keychain, and we don't want that. Easy solution is to verify
-        // the chain by the system certificates and if the attempt failed, retry with Qt
-        // implementation which will use only the certificates we loaded explicitly (because it
-        // does not have access to the system certificates).
-        if (detail::verifyBySystemCertificatesMac(chain, hostName, outErrorMessage))
-            return true;
+    // QSslCertificate::verify does not work properly in iOS because iOS does not provide any
+    // API to extract trusted certificates from the OS, but they are required for Qt
+    // implementation of verification. We use a dedicated implementation for this case which
+    // uses a system API to verify the chain without extracting the certificate. Unfortunately
+    // that API does not provide a way to temporarily add a trusted root certificate. It can
+    // only be added to the system keychain, and we don't want that. Easy solution is to verify
+    // the chain by the system certificates and if the attempt failed, retry with Qt
+    // implementation which will use only the certificates we loaded explicitly (because it
+    // does not have access to the system certificates).
+    if (detail::verifyBySystemCertificatesMac(chain, hostName, outErrorMessage))
+        return true;
     #endif
 
     if (outErrorMessage)
@@ -1399,18 +1441,17 @@ bool verifyBySystemCertificates(
     return false;
 }
 
-std::vector<Certificate> completeCertificateChain(STACK_OF(X509)* chain, bool* ok)
+std::vector<Certificate> completeCertificateChain(STACK_OF(X509) * chain, bool* ok)
 {
-    auto converted =
-        [](STACK_OF(X509)* chain)
-        {
-            std::vector<Certificate> result;
+    auto converted = [](STACK_OF(X509)* chain)
+    {
+        std::vector<Certificate> result;
 
-            for (int i = 0; i < sk_X509_num(chain); ++i)
-                result.push_back(Certificate(sk_X509_value(chain, i)));
+        for (int i = 0; i < sk_X509_num(chain); ++i)
+            result.push_back(Certificate(sk_X509_value(chain, i)));
 
-            return result;
-        };
+        return result;
+    };
 
     // Report a failure if we don't reach the end of this function.
     if (ok)
@@ -1419,22 +1460,23 @@ std::vector<Certificate> completeCertificateChain(STACK_OF(X509)* chain, bool* o
     auto store = CaStore::instance().x509Store();
     if (!store)
     {
-        NX_WARNING(NX_SCOPE_TAG,
-            "Can't complete certificate chain: OpenSSL store is not created");
+        NX_WARNING(NX_SCOPE_TAG, "Can't complete certificate chain: OpenSSL store is not created");
         return converted(chain);
     }
 
     auto context = nx::wrapUnique(X509_STORE_CTX_new(), &X509_STORE_CTX_free);
     if (!NX_ASSERT(context))
     {
-        NX_WARNING(NX_SCOPE_TAG,
+        NX_WARNING(
+            NX_SCOPE_TAG,
             "Can't complete certificate chain: OpenSSL context is not created");
         return converted(chain);
     }
 
     if (!X509_STORE_CTX_init(context.get(), store, sk_X509_value(chain, 0), chain))
     {
-        NX_WARNING(NX_SCOPE_TAG,
+        NX_WARNING(
+            NX_SCOPE_TAG,
             "Can't complete certificate chain: failed to initialize OpenSSL context");
         return converted(chain);
     }
@@ -1462,7 +1504,8 @@ void addTrustedRootCertificate(const CertificateView& cert)
     conf.addCaCertificate(QSslCertificate(pemByteArray(cert.x509())));
     QSslConfiguration::setDefaultConfiguration(std::move(conf));
 
-    NX_ASSERT(CaStore::instance().isX509StoreUnused(),
+    NX_ASSERT(
+        CaStore::instance().isX509StoreUnused(),
         "All trusted root certificates should be loaded on startup");
 }
 

@@ -122,9 +122,8 @@ void TopQueue<T, Comp>::populatePopStack()
         }
         else
         {
-            m_popStack.push(std::make_pair(
-                elemToPush,
-                selectTopValue(m_popStack.top().second, elemToPush)));
+            m_popStack.push(
+                std::make_pair(elemToPush, selectTopValue(m_popStack.top().second, elemToPush)));
         }
 
         m_pushStack.pop();
@@ -132,8 +131,7 @@ void TopQueue<T, Comp>::populatePopStack()
 }
 
 template<typename T, typename Comp>
-const T& TopQueue<T, Comp>::selectTopValue(
-    const T& left, const T& right)
+const T& TopQueue<T, Comp>::selectTopValue(const T& left, const T& right)
 {
     return Comp()(left, right) ? left : right;
 }

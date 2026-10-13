@@ -4,9 +4,9 @@
 
 #include <cinttypes>
 
-#include <QtNetwork/QAuthenticator>
-
 #include <openssl/md5.h>
+
+#include <QtNetwork/QAuthenticator>
 
 #include <nx/reflect/json.h>
 #include <nx/utils/cryptographic_hash.h>
@@ -75,10 +75,7 @@ VideoWallAuthToken::VideoWallAuthToken(const nx::Uuid& videoWallId)
     setBearerToken(prefix + videoWallId.toSimpleStdString());
 }
 
-Credentials::Credentials(
-    std::string_view username,
-    const AuthToken& authToken)
-    :
+Credentials::Credentials(std::string_view username, const AuthToken& authToken):
     username(username),
     authToken(authToken)
 {
@@ -168,8 +165,8 @@ std::optional<header::Authorization> generateAuthorization(
         return bearerAuthorization;
     }
 
-    if (wwwAuthenticateHeader.authScheme == header::AuthScheme::basic &&
-        (credentials.authToken.isPassword() || credentials.authToken.empty()))
+    if (wwwAuthenticateHeader.authScheme == header::AuthScheme::basic
+        && (credentials.authToken.isPassword() || credentials.authToken.empty()))
     {
         header::BasicAuthorization basicAuthorization(
             credentials.username,
@@ -179,11 +176,7 @@ std::optional<header::Authorization> generateAuthorization(
 
     if (wwwAuthenticateHeader.authScheme == header::AuthScheme::digest)
     {
-        return generateDigestAuthorization(
-            request,
-            credentials,
-            wwwAuthenticateHeader,
-            1);
+        return generateDigestAuthorization(request, credentials, wwwAuthenticateHeader, 1);
     }
 
     return std::nullopt;
@@ -212,8 +205,7 @@ NX_NETWORK_API std::optional<header::Authorization> generateDigestAuthorization(
     return digestAuthorizationHeader;
 }
 
-std::optional<nx::utils::QnCryptographicHash::Algorithm> parseAlgorithm(
-    std::string_view algorithm)
+std::optional<nx::utils::QnCryptographicHash::Algorithm> parseAlgorithm(std::string_view algorithm)
 {
     // TODO: #muskov Perhaps we should support some other algorithms?
     if (nx::utils::stricmp(algorithm, "MD5") == 0)
@@ -244,10 +236,7 @@ std::string calcHa1(
     return nx::utils::toHex(std::string_view(hash.data(), (std::size_t) hash.size()));
 }
 
-std::string calcHa2(
-    const Method& method,
-    std::string_view uri,
-    std::string_view algorithm)
+std::string calcHa2(const Method& method, std::string_view uri, std::string_view algorithm)
 {
     // TODO: #akolesnikov Use openssl directly.
 
@@ -316,7 +305,8 @@ static std::optional<std::string> chooseQop(const std::string& qopAttributeValue
 
     std::optional<std::string> found;
     nx::utils::split(
-        qopAttributeValue, ',',
+        qopAttributeValue,
+        ',',
         [&found](const auto& qopOption)
         {
             if (!found)
@@ -351,16 +341,12 @@ bool calcDigestResponse(
 
     const std::string ha1 = predefinedHa1
         ? std::string(*predefinedHa1)
-        : calcHa1(
-            userName,
-            realm,
-            userPassword ? *userPassword : std::string(),
-            algorithm);
+        : calcHa1(userName, realm, userPassword ? *userPassword : std::string(), algorithm);
 
-    //HA2, qop=auth-int is not supported
+    // HA2, qop=auth-int is not supported
     const std::string& ha2 = calcHa2(method, uri, algorithm);
 
-    //response
+    // response
     if (!algorithm.empty())
         outputParams->emplace("algorithm", algorithm);
 
@@ -377,11 +363,11 @@ bool calcDigestResponse(
     else
     {
         std::string nonceCount = fieldOrDefault(inputParams, "nc", "00000001");
-        std::string clientNonce = fieldOrDefault(
-            inputParams, "cnonce", nx::utils::random::generateName(16));
+        std::string clientNonce =
+            fieldOrDefault(inputParams, "cnonce", nx::utils::random::generateName(16));
 
-        digestResponse = calcResponseAuthInt(
-            ha1, nonce, nonceCount, clientNonce, *qop, ha2, algorithm);
+        digestResponse =
+            calcResponseAuthInt(ha1, nonce, nonceCount, clientNonce, *qop, ha2, algorithm);
 
         outputParams->emplace("qop", *qop);
         outputParams->emplace("nc", std::move(nonceCount));
@@ -479,8 +465,13 @@ bool validateAuthorization(
 
     std::map<std::string, std::string> outputParams;
     const auto result = calcDigestResponse(
-        method, userName, userPassword, predefinedHa1, uri,
-        digestParams, &outputParams);
+        method,
+        userName,
+        userPassword,
+        predefinedHa1,
+        uri,
+        digestParams,
+        &outputParams);
 
     if (!result)
         return false;
@@ -495,10 +486,7 @@ bool validateAuthorization(
     const Credentials& credentials,
     const header::DigestAuthorization& digestAuthorizationHeader)
 {
-    return validateAuthorization(
-        method,
-        credentials,
-        *digestAuthorizationHeader.digest);
+    return validateAuthorization(method, credentials, *digestAuthorizationHeader.digest);
 }
 
 bool validateAuthorization(
@@ -509,12 +497,10 @@ bool validateAuthorization(
     return validateAuthorization(
         method,
         credentials.username,
-        credentials.authToken.isPassword()
-            ? std::make_optional(credentials.authToken.value)
-            : std::nullopt,
-        credentials.authToken.isHa1()
-            ? std::make_optional(credentials.authToken.value)
-            : std::nullopt,
+        credentials.authToken.isPassword() ? std::make_optional(credentials.authToken.value)
+                                           : std::nullopt,
+        credentials.authToken.isHa1() ? std::make_optional(credentials.authToken.value)
+                                      : std::nullopt,
         digestAuthorizationHeader);
 }
 
@@ -530,17 +516,16 @@ bool validateAuthorizationByIntemerdiateResponse(
     std::string nonce = fieldOrDefault(digestAuthorizationHeader.params, "nonce");
     std::string_view nonceTrailer = nonce;
     nonceTrailer.remove_prefix(std::min(nonceTrailer.size(), baseNonce.size()));
-    return fieldOrDefault(digestAuthorizationHeader.params, "response") == calcResponseFromIntermediate(
-        intermediateResponse, baseNonce.size(), nonceTrailer, ha2);
+    return fieldOrDefault(digestAuthorizationHeader.params, "response")
+        == calcResponseFromIntermediate(intermediateResponse, baseNonce.size(), nonceTrailer, ha2);
 }
 
 static const size_t MD5_CHUNK_LEN = 64;
 
-std::string calcIntermediateResponse(
-    std::string_view ha1,
-    std::string_view nonce)
+std::string calcIntermediateResponse(std::string_view ha1, std::string_view nonce)
 {
-    NX_ASSERT((ha1.size() + 1 + nonce.size()) % MD5_CHUNK_LEN == 0,
+    NX_ASSERT(
+        (ha1.size() + 1 + nonce.size()) % MD5_CHUNK_LEN == 0,
         nx::format("ha1.size() = %1, nonce.size() = %2").args(ha1.size(), nonce.size()));
 
     MD5_CTX md5Ctx;
@@ -584,15 +569,16 @@ std::string generateNonce(const std::string& eTag)
 
     const auto now = std::chrono::high_resolution_clock::now();
     return nx::utils::buildString(
-        now.time_since_epoch().count(), ":",
-        eTag.empty() ? nx::Uuid::createUuid().toSimpleStdString() : eTag, ":",
+        now.time_since_epoch().count(),
+        ":",
+        eTag.empty() ? nx::Uuid::createUuid().toSimpleStdString() : eTag,
+        ":",
         nx::utils::random::generateName(
             nx::utils::random::CryptographicDevice::instance(),
             secretDataLength));
 }
 
-header::WWWAuthenticate generateWwwAuthenticateBasicHeader(
-    const std::string& realm)
+header::WWWAuthenticate generateWwwAuthenticateBasicHeader(const std::string& realm)
 {
     header::WWWAuthenticate wwwAuthenticate;
     wwwAuthenticate.authScheme = header::AuthScheme::basic;
@@ -614,9 +600,10 @@ header::WWWAuthenticate generateWwwAuthenticateDigestHeader(
 
 std::string digestUri(const Method& method, const nx::Url& url)
 {
-    // TODO: #akolesnikov This is an incorrect value for "uri". See [rfc7616#3.4] and [rfc7230#5.5].
-    // The proper fix may be incompatible with some cameras which loosely follow the standards.
-    // But without the proper fix we can run into incompatibility with some HTTP servers.
+    // TODO: #akolesnikov This is an incorrect value for "uri". See [rfc7616#3.4] and
+    // [rfc7230#5.5]. The proper fix may be incompatible with some cameras which loosely follow the
+    // standards. But without the proper fix we can run into incompatibility with some HTTP
+    // servers.
     return (method == Method::connect)
         ? url.authority().toStdString()
         : url.toString(QUrl::RemoveScheme | QUrl::RemoveAuthority | QUrl::FullyEncoded)

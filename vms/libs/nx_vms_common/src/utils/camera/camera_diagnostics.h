@@ -9,7 +9,7 @@
 #include <nx/media/stream_event.h>
 #include <nx/utils/url.h>
 
-//!Holds types related to performing camera availability diagnostics
+//! Holds types related to performing camera availability diagnostics
 namespace CameraDiagnostics {
 
 namespace Step {
@@ -17,13 +17,13 @@ namespace Step {
 enum Value
 {
     none = 0,
-    //!checking server availability
+    //! checking server availability
     mediaServerAvailability,
-    //!checking that camera responses on base API requests
+    //! checking that camera responses on base API requests
     cameraAvailability,
-    //!checking that camera provides media stream
+    //! checking that camera provides media stream
     mediaStreamAvailability,
-    //!checking media stream provided by camera for errors
+    //! checking media stream provided by camera for errors
     mediaStreamIntegrity,
     end
 };
@@ -33,36 +33,36 @@ NX_VMS_COMMON_API Value fromString(const QString& str);
 
 } // namespace Step
 
-//!Contains error codes
+//! Contains error codes
 namespace ErrorCode {
 
 enum Value
 {
     noError = 0,
-    //!params: server ip
+    //! params: server ip
     mediaServerUnavailable,
-    //!params: server ip
+    //! params: server ip
     mediaServerBadResponse,
-    //!params: port
+    //! params: port
     cannotEstablishConnection,
-    //!params: mediaURL, mediaPort
+    //! params: mediaURL, mediaPort
     cannotOpenCameraMediaPort,
-    //!params: mediaPort
+    //! params: mediaPort
     connectionClosedUnexpectedly,
-    //!no params
+    //! no params
     responseParseError,
-    //!no params
+    //! no params
     noMediaTrack,
-    //!no params
+    //! no params
     notAuthorised,
-    //!params: mediaURL, protocolName
+    //! params: mediaURL, protocolName
     unsupportedProtocol,
-    //!params: failed param
+    //! params: failed param
     cannotConfigureMediaStream,
-    //!params: request name, server response message
+    //! params: request name, server response message
     requestFailed,
     notImplemented,
-    //!params: OS error message
+    //! params: OS error message
     ioError,
     serverTerminated,
     cameraInvalidParams,
@@ -79,18 +79,20 @@ enum Value
     unknown
 };
 
-//!Returns textual description of error with  parameters
+//! Returns textual description of error with  parameters
 
 typedef QList<QString> ErrorParams;
 
-NX_VMS_COMMON_API QString toString(Value val,
+NX_VMS_COMMON_API QString toString(
+    Value val,
     QnResourcePool* resourcePool,
-    const QnVirtualCameraResourcePtr &device,
+    const QnVirtualCameraResourcePtr& device,
     const ErrorParams& errorParams = ErrorParams());
 
-NX_VMS_COMMON_API QString toString(int val,
+NX_VMS_COMMON_API QString toString(
+    int val,
     QnResourcePool* resourcePool,
-    const QnVirtualCameraResourcePtr &device,
+    const QnVirtualCameraResourcePtr& device,
     const ErrorParams& errorParams = ErrorParams());
 
 } // namespace ErrorCode
@@ -116,6 +118,7 @@ public:
     QString toString(QnResourcePool* resourcePool) const;
     QString toString(QnResourcePool* resourcePool, const QnVirtualCameraResourcePtr& device) const;
     nx::media::StreamEvent toMediaStreamEvent() const;
+
 protected:
     QString urlToStr(const nx::Url& value) const;
 };
@@ -132,9 +135,7 @@ public:
 class MediaServerUnavailableResult: public Result
 {
 public:
-    MediaServerUnavailableResult(
-        const QString& mediaServerIP)
-        :
+    MediaServerUnavailableResult(const QString& mediaServerIP):
         Result(ErrorCode::mediaServerUnavailable, mediaServerIP)
     {
     }
@@ -143,10 +144,7 @@ public:
 class MediaServerBadResponseResult: public Result
 {
 public:
-    MediaServerBadResponseResult(
-        const QString& mediaServerIP,
-        const QString& serverResponse)
-        :
+    MediaServerBadResponseResult(const QString& mediaServerIP, const QString& serverResponse):
         Result(ErrorCode::mediaServerBadResponse, mediaServerIP, serverResponse)
     {
     }
@@ -155,9 +153,7 @@ public:
 class CannotEstablishConnectionResult: public Result
 {
 public:
-    CannotEstablishConnectionResult(
-        const int port)
-        :
+    CannotEstablishConnectionResult(const int port):
         Result(ErrorCode::cannotEstablishConnection, QString::number(port))
     {
     }
@@ -166,11 +162,11 @@ public:
 class CannotOpenCameraMediaPortResult: public Result
 {
 public:
-    CannotOpenCameraMediaPortResult(
-        const nx::Url& mediaURL,
-        const int mediaPort)
-        :
-        Result(ErrorCode::cannotOpenCameraMediaPort, urlToStr(mediaURL), QString::number(mediaPort))
+    CannotOpenCameraMediaPortResult(const nx::Url& mediaURL, const int mediaPort):
+        Result(
+            ErrorCode::cannotOpenCameraMediaPort,
+            urlToStr(mediaURL),
+            QString::number(mediaPort))
     {
     }
 };
@@ -178,10 +174,7 @@ public:
 class ConnectionClosedUnexpectedlyResult: public Result
 {
 public:
-    ConnectionClosedUnexpectedlyResult(
-        const QString& host,
-        const int mediaPort)
-        :
+    ConnectionClosedUnexpectedlyResult(const QString& host, const int mediaPort):
         Result(ErrorCode::connectionClosedUnexpectedly, host, QString::number(mediaPort))
     {
     }
@@ -190,8 +183,8 @@ public:
 class BadMediaStreamResult: public Result
 {
 public:
-    BadMediaStreamResult()
-        : Result(ErrorCode::badMediaStream)
+    BadMediaStreamResult():
+        Result(ErrorCode::badMediaStream)
     {
     }
 };
@@ -199,8 +192,8 @@ public:
 class NoMediaStreamResult: public Result
 {
 public:
-    NoMediaStreamResult()
-        : Result(ErrorCode::noMediaStream)
+    NoMediaStreamResult():
+        Result(ErrorCode::noMediaStream)
     {
     }
 };
@@ -217,10 +210,7 @@ public:
 class CameraResponseParseErrorResult: public Result
 {
 public:
-    CameraResponseParseErrorResult(
-        const nx::Url& requestedURL,
-        const QString &requestName)
-        :
+    CameraResponseParseErrorResult(const nx::Url& requestedURL, const QString& requestName):
         Result(ErrorCode::responseParseError, urlToStr(requestedURL), requestName)
     {
     }
@@ -229,9 +219,7 @@ public:
 class NoMediaTrackResult: public Result
 {
 public:
-    NoMediaTrackResult(
-        const nx::Url& requestedURL)
-        :
+    NoMediaTrackResult(const nx::Url& requestedURL):
         Result(ErrorCode::noMediaTrack, urlToStr(requestedURL))
     {
     }
@@ -240,9 +228,7 @@ public:
 class NotAuthorisedResult: public Result
 {
 public:
-    NotAuthorisedResult(
-        const nx::Url& requestedURL)
-        :
+    NotAuthorisedResult(const nx::Url& requestedURL):
         Result(ErrorCode::notAuthorised, urlToStr(requestedURL))
     {
     }
@@ -251,10 +237,7 @@ public:
 class UnsupportedProtocolResult: public Result
 {
 public:
-    UnsupportedProtocolResult(
-        const nx::Url& mediaUrl,
-        const QString& protocolName)
-        :
+    UnsupportedProtocolResult(const nx::Url& mediaUrl, const QString& protocolName):
         Result(ErrorCode::unsupportedProtocol, urlToStr(mediaUrl), protocolName)
     {
     }
@@ -263,9 +246,7 @@ public:
 class CannotConfigureMediaStreamResult: public Result
 {
 public:
-    CannotConfigureMediaStreamResult(
-        const QString& failedParamName)
-        :
+    CannotConfigureMediaStreamResult(const QString& failedParamName):
         Result(ErrorCode::cannotConfigureMediaStream, failedParamName)
     {
     }
@@ -274,10 +255,7 @@ public:
 class RequestFailedResult: public Result
 {
 public:
-    RequestFailedResult(
-        const QString& requestName,
-        const QString& serverResponse)
-        :
+    RequestFailedResult(const QString& requestName, const QString& serverResponse):
         Result(ErrorCode::requestFailed, requestName, serverResponse)
     {
     }
@@ -286,9 +264,7 @@ public:
 class CameraInvalidParams: public Result
 {
 public:
-    CameraInvalidParams(
-        const QString& errorString)
-        :
+    CameraInvalidParams(const QString& errorString):
         Result(ErrorCode::cameraInvalidParams, errorString)
     {
     }
@@ -298,7 +274,7 @@ class CameraOldFirmware: public Result
 {
 public:
     CameraOldFirmware(const QString& minimalVersion, const QString& currentVersion):
-        Result(ErrorCode::cameraOldFirmwareError,minimalVersion,currentVersion)
+        Result(ErrorCode::cameraOldFirmwareError, minimalVersion, currentVersion)
     {
     }
 };
@@ -315,9 +291,7 @@ public:
 class IOErrorResult: public Result
 {
 public:
-    IOErrorResult(
-        const QString& osErrorMessage)
-        :
+    IOErrorResult(const QString& osErrorMessage):
         Result(ErrorCode::ioError, osErrorMessage)
     {
     }
@@ -353,14 +327,16 @@ public:
 class PluginErrorResult: public Result
 {
 public:
-    PluginErrorResult(const QString& errorMessage): Result(ErrorCode::pluginError, errorMessage) {}
+    PluginErrorResult(const QString& errorMessage):
+        Result(ErrorCode::pluginError, errorMessage)
+    {
+    }
 };
 
 class TooManyOpenedConnectionsResult: public Result
 {
 public:
-    TooManyOpenedConnectionsResult()
-        :
+    TooManyOpenedConnectionsResult():
         Result(ErrorCode::tooManyOpenedConnections)
     {
     }
@@ -369,16 +345,17 @@ public:
 class PluginIsUnavailableResult: public Result
 {
 public:
-    PluginIsUnavailableResult(): Result(ErrorCode::pluginIsUnavailable) {}
+    PluginIsUnavailableResult():
+        Result(ErrorCode::pluginIsUnavailable)
+    {
+    }
 };
 
 class InternalServerErrorResult: public Result
 {
 public:
     InternalServerErrorResult(const QString& errorMessage):
-        Result(ErrorCode::internalServerError, errorMessage)
-    {
-    };
+        Result(ErrorCode::internalServerError, errorMessage) {};
 };
 
 } // namespace CameraDiagnostics

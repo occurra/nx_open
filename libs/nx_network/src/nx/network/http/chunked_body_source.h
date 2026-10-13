@@ -11,8 +11,7 @@ namespace nx::network::http {
  * and encodes it to the chunked encoding [rfc7230, 4.1].
  * Each buffer read from the source stream is encoded as a single chunk.
  */
-class NX_NETWORK_API ChunkedBodySource:
-    public AbstractMsgBodySource
+class NX_NETWORK_API ChunkedBodySource: public AbstractMsgBodySource
 {
     using base_type = AbstractMsgBodySource;
 
@@ -26,9 +25,7 @@ public:
     virtual std::optional<uint64_t> contentLength() const override;
 
     virtual void readAsync(
-        nx::MoveOnlyFunc<
-        void(SystemError::ErrorCode, nx::Buffer)
-        > completionHandler) override;
+        nx::MoveOnlyFunc<void(SystemError::ErrorCode, nx::Buffer)> completionHandler) override;
 
 protected:
     virtual void stopWhileInAioThread() override;

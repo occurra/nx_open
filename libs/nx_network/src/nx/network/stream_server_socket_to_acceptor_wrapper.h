@@ -8,15 +8,14 @@
 namespace nx {
 namespace network {
 
-// TODO: #akolesnikov Remove this class when AbstractStreamServerSocket inherits AbstractStreamSocketAcceptor.
-class NX_NETWORK_API StreamServerSocketToAcceptorWrapper:
-    public AbstractStreamSocketAcceptor
+// TODO: #akolesnikov Remove this class when AbstractStreamServerSocket inherits
+// AbstractStreamSocketAcceptor.
+class NX_NETWORK_API StreamServerSocketToAcceptorWrapper: public AbstractStreamSocketAcceptor
 {
     using base_type = AbstractStreamSocketAcceptor;
 
 public:
-    StreamServerSocketToAcceptorWrapper(
-        std::unique_ptr<AbstractStreamServerSocket> serverSocket);
+    StreamServerSocketToAcceptorWrapper(std::unique_ptr<AbstractStreamServerSocket> serverSocket);
 
     virtual void bindToAioThread(aio::AbstractAioThread* aioThread) override;
 

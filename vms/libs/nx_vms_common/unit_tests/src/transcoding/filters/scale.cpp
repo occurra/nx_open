@@ -19,7 +19,7 @@ CLVideoDecoderOutputPtr generateFrame(const QSize& size)
 class ScaleFilterTest: public ::testing::Test
 {
 public:
-    ScaleFilterTest(const CLVideoDecoderOutputPtr &frame = CLVideoDecoderOutputPtr()) :
+    ScaleFilterTest(const CLVideoDecoderOutputPtr& frame = CLVideoDecoderOutputPtr()):
         m_frame(frame)
     {
     }
@@ -39,10 +39,7 @@ public:
         ASSERT_EQ(result->size(), m_frame->size());
     }
 
-    void givenFrame(const QSize& size)
-    {
-        m_frame = generateFrame(size);
-    }
+    void givenFrame(const QSize& size) { m_frame = generateFrame(size); }
 
 private:
     CLVideoDecoderOutputPtr m_frame;
@@ -55,7 +52,8 @@ public:
         ScaleFilterTest(),
         m_step(0),
         m_shouldFail(false)
-    {}
+    {
+    }
 
     void testValidSizes()
     {
@@ -72,23 +70,25 @@ private:
         m_step = step;
     }
 
-    void setShouldFail(bool shouldFail)
-    {
-        m_shouldFail = shouldFail;
-    }
+    void setShouldFail(bool shouldFail) { m_shouldFail = shouldFail; }
 
     void testAllSizes()
     {
         ASSERT_TRUE(m_step != 0);
 
-        forEachSize([this] (const QSize& size) { return testWithExactFrame(size); });
+        forEachSize(
+            [this](const QSize& size)
+            {
+                return testWithExactFrame(size);
+            });
     }
 
     void testWithExactFrame(const QSize& frameSize)
     {
         givenFrame(frameSize);
 
-        forEachSize([this] (const QSize& size)
+        forEachSize(
+            [this](const QSize& size)
             {
                 if (m_shouldFail)
                     thenScalingFailed(size);
@@ -97,7 +97,7 @@ private:
             });
     }
 
-    template <typename F>
+    template<typename F>
     void forEachSize(F f)
     {
         for (int i = m_startSize.width(); i <= m_endSize.width(); i += m_step)

@@ -44,8 +44,12 @@ public:
 
     aio::AioThreadWatcher::StuckThread waitForStuckThread()
     {
-       m_pollable->post([this](){ m_unstick.pop(); });
-       return m_newlyStuckThreads.pop();
+        m_pollable->post(
+            [this]()
+            {
+                m_unstick.pop();
+            });
+        return m_newlyStuckThreads.pop();
     }
 
 protected:
@@ -79,13 +83,10 @@ TEST_F(AioThreadWatcher, detectStuckThreads_always_returns_stuck_threads)
 
 class AioServiceStatistics: public ::testing::Test
 {
-
 public:
     AioServiceStatistics()
     {
-        NX_ASSERT(m_aioService.initialize(
-            m_aioThreadPoolSize,
-            true /*enableAioThreadWatcher*/));
+        NX_ASSERT(m_aioService.initialize(m_aioThreadPoolSize, true /*enableAioThreadWatcher*/));
 
         m_aioService.aioThreadWatcher()->setAbsoluteThreshold(std::chrono::milliseconds(10));
 
@@ -106,7 +107,11 @@ public:
     AioStatistics getStatisticsWithAllThreadsStuck()
     {
         for (auto& pollable: m_pollables)
-            pollable.post([this](){ m_unstick.pop(); });
+            pollable.post(
+                [this]()
+                {
+                    m_unstick.pop();
+                });
 
         auto statistics = m_aioService.statistics();
         while (statistics.stuckThreadData->count != (int) m_pollables.size())

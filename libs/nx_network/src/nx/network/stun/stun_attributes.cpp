@@ -4,9 +4,9 @@
 #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "stun_attributes.h"
-
 #include <nx/utils/log/log.h>
+
+#include "stun_attributes.h"
 
 namespace nx {
 namespace network {
@@ -61,7 +61,8 @@ nx::network::server::SerializerState AddressAttribute::serialize(
     if (buffer->WriteByte(0) == nullptr)
         return nx::network::server::SerializerState::needMoreBufferSpace;
 
-    const uint8_t addressFamily = m_endpoint.address.ipV4() ? kAddressFamilyIpV4 : kAddressFamilyIpV6;
+    const uint8_t addressFamily =
+        m_endpoint.address.ipV4() ? kAddressFamilyIpV4 : kAddressFamilyIpV6;
     if (buffer->WriteByte(addressFamily) == nullptr)
         return nx::network::server::SerializerState::needMoreBufferSpace;
 
@@ -75,7 +76,8 @@ nx::network::server::SerializerState AddressAttribute::serialize(
     }
     else if (const auto ipv6Address = m_endpoint.address.ipV6().first)
     {
-        if (buffer->WriteBytes(reinterpret_cast<const char*>(&ipv6Address->s6_addr), 16) == nullptr)
+        if (buffer->WriteBytes(reinterpret_cast<const char*>(&ipv6Address->s6_addr), 16)
+            == nullptr)
             return nx::network::server::SerializerState::needMoreBufferSpace;
     }
 
@@ -179,7 +181,8 @@ AlternateServer::AlternateServer(SocketAddress endpoint):
 //-------------------------------------------------------------------------------------------------
 // class XorMappedAddress
 
-static_assert(sizeof(in6_addr().s6_addr) == sizeof(XorMappedAddress().address.ipv6.words),
+static_assert(
+    sizeof(in6_addr().s6_addr) == sizeof(XorMappedAddress().address.ipv6.words),
     "XorMappedAddress().address.ipv6 type is wrong");
 
 XorMappedAddress::XorMappedAddress(int port_, uint32_t ipv4_):
@@ -207,7 +210,9 @@ XorMappedAddress::XorMappedAddress(const SocketAddress& addr)
     else if (addr.address.ipV6().first)
     {
         family = kAddressFamilyIpV6;
-        memcpy(address.ipv6.words, addr.address.ipV6().first->s6_addr,
+        memcpy(
+            address.ipv6.words,
+            addr.address.ipV6().first->s6_addr,
             sizeof(addr.address.ipV6().first->s6_addr));
     }
 }
@@ -237,8 +242,8 @@ SocketAddress XorMappedAddress::addr() const
 //-------------------------------------------------------------------------------------------------
 // class BufferedValue
 
-BufferedValue::BufferedValue(nx::Buffer buffer_)
-    : m_buffer(std::move(buffer_))
+BufferedValue::BufferedValue(nx::Buffer buffer_):
+    m_buffer(std::move(buffer_))
 {
 }
 
@@ -280,7 +285,6 @@ FingerPrint::FingerPrint(uint32_t crc32_):
 {
 }
 
-
 MessageIntegrity::MessageIntegrity(nx::Buffer hmac):
     BufferedValue(std::move(hmac))
 {
@@ -297,7 +301,6 @@ Unknown::Unknown(int userType_, nx::Buffer value):
 {
 }
 
-
 //-------------------------------------------------------------------------------------------------
 // IntAttribute
 
@@ -305,10 +308,9 @@ IntAttribute::IntAttribute(int userType, int value):
     Unknown(userType)
 {
     const int valueInNetworkByteOrder = htonl(value);
-    setBuffer(
-        Buffer(
-            reinterpret_cast<const char*>(&valueInNetworkByteOrder),
-            sizeof(valueInNetworkByteOrder)));
+    setBuffer(Buffer(
+        reinterpret_cast<const char*>(&valueInNetworkByteOrder),
+        sizeof(valueInNetworkByteOrder)));
 }
 
 int IntAttribute::value() const
@@ -318,10 +320,7 @@ int IntAttribute::value() const
     if (buf.size() != sizeof(valueInNetworkByteOrder))
         return 0;
 
-    memcpy(
-        &valueInNetworkByteOrder,
-        buf.data(),
-        sizeof(valueInNetworkByteOrder));
+    memcpy(&valueInNetworkByteOrder, buf.data(), sizeof(valueInNetworkByteOrder));
     return ntohl(valueInNetworkByteOrder);
 }
 
@@ -332,10 +331,9 @@ Int64Attribute::Int64Attribute(int userType, std::int64_t value):
     Unknown(userType)
 {
     const std::int64_t valueInNetworkByteOrder = htonll(value);
-    setBuffer(
-        Buffer(
-            reinterpret_cast<const char*>(&valueInNetworkByteOrder),
-            sizeof(valueInNetworkByteOrder)));
+    setBuffer(Buffer(
+        reinterpret_cast<const char*>(&valueInNetworkByteOrder),
+        sizeof(valueInNetworkByteOrder)));
 }
 
 std::int64_t Int64Attribute::value() const
@@ -345,10 +343,7 @@ std::int64_t Int64Attribute::value() const
     if (buf.size() != sizeof(valueInNetworkByteOrder))
         return 0;
 
-    memcpy(
-        &valueInNetworkByteOrder,
-        buf.data(),
-        sizeof(valueInNetworkByteOrder));
+    memcpy(&valueInNetworkByteOrder, buf.data(), sizeof(valueInNetworkByteOrder));
 
     return ntohll(valueInNetworkByteOrder);
 }
@@ -376,7 +371,7 @@ RequestedTransport::RequestedTransport(Transport transport):
     Unknown(TYPE)
 {
     constexpr int kRequestedTransportValueSize = 4;
-    char value[] = {(char)transport, 0, 0, 0};
+    char value[] = {(char) transport, 0, 0, 0};
     setBuffer({value, kRequestedTransportValueSize});
 }
 

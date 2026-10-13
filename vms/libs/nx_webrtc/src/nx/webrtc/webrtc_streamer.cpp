@@ -3,18 +3,18 @@
 #include "webrtc_streamer.h"
 
 #include <core/resource/camera_resource.h>
+#include <nx/metric/metrics_storage.h>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-
-#include <nx/metric/metrics_storage.h>
 
 #include "webrtc_session.h"
 #include "webrtc_session_pool.h"
 
 namespace nx::webrtc {
 
-Streamer::Streamer(Session* session): m_session(session)
+Streamer::Streamer(Session* session):
+    m_session(session)
 {
 }
 
@@ -102,8 +102,7 @@ static nx::vms::api::StreamIndex parseStreamIndex(const rapidjson::Value& obj)
         return nx::vms::api::StreamIndex::primary;
 
     const auto& v = it->value;
-    if ((v.IsString() && std::string{ v.GetString() } == "1")
-        || (v.IsInt() && v.GetInt() == 1)
+    if ((v.IsString() && std::string{v.GetString()} == "1") || (v.IsInt() && v.GetInt() == 1)
         || (v.IsInt64() && v.GetInt64() == 1))
     {
         return nx::vms::api::StreamIndex::secondary;
@@ -141,11 +140,7 @@ void Streamer::onDataChannelString(const std::string& data, int /*streamId*/)
 
         try
         {
-            m_session->createProvider(
-                deviceId,
-                positionMs,
-                newStream,
-                std::nullopt /*speedOpt*/);
+            m_session->createProvider(deviceId, positionMs, newStream, std::nullopt /*speedOpt*/);
         }
         catch (const std::exception& e)
         {
@@ -249,7 +244,8 @@ Ice* Streamer::ice()
 
 void Streamer::sendTimestamp(int64_t timestampUs, uint32_t rtpTimestamp)
 {
-    // TODO: this function doesn't support multi camera streaming properly. It is needed to refactor it.
+    // TODO: this function doesn't support multi camera streaming properly. It is needed to
+    // refactor it.
     rapidjson::Document message(rapidjson::kObjectType);
     message.AddMember("timestampMs", (int64_t) timestampUs / 1000, message.GetAllocator());
     message.AddMember("rtpTimestamp", rtpTimestamp, message.GetAllocator());
@@ -261,18 +257,14 @@ void Streamer::sendTimestamp(int64_t timestampUs, uint32_t rtpTimestamp)
     ice()->writeDataChannelString(data);
 }
 
-void Streamer::handleStreamStatus(
-    nx::Uuid deviceId,
-    Consumer::StreamStatus result)
+void Streamer::handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus result)
 {
     auto provider = m_session->provider(deviceId);
     if (!provider)
         return;
 
     rapidjson::Document message(rapidjson::kObjectType);
-    auto positionMs = provider->isLiveMode()
-        ? -1.0
-        : provider->getPosition() / 1000;
+    auto positionMs = provider->isLiveMode() ? -1.0 : provider->getPosition() / 1000;
 
     if (result == Consumer::StreamStatus::reconnect) //< If reconnect send timestamp to reconnect.
         positionMs = m_session->muxer()->getLastTimestampMs();
@@ -281,10 +273,7 @@ void Streamer::handleStreamStatus(
         "deviceId",
         provider->resource()->getId().toSimpleStdString(),
         message.GetAllocator());
-    message.AddMember(
-        "timestampMs",
-        positionMs,
-        message.GetAllocator());
+    message.AddMember("timestampMs", positionMs, message.GetAllocator());
     message.AddMember("status", result, message.GetAllocator());
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);

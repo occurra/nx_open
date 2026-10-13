@@ -31,7 +31,7 @@ QString toString(StreamEvent value)
     }
 }
 
-bool StreamEventPacket::operator== (const StreamEventPacket& right) const
+bool StreamEventPacket::operator==(const StreamEventPacket& right) const
 {
     return code == right.code && extraData == right.extraData;
 }
@@ -55,8 +55,7 @@ bool deserialize(const QByteArray& data, StreamEventPacket* outValue)
 
     const int delimiterPos = data.indexOf(';');
     QByteArray eventType = delimiterPos == -1 ? data : data.left(delimiterPos);
-    outValue->code = nx::reflect::fromString<nx::media::StreamEvent>(
-        eventType.toStdString());
+    outValue->code = nx::reflect::fromString<nx::media::StreamEvent>(eventType.toStdString());
     outValue->extraData = delimiterPos == -1 ? QByteArray() : data.mid(delimiterPos + 1);
 
     return true;

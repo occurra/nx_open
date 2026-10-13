@@ -11,7 +11,7 @@
 class NX_MEDIA_CORE_API QnCompressedAudioData: public QnAbstractMediaData
 {
 public:
-    //QnCodecAudioFormat format;
+    // QnCodecAudioFormat format;
     quint64 duration;
 
     QnCompressedAudioData(const CodecParametersConstPtr& ctx);
@@ -22,8 +22,7 @@ public:
 typedef std::shared_ptr<QnCompressedAudioData> QnCompressedAudioDataPtr;
 typedef std::shared_ptr<const QnCompressedAudioData> QnConstCompressedAudioDataPtr;
 
-
-//!Stores video data buffer using \a nx::utils::ByteArray
+//! Stores video data buffer using \a nx::utils::ByteArray
 class NX_MEDIA_CORE_API QnWritableCompressedAudioData: public QnCompressedAudioData
 {
 public:
@@ -32,11 +31,11 @@ public:
     /** Default FFMpeg alignment and padding are used. */
     QnWritableCompressedAudioData(size_t capacity = 0, CodecParametersConstPtr ctx = {});
 
-    //!Implementation of QnAbstractMediaData::clone
+    //! Implementation of QnAbstractMediaData::clone
     virtual QnWritableCompressedAudioData* clone() const override;
-    //!Implementation of QnAbstractMediaData::data
+    //! Implementation of QnAbstractMediaData::data
     virtual const char* data() const override;
-    //!Implementation of QnAbstractMediaData::dataSize
+    //! Implementation of QnAbstractMediaData::dataSize
     virtual size_t dataSize() const override;
 
     virtual void setData(nx::utils::ByteArray&& buffer) override;

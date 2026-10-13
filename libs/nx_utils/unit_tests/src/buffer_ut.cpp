@@ -73,36 +73,44 @@ TEST(Buffer, resize)
 TEST(Buffer, swap)
 {
     auto testData = std::make_tuple(QByteArray(100, 'x'), std::string(100, 'x'), "Hello");
-    const auto swap =
-        [](const auto& data)
+    const auto swap = [](const auto& data)
+    {
+        nx::Buffer one(data);
+        nx::Buffer two("raz, raz");
+
+        one.swap(two);
+
+        ASSERT_EQ(data, two);
+        ASSERT_EQ("raz, raz", one);
+    };
+
+    std::apply(
+        [swap](const auto&... data)
         {
-            nx::Buffer one(data);
-            nx::Buffer two("raz, raz");
-
-            one.swap(two);
-
-            ASSERT_EQ(data, two);
-            ASSERT_EQ("raz, raz", one);
-        };
-
-    std::apply([swap](const auto&... data) { (swap(data), ...); }, testData);
+            (swap(data), ...);
+        },
+        testData);
 }
 
 TEST(Buffer, append)
 {
     auto testData = std::make_tuple(QByteArray(100, 'x'), std::string(100, 'x'), "Hello");
-    const auto append =
-        [](const auto& data)
-        {
-            nx::Buffer buf(data);
-            buf.append(", world");
+    const auto append = [](const auto& data)
+    {
+        nx::Buffer buf(data);
+        buf.append(", world");
 
-            if constexpr (std::is_same_v<std::remove_cv_t<decltype(data)>, QByteArray>)
-                ASSERT_EQ(data + ", world", buf);
-            else
-                ASSERT_EQ(std::string(data) + ", world", buf);
-        };
-    std::apply([append](const auto&... data) { (append(data), ...); }, testData);
+        if constexpr (std::is_same_v<std::remove_cv_t<decltype(data)>, QByteArray>)
+            ASSERT_EQ(data + ", world", buf);
+        else
+            ASSERT_EQ(std::string(data) + ", world", buf);
+    };
+    std::apply(
+        [append](const auto&... data)
+        {
+            (append(data), ...);
+        },
+        testData);
 }
 
 TEST(Buffer, find)

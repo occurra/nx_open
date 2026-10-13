@@ -24,20 +24,19 @@ static inline bool fuzzyIsNull(float f)
 static inline bool fuzzyEquals(double p1, double p2)
 {
     constexpr double kPrecision = 1'000'000'000'000.0;
-    return (fuzzyIsNull(p1) && fuzzyIsNull(p2)) ||
-        (std::fabs(p1 - p2) * kPrecision <= std::fmin(std::fabs(p1), std::fabs(p2)));
+    return (fuzzyIsNull(p1) && fuzzyIsNull(p2))
+        || (std::fabs(p1 - p2) * kPrecision <= std::fmin(std::fabs(p1), std::fabs(p2)));
 }
 
 static inline bool fuzzyEquals(float p1, float p2)
 {
     constexpr float kPrecision = 100'000.0f;
-    return (fuzzyIsNull(p1) && fuzzyIsNull(p2)) ||
-        (std::fabs(p1 - p2) * kPrecision <= std::fmin(std::fabs(p1), std::fabs(p2)));
+    return (fuzzyIsNull(p1) && fuzzyIsNull(p2))
+        || (std::fabs(p1 - p2) * kPrecision <= std::fmin(std::fabs(p1), std::fabs(p2)));
 }
 
 template<typename T>
-class EqualityEnumerator:
-    public nx::reflect::GenericVisitor<EqualityEnumerator<T>>
+class EqualityEnumerator: public nx::reflect::GenericVisitor<EqualityEnumerator<T>>
 {
 public:
     EqualityEnumerator(const T& left, const T& right):
@@ -59,10 +58,7 @@ public:
         }
     }
 
-    bool finish()
-    {
-        return m_equals;
-    }
+    bool finish() { return m_equals; }
 
 private:
     const T& m_left;

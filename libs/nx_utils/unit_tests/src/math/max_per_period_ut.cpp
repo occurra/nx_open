@@ -1,8 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <thread>
+
+#include <gtest/gtest.h>
 
 #include <nx/utils/math/max_per_period.h>
 
@@ -17,15 +17,13 @@ public:
     }
 
 protected:
-    void whenAddValuesEvenlyWithinPeriod(
-        std::vector<int> values,
-        std::chrono::milliseconds period)
+    void whenAddValuesEvenlyWithinPeriod(std::vector<int> values, std::chrono::milliseconds period)
     {
         const auto timePerValue = period / (int) values.size();
 
         initializeMaxPerPeriod(period);
 
-        for(std::size_t i = 0; i < values.size(); ++i)
+        for (std::size_t i = 0; i < values.size(); ++i)
         {
             m_timeShift.applyRelativeShift(timePerValue / 2);
 
@@ -60,9 +58,7 @@ private:
 
 TEST_F(MaxPerPeriod, gets_max_of_all_values_within_the_period)
 {
-    whenAddValuesEvenlyWithinPeriod(
-        {600, 500, 400, 300, 200, 100},
-        std::chrono::milliseconds(10));
+    whenAddValuesEvenlyWithinPeriod({600, 500, 400, 300, 200, 100}, std::chrono::milliseconds(10));
 
     thenMaxValueIs(600);
 }
@@ -80,9 +76,7 @@ TEST_F(MaxPerPeriod, gets_max_after_some_values_expire)
 
 TEST_F(MaxPerPeriod, zero_max_after_all_values_expire)
 {
-    whenAddValuesEvenlyWithinPeriod(
-        {600, 500, 400, 300, 200, 100},
-        std::chrono::milliseconds(10));
+    whenAddValuesEvenlyWithinPeriod({600, 500, 400, 300, 200, 100}, std::chrono::milliseconds(10));
 
     whenSomeTimePasses(std::chrono::milliseconds(11));
 

@@ -26,14 +26,13 @@ class WritableMessageBody;
 
 namespace deprecated {
 
-using AsyncMessagePipeline =
-    nx::network::server::StreamProtocolConnection<
-        nx::network::http::Message,
-        nx::network::http::deprecated::MessageParser,
-        nx::network::http::MessageSerializer>;
+using AsyncMessagePipeline = nx::network::server::StreamProtocolConnection<
+    nx::network::http::Message,
+    nx::network::http::deprecated::MessageParser,
+    nx::network::http::MessageSerializer>;
 
-template<typename ConnectionType> using BaseConnection =
-nx::network::server::BaseStreamProtocolConnection<
+template<typename ConnectionType>
+using BaseConnection = nx::network::server::BaseStreamProtocolConnection<
     ConnectionType,
     nx::network::http::Message,
     nx::network::http::deprecated::MessageParser,
@@ -44,12 +43,12 @@ nx::network::server::BaseStreamProtocolConnection<
 class NX_NETWORK_API HttpServerConnection;
 class AbstractMessageDispatcher;
 
-template<typename ConnectionType> using BaseConnection =
-    nx::network::server::BaseStreamProtocolConnection<
-        ConnectionType,
-        nx::network::http::Message,
-        nx::network::http::MessageParser,
-        nx::network::http::MessageSerializer>;
+template<typename ConnectionType>
+using BaseConnection = nx::network::server::BaseStreamProtocolConnection<
+    ConnectionType,
+    nx::network::http::Message,
+    nx::network::http::MessageParser,
+    nx::network::http::MessageSerializer>;
 
 //-------------------------------------------------------------------------------------------------
 
@@ -66,9 +65,8 @@ class NX_NETWORK_API HttpServerConnection:
     using base_type = BaseConnection<HttpServerConnection>;
 
 public:
-    using OnResponseSentHandler = nx::MoveOnlyFunc<void(
-        std::chrono::microseconds /*requestProcessingTime*/,
-        StatusCode::Value)>;
+    using OnResponseSentHandler = nx::MoveOnlyFunc<
+        void(std::chrono::microseconds /*requestProcessingTime*/, StatusCode::Value)>;
 
     HttpServerConnection(
         std::unique_ptr<AbstractStreamSocket> sock,
@@ -116,8 +114,7 @@ public:
      * Establishes two-way bridge between underlying connection and `targetConnection`.
      * I.e., data received from either connection is forwarded to another one.
      */
-    void startConnectionBridging(
-        std::unique_ptr<AbstractCommunicatingSocket> targetConnection);
+    void startConnectionBridging(std::unique_ptr<AbstractCommunicatingSocket> targetConnection);
 
     /**
      * @return The number of requests being processed currently.
@@ -171,8 +168,7 @@ private:
             nx::network::http::Message msg,
             std::unique_ptr<nx::network::http::AbstractMsgBodySource> msgBody,
             ConnectionEvents connectionEvents,
-            time_point requestReceivedTime)
-            :
+            time_point requestReceivedTime):
             requestLine(std::move(requestLine)),
             msg(std::move(msg)),
             msgBody(std::move(msgBody)),
@@ -195,7 +191,8 @@ private:
     // X-Forwarded-For headers.
     std::optional<SocketAddress> m_clientEndpoint;
     std::atomic<std::int64_t> m_lastRequestSequence{0};
-    std::map<std::int64_t /*sequence*/, std::unique_ptr<ResponseMessageContext>> m_requestsBeingProcessed;
+    std::map<std::int64_t /*sequence*/, std::unique_ptr<ResponseMessageContext>>
+        m_requestsBeingProcessed;
     OnResponseSentHandler m_responseSentHandler;
     std::shared_ptr<MessageBodyWriter> m_currentRequestBodyWriter;
     int m_closeHandlerSubscriptionId = -1;

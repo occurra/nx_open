@@ -44,7 +44,7 @@ class NX_VMS_COMMON_API QnRtspIoDevice
 public:
     struct AddressInfo
     {
-        nx::vms::api::RtpTransportType transport{ nx::vms::api::RtpTransportType::automatic };
+        nx::vms::api::RtpTransportType transport{nx::vms::api::RtpTransportType::automatic};
         nx::network::SocketAddress address;
     };
 
@@ -56,19 +56,22 @@ public:
         quint16 rtcpPort = 0);
 
     virtual ~QnRtspIoDevice();
-    virtual qint64 read(char * data, qint64 maxSize );
+    virtual qint64 read(char* data, qint64 maxSize);
     const nx::rtp::RtcpSenderReport& getSenderReport() { return m_senderReport; }
     void setSenderReport(const nx::rtp::RtcpSenderReport& value) { m_senderReport = value; }
     nx::network::AbstractCommunicatingSocket* getMediaSocket();
     nx::streaming::rtsp::UdpSocketPair& getUdpSockets() { return m_udpSockets; }
     void shutdown();
     bool setTransport(nx::vms::api::RtpTransportType rtpTransport);
-    void setSSRC(quint32 value) {ssrc = value; }
+    void setSSRC(quint32 value) { ssrc = value; }
     quint32 getSSRC() const { return ssrc; }
 
     bool updateRemotePorts(quint16 mediaPort, quint16 rtcpPort);
-    void setHostAddress(const nx::network::HostAddress& hostAddress) {m_hostAddress = hostAddress;};
-    void setForceRtcpReports(bool force) {m_forceRtcpReports = force;};
+    void setHostAddress(const nx::network::HostAddress& hostAddress)
+    {
+        m_hostAddress = hostAddress;
+    };
+    void setForceRtcpReports(bool force) { m_forceRtcpReports = force; };
 
     void bindToMulticastAddress(const QHostAddress& address, const nx::String& interfaceAddress);
     void sendDummy();
@@ -150,16 +153,16 @@ public:
             const nx::rtp::Sdp::Media& sdpMedia,
             QnRtspClient* owner,
             nx::vms::api::RtpTransportType transport,
-            int serverPort)
-            :
+            int serverPort):
             sdpMedia(sdpMedia)
         {
             ioDevice = std::make_shared<QnRtspIoDevice>(owner, transport, serverPort);
-            ioDevice->setHostAddress(nx::network::HostAddress(owner->getUrl().host().toStdString()));
+            ioDevice->setHostAddress(
+                nx::network::HostAddress(owner->getUrl().host().toStdString()));
         }
         bool setupSuccess = false;
         nx::rtp::Sdp::Media sdpMedia;
-        QPair<int, int> interleaved{ -1, -1 };
+        QPair<int, int> interleaved{-1, -1};
         std::shared_ptr<QnRtspIoDevice> ioDevice;
     };
     QnRtspClient(const Config& config);
@@ -201,15 +204,16 @@ public:
     void setTcpRecvBufferSize(int value);
     int tcpRecvBufferSize() const { return m_tcpRecvBufferSize; }
 
-    // returns \a CameraDiagnostics::ErrorCode::noError if stream was opened, error code - otherwise
+    // returns \a CameraDiagnostics::ErrorCode::noError if stream was opened, error code -
+    // otherwise
     CameraDiagnostics::Result open(const nx::Url& url, qint64 startTime = AV_NOPTS_VALUE);
 
     /*
-    * Start playing RTSP session.
-    * @param positionStart start position at usec
-    * @param positionEnd end position at usec
-    * @param scale playback speed
-    */
+     * Start playing RTSP session.
+     * @param positionStart start position at usec
+     * @param positionEnd end position at usec
+     * @param scale playback speed
+     */
     bool play(qint64 positionStart, qint64 positionEnd, double scale);
 
     // returns true if there is no error delivering STOP
@@ -250,7 +254,7 @@ public:
     bool sendSetParameter(const QByteArray& paramName, const QByteArray& paramValue);
     bool sendTeardown();
 
-    int lastSendedCSeq() const { return m_csec-1; }
+    int lastSendedCSeq() const { return m_csec - 1; }
 
     void setAdditionAttribute(const QByteArray& name, const QByteArray& value);
     void removeAdditionAttribute(const QByteArray& name);
@@ -261,17 +265,19 @@ public:
     void parseRangeHeader(const QString& rangeStr);
 
     /*
-    * Client will use any AuthScheme corresponding to server requirements (authenticate server request)
-    * defaultAuthScheme is used for first client request only
-    */
+     * Client will use any AuthScheme corresponding to server requirements (authenticate server
+     * request) defaultAuthScheme is used for first client request only
+     */
     void setUsernameAndPassword(
         const QString& username,
         const QString& password,
         nx::network::http::header::AuthScheme::Value defaultAuthScheme =
             nx::network::http::header::AuthScheme::basic);
 
-    void setCredentials(const nx::network::http::Credentials& credentials,
-        nx::network::http::header::AuthScheme::Value defaultAuthScheme = nx::network::http::header::AuthScheme::none);
+    void setCredentials(
+        const nx::network::http::Credentials& credentials,
+        nx::network::http::header::AuthScheme::Value defaultAuthScheme =
+            nx::network::http::header::AuthScheme::none);
 
     const nx::network::http::Credentials& getCredentials() const;
 
@@ -289,25 +295,29 @@ public:
     bool isMediaTypeEnabled(nx::rtp::Sdp::MediaType mediaType) const;
 
     /*
-    * Demux RTSP binary data
-    * @param data Buffer to write demuxed data. 4 byte RTSP header keep in buffer
-    * @param maxDataSize maximum buffer size
-    * @return amount of read bytes
-    */
-    int readBinaryResponse(quint8 *data, int maxDataSize);
+     * Demux RTSP binary data
+     * @param data Buffer to write demuxed data. 4 byte RTSP header keep in buffer
+     * @param maxDataSize maximum buffer size
+     * @return amount of read bytes
+     */
+    int readBinaryResponse(quint8* data, int maxDataSize);
 
     /*
-    * Demux RTSP binary data.
-    * @param demuxedData vector of buffers where stored demuxed data. Buffer number determined by RTSP channel number. 4 byte RTSP header are not stored in buffer
-    * @param channelNumber buffer number
-    * @return amount of read bytes
-    */
+     * Demux RTSP binary data.
+     * @param demuxedData vector of buffers where stored demuxed data. Buffer number determined by
+     * RTSP channel number. 4 byte RTSP header are not stored in buffer
+     * @param channelNumber buffer number
+     * @return amount of read bytes
+     */
     int readBinaryResponse(std::vector<nx::utils::ByteArray*>& demuxedData, int& channelNumber);
 
     void sendBinaryResponse(const quint8* buffer, int size);
     void setPlayNowModeAllowed(bool value);
     bool isPlayNowMode() const;
-    static quint8* prepareDemuxedData(std::vector<nx::utils::ByteArray*>& demuxedData, int channel, int reserve);
+    static quint8* prepareDemuxedData(
+        std::vector<nx::utils::ByteArray*>& demuxedData,
+        int channel,
+        int reserve);
 
     QString getVideoLayout() const;
     nx::network::AbstractStreamSocket* tcpSock(); //< This method need for UT. do not delete
@@ -329,8 +339,8 @@ public:
     QString sessionId() const { return m_SessionId; }
 
     /*
-    * Some cameras declare qop support in digest authentication, but actually don't support it.
-    */
+     * Some cameras declare qop support in digest authentication, but actually don't support it.
+     */
     void setIgnoreQopInDigest(bool value);
     bool ignoreQopInDigest() const;
 
@@ -343,34 +353,39 @@ public:
     std::chrono::milliseconds connectionTimeout() const;
 
 private:
-    void addRangeHeader( nx::network::http::Request* const request, qint64 startPos, qint64 endPos );
+    void addRangeHeader(nx::network::http::Request* const request, qint64 startPos, qint64 endPos);
     nx::network::http::Request createDescribeRequest();
     CameraDiagnostics::Result sendOptions();
     CameraDiagnostics::Result sendDescribe();
     bool sendKeepAlive();
 
-    bool readTextResponse(QByteArray &response);
+    bool readTextResponse(QByteArray& response);
     void fillRequestAuthorization(nx::network::http::Request* request);
     void fillRequestAuthorizationByResponseAuthenticate(nx::network::http::Request* request);
 
-    void updateTransportHeader(QByteArray &response);
+    void updateTransportHeader(QByteArray& response);
 
     bool parseSDP(const QByteArray& response);
 
-    void addAdditionAttrs( nx::network::http::Request* const request );
+    void addAdditionAttrs(nx::network::http::Request* const request);
     void processTextData(const QByteArray& textData);
     static std::string getGuid();
     void registerRTPChannel(int rtpNum, int rtcpNum, int trackIndex);
-    nx::network::http::Request createPlayRequest( qint64 startPos, qint64 endPos );
+    nx::network::http::Request createPlayRequest(qint64 startPos, qint64 endPos);
     bool sendRequestInternal(nx::network::http::Request&& request);
     void addCommonHeaders(nx::network::http::HttpHeaders& headers);
-    void addAdditionalHeaders(const QString& requestName, nx::network::http::HttpHeaders* outHeaders);
+    void addAdditionalHeaders(
+        const QString& requestName,
+        nx::network::http::HttpHeaders* outHeaders);
     QString parseContentBase(const QString& buffer);
     void setTcpSocket(std::unique_ptr<nx::network::AbstractStreamSocket> socket);
     CameraDiagnostics::Result parseErrorResponse(const nx::network::rtsp::RtspResponse& response);
 
 private:
-    enum { RTSP_BUFFER_LEN = 1024 * 65 };
+    enum
+    {
+        RTSP_BUFFER_LEN = 1024 * 65
+    };
 
     Config m_config;
 
@@ -421,7 +436,8 @@ private:
     QString m_videoLayout;
 
     bool m_isProxyAuthorizationRequired = false;
-    std::optional<nx::network::http::header::WWWAuthenticate> m_responseAuthenticate = std::nullopt;
+    std::optional<nx::network::http::header::WWWAuthenticate> m_responseAuthenticate =
+        std::nullopt;
     nx::String m_userAgent;
     nx::network::http::header::AuthScheme::Value m_defaultAuthScheme;
     mutable nx::Mutex m_socketMutex;
@@ -441,14 +457,18 @@ private:
     Format m_format = Format::RTP;
 
     /*!
-        \param readSome if \a true, returns as soon as some data has been read. Otherwise, blocks till all \a bufSize bytes has been read
+        \param readSome if \a true, returns as soon as some data has been read. Otherwise, blocks
+       till all \a bufSize bytes has been read
     */
-    int readSocketWithBuffering( quint8* buf, size_t bufSize, bool readSome );
+    int readSocketWithBuffering(quint8* buf, size_t bufSize, bool readSome);
 
-    //!Sends request and waits for response. If request requires authentication, re-tries request with credentials
+    //! Sends request and waits for response. If request requires authentication, re-tries request
+    //! with credentials
     /*!
         Updates \a m_responseCode member.
         \return error description
     */
-    CameraDiagnostics::Result sendRequestAndReceiveResponse(nx::network::http::Request&& request, QByteArray& response);
+    CameraDiagnostics::Result sendRequestAndReceiveResponse(
+        nx::network::http::Request&& request,
+        QByteArray& response);
 };

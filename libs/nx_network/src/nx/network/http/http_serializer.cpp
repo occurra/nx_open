@@ -21,6 +21,6 @@ nx::network::server::SerializerState MessageSerializer::serialize(
     return nx::network::server::SerializerState::done;
 }
 
-} // namespace nx
-} // namespace network
 } // namespace http
+} // namespace network
+} // namespace nx

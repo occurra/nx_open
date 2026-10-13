@@ -8,11 +8,7 @@
 
 namespace nx::utils {
 
-namespace {
-
-static const QList<QChar> kAllowedDelimiters{'-', ':'};
-
-} // namespace
+namespace { static const QList<QChar> kAllowedDelimiters{'-', ':'}; } // namespace
 
 MacAddress::MacAddress(const Data& bytes)
 {
@@ -44,14 +40,17 @@ MacAddress::MacAddress(QStringView mac)
     {
         QChar delimiter;
 
-        static const QList<int> kDelimiterIndices{2,5,8,11,14};
+        static const QList<int> kDelimiterIndices{2, 5, 8, 11, 14};
 
         // Check variant with delimiters. Only '-' or ':' are allowed.
         for (const QChar& c: kAllowedDelimiters)
         {
             if (std::ranges::all_of(
-                kDelimiterIndices,
-                [mac, c](int index) { return mac[index] == c; }))
+                    kDelimiterIndices,
+                    [mac, c](int index)
+                    {
+                        return mac[index] == c;
+                    }))
             {
                 delimiter = c;
                 break;
@@ -114,7 +113,12 @@ MacAddress MacAddress::random()
 
 bool MacAddress::isNull() const
 {
-    return std::ranges::all_of(m_data, [](auto byte) { return byte == 0; });
+    return std::ranges::all_of(
+        m_data,
+        [](auto byte)
+        {
+            return byte == 0;
+        });
 }
 
 const std::array<quint8, MacAddress::kMacAddressLength>& MacAddress::bytes() const
@@ -131,7 +135,7 @@ QString MacAddress::toString() const
         std::back_inserter(bytes),
         [](auto byte)
         {
-            return QString("%1").arg((uint)byte, 2, 16, QChar('0')).toUpper();
+            return QString("%1").arg((uint) byte, 2, 16, QChar('0')).toUpper();
         });
     return bytes.join(kAllowedDelimiters[0]);
 }

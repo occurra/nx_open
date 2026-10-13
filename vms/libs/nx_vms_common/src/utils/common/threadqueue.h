@@ -14,21 +14,18 @@
 
 static constexpr qint32 kDefaultMaxThreadQueueSize = 256;
 
-template <typename T>
+template<typename T>
 class QnSafeQueue
 {
 public:
-    template <class Q = QnSafeQueue>
+    template<class Q = QnSafeQueue>
     class RandomAccess
     {
     public:
         RandomAccess(const RandomAccess<Q>&) = delete;
         RandomAccess<Q>& operator=(const RandomAccess<Q>&) = delete;
 
-        RandomAccess(RandomAccess<Q>&& other) noexcept
-        {
-            m_q = std::exchange(other.m_q, nullptr);
-        }
+        RandomAccess(RandomAccess<Q>&& other) noexcept { m_q = std::exchange(other.m_q, nullptr); }
         RandomAccess<Q>& operator=(RandomAccess<Q>&& other) noexcept
         {
             m_q = std::exchange(other.m_q, nullptr);
@@ -42,25 +39,13 @@ public:
         }
 
         // Returns T() in case of invalid index.
-        const T& at(int index) const
-        {
-            return m_q->atUnsafe(index);
-        }
+        const T& at(int index) const { return m_q->atUnsafe(index); }
 
-        bool setAt(const T& value, int i)
-        {
-            return m_q->setAtUnsafe(value, i);
-        }
+        bool setAt(const T& value, int i) { return m_q->setAtUnsafe(value, i); }
 
-        bool removeAt(int index)
-        {
-            return m_q->removeAtUnsafe(index);
-        }
+        bool removeAt(int index) { return m_q->removeAtUnsafe(index); }
 
-        void pack()
-        {
-            m_q->packUnsafe();
-        }
+        void pack() { m_q->packUnsafe(); }
 
         bool popFront()
         {
@@ -74,28 +59,17 @@ public:
             return true;
         }
 
-        const T& front() const
-        {
-            return at(0);
-        }
+        const T& front() const { return at(0); }
 
-        const T& last() const
-        {
-            return at(size() - 1);
-        }
+        const T& last() const { return at(size() - 1); }
 
-        int size() const
-        {
-            return m_q->size();
-        }
+        int size() const { return m_q->size(); }
 
-        void clear()
-        {
-            m_q->clearUnsafe();
-        }
+        void clear() { m_q->clearUnsafe(); }
 
     private:
-        explicit RandomAccess(Q* queue): m_q(queue)
+        explicit RandomAccess(Q* queue):
+            m_q(queue)
         {
             m_q->lockInternal();
         }
@@ -110,7 +84,8 @@ public:
      * @param maxSize Is not used by the implementation of this class, but rather intended to be
      *     checked by pushers via maxSize().
      */
-    explicit QnSafeQueue(quint32 maxSize = kDefaultMaxThreadQueueSize) : m_maxSize(maxSize)
+    explicit QnSafeQueue(quint32 maxSize = kDefaultMaxThreadQueueSize):
+        m_maxSize(maxSize)
     {
         reallocateBufferUnsafe(maxSize);
     }
@@ -120,15 +95,9 @@ public:
         return RandomAccess<const QnSafeQueue>(const_cast<QnSafeQueue*>(this));
     }
 
-    RandomAccess<QnSafeQueue> lock()
-    {
-        return RandomAccess<QnSafeQueue>(this);
-    }
+    RandomAccess<QnSafeQueue> lock() { return RandomAccess<QnSafeQueue>(this); }
 
-    bool isEmpty() const
-    {
-        return size() == 0;
-    }
+    bool isEmpty() const { return size() == 0; }
 
     template<typename ValueRef>
     bool push(ValueRef&& val)
@@ -137,8 +106,8 @@ public:
         if (m_terminated)
             return false;
 
-        if ((uint)m_bufferLen == m_buffer.size())
-            reallocateBufferUnsafe(qMax(m_bufferLen + 1, m_bufferLen + m_bufferLen/4));
+        if ((uint) m_bufferLen == m_buffer.size())
+            reallocateBufferUnsafe(qMax(m_bufferLen + 1, m_bufferLen + m_bufferLen / 4));
 
         const int index = (m_headIndex + m_bufferLen) % m_buffer.size();
         m_buffer[index] = std::forward<ValueRef>(val);
@@ -160,13 +129,13 @@ public:
 
         val = std::exchange(m_buffer[m_headIndex], T());
         m_headIndex++;
-        if ((uint)m_headIndex >= m_buffer.size())
+        if ((uint) m_headIndex >= m_buffer.size())
             m_headIndex = 0;
         m_bufferLen--;
         return true;
     }
 
-    template <class ConditionFunc>
+    template<class ConditionFunc>
     void detachDataByCondition(const ConditionFunc& cond, const QVariant& opaque = QVariant())
     {
         NX_MUTEX_LOCKER mutex(&m_mutex);
@@ -179,15 +148,9 @@ public:
         }
     }
 
-    int size() const
-    {
-        return m_bufferLen;
-    }
+    int size() const { return m_bufferLen; }
 
-    int maxSize() const
-    {
-        return m_maxSize;
-    }
+    int maxSize() const { return m_maxSize; }
 
     void setMaxSize(int value)
     {
@@ -215,20 +178,11 @@ public:
     }
 
 private:
-    void lockInternal() const
-    {
-        m_mutex.lock();
-    }
+    void lockInternal() const { m_mutex.lock(); }
 
-    void unlockInternal() const
-    {
-        m_mutex.unlock();
-    }
+    void unlockInternal() const { m_mutex.unlock(); }
 
-    bool isValidIndex(int index) const
-    {
-        return index >= 0 && index < size();
-    }
+    bool isValidIndex(int index) const { return index >= 0 && index < size(); }
 
     const T& atUnsafe(int i) const
     {
@@ -308,9 +262,9 @@ private:
             for (int i = 0; i < delta && i < tailIndex; ++i)
                 m_buffer[oldSize + i] = std::move(m_buffer[i]);
             int i = 0;
-            for (;i < tailIndex - delta; ++i)
+            for (; i < tailIndex - delta; ++i)
                 m_buffer[i] = std::move(m_buffer[i + delta]);
-            for (;i < tailIndex; ++i)
+            for (; i < tailIndex; ++i)
                 m_buffer[i] = T();
         }
     }
@@ -338,36 +292,32 @@ protected:
     bool m_terminated = false;
 };
 
-template <typename T>
+template<typename T>
 class QnUnsafeQueue
 {
 public:
-    QnUnsafeQueue( quint32 maxSize = kDefaultMaxThreadQueueSize)
-        : m_headIndex(0),
+    QnUnsafeQueue(quint32 maxSize = kDefaultMaxThreadQueueSize):
+        m_headIndex(0),
         m_bufferLen(0),
-        m_maxSize( maxSize )
+        m_maxSize(maxSize)
     {
         reallocateBuffer(maxSize);
     }
 
-    ~QnUnsafeQueue() {
-        clear();
-    }
+    ~QnUnsafeQueue() { clear(); }
 
-    bool isEmpty() const
-    {
-        return m_bufferLen == 0;
-    }
+    bool isEmpty() const { return m_bufferLen == 0; }
 
     bool push(const T& val)
     {
-        if ((uint)m_bufferLen == m_buffer.size())
-            reallocateBuffer(qMax(m_bufferLen + 1, m_bufferLen + m_bufferLen/4));
+        if ((uint) m_bufferLen == m_buffer.size())
+            reallocateBuffer(qMax(m_bufferLen + 1, m_bufferLen + m_bufferLen / 4));
 
-        // we can have 2 threads independently put data at the same queue; so we need to put data any way. client is responsible for max size of the queue
-        //if ( m_queue.size()>=m_maxSize )    return false; <- wrong approach
+        // we can have 2 threads independently put data at the same queue; so we need to put data
+        // any way. client is responsible for max size of the queue
+        // if ( m_queue.size()>=m_maxSize )    return false; <- wrong approach
 
-        //m_queue.enqueue(val);
+        // m_queue.enqueue(val);
         int index = (m_headIndex + m_bufferLen) % m_buffer.size();
         m_buffer[index] = val;
         m_bufferLen++;
@@ -375,10 +325,7 @@ public:
         return true;
     }
 
-    T front() const
-    {
-        return m_buffer[m_headIndex];
-    }
+    T front() const { return m_buffer[m_headIndex]; }
 
     const T& at(int i) const
     {
@@ -398,7 +345,7 @@ public:
         {
             val = std::move(m_buffer[m_headIndex]);
             m_headIndex++;
-            if ((uint)m_headIndex >= m_buffer.size())
+            if ((uint) m_headIndex >= m_buffer.size())
                 m_headIndex = 0;
             m_bufferLen--;
             return true;
@@ -406,7 +353,7 @@ public:
         return false;
     }
 
-    template <class ConditionFunc>
+    template<class ConditionFunc>
     void detachDataByCondition(const ConditionFunc& cond, QVariant opaque)
     {
         int index = m_headIndex;
@@ -418,15 +365,9 @@ public:
         }
     }
 
-    int size() const
-    {
-        return m_bufferLen;
-    }
+    int size() const { return m_bufferLen; }
 
-    int maxSize() const
-    {
-        return m_maxSize;
-    }
+    int maxSize() const { return m_maxSize; }
 
     void setMaxSize(int value)
     {
@@ -461,14 +402,14 @@ private:
             else
                 return; // no correction is needed
 
-            int delta = newSize-oldSize;
+            int delta = newSize - oldSize;
 
             for (int i = 0; i < delta && i < tailIndex; ++i)
                 m_buffer[oldSize + i] = m_buffer[i];
             int i = 0;
-            for (;i < tailIndex - delta; ++i)
-                m_buffer[i] = m_buffer[i+delta];
-            for (;i < tailIndex; ++i)
+            for (; i < tailIndex - delta; ++i)
+                m_buffer[i] = m_buffer[i + delta];
+            for (; i < tailIndex; ++i)
                 m_buffer[i] = T();
         }
     }

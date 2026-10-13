@@ -16,11 +16,19 @@ NX_CODEC_API const uint8_t* findNextNAL(const uint8_t* buffer, const uint8_t* en
 NX_CODEC_API const uint8_t* findNALWithStartCode(const uint8_t* buffer, const uint8_t* end);
 
 // Encodes to emulation prevention three byte
-NX_CODEC_API int encodeEpb(const uint8_t* srcBuffer, const uint8_t* srcEnd, uint8_t* dstBuffer, size_t dstBufferSize);
+NX_CODEC_API int encodeEpb(
+    const uint8_t* srcBuffer,
+    const uint8_t* srcEnd,
+    uint8_t* dstBuffer,
+    size_t dstBufferSize);
 
 // Decodes from Annex B (removes emulation_prevention_three_byte)
 // return Bytes written to \a dstBuffer
-NX_CODEC_API int decodeEpb(const uint8_t* srcBuffer, const uint8_t* srcEnd, uint8_t* dstBuffer, size_t dstBufferSize);
+NX_CODEC_API int decodeEpb(
+    const uint8_t* srcBuffer,
+    const uint8_t* srcEnd,
+    uint8_t* dstBuffer,
+    size_t dstBufferSize);
 
 struct NX_CODEC_API NalUnitInfo
 {
@@ -29,18 +37,20 @@ struct NX_CODEC_API NalUnitInfo
 };
 
 NX_CODEC_API std::vector<NalUnitInfo> findNalUnitsAnnexB(
-    const uint8_t* data, int32_t size,
+    const uint8_t* data,
+    int32_t size,
     bool droppedFirstStartcode = false,
     bool removeFinalTrailing = true);
 
-NX_CODEC_API std::vector<NalUnitInfo> findNalUnitsMp4(
-    const uint8_t* data, int32_t size);
+NX_CODEC_API std::vector<NalUnitInfo> findNalUnitsMp4(const uint8_t* data, int32_t size);
 
 NX_CODEC_API std::vector<uint8_t> convertStartCodesToSizes(
-    const uint8_t* data, int32_t size, int32_t padding = 0);
+    const uint8_t* data,
+    int32_t size,
+    int32_t padding = 0);
 
-static const std::array<uint8_t, 4> kStartCode = { 0, 0, 0, 1 };
-static const std::array<uint8_t, 3> kStartCode3B = { 0, 0, 1 };
+static const std::array<uint8_t, 4> kStartCode = {0, 0, 0, 1};
+static const std::array<uint8_t, 3> kStartCode3B = {0, 0, 1};
 
 static constexpr int kNalUnitSizeLength = 4;
 

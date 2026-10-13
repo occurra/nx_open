@@ -55,7 +55,8 @@ struct ApplicationContext::Private
     void initNetworking(const QString& customCloudHost)
     {
         SocketGlobals::init(/*initializationFlags*/ 0, customCloudHost.toStdString());
-        SocketGlobals::addressResolver().addFixedAddress("localhost",
+        SocketGlobals::addressResolver().addFixedAddress(
+            "localhost",
             SocketAddress::anyPrivateAddress);
 
         // Providing mediaserver-specific way of validating peer id.
@@ -64,8 +65,7 @@ struct ApplicationContext::Private
                 [](const std::string& connectSessionId)
                     -> std::unique_ptr<cloud::tcp::AbstractEndpointVerificator>
                 {
-                    return std::make_unique<CloudMediaServerEndpointVerificator>(
-                        connectSessionId);
+                    return std::make_unique<CloudMediaServerEndpointVerificator>(connectSessionId);
                 });
     }
 
@@ -73,7 +73,8 @@ struct ApplicationContext::Private
     {
         cloud::tcp::EndpointVerificatorFactory::instance().setCustomFunc(
             std::move(endpointVerificatorFactoryBak));
-        SocketGlobals::addressResolver().removeFixedAddress("localhost",
+        SocketGlobals::addressResolver().removeFixedAddress(
+            "localhost",
             SocketAddress::anyPrivateAddress);
         SocketGlobals::deinit();
     }
@@ -83,13 +84,9 @@ ApplicationContext::ApplicationContext(
     PeerType localPeerType,
     Features features,
     const QString& customCloudHost,
-    QObject* parent)
-    :
+    QObject* parent):
     QObject(parent),
-    d(new Private{
-        .q = this,
-        .localPeerType = localPeerType,
-        .features = features})
+    d(new Private{.q = this, .localPeerType = localPeerType, .features = features})
 {
     if (NX_ASSERT(!s_instance))
         s_instance = this;
@@ -192,10 +189,9 @@ QString ApplicationContext::moduleDisplayName(const nx::Uuid& id) const
 
     NX_MUTEX_LOCKER lock(&d->mutex);
     auto itr = d->longToShortInstanceId.find(id);
-    return itr != d->longToShortInstanceId.end() ?
-        QString::number(itr.value()) : id.toSimpleString();
+    return itr != d->longToShortInstanceId.end() ? QString::number(itr.value())
+                                                 : id.toSimpleString();
 }
-
 
 QnStoragePluginFactory* ApplicationContext::storagePluginFactory() const
 {

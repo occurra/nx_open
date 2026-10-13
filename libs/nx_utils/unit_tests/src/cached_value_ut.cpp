@@ -1,11 +1,12 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-
 #include <thread>
-#include <nx/utils/value_cache.h>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <nx/utils/scope_guard.h>
+#include <nx/utils/value_cache.h>
 
 namespace nx::utils::test {
 
@@ -38,13 +39,23 @@ public:
     static SpecialFunctionsCatcher* m_catcher;
 
 public:
+    SomeType():
+        m_value(0)
+    {
+    }
 
-    SomeType(): m_value(0) {}
-
-    SomeType(int value): m_value(value)  { m_catcher->construct(); }
+    SomeType(int value):
+        m_value(value)
+    {
+        m_catcher->construct();
+    }
     ~SomeType() { m_catcher->destruct(); }
 
-    SomeType(const SomeType& other): m_value(other.m_value) { m_catcher->copyConstruct(); }
+    SomeType(const SomeType& other):
+        m_value(other.m_value)
+    {
+        m_catcher->copyConstruct();
+    }
     SomeType& operator=(const SomeType& other)
     {
         m_value = other.m_value;
@@ -94,29 +105,40 @@ static void expectSpecialFunctionCalls(
 
 TEST(CachedValue, Base)
 {
-     int returnValue = 0;
-     CachedValue<int> value([&returnValue](){ return returnValue; });
+    int returnValue = 0;
+    CachedValue<int> value(
+        [&returnValue]()
+        {
+            return returnValue;
+        });
 
-     ASSERT_EQ(value.get(), 0);
+    ASSERT_EQ(value.get(), 0);
 
-     returnValue += 1;
-     ASSERT_EQ(value.get(), 0);
-     value.reset();
-     ASSERT_EQ(value.get(), 1);
+    returnValue += 1;
+    ASSERT_EQ(value.get(), 0);
+    value.reset();
+    ASSERT_EQ(value.get(), 1);
 
-     returnValue += 1;
-     ASSERT_EQ(value.get(), 1);
-     ASSERT_EQ(value.updated(), 2);
+    returnValue += 1;
+    ASSERT_EQ(value.get(), 1);
+    ASSERT_EQ(value.updated(), 2);
 }
 
 TEST(CachedValue, ConstructionAndCopy)
 {
     ::testing::NiceMock<SpecialFunctionsCatcherMock> catcherMocks[6];
     auto guard = nx::utils::makeScopeGuard(
-        [](){ SomeType::m_catcher = &SomeType::m_defaultCatcher; });
+        []()
+        {
+            SomeType::m_catcher = &SomeType::m_defaultCatcher;
+        });
 
     expectSpecialFunctionCalls(catcherMocks[0], 0, -1, -1, -1);
-    CachedValue<SomeType> value([n = 0]() mutable { return SomeType(n++); });
+    CachedValue<SomeType> value(
+        [n = 0]() mutable
+        {
+            return SomeType(n++);
+        });
 
     expectSpecialFunctionCalls(catcherMocks[1], 1, -1, 1, 0);
     EXPECT_EQ(value.get().m_value, 0);
@@ -141,10 +163,18 @@ TEST(CachedValue, ExpirationTime)
     constexpr std::chrono::milliseconds expiryTime(8);
     ::testing::NiceMock<SpecialFunctionsCatcherMock> catcherMocks[8];
     auto guard = nx::utils::makeScopeGuard(
-        [](){ SomeType::m_catcher = &SomeType::m_defaultCatcher; });
+        []()
+        {
+            SomeType::m_catcher = &SomeType::m_defaultCatcher;
+        });
 
     expectSpecialFunctionCalls(catcherMocks[0], 1, -1, 1, 0);
-    CachedValueWithTimeout<SomeType> value([n = 0]() mutable { return SomeType(n++); }, expiryTime);
+    CachedValueWithTimeout<SomeType> value(
+        [n = 0]() mutable
+        {
+            return SomeType(n++);
+        },
+        expiryTime);
     EXPECT_EQ(value.get().m_value, 0);
 
     // Nothing should happen before any call to CachedValue.
@@ -185,7 +215,10 @@ TEST(CachedValue, LongTimeOfValueGeneration)
     constexpr std::chrono::milliseconds expiryTime(2);
     ::testing::NiceMock<SpecialFunctionsCatcherMock> catcherMocks[8];
     auto guard = nx::utils::makeScopeGuard(
-        [](){ SomeType::m_catcher = &SomeType::m_defaultCatcher; });
+        []()
+        {
+            SomeType::m_catcher = &SomeType::m_defaultCatcher;
+        });
 
     expectSpecialFunctionCalls(catcherMocks[0], 1, -1, 1, 0);
     CachedValueWithTimeout<SomeType> value(
@@ -193,7 +226,8 @@ TEST(CachedValue, LongTimeOfValueGeneration)
         {
             timeShift.applyRelativeShift(expiryTime + 1ms);
             return SomeType(n++);
-        }, expiryTime);
+        },
+        expiryTime);
     EXPECT_EQ(value.updated().m_value, 0);
 
     expectSpecialFunctionCalls(catcherMocks[1], 1, -1, 2, 0);
@@ -208,7 +242,10 @@ TEST(CachedValue, Concurrency)
 
     ::testing::NiceMock<SpecialFunctionsCatcherMock> catcherMock;
     auto guard = nx::utils::makeScopeGuard(
-        [](){ SomeType::m_catcher = &SomeType::m_defaultCatcher; });
+        []()
+        {
+            SomeType::m_catcher = &SomeType::m_defaultCatcher;
+        });
 
     expectSpecialFunctionCalls(catcherMock, -1, -1, 2, 0);
     nx::Mutex mutex;
@@ -219,8 +256,16 @@ TEST(CachedValue, Concurrency)
             timeShift.applyRelativeShift(std::chrono::milliseconds(1));
             return SomeType(0);
         });
-    std::thread t1([&value](){ EXPECT_EQ(value.get().m_value, 0); });
-    std::thread t2([&value](){ EXPECT_EQ(value.get().m_value, 0); });
+    std::thread t1(
+        [&value]()
+        {
+            EXPECT_EQ(value.get().m_value, 0);
+        });
+    std::thread t2(
+        [&value]()
+        {
+            EXPECT_EQ(value.get().m_value, 0);
+        });
 
     t1.join();
     t2.join();

@@ -8,16 +8,15 @@
 #include <nx/network/aio/aio_event_handler.h>
 #include <nx/network/aio/aio_task_queue.h>
 #include <nx/network/aio/aio_thread.h>
-#include <nx/network/aio/pollset_wrapper.h>
 #include <nx/network/aio/pollset.h>
+#include <nx/network/aio/pollset_wrapper.h>
 #include <nx/network/socket_global.h>
 #include <nx/network/system_socket.h>
 #include <nx/utils/thread/sync_queue.h>
 
 namespace nx::network::aio::test {
 
-class DummyEventHandler:
-    public AIOEventHandler
+class DummyEventHandler: public AIOEventHandler
 {
 public:
     DummyEventHandler(std::function<void(Pollable*, aio::EventType)> func):
@@ -36,9 +35,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class AioThread:
-    public ::testing::Test,
-    public aio::AIOEventHandler
+class AioThread: public ::testing::Test, public aio::AIOEventHandler
 {
 public:
     AioThread():
@@ -64,10 +61,7 @@ public:
     }
 
 protected:
-    void givenSocketBeingPolled()
-    {
-        whenStartPollingSocket();
-    }
+    void givenSocketBeingPolled() { whenStartPollingSocket(); }
 
     void whenStartPollingSocket()
     {
@@ -93,19 +87,23 @@ protected:
             aio::EventType::etRead,
             this,
             std::chrono::milliseconds(std::chrono::hours(1)),
-            [&added]() { added.set_value(); });
+            [&added]()
+            {
+                added.set_value();
+            });
 
         added.get_future().wait();
     }
 
-    void whenRegisterSocketTimer()
-    {
-        m_tcpSocket->registerTimer(std::chrono::hours(1), nullptr);
-    }
+    void whenRegisterSocketTimer() { m_tcpSocket->registerTimer(std::chrono::hours(1), nullptr); }
 
     void whenDeleteSocket()
     {
-        m_pollable.executeInAioThreadSync([this]() { m_tcpSocket.reset(); });
+        m_pollable.executeInAioThreadSync(
+            [this]()
+            {
+                m_tcpSocket.reset();
+            });
     }
 
     void thenTimerTaskIsRemovedFromAio()
@@ -132,7 +130,7 @@ private:
 TEST_F(AioThread, unexpected_stop_polling)
 {
     whenStopPollingSocket();
-    //thenProcessHasNotCrashed();
+    // thenProcessHasNotCrashed();
 }
 
 TEST_F(AioThread, duplicate_start_polling)
@@ -142,7 +140,7 @@ TEST_F(AioThread, duplicate_start_polling)
     whenStartPollingSocket();
     whenStopPollingSocket();
 
-    //thenProcessHasNotCrashed();
+    // thenProcessHasNotCrashed();
 }
 
 TEST_F(AioThread, socket_polled_notification)
@@ -200,21 +198,17 @@ TEST_F(AioThread, socket_timer_is_removed_when_deleting_socket)
 
 //-------------------------------------------------------------------------------------------------
 
-class FailingPollSet:
-    public PollSetWrapper<aio::PollSet>
+class FailingPollSet: public PollSetWrapper<aio::PollSet>
 {
 public:
-    virtual bool add(
-        Pollable* const /*sock*/,
-        aio::EventType /*eventType*/,
-        void* /*userData*/) override
+    virtual bool add(Pollable* const /*sock*/, aio::EventType /*eventType*/, void* /*userData*/)
+        override
     {
         return false;
     }
 };
 
-class AIOThreadWithFailingPollSet:
-    public AioThread
+class AIOThreadWithFailingPollSet: public AioThread
 {
 public:
     AIOThreadWithFailingPollSet():
@@ -223,10 +217,7 @@ public:
     }
 
 protected:
-    void givenSocketFailedToMonitor()
-    {
-        whenStartMonitoringFailed();
-    }
+    void givenSocketFailedToMonitor() { whenStartMonitoringFailed(); }
 
     void whenStartMonitoringFailed()
     {

@@ -25,22 +25,18 @@ namespace nx::utils::algorithm {
  * @returns Total number of items in truncated lists.
  */
 template<typename ListOfSortedLists, typename LessPredicate>
-int truncate_sorted_lists(
-    ListOfSortedLists&& sortedLists,
-    int totalLimit,
-    LessPredicate lessItem)
+int truncate_sorted_lists(ListOfSortedLists&& sortedLists, int totalLimit, LessPredicate lessItem)
 {
     using SortedListsItem = std::remove_reference_t<decltype(*sortedLists.begin())>;
     using SortedList = std::remove_pointer_t<SortedListsItem>;
 
-    const auto deref =
-        [](auto&& item) -> auto&
-        {
-            if constexpr (std::is_pointer_v<std::remove_reference_t<decltype(item)>>)
-                return *item;
-            else
-                return item;
-        };
+    const auto deref = [](auto&& item) -> auto&
+    {
+        if constexpr (std::is_pointer_v<std::remove_reference_t<decltype(item)>>)
+            return *item;
+        else
+            return item;
+    };
 
     if (totalLimit <= 0)
     {
@@ -50,23 +46,25 @@ int truncate_sorted_lists(
         return 0;
     }
 
-    const auto truncateList =
-        [](SortedList& list, int limit) -> int
-        {
-            if ((int) list.size() <= limit)
-                return (int) list.size();
+    const auto truncateList = [](SortedList& list, int limit) -> int
+    {
+        if ((int) list.size() <= limit)
+            return (int) list.size();
 
-            auto outOfLimit = list.begin();
-            std::advance(outOfLimit, limit);
-            list.erase(outOfLimit, list.end());
-            return limit;
-        };
+        auto outOfLimit = list.begin();
+        std::advance(outOfLimit, limit);
+        list.erase(outOfLimit, list.end());
+        return limit;
+    };
 
     switch (sortedLists.size())
     {
-        case 0: return 0;
-        case 1: return truncateList(deref(*sortedLists.begin()), totalLimit);
-        default: break;
+        case 0:
+            return 0;
+        case 1:
+            return truncateList(deref(*sortedLists.begin()), totalLimit);
+        default:
+            break;
     }
 
     using Iterator = typename SortedList::iterator;
@@ -94,16 +92,19 @@ int truncate_sorted_lists(
 
     switch (queueData.size())
     {
-        case 0: return 0;
-        case 1: return truncateList(*lastNonEmptyList, totalLimit);
-        default: break;
+        case 0:
+            return 0;
+        case 1:
+            return truncateList(*lastNonEmptyList, totalLimit);
+        default:
+            break;
     }
 
     const auto lessPriority =
         [lessItem](const CurrentPosition& left, const CurrentPosition& right) -> bool
-        {
-            return !lessItem(*left.first, *right.first);
-        };
+    {
+        return !lessItem(*left.first, *right.first);
+    };
 
     std::make_heap(queueData.begin(), queueData.end(), lessPriority);
 
@@ -150,13 +151,22 @@ int truncate_sorted_lists(
     int totalLimit,
     Qt::SortOrder sortOrder = Qt::AscendingOrder)
 {
-    using SortedList = std::remove_pointer_t<std::remove_reference_t<decltype(*sortedLists.begin())>>;
+    using SortedList =
+        std::remove_pointer_t<std::remove_reference_t<decltype(*sortedLists.begin())>>;
     using Item = typename SortedList::value_type;
 
     using Less = std::function<bool(const Item&, const Item&)>;
     const auto less = sortOrder == Qt::AscendingOrder
-        ? Less([key = sortFieldGetter](const Item& l, const Item& r) { return key(l) < key(r); })
-        : Less([key = sortFieldGetter](const Item& l, const Item& r) { return key(l) > key(r); });
+        ? Less(
+              [key = sortFieldGetter](const Item& l, const Item& r)
+              {
+                  return key(l) < key(r);
+              })
+        : Less(
+              [key = sortFieldGetter](const Item& l, const Item& r)
+              {
+                  return key(l) > key(r);
+              });
 
     return truncate_sorted_lists(std::forward<ListOfSortedLists>(sortedLists), totalLimit, less);
 };
@@ -181,11 +191,17 @@ int truncate_sorted_lists(
     int totalLimit,
     Qt::SortOrder sortOrder = Qt::AscendingOrder)
 {
-    using SortedList = std::remove_pointer_t<std::remove_reference_t<decltype(*sortedLists.begin())>>;
+    using SortedList =
+        std::remove_pointer_t<std::remove_reference_t<decltype(*sortedLists.begin())>>;
 
-    return truncate_sorted_lists(std::forward<ListOfSortedLists>(sortedLists),
-        [](const typename SortedList::value_type& value) { return value; },
-        totalLimit, sortOrder);
+    return truncate_sorted_lists(
+        std::forward<ListOfSortedLists>(sortedLists),
+        [](const typename SortedList::value_type& value)
+        {
+            return value;
+        },
+        totalLimit,
+        sortOrder);
 }
 
 } // namespace nx::utils::algorithm

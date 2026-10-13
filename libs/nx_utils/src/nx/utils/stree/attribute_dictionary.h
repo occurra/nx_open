@@ -42,10 +42,7 @@ public:
         return {};
     }
 
-    virtual bool contains(const AttrName& name) const
-    {
-        return getStr(name) != std::nullopt;
-    }
+    virtual bool contains(const AttrName& name) const { return getStr(name) != std::nullopt; }
 
     /**
      * Helper function to get typed value.
@@ -177,8 +174,7 @@ NX_UTILS_API void copy(const AbstractIteratableContainer& from, AbstractAttribut
 namespace detail {
 
 template<typename AttributesMap>
-class AttributeDictionaryConstIterator:
-    public AbstractConstIterator
+class AttributeDictionaryConstIterator: public AbstractConstIterator
 {
 public:
     AttributeDictionaryConstIterator(const AttributesMap& attrs):
@@ -205,13 +201,17 @@ private:
 };
 
 template<typename C, typename Key, typename = void>
-struct FindDefined: public std::false_type {};
+struct FindDefined: public std::false_type
+{
+};
 
 template<typename C, typename Key>
-struct FindDefined<C, Key, std::void_t<decltype(C().find(Key()))>>:
-    public std::true_type {};
+struct FindDefined<C, Key, std::void_t<decltype(C().find(Key()))>>: public std::true_type
+{
+};
 
-template<typename... Args> inline constexpr bool FindDefinedV = FindDefined<Args...>::value;
+template<typename... Args>
+inline constexpr bool FindDefinedV = FindDefined<Args...>::value;
 
 } // namespace detail
 
@@ -221,12 +221,17 @@ template<typename... Args> inline constexpr bool FindDefinedV = FindDefined<Args
  * Adapter for using an STL associative container as AbstractAttributeReader.
  */
 template<typename AttributesMap>
-class AttributeReaderAdapter:
-    public AbstractAttributeReader
+class AttributeReaderAdapter: public AbstractAttributeReader
 {
 public:
-    AttributeReaderAdapter(const AttributesMap& attrs): m_attrs(&attrs) {}
-    AttributeReaderAdapter(const AttributesMap* attrs): m_attrs(attrs) {}
+    AttributeReaderAdapter(const AttributesMap& attrs):
+        m_attrs(&attrs)
+    {
+    }
+    AttributeReaderAdapter(const AttributesMap* attrs):
+        m_attrs(attrs)
+    {
+    }
 
     virtual std::optional<std::string> getStr(const AttrName& name) const override
     {
@@ -283,29 +288,28 @@ public:
     std::string toString() const
     {
         return nx::utils::join(
-            m_attrs->begin(), m_attrs->end(), ", ",
+            m_attrs->begin(),
+            m_attrs->end(),
+            ", ",
             [](std::string* out, const auto& item)
             {
                 return buildString(out, item.first, ':', item.second);
             });
     }
 
-    bool empty() const
-    {
-        return m_attrs->empty();
-    }
+    bool empty() const { return m_attrs->empty(); }
 
     /**
      * Inserts elements of other with keys missing in *this.
      */
-    void merge(AttributeDictionaryAdapter&& other)
-    {
-        m_attrs->merge(std::move(*other.m_attrs));
-    }
+    void merge(AttributeDictionaryAdapter&& other) { m_attrs->merge(std::move(*other.m_attrs)); }
 
     void merge(const AttributeDictionaryAdapter& other)
     {
-        std::copy(other.m_attrs->begin(), other.m_attrs->end(), std::inserter(*m_attrs, m_attrs->end()));
+        std::copy(
+            other.m_attrs->begin(),
+            other.m_attrs->end(),
+            std::inserter(*m_attrs, m_attrs->end()));
     }
 
 private:
@@ -314,15 +318,14 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-using StringAttrDict = std::unordered_map<std::string, std::string,
-    nx::utils::StringHashTransparent, std::equal_to<>>;
+using StringAttrDict = std::
+    unordered_map<std::string, std::string, nx::utils::StringHashTransparent, std::equal_to<>>;
 
 /**
  * Attributes container. Implements reading and saving attributes.
  * Attributes are stored in a unique-key dictionary internally.
  */
-class NX_UTILS_API AttributeDictionary:
-    public AttributeDictionaryAdapter<StringAttrDict>
+class NX_UTILS_API AttributeDictionary: public AttributeDictionaryAdapter<StringAttrDict>
 {
 public:
     using Container = StringAttrDict;
@@ -366,13 +369,10 @@ private:
  * Reads from multiple AbstractAttributeReader instances.
  */
 template<std::size_t kSize>
-class MultiReader:
-    public AbstractAttributeReader
+class MultiReader: public AbstractAttributeReader
 {
 public:
-    MultiReader(
-        std::array<std::reference_wrapper<const AbstractAttributeReader>, kSize> readers)
-        :
+    MultiReader(std::array<std::reference_wrapper<const AbstractAttributeReader>, kSize> readers):
         m_readers(std::move(readers))
     {
     }
@@ -419,8 +419,7 @@ MultiReader<sizeof...(Readers)> makeMultiReader(const Readers&... readers)
  * Writes to all writers.
  */
 template<std::size_t kSize>
-class MultiWriter:
-    public AbstractAttributeWriter
+class MultiWriter: public AbstractAttributeWriter
 {
 public:
     MultiWriter(std::array<AbstractAttributeWriter*, kSize> writers):

@@ -36,7 +36,10 @@ public:
     {
         // NOTE: uint64_t is used because it is likely biggest type available.
         static const uint64_t deviceRange = (uint64_t) (Device::max() - Device::min());
-        const auto makeNumber = [&device]() { return (Type) (device() - Device::min()); };
+        const auto makeNumber = [&device]()
+        {
+            return (Type) (device() - Device::min());
+        };
 
         Type number = makeNumber();
         uint64_t range = deviceRange;
@@ -79,8 +82,12 @@ StringType generate(int count)
 
     StringType data(count, 0);
     std::generate(
-        data.begin(), data.end(),
-        [&device]() { return (char) device(); });
+        data.begin(),
+        data.end(),
+        [&device]()
+        {
+            return (char) device();
+        });
 
     return data;
 }
@@ -100,14 +107,13 @@ Type number(
     Type max = std::numeric_limits<Type>::max(),
     typename std::enable_if<std::is_class<RandomDevice>::value>::type* = 0,
     typename std::enable_if<
-        std::is_integral<Type>::value &&
-        !std::is_same<Type, bool>::value>::type* = 0)
+        std::is_integral<Type>::value && !std::is_same<Type, bool>::value>::type* = 0)
 {
-    #ifdef NX_UTILS_USE_OWN_INT_DISTRIBUTION
-        UniformIntDistribution<Type> distribution(min, max);
-    #else
-        std::uniform_int_distribution<Type> distribution(min, max);
-    #endif
+#ifdef NX_UTILS_USE_OWN_INT_DISTRIBUTION
+    UniformIntDistribution<Type> distribution(min, max);
+#else
+    std::uniform_int_distribution<Type> distribution(min, max);
+#endif
     return distribution(randomDevice);
 }
 
@@ -116,8 +122,7 @@ Type number(
     Type min = 0,
     Type max = std::numeric_limits<Type>::max(),
     typename std::enable_if<
-        std::is_integral<Type>::value &&
-        !std::is_same<Type, bool>::value>::type* = 0)
+        std::is_integral<Type>::value && !std::is_same<Type, bool>::value>::type* = 0)
 {
     return number<QRandomGenerator, Type>(*QRandomGenerator::global(), min, max);
 }
@@ -128,8 +133,8 @@ bool number(
     typename std::enable_if<std::is_class<RandomDevice>::value>::type* = 0,
     typename std::enable_if<std::is_same<Type, bool>::value>::type* = 0)
 {
-    return randomDevice() >
-        (RandomDevice::min() + ((RandomDevice::max() - RandomDevice::min()) / 2));
+    return randomDevice()
+        > (RandomDevice::min() + ((RandomDevice::max() - RandomDevice::min()) / 2));
 }
 
 template<typename Type>
@@ -175,13 +180,14 @@ String generateName(RandomDevice& randomDevice, int length)
 
     String str;
     str.resize(length);
-    str[0] = kAlphaAndDigits[
-        nx::utils::random::number(randomDevice) %
-            (sizeof(kAlphaAndDigits) / sizeof(*kAlphaAndDigits) - kDigitsCount - 1)];
+    str[0] = kAlphaAndDigits
+        [nx::utils::random::number(randomDevice)
+         % (sizeof(kAlphaAndDigits) / sizeof(*kAlphaAndDigits) - kDigitsCount - 1)];
     for (int i = 1; i < length; ++i)
     {
-        str[i] = kAlphaAndDigits[nx::utils::random::number(randomDevice) %
-            (sizeof(kAlphaAndDigits) / sizeof(*kAlphaAndDigits) - 1)];
+        str[i] = kAlphaAndDigits
+            [nx::utils::random::number(randomDevice)
+             % (sizeof(kAlphaAndDigits) / sizeof(*kAlphaAndDigits) - 1)];
     }
 
     return str;
@@ -191,7 +197,8 @@ template<typename String>
 String generateName(int length)
 {
     return generateName<std::decay_t<decltype(*QRandomGenerator::global())>, String>(
-        *QRandomGenerator::global(), length);
+        *QRandomGenerator::global(),
+        length);
 }
 
 NX_UTILS_API std::string generateName(int length);
@@ -200,7 +207,10 @@ NX_UTILS_API std::string generateName(int length);
  * Generates uniform random number in [base - delta, base + delta]
  */
 template<typename Type>
-Type numberDelta(Type base, Type delta) { return number(base - delta, base + delta); }
+Type numberDelta(Type base, Type delta)
+{
+    return number(base - delta, base + delta);
+}
 
 /**
  * Returns ref on random element in container.

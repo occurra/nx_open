@@ -3,6 +3,7 @@
 #include "debug_helpers.h"
 
 #include <QtCore/QDir>
+
 #include <nx/utils/log/log.h>
 
 namespace nx::utils::debug_helpers {

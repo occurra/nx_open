@@ -40,7 +40,8 @@ struct NX_CODEC_API VideoParameterSet
     std::vector<OrderingInfo> ordering_info;
     uint8_t vps_max_layer_id;
     uint32_t vps_num_layer_sets_minus1;
-    std::vector< std::bitset<64> > layer_id_included_flags; // 64 - it`s max size of vps_max_layer_id (6) bit
+    std::vector<std::bitset<64>>
+        layer_id_included_flags; // 64 - it`s max size of vps_max_layer_id (6) bit
     bool vps_timing_info_present_flag;
     /*TODO uint32_t vps_num_units_in_tick;
     uint32_t vps_time_scale;

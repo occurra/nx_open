@@ -44,12 +44,12 @@ bool QnFfmpegAudioTranscoder::open(const CodecParametersConstPtr& context)
     NX_ASSERT(context);
     auto codecpar = context->getAvCodecParameters();
     if (!m_encoder.open(
-        m_config.targetCodecId,
-        codecpar->sample_rate,
-        (AVSampleFormat)codecpar->format,
-        codecpar->ch_layout,
-        m_config.bitrate,
-        m_config.dstFrameSize))
+            m_config.targetCodecId,
+            codecpar->sample_rate,
+            (AVSampleFormat) codecpar->format,
+            codecpar->ch_layout,
+            m_config.bitrate,
+            m_config.dstFrameSize))
     {
         return false;
     }
@@ -81,7 +81,8 @@ bool QnFfmpegAudioTranscoder::openDecoder(const CodecParametersConstPtr& context
 
 AVCodecParameters* QnFfmpegAudioTranscoder::getCodecParameters()
 {
-    return m_encoder.codecParameters() ? m_encoder.codecParameters()->getAvCodecParameters() : nullptr;
+    return m_encoder.codecParameters() ? m_encoder.codecParameters()->getAvCodecParameters()
+                                       : nullptr;
 }
 
 bool QnFfmpegAudioTranscoder::isOpened() const
@@ -90,17 +91,22 @@ bool QnFfmpegAudioTranscoder::isOpened() const
 }
 
 int QnFfmpegAudioTranscoder::transcodePacket(
-    const QnConstAbstractMediaDataPtr& media, QnAbstractMediaDataPtr* const result)
+    const QnConstAbstractMediaDataPtr& media,
+    QnAbstractMediaDataPtr* const result)
 {
     if (m_decoderCodecParameters && media && media->context
         && !media->context->isEqual(*m_decoderCodecParameters))
     {
-        NX_DEBUG(this, "Input audio codec parameters changed from: %1 to %2",
-            m_decoderCodecParameters->toString(), media->context->toString());
+        NX_DEBUG(
+            this,
+            "Input audio codec parameters changed from: %1 to %2",
+            m_decoderCodecParameters->toString(),
+            media->context->toString());
 
         if (!openDecoder(media->context))
         {
-            NX_WARNING(this,
+            NX_WARNING(
+                this,
                 "Failed to reinitialize audio transcoder when codec changed from: %1 to %2",
                 m_decoderCtx->codec_id,
                 media->compressionType);
@@ -129,7 +135,7 @@ bool QnFfmpegAudioTranscoder::sendPacket(const QnConstAbstractMediaDataPtr& medi
 
     // 1. push media to decoder
     auto avPacket = av_packet_alloc();
-    avPacket->data = (uint8_t*)(media->data());
+    avPacket->data = (uint8_t*) (media->data());
     avPacket->size = media->dataSize();
     avPacket->dts = media->timestamp;
     avPacket->pts = media->timestamp;
@@ -139,7 +145,10 @@ bool QnFfmpegAudioTranscoder::sendPacket(const QnConstAbstractMediaDataPtr& medi
 
     if (error && error != AVERROR_EOF)
     {
-        NX_WARNING(this, "ffmpeg audio decoder error: %1", nx::media::ffmpeg::avErrorToString(error));
+        NX_WARNING(
+            this,
+            "ffmpeg audio decoder error: %1",
+            nx::media::ffmpeg::avErrorToString(error));
         return false;
     }
 
@@ -152,7 +161,11 @@ bool QnFfmpegAudioTranscoder::sendPacket(const QnConstAbstractMediaDataPtr& medi
             NX_ERROR(this, "Failed to transcode audio packet: out of memory");
             return false;
         }
-        auto guard = nx::utils::makeScopeGuard([&decodedFrame]() {av_frame_free(&decodedFrame); });
+        auto guard = nx::utils::makeScopeGuard(
+            [&decodedFrame]()
+            {
+                av_frame_free(&decodedFrame);
+            });
 
         error = avcodec_receive_frame(m_decoderCtx, decodedFrame);
         // There is not enough data to decode
@@ -161,7 +174,9 @@ bool QnFfmpegAudioTranscoder::sendPacket(const QnConstAbstractMediaDataPtr& medi
 
         if (error != 0)
         {
-            NX_WARNING(this, "Could not receive audio frame from decoder, Error code: %1.",
+            NX_WARNING(
+                this,
+                "Could not receive audio frame from decoder, Error code: %1.",
                 nx::media::ffmpeg::avErrorToString(error));
             return false;
         }

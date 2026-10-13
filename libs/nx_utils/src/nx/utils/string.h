@@ -21,25 +21,25 @@
 namespace nx::utils {
 
 /**
-* \param string                        String to perform replacement on.
-* \param symbols                       Symbols that are to be replaced.
-* \param replacement                   Character to use as a replacement.
-* \returns                             String with all characters from symbols replaced with replacement.
-*/
-NX_UTILS_API QString replaceCharacters(
-    const QString &string,
-    std::string_view symbols,
-    const QChar &replacement);
+ * \param string                        String to perform replacement on.
+ * \param symbols                       Symbols that are to be replaced.
+ * \param replacement                   Character to use as a replacement.
+ * \returns                             String with all characters from symbols replaced with
+ * replacement.
+ */
+NX_UTILS_API QString
+    replaceCharacters(const QString& string, std::string_view symbols, const QChar& replacement);
 
 /**
-* \param string                        String to perform replacement on.
-* \param replacement                   Character to use as a replacement.
-* \returns                             String with all non-filename characters replaces with replacement.
-*/
-inline QString replaceNonFileNameCharacters(const QString &string, const QChar &replacement)
+ * \param string                        String to perform replacement on.
+ * \param replacement                   Character to use as a replacement.
+ * \returns                             String with all non-filename characters replaces with
+ * replacement.
+ */
+inline QString replaceNonFileNameCharacters(const QString& string, const QChar& replacement)
 {
-    return replaceCharacters(
-        string, std::string_view("/\0\t\n\\:*?\"<>|", 12), replacement).trimmed();
+    return replaceCharacters(string, std::string_view("/\0\t\n\\:*?\"<>|", 12), replacement)
+        .trimmed();
 }
 
 /*!
@@ -57,26 +57,32 @@ NX_UTILS_API int naturalStringCompare(
     QStringView rhs,
     Qt::CaseSensitivity caseSensitive = Qt::CaseSensitive,
     bool enableFloat = false);
-NX_UTILS_API QStringList naturalStringSort(const QStringList &list, Qt::CaseSensitivity caseSensitive = Qt::CaseSensitive);
+NX_UTILS_API QStringList naturalStringSort(
+    const QStringList& list,
+    Qt::CaseSensitivity caseSensitive = Qt::CaseSensitive);
 
-NX_UTILS_API bool naturalStringLess(const QString &lhs, const QString &rhs);
+NX_UTILS_API bool naturalStringLess(const QString& lhs, const QString& rhs);
 
-NX_UTILS_API QString xorEncrypt(const QString &plaintext, const QString &key);
-NX_UTILS_API QString xorDecrypt(const QString &crypted, const QString &key);
+NX_UTILS_API QString xorEncrypt(const QString& plaintext, const QString& key);
+NX_UTILS_API QString xorDecrypt(const QString& crypted, const QString& key);
 
 /** Returns filename extension (with dot) from the string containing filename of dialog filter.
-*  Supports strings like "/home/file.avi" -> ".avi"; "Avi files (*.avi)" -> ".avi"
-*  Returns an empty string if the string does not contain any dot.
-*/
-NX_UTILS_API QString extractFileExtension(const QString &string);
+ *  Supports strings like "/home/file.avi" -> ".avi"; "Avi files (*.avi)" -> ".avi"
+ *  Returns an empty string if the string does not contain any dot.
+ */
+NX_UTILS_API QString extractFileExtension(const QString& string);
 
-/** Returns string formed as "baseValue<spacer>(n)" that is not contained in the usedValues list. */
-NX_UTILS_API QString generateUniqueString(const QStringList &usedStrings, const QString &defaultString, const QString &templateString);
+/** Returns string formed as "baseValue<spacer>(n)" that is not contained in the usedValues list.
+ */
+NX_UTILS_API QString generateUniqueString(
+    const QStringList& usedStrings,
+    const QString& defaultString,
+    const QString& templateString);
 
-NX_UTILS_API void trimInPlace( QString* const str, const QString& symbols = QLatin1String(" ") );
+NX_UTILS_API void trimInPlace(QString* const str, const QString& symbols = QLatin1String(" "));
 
-NX_UTILS_API QString elideString(
-    const QString& source, int maxLength, const QString& tail = QLatin1String("..."));
+NX_UTILS_API QString
+    elideString(const QString& source, int maxLength, const QString& tail = QLatin1String("..."));
 
 /**
  * Replace several substrings in the source string at once. Handles situation when one of
@@ -90,7 +96,7 @@ NX_UTILS_API QString replaceStrings(
     const std::vector<std::pair<QString, QString>>& substitutions,
     Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive);
 
-//!Generates random string containing only letters and digits
+//! Generates random string containing only letters and digits
 NX_UTILS_API std::string generateRandomName(int length);
 
 /**
@@ -105,7 +111,7 @@ NX_UTILS_API std::string bytesToString(uint64_t bytes, int precision = 4);
  * Converts bytes number string (e.g., 64K) to integer.
  * K, M, G suffix are supported.
  * @return On failure returns 0 and (if not null) sets *ok to false.
-*/
+ */
 NX_UTILS_API uint64_t stringToBytes(std::string_view str, bool* ok = nullptr);
 NX_UTILS_API uint64_t stringToBytes(std::string_view str, uint64_t defaultValue);
 
@@ -120,7 +126,7 @@ NX_UTILS_API QString removeMnemonics(QString text);
  */
 NX_UTILS_API QString escapeMnemonics(QString text);
 
-//!Splits data by delimiter not closed within quotes
+//! Splits data by delimiter not closed within quotes
 /*!
     E.g.:
     \code
@@ -134,16 +140,14 @@ NX_UTILS_API QString escapeMnemonics(QString text);
     "three, four"
     \endcode
 */
-NX_UTILS_API QList<QByteArray> smartSplit(
-    const QByteArray& data,
-    const char delimiter);
+NX_UTILS_API QList<QByteArray> smartSplit(const QByteArray& data, const char delimiter);
 
 NX_UTILS_API QStringList smartSplit(
     const QString& data,
     const QChar delimiter,
     Qt::SplitBehavior splitBehavior = Qt::KeepEmptyParts);
 
-template <class T, class T2>
+template<class T, class T2>
 T unquote(const T& str, T2 quoteChar)
 {
     int pos1 = str.startsWith(T2(quoteChar)) ? 1 : 0;
@@ -151,7 +155,7 @@ T unquote(const T& str, T2 quoteChar)
     return str.mid(pos1, str.length() - pos1 - pos2);
 }
 
-template <class T, class T2>
+template<class T, class T2>
 T trimAndUnquote(const T& str, T2 quoteChar)
 {
     return unquote(str.trimmed(), quoteChar);
@@ -180,11 +184,9 @@ size_t find_first_of(
     size_t count = BufferNpos)
 {
     const size_t toSearchDataSize = strlen(toSearch);
-    const typename Str::value_type* strEnd = str.data() + (count == BufferNpos ? str.size() : (offset + count));
-    for (const typename Str::value_type*
-        curPos = str.data() + offset;
-        curPos < strEnd;
-        ++curPos)
+    const typename Str::value_type* strEnd =
+        str.data() + (count == BufferNpos ? str.size() : (offset + count));
+    for (const typename Str::value_type* curPos = str.data() + offset; curPos < strEnd; ++curPos)
     {
         if (memchr(toSearch, *curPos, toSearchDataSize))
             return curPos - str.data();
@@ -201,11 +203,9 @@ size_t find_first_not_of(
     size_t count = BufferNpos)
 {
     const size_t toSearchDataSize = strlen(toSearch);
-    const typename Str::value_type* strEnd = str.data() + (count == BufferNpos ? str.size() : (offset + count));
-    for (const typename Str::value_type*
-        curPos = str.data() + offset;
-        curPos < strEnd;
-        ++curPos)
+    const typename Str::value_type* strEnd =
+        str.data() + (count == BufferNpos ? str.size() : (offset + count));
+    for (const typename Str::value_type* curPos = str.data() + offset; curPos < strEnd; ++curPos)
     {
         if (memchr(toSearch, *curPos, toSearchDataSize) == NULL)
             return curPos - str.data();
@@ -222,8 +222,8 @@ NX_UTILS_API QByteArray formatJsonString(const QByteArray& data);
 NX_UTILS_API nx::Buffer formatJsonString(const nx::Buffer& data);
 
 /**
-* Concatenate all strings from a specified container, inserting specified separator between them.
-*/
+ * Concatenate all strings from a specified container, inserting specified separator between them.
+ */
 // TODO: VMS-20167 Combine with nx::utils::join.
 template<
     typename StringContainerType,
@@ -240,8 +240,13 @@ StringType strJoin(const StringContainerType& strings, const SeparatorType& sepa
     using SizeType = decltype(result.size());
 
     const auto accumulatedSize = separatorStr.size() * (strings.size() - 1)
-        + std::accumulate(strings.begin(), strings.end(), SizeType(0),
-            [](SizeType value, const StringType& string) { return value + string.size(); });
+        + std::accumulate(strings.begin(),
+                          strings.end(),
+                          SizeType(0),
+                          [](SizeType value, const StringType& string)
+                          {
+                              return value + string.size();
+                          });
 
     result.reserve(accumulatedSize);
 
@@ -258,13 +263,13 @@ StringType strJoin(const StringContainerType& strings, const SeparatorType& sepa
 }
 
 /**
-* Concatenate all strings from a specified range, inserting specified separator between them.
-*/
+ * Concatenate all strings from a specified range, inserting specified separator between them.
+ */
 template<
     typename BeginType,
     typename EndType,
     typename SeparatorType,
-    typename StringType = std::remove_cv_t<std::remove_reference_t<decltype(**((BeginType*)0))>>>
+    typename StringType = std::remove_cv_t<std::remove_reference_t<decltype(**((BeginType*) 0))>>>
 StringType strJoin(BeginType begin, EndType end, const SeparatorType& separator)
 {
     StringType result;
@@ -283,15 +288,17 @@ StringType strJoin(BeginType begin, EndType end, const SeparatorType& separator)
 }
 
 /**
-* Truncate QString to the first '\x00' character.
-*/
+ * Truncate QString to the first '\x00' character.
+ */
 NX_UTILS_API void truncateToNul(QString* s);
 
 /**
-* Convert any buffer to hex string.
-*/
+ * Convert any buffer to hex string.
+ */
 NX_UTILS_API std::string toHex(
-    const void* buffer, const int size, const std::string& delimeter = " ");
+    const void* buffer,
+    const int size,
+    const std::string& delimeter = " ");
 
 /**
  * Hides the second half of the string
@@ -299,13 +306,14 @@ NX_UTILS_API std::string toHex(
 NX_UTILS_API std::string half(const std::string& str);
 
 /**
- * Quotes text tokens that contain spaces and are not already quoted, preserving specified delimiters.
+ * Quotes text tokens that contain spaces and are not already quoted, preserving specified
+ * delimiters.
  * @param input Input text to process
  * @param delimiters List of delimiter tokens (e.g. {"OR", "AND"})
  * @return Formatted string with quoted tokens where needed
  */
-NX_UTILS_API QString quoteDelimitedTokens( const QString& input, const QStringList& delimiters);
-NX_UTILS_API QStringList quoteDelimitedTokenList(
-    const QString& input, const QStringList& delimiters);
+NX_UTILS_API QString quoteDelimitedTokens(const QString& input, const QStringList& delimiters);
+NX_UTILS_API QStringList
+    quoteDelimitedTokenList(const QString& input, const QStringList& delimiters);
 
 } // namespace nx::utils

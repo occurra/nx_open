@@ -4,8 +4,8 @@
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
-#include <QtGui/QGuiApplication>
 #include <QtGui/QFontMetrics>
+#include <QtGui/QGuiApplication>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 
@@ -14,9 +14,9 @@
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_GLYPH_H
+    #include <ft2build.h>
+    #include FT_FREETYPE_H
+    #include FT_GLYPH_H
 
 namespace nx::utils {
 
@@ -66,11 +66,16 @@ public:
             FT_GlyphSlot glyph = face->glyph;
             blendGlyphToBuffer(
                 rgbaBuffer,
-                image.width(), image.height(),
+                image.width(),
+                image.height(),
                 &glyph->bitmap,
-                penX / 64, penY / 64,
-                maxWidth, maxHeight,
-                color.red(), color.green(), color.blue());
+                penX / 64,
+                penY / 64,
+                maxWidth,
+                maxHeight,
+                color.red(),
+                color.green(),
+                color.blue());
             penX += glyph->advance.x; //< Fixed point format, low 6 bits are subpixels.
             penY += glyph->advance.y;
         }
@@ -130,11 +135,16 @@ private:
 
     void blendGlyphToBuffer(
         unsigned char* buffer,
-        int bufferWidth, int bufferHeight,
+        int bufferWidth,
+        int bufferHeight,
         FT_Bitmap* bitmap,
-        int xOffset, int yOffset,
-        int maxX, int maxY,
-        unsigned char r, unsigned char g, unsigned char b)
+        int xOffset,
+        int yOffset,
+        int maxX,
+        int maxY,
+        unsigned char r,
+        unsigned char g,
+        unsigned char b)
     {
         // Loop over each pixel of the glyph bitmap.
         for (int row = 0; row < std::min((int) bitmap->rows, maxY); ++row)
@@ -143,7 +153,8 @@ private:
             {
                 const int bufferX = xOffset + col;
                 const int bufferY = yOffset + row;
-                if (bufferX < 0 || bufferX >= bufferWidth || bufferY < 0 || bufferY >= bufferHeight)
+                if (bufferX < 0 || bufferX >= bufferWidth || bufferY < 0
+                    || bufferY >= bufferHeight)
                     continue;
 
                 // Get the alpha value from the glyph's bitmap (0-255).
@@ -209,12 +220,12 @@ std::unique_ptr<AbstractTextRenderer> TextRendererFactory::create()
     if (qobject_cast<QGuiApplication*>(qApp))
         renderer = std::make_unique<QtTextRenderer>();
 
-    #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-        if (!renderer)
-            renderer = std::make_unique<FreetypeTextRenderer>();
-    #endif
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+    if (!renderer)
+        renderer = std::make_unique<FreetypeTextRenderer>();
+#endif
 
     return renderer;
 }
 
-} // nx::utils
+} // namespace nx::utils

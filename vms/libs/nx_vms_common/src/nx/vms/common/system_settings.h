@@ -37,7 +37,7 @@ enum class ProxyConnectionAccessPolicy;
 enum class SystemSettingName;
 enum class IntegrationProcessMode;
 
-} // nx::vms::api
+} // namespace nx::vms::api
 
 namespace nx::vms::common {
 
@@ -45,7 +45,7 @@ namespace nx::vms::common {
 
 struct NX_VMS_COMMON_API SystemSettingNames
 {
-    #define DECLARE_SETTING_NAME(NAME) static const inline QString NAME = NX_FMT( #NAME )
+#define DECLARE_SETTING_NAME(NAME) static const inline QString NAME = NX_FMT(#NAME)
 
     DECLARE_SETTING_NAME(backupSettings);
     DECLARE_SETTING_NAME(cloudAccountName);
@@ -109,8 +109,7 @@ struct NX_VMS_COMMON_API SystemSettingNames
         statisticsReportLastNumber,
         statisticsReportLastTime,
         statisticsReportLastVersion,
-        system2faEnabled
-    };
+        system2faEnabled};
 
     static const inline std::set<QString> kWriteOnlyNames = {
         cloudAuthKey,
@@ -146,9 +145,7 @@ struct NX_VMS_COMMON_API SystemSettingNames
 
 using FileToPeerList = QMap<QString, QList<nx::Uuid>>;
 
-class NX_VMS_COMMON_API SystemSettings:
-    public QObject,
-    public SystemContextAware
+class NX_VMS_COMMON_API SystemSettings: public QObject, public SystemContextAware
 {
     Q_OBJECT
     typedef QObject base_type;
@@ -169,12 +166,13 @@ public:
     /**
      * Save all settings to database
      */
-    bool resynchronizeNowSync(nx::MoveOnlyFunc<
-        bool(const QString& paramName, const QString& paramValue)> filter = nullptr);
+    bool resynchronizeNowSync(
+        nx::MoveOnlyFunc<bool(const QString& paramName, const QString& paramValue)> filter =
+            nullptr);
 
     /**
-    * Save modified settings to database
-    */
+     * Save modified settings to database
+     */
     bool synchronizeNowSync();
 
     bool takeFromSettings(QSettings* settings, const QnResourcePtr& mediaServer);
@@ -447,8 +445,7 @@ public:
     void setTargetUpdateInformation(const QByteArray& updateInformation);
 
     nx::vms::api::PersistentUpdateStorage targetPersistentUpdateStorage() const;
-    void setTargetPersistentUpdateStorage(
-        const nx::vms::api::PersistentUpdateStorage& data);
+    void setTargetPersistentUpdateStorage(const nx::vms::api::PersistentUpdateStorage& data);
 
     nx::vms::api::PersistentUpdateStorage installedPersistentUpdateStorage() const;
     void setInstalledPersistentUpdateStorage(const nx::vms::api::PersistentUpdateStorage& data);

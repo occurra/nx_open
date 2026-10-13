@@ -25,8 +25,8 @@
 namespace nx {
 
 /**
- * BasicBuffer class, compatible with std::basic_string. Stores data inside as std::basic_string or QByteArray.
- * The latter allows instantiating this class from QByteArray.
+ * BasicBuffer class, compatible with std::basic_string. Stores data inside as std::basic_string or
+ * QByteArray. The latter allows instantiating this class from QByteArray.
  */
 template<typename CharType>
 class BasicBuffer
@@ -161,29 +161,33 @@ public:
 
     size_type find_first_of(const std::basic_string<value_type>& str, size_type pos = 0) const;
     size_type find_first_of(value_type ch, size_type pos = 0) const;
-    size_type find_first_of(const std::basic_string_view<value_type>& str, size_type pos = 0) const;
+    size_type find_first_of(const std::basic_string_view<value_type>& str, size_type pos = 0)
+        const;
     size_type find_first_of(const value_type* str, size_type pos = 0) const;
 
     size_type find_first_not_of(const std::basic_string<value_type>& str, size_type pos = 0) const;
     size_type find_first_not_of(value_type ch, size_type pos = 0) const;
-    size_type find_first_not_of(const std::basic_string_view<value_type>& str, size_type pos = 0) const;
+    size_type find_first_not_of(const std::basic_string_view<value_type>& str, size_type pos = 0)
+        const;
     size_type find_first_not_of(const value_type* str, size_type pos = 0) const;
 
     size_type find_last_of(const std::basic_string<value_type>& str, size_type pos = npos) const;
     size_type find_last_of(value_type ch, size_type pos = npos) const;
-    size_type find_last_of(const std::basic_string_view<value_type>& str, size_type pos = npos) const;
+    size_type find_last_of(const std::basic_string_view<value_type>& str, size_type pos = npos)
+        const;
     size_type find_last_of(const value_type* str, size_type pos = npos) const;
 
-    size_type find_last_not_of(const std::basic_string<value_type>& str, size_type pos = npos) const;
+    size_type find_last_not_of(const std::basic_string<value_type>& str, size_type pos = npos)
+        const;
     size_type find_last_not_of(value_type ch, size_type pos = npos) const;
-    size_type find_last_not_of(const std::basic_string_view<value_type>& str, size_type pos = npos) const;
+    size_type find_last_not_of(const std::basic_string_view<value_type>& str, size_type pos = npos)
+        const;
     size_type find_last_not_of(const value_type* str, size_type pos = npos) const;
 
     template<
         typename String,
         typename = decltype(std::declval<String>().data()),
-        typename = decltype(std::declval<String>().size())
-    >
+        typename = decltype(std::declval<String>().size())>
     BasicBuffer& replace(size_type pos, size_type count, const String&);
 
     BasicBuffer& replace(size_type pos, size_type count, const CharType*);
@@ -201,12 +205,14 @@ public:
     QByteArray toRawByteArray() const { return QByteArray::fromRawData(data(), (int) size()); }
 
     /**
-     * If the data is stored as std::basic_string, then moves that string outside leaving the buffer empty.
+     * If the data is stored as std::basic_string, then moves that string outside leaving the
+     * buffer empty.
      */
     std::basic_string<CharType> takeStdString();
 
     /**
-     * If the data is stored as QByteArray, then moves that QByteArray outside leaving the buffer empty.
+     * If the data is stored as QByteArray, then moves that QByteArray outside leaving the buffer
+     * empty.
      */
     QByteArray takeByteArray();
 
@@ -475,7 +481,8 @@ BasicBuffer<CharType>& BasicBuffer<CharType>::operator=(QByteArray&& other)
 }
 
 template<typename CharType>
-BasicBuffer<CharType>& BasicBuffer<CharType>::operator=(const std::basic_string_view<value_type>& other)
+BasicBuffer<CharType>& BasicBuffer<CharType>::operator=(
+    const std::basic_string_view<value_type>& other)
 {
     assign(other);
     return *this;
@@ -486,7 +493,7 @@ std::strong_ordering BasicBuffer<CharType>::operator<=>(const BasicBuffer& right
 {
     const int cmp = compare(right);
     return cmp == 0 ? std::strong_ordering::equal
-        : (cmp < 0 ? std::strong_ordering::less : std::strong_ordering::greater);
+                    : (cmp < 0 ? std::strong_ordering::less : std::strong_ordering::greater);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -510,7 +517,8 @@ typename BasicBuffer<CharType>::value_type& BasicBuffer<CharType>::operator[](si
 }
 
 template<typename CharType>
-const typename BasicBuffer<CharType>::value_type& BasicBuffer<CharType>::operator[](size_type pos) const
+const typename BasicBuffer<CharType>::value_type& BasicBuffer<CharType>::operator[](
+    size_type pos) const
 {
     return at(pos);
 }
@@ -570,8 +578,9 @@ BasicBuffer<CharType> BasicBuffer<CharType>::substr(size_type pos, size_type cou
 {
     if (pos > size())
     {
-        throw std::out_of_range("Index " + std::to_string(pos) +
-            " is out of BasicBuffer of size " + std::to_string(size()));
+        throw std::out_of_range(
+            "Index " + std::to_string(pos) + " is out of BasicBuffer of size "
+            + std::to_string(size()));
     }
 
     return BasicBuffer<CharType>(
@@ -610,8 +619,9 @@ void BasicBuffer<CharType>::resize(size_type count, value_type ch)
         }
         else
         {
-            // NOTE: This assert is actually unreachable ("if (count > m_capacity)" condition guarantees that),
-            // but without it gcc produces a compilation warning (out of bounds in "m_buf[count]").
+            // NOTE: This assert is actually unreachable ("if (count > m_capacity)" condition
+            // guarantees that), but without it gcc produces a compilation warning (out of bounds
+            // in "m_buf[count]").
             NX_ASSERT(false);
         }
     }
@@ -728,7 +738,8 @@ BasicBuffer<CharType>& BasicBuffer<CharType>::append(const QByteArray& other)
 }
 
 template<typename CharType>
-BasicBuffer<CharType>& BasicBuffer<CharType>::append(const std::basic_string_view<value_type>& other)
+BasicBuffer<CharType>& BasicBuffer<CharType>::append(
+    const std::basic_string_view<value_type>& other)
 {
     return append(other.data(), other.size());
 }
@@ -748,7 +759,8 @@ BasicBuffer<CharType>& BasicBuffer<CharType>::operator+=(value_type ch)
 }
 
 template<typename CharType>
-BasicBuffer<CharType>& BasicBuffer<CharType>::operator+=(const std::basic_string<value_type>& other)
+BasicBuffer<CharType>& BasicBuffer<CharType>::operator+=(
+    const std::basic_string<value_type>& other)
 {
     return append(other);
 }
@@ -760,7 +772,8 @@ BasicBuffer<CharType>& BasicBuffer<CharType>::operator+=(const QByteArray& other
 }
 
 template<typename CharType>
-BasicBuffer<CharType>& BasicBuffer<CharType>::operator+=(const std::basic_string_view<value_type>& other)
+BasicBuffer<CharType>& BasicBuffer<CharType>::operator+=(
+    const std::basic_string_view<value_type>& other)
 {
     return append(other);
 }
@@ -775,8 +788,9 @@ BasicBuffer<CharType>& BasicBuffer<CharType>::erase(size_type pos, size_type cou
 
     if (pos > size())
     {
-        throw std::out_of_range("Index " + std::to_string(pos) +
-            " is out of BasicBuffer of size " + std::to_string(size()));
+        throw std::out_of_range(
+            "Index " + std::to_string(pos) + " is out of BasicBuffer of size "
+            + std::to_string(size()));
     }
 
     if (m_str)
@@ -948,28 +962,31 @@ int BasicBuffer<CharType>::compare(const QByteArray& other) const
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find(
-    const std::basic_string<value_type>& str, size_type pos) const
+    const std::basic_string<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find(str, pos);
 }
 
 template<typename CharType>
-typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find(
-    value_type ch, size_type pos) const
+typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find(value_type ch, size_type pos)
+    const
 {
     return std::basic_string_view<value_type>(data(), size()).find(ch, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find(
-    const std::basic_string_view<value_type>& str, size_type pos) const
+    const std::basic_string_view<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find(
-    const value_type* str, size_type pos) const
+    const value_type* str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find(str, pos);
 }
@@ -978,28 +995,32 @@ typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find(
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::rfind(
-    const std::basic_string<value_type>& str, size_type pos) const
+    const std::basic_string<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).rfind(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::rfind(
-    value_type ch, size_type pos) const
+    value_type ch,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).rfind(ch, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::rfind(
-    const std::basic_string_view<value_type>& str, size_type pos) const
+    const std::basic_string_view<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).rfind(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::rfind(
-    const value_type* str, size_type pos) const
+    const value_type* str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).rfind(str, pos);
 }
@@ -1008,28 +1029,32 @@ typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::rfind(
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_first_of(
-    const std::basic_string<value_type>& str, size_type pos) const
+    const std::basic_string<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_first_of(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_first_of(
-    value_type ch, size_type pos) const
+    value_type ch,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_first_of(ch, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_first_of(
-    const std::basic_string_view<value_type>& str, size_type pos) const
+    const std::basic_string_view<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_first_of(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_first_of(
-    const value_type* str, size_type pos) const
+    const value_type* str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_first_of(str, pos);
 }
@@ -1038,28 +1063,32 @@ typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_first_of(
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_first_not_of(
-    const std::basic_string<value_type>& str, size_type pos) const
+    const std::basic_string<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_first_not_of(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_first_not_of(
-    value_type ch, size_type pos) const
+    value_type ch,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_first_not_of(ch, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_first_not_of(
-    const std::basic_string_view<value_type>& str, size_type pos) const
+    const std::basic_string_view<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_first_not_of(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_first_not_of(
-    const value_type* str, size_type pos) const
+    const value_type* str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_first_not_of(str, pos);
 }
@@ -1068,28 +1097,32 @@ typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_first_not_
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_last_of(
-    const std::basic_string<value_type>& str, size_type pos) const
+    const std::basic_string<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_last_of(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_last_of(
-    value_type ch, size_type pos) const
+    value_type ch,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_last_of(ch, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_last_of(
-    const std::basic_string_view<value_type>& str, size_type pos) const
+    const std::basic_string_view<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_last_of(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_last_of(
-    const value_type* str, size_type pos) const
+    const value_type* str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_last_of(str, pos);
 }
@@ -1098,28 +1131,32 @@ typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_last_of(
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_last_not_of(
-    const std::basic_string<value_type>& str, size_type pos) const
+    const std::basic_string<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_last_not_of(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_last_not_of(
-    value_type ch, size_type pos) const
+    value_type ch,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_last_not_of(ch, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_last_not_of(
-    const std::basic_string_view<value_type>& str, size_type pos) const
+    const std::basic_string_view<value_type>& str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_last_not_of(str, pos);
 }
 
 template<typename CharType>
 typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_last_not_of(
-    const value_type* str, size_type pos) const
+    const value_type* str,
+    size_type pos) const
 {
     return std::basic_string_view<value_type>(data(), size()).find_last_not_of(str, pos);
 }
@@ -1127,7 +1164,8 @@ typename BasicBuffer<CharType>::size_type BasicBuffer<CharType>::find_last_not_o
 template<typename CharType>
 template<typename String, typename, typename>
 BasicBuffer<CharType>& BasicBuffer<CharType>::replace(
-    size_type pos, size_type count,
+    size_type pos,
+    size_type count,
     const String& str)
 {
     if (count == npos)
@@ -1145,7 +1183,8 @@ BasicBuffer<CharType>& BasicBuffer<CharType>::replace(
 
 template<typename CharType>
 BasicBuffer<CharType>& BasicBuffer<CharType>::replace(
-    size_type pos, size_type count,
+    size_type pos,
+    size_type count,
     const CharType* str)
 {
     return replace(pos, count, std::basic_string_view<CharType>(str));
@@ -1216,11 +1255,14 @@ std::string BasicBuffer<CharType>::toBase64() const
 {
     std::string result;
 
-    result.resize((std::size_t) utils::toBase64(data(),
-        (int) size() * sizeof(CharType), nullptr, 0));
+    result.resize(
+        (std::size_t) utils::toBase64(data(), (int) size() * sizeof(CharType), nullptr, 0));
 
-    result.resize((std::size_t) utils::toBase64(data(),
-        (int)size() * sizeof(CharType), result.data(), (int) result.size()));
+    result.resize((std::size_t) utils::toBase64(
+        data(),
+        (int) size() * sizeof(CharType),
+        result.data(),
+        (int) result.size()));
 
     return result;
 }
@@ -1230,11 +1272,16 @@ BasicBuffer<CharType> BasicBuffer<CharType>::fromBase64(std::string_view str)
 {
     BasicBuffer<char> result;
 
-    const auto byteCount = (std::size_t) utils::fromBase64(str.data(), (int) str.size(), nullptr, 0);
+    const auto byteCount =
+        (std::size_t) utils::fromBase64(str.data(), (int) str.size(), nullptr, 0);
     result.resize((byteCount + sizeof(CharType) - 1) / sizeof(CharType));
 
-    result.resize(utils::fromBase64(str.data(), (int) str.size(),
-        result.data(), (int) result.size() * sizeof(CharType)));
+    result.resize(
+        utils::fromBase64(
+            str.data(),
+            (int) str.size(),
+            result.data(),
+            (int) result.size() * sizeof(CharType)));
     return result;
 }
 
@@ -1281,8 +1328,7 @@ inline std::ostream& operator<<(std::ostream& os, const Buffer& buf)
 /**
  * Extends std::string_view by introducing implicit conversion from QByteArray.
  */
-class ConstBufferRefType:
-    public std::string_view
+class ConstBufferRefType: public std::string_view
 {
     using base_type = std::string_view;
 
@@ -1304,16 +1350,12 @@ public:
      * E.g., QByteArray.
      */
     template<nx::ToStringViewConvertible T>
-    ConstBufferRefType(const T& str)
-        :
+    ConstBufferRefType(const T& str):
         base_type(str.data(), (std::size_t) str.size())
     {
     }
 
-    QByteArray toRawByteArray() const
-    {
-        return QByteArray::fromRawData(data(), (int) size());
-    }
+    QByteArray toRawByteArray() const { return QByteArray::fromRawData(data(), (int) size()); }
 };
 
 #else
@@ -1351,9 +1393,10 @@ bool operator<(const nx::BasicBuffer<CharType>& left, const Other& right)
     return left.compare(right) < 0;
 }
 
-template<typename CharType, typename Other,
-    typename X = std::enable_if_t<!std::is_same_v<Other, nx::BasicBuffer<CharType>>>
->
+template<
+    typename CharType,
+    typename Other,
+    typename X = std::enable_if_t<!std::is_same_v<Other, nx::BasicBuffer<CharType>>>>
 bool operator<(const Other& left, const nx::BasicBuffer<CharType>& right)
 {
     return right.compare(left) > 0;
@@ -1365,9 +1408,10 @@ bool operator<=(const nx::BasicBuffer<CharType>& left, const Other& right)
     return left.compare(right) <= 0;
 }
 
-template<typename CharType, typename Other,
-    typename X = std::enable_if_t<!std::is_same_v<Other, nx::BasicBuffer<CharType>>>
->
+template<
+    typename CharType,
+    typename Other,
+    typename X = std::enable_if_t<!std::is_same_v<Other, nx::BasicBuffer<CharType>>>>
 bool operator<=(const Other& left, const nx::BasicBuffer<CharType>& right)
 {
     return right.compare(left) >= 0;
@@ -1379,9 +1423,10 @@ bool operator>(const nx::BasicBuffer<CharType>& left, const Other& right)
     return left.compare(right) > 0;
 }
 
-template<typename CharType, typename Other,
-    typename X = std::enable_if_t<!std::is_same_v<Other, nx::BasicBuffer<CharType>>>
->
+template<
+    typename CharType,
+    typename Other,
+    typename X = std::enable_if_t<!std::is_same_v<Other, nx::BasicBuffer<CharType>>>>
 bool operator>(const Other& left, const nx::BasicBuffer<CharType>& right)
 {
     return right.compare(left) < 0;
@@ -1393,9 +1438,10 @@ bool operator>=(const nx::BasicBuffer<CharType>& left, const Other& right)
     return left.compare(right) >= 0;
 }
 
-template<typename CharType, typename Other,
-    typename X = std::enable_if_t<!std::is_same_v<Other, nx::BasicBuffer<CharType>>>
->
+template<
+    typename CharType,
+    typename Other,
+    typename X = std::enable_if_t<!std::is_same_v<Other, nx::BasicBuffer<CharType>>>>
 bool operator>=(const Other& left, const nx::BasicBuffer<CharType>& right)
 {
     return right.compare(left) <= 0;

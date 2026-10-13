@@ -4,9 +4,7 @@
 
 namespace nx::sql::detail {
 
-void CursorHandlerPool::add(
-    nx::Uuid id,
-    std::unique_ptr<AbstractCursorHandler> cursorHandler)
+void CursorHandlerPool::add(nx::Uuid id, std::unique_ptr<AbstractCursorHandler> cursorHandler)
 {
     m_cursors.emplace(id, std::move(cursorHandler));
 }
@@ -59,9 +57,7 @@ void CursorHandlerPool::markCursorForDeletion(nx::Uuid id)
 
 //-------------------------------------------------------------------------------------------------
 
-BasicCursorOperationExecutor::BasicCursorOperationExecutor(
-    CursorHandlerPool* cursorContextPool)
-    :
+BasicCursorOperationExecutor::BasicCursorOperationExecutor(CursorHandlerPool* cursorContextPool):
     base_type(QueryType::lookup, std::string()),
     m_cursorContextPool(cursorContextPool)
 {
@@ -85,8 +81,7 @@ DBResult BasicCursorOperationExecutor::executeQuery(AbstractDbConnection* const 
 
 CursorCreator::CursorCreator(
     CursorHandlerPool* cursorContextPool,
-    std::unique_ptr<AbstractCursorHandler> cursorHandler)
-    :
+    std::unique_ptr<AbstractCursorHandler> cursorHandler):
     base_type(cursorContextPool),
     m_cursorHandler(std::move(cursorHandler))
 {
@@ -111,20 +106,16 @@ void CursorCreator::executeCursor(AbstractDbConnection* const connection)
 
 //-------------------------------------------------------------------------------------------------
 
-CleanUpDroppedCursorsExecutor::CleanUpDroppedCursorsExecutor(
-    CursorHandlerPool* cursorContextPool)
-    :
+CleanUpDroppedCursorsExecutor::CleanUpDroppedCursorsExecutor(CursorHandlerPool* cursorContextPool):
     base_type(cursorContextPool)
 {
 }
 
-void CleanUpDroppedCursorsExecutor::reportErrorWithoutExecution(
-    DBResult /*errorCode*/)
+void CleanUpDroppedCursorsExecutor::reportErrorWithoutExecution(DBResult /*errorCode*/)
 {
 }
 
-void CleanUpDroppedCursorsExecutor::setExternalTransaction(
-    Transaction* /*transaction*/)
+void CleanUpDroppedCursorsExecutor::setExternalTransaction(Transaction* /*transaction*/)
 {
 }
 

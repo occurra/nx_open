@@ -7,29 +7,29 @@
 #include <nx/streaming/data_packet_queue.h>
 #include <nx/utils/thread/long_runnable.h>
 
-class NX_VMS_COMMON_API QnAbstractDataConsumer
-:
+class NX_VMS_COMMON_API QnAbstractDataConsumer:
     public QnLongRunnable,
     public QnAbstractMediaDataReceptor
 {
 public:
     QnAbstractDataConsumer(int maxQueueSize);
-    virtual ~QnAbstractDataConsumer(){ stop(); }
+    virtual ~QnAbstractDataConsumer() { stop(); }
 
     /**
-      * @return true is there is any space in the queue, false otherwise
-      */
+     * @return true is there is any space in the queue, false otherwise
+     */
     virtual bool canAcceptData() const override;
-    virtual void putData( const QnAbstractDataPacketPtr& data ) override;
+    virtual void putData(const QnAbstractDataPacketPtr& data) override;
     virtual void clearUnprocessedData() override;
     int queueSize() const;
     int maxQueueSize() const;
     virtual void setSingleShotMode(bool /*single*/) {}
 
-    //virtual qint64 getDisplayedTime() const { return 0; }
+    // virtual qint64 getDisplayedTime() const { return 0; }
     virtual bool isRealTimeSource() const { return false; }
     virtual void pleaseStop() override;
     virtual bool isRunning() const { return QnLongRunnable::isRunning(); }
+
 protected:
     static const int kNoDataDelayIntervalMs = 10;
 
@@ -41,10 +41,13 @@ protected:
     virtual bool processData(const QnAbstractDataPacketPtr& data) = 0;
     virtual void beforeRun();
     virtual void endOfRun();
+
 private:
     void resumeDataQueue();
+
 protected:
     QnDataPacketQueue m_dataQueue;
+
 private:
     nx::Mutex m_pleaseStopMutex;
 };

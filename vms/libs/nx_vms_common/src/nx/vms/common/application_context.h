@@ -45,7 +45,10 @@ public:
         FeatureFlags flags = FeatureFlag::none;
 
         Features() = default;
-        Features(FeatureFlags flags): flags(flags){}
+        Features(FeatureFlags flags):
+            flags(flags)
+        {
+        }
 
         Features& withFlag(FeatureFlag flag)
         {
@@ -107,6 +110,9 @@ private:
     nx::utils::ImplPtr<Private> d;
 };
 
-inline ApplicationContext* appContext() { return ApplicationContext::instance(); }
+inline ApplicationContext* appContext()
+{
+    return ApplicationContext::instance();
+}
 
 } // namespace nx::vms::common

@@ -26,7 +26,10 @@ template<typename T>
 class ImplPtr final
 {
 public:
-    explicit ImplPtr(T* ptr): m_ptr(ptr) {}
+    explicit ImplPtr(T* ptr):
+        m_ptr(ptr)
+    {
+    }
     ~ImplPtr() = default;
 
     ImplPtr() = delete;

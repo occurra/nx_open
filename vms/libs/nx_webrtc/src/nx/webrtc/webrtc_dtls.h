@@ -26,6 +26,7 @@ public:
         client,
         server
     };
+
 private:
     enum SslError
     {
@@ -37,7 +38,11 @@ private:
 public:
     // Main API.
     Dtls(const std::string& id, const nx::network::ssl::Pem& pem, Type type = Type::server):
-        m_id(id), m_pem(pem), m_type(type) {}
+        m_id(id),
+        m_pem(pem),
+        m_type(type)
+    {
+    }
     Status handlePacket(const uint8_t* data, int size, AbstractDtlsDelegate* ice);
     Status writePacket(const uint8_t* data, int size, AbstractDtlsDelegate* ice);
     nx::rtsp::EncryptionData encryptionData() const;
@@ -45,12 +50,12 @@ public:
 
 private:
     // DTLS methods.
-    static int bioMethodNew(BIO *bio);
-    static int bioMethodFree(BIO *bio);
-    static int bioMethodWrite(BIO *bio, const char *in, int inl);
-    static long bioMethodCtrl(BIO * /*bio*/, int cmd, long /*num*/, void * /*ptr*/);
-    static int certificateCallback(int /*preverify_ok*/, X509_STORE_CTX *ctx);
-    static void infoCallback(const SSL *ssl, int where, int ret);
+    static int bioMethodNew(BIO* bio);
+    static int bioMethodFree(BIO* bio);
+    static int bioMethodWrite(BIO* bio, const char* in, int inl);
+    static long bioMethodCtrl(BIO* /*bio*/, int cmd, long /*num*/, void* /*ptr*/);
+    static int certificateCallback(int /*preverify_ok*/, X509_STORE_CTX* ctx);
+    static void infoCallback(const SSL* ssl, int where, int ret);
     bool initDtls();
     SslError sslErrorCheck(int success, const std::string& message);
     SslError sslDumpError(const std::string& error, const std::string& message);
@@ -67,10 +72,10 @@ private:
     Type m_type = Type::server;
 
     // DTLS variables.
-    std::unique_ptr<BIO_METHOD, decltype(&BIO_meth_free)> m_bioMethods { nullptr, &BIO_meth_free };
-    std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> m_sslContext { nullptr, &SSL_CTX_free };
-    std::unique_ptr<SSL, decltype(&SSL_free)> m_ssl { nullptr, &SSL_free };
-    std::unique_ptr<EC_KEY, decltype(&EC_KEY_free)> m_ecdh { nullptr, &EC_KEY_free };
+    std::unique_ptr<BIO_METHOD, decltype(&BIO_meth_free)> m_bioMethods{nullptr, &BIO_meth_free};
+    std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> m_sslContext{nullptr, &SSL_CTX_free};
+    std::unique_ptr<SSL, decltype(&SSL_free)> m_ssl{nullptr, &SSL_free};
+    std::unique_ptr<EC_KEY, decltype(&EC_KEY_free)> m_ecdh{nullptr, &EC_KEY_free};
     BIO* m_bioIn = nullptr;
     BIO* m_bioOut = nullptr;
 };

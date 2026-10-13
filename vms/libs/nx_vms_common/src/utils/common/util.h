@@ -7,7 +7,7 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QString>
 
-NX_VMS_COMMON_API QString strPadLeft(const QString &str, int len, char ch);
+NX_VMS_COMMON_API QString strPadLeft(const QString& str, int len, char ch);
 
 NX_VMS_COMMON_API QString closeDirPath(QString path);
 NX_VMS_COMMON_API QString getPathSeparator(const QString& path);
@@ -15,14 +15,15 @@ NX_VMS_COMMON_API QString stripLastSeparator(QString path);
 NX_VMS_COMMON_API QString toUnixSeparator(QString path);
 NX_VMS_COMMON_API QString closeDirPathUnix(QString path);
 
-//#define MAX_RTSP_DATA_LEN (65535 - 16)
+// #define MAX_RTSP_DATA_LEN (65535 - 16)
 
 #define BACKWARD_SEEK_STEP (1000ll * 1000)
 
-// This constant limit duration of a first GOP. So, if jump to position X, and first I-frame has position X-N, data will be transfer for range
-// [X-N..X-N+MAX_FIRST_GOP_DURATION]. It prevent long preparing then reverse mode is activate.
-// I have increased constant because of camera with very low FPS may have long gop (30-60 seconds).
-//static const qint64 MAX_FIRST_GOP_DURATION = 1000 * 1000 * 10;
+// This constant limit duration of a first GOP. So, if jump to position X, and first I-frame has
+// position X-N, data will be transfer for range [X-N..X-N+MAX_FIRST_GOP_DURATION]. It prevent long
+// preparing then reverse mode is activate. I have increased constant because of camera with very
+// low FPS may have long gop (30-60 seconds).
+// static const qint64 MAX_FIRST_GOP_DURATION = 1000 * 1000 * 10;
 #define MAX_FIRST_GOP_FRAMES 250ll
 
 #define MAX_FRAME_DURATION_MS (5ll * 1000)
@@ -36,7 +37,7 @@ NX_VMS_COMMON_API QString closeDirPathUnix(QString path);
 
 NX_VMS_COMMON_API QString getValueFromString(const QString& line);
 
-static const qint64 UTC_TIME_DETECTION_THRESHOLD = 1'000'000ll * 3600*24*100;
+static const qint64 UTC_TIME_DETECTION_THRESHOLD = 1'000'000ll * 3600 * 24 * 100;
 
 /**
  * \returns                             has of string. Added for compatibility with QT4 code

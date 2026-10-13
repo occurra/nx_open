@@ -12,7 +12,7 @@ struct AVHWDeviceContext;
 namespace nx::metric { struct Storage; }
 namespace nx::media::ffmpeg {
 
-class NX_MEDIA_CORE_API HwVideoDecoder : public QnAbstractVideoDecoder
+class NX_MEDIA_CORE_API HwVideoDecoder: public QnAbstractVideoDecoder
 {
 public:
     using InitFunc = std::function<bool(AVHWDeviceContext*)>;
@@ -33,11 +33,10 @@ public:
     static QSize maxResolution(const AVCodecID codec);
 
     // QnAbstractVideoDecoder impl
-    bool decode(
-        const QnConstCompressedVideoDataPtr& data,
-        CLVideoDecoderOutputPtr* const outFrame) override;
+    bool decode(const QnConstCompressedVideoDataPtr& data, CLVideoDecoderOutputPtr* const outFrame)
+        override;
 
-    bool hardwareDecoder() const override {return m_hardwareMode; }
+    bool hardwareDecoder() const override { return m_hardwareMode; }
     void setLightCpuMode(DecodeMode) override {}
     void setMultiThreadDecodePolicy(MultiThreadDecodePolicy policy) override;
     int getWidth() const override;
@@ -71,7 +70,7 @@ private:
     std::unique_ptr<AvOptions> m_options = nullptr;
     nx::metric::Storage* m_metrics = nullptr;
     uint32_t m_channel = 0;
-    QnAbstractMediaData::MediaFlags m_flags {};
+    QnAbstractMediaData::MediaFlags m_flags{};
     MultiThreadDecodePolicy m_mtDecodingPolicy = MultiThreadDecodePolicy::enabled;
 };
 

@@ -20,8 +20,8 @@ public:
     IntegerRange& operator=(const IntegerRange&) = default;
 
     qint64 first() const; //< First element in range.
-    qint64 last() const;  //< Last element in range.
-    qint64 next() const;  //< Next element past range.
+    qint64 last() const; //< Last element in range.
+    qint64 next() const; //< Next element past range.
     qint64 count() const; //< Count of elements in range.
 
     bool contains(qint64 value) const; //< Whether range contains specified value.

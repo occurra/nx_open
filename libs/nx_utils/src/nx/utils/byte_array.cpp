@@ -7,11 +7,7 @@
 
 namespace nx::utils {
 
-ByteArray::ByteArray(
-    size_t alignment,
-    size_t capacity,
-    size_t padding)
-    :
+ByteArray::ByteArray(size_t alignment, size_t capacity, size_t padding):
     m_alignment(alignment),
     m_padding(padding)
 {
@@ -188,7 +184,8 @@ char* ByteArray::allocateBuffer(size_t capacity)
 
 bool ByteArray::reallocate(size_t capacity)
 {
-    if (!(NX_ASSERT(capacity >= m_size,
+    if (!(NX_ASSERT(
+            capacity >= m_size,
             "Unable to decrease capacity. Did you forget to clear() the buffer?")))
     {
         return false;

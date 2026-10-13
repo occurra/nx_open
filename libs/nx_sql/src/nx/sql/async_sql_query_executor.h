@@ -45,8 +45,8 @@ public:
     virtual void setConcurrentModificationQueryLimit(int value) = 0;
 
     /**
-     * @param enabled If set to false, then ConnectionOptions::maxPeriodQueryWaitsForAvailableConnection
-     * timeout is not respected.
+     * @param enabled If set to false, then
+     * ConnectionOptions::maxPeriodQueryWaitsForAvailableConnection timeout is not respected.
      */
     virtual void setQueryTimeoutEnabled(bool enabled) = 0;
 
@@ -98,8 +98,7 @@ public:
     template<
         typename DbFunc,
         typename =
-            std::enable_if_t<std::is_same_v<std::invoke_result_t<DbFunc, QueryContext*>, void>>
-    >
+            std::enable_if_t<std::is_same_v<std::invoke_result_t<DbFunc, QueryContext*>, void>>>
     void executeUpdate(
         DbFunc dbUpdateFunc,
         nx::MoveOnlyFunc<void(DBResult)> completionHandler,
@@ -125,11 +124,8 @@ public:
         typename CompletionHandler,
         typename AppResult = std::invoke_result_t<DbFunc, QueryContext*>,
         typename = std::enable_if_t<
-            !std::is_same_v<AppResult, void>
-            && !std::is_same_v<AppResult, DBResult>
-            && !std::is_same_v<AppResult, DBResultCode>
-        >
-    >
+            !std::is_same_v<AppResult, void> && !std::is_same_v<AppResult, DBResult>
+            && !std::is_same_v<AppResult, DBResultCode>>>
     void executeUpdate(
         DbFunc dbUpdateFunc,
         CompletionHandler handler,
@@ -155,11 +151,8 @@ public:
     template<
         typename DbFunc,
         typename =
-            std::enable_if_t<std::is_same_v<std::invoke_result_t<DbFunc, QueryContext*>, void>>
-    >
-    void executeSelect(
-        DbFunc dbUpdateFunc,
-        nx::MoveOnlyFunc<void(DBResult)> completionHandler)
+            std::enable_if_t<std::is_same_v<std::invoke_result_t<DbFunc, QueryContext*>, void>>>
+    void executeSelect(DbFunc dbUpdateFunc, nx::MoveOnlyFunc<void(DBResult)> completionHandler)
     {
         executeSelect(
             [dbUpdateFunc = std::move(dbUpdateFunc)](auto queryContext) -> DBResult
@@ -186,8 +179,7 @@ public:
      */
     template<
         typename QueryFunc,
-        typename Result = decltype(std::declval<QueryFunc>()((nx::sql::QueryContext*) nullptr))
-    >
+        typename Result = decltype(std::declval<QueryFunc>()((nx::sql::QueryContext*) nullptr))>
     Result executeUpdateSync(QueryFunc queryFunc)
     {
         std::promise<nx::sql::DBResult> queryDonePromise;
@@ -224,9 +216,11 @@ public:
      */
     void execSqlScriptSync(const std::string& script)
     {
-        executeUpdateSync([this, &script](QueryContext* queryContext) {
-            return execSqlScript(queryContext, script);
-        });
+        executeUpdateSync(
+            [this, &script](QueryContext* queryContext)
+            {
+                return execSqlScript(queryContext, script);
+            });
     }
 
     /**
@@ -239,8 +233,8 @@ public:
      * @throws nx::sql::Exception.
      */
     template<typename QueryFunc>
-    typename std::invoke_result_t<QueryFunc, nx::sql::QueryContext*>
-        executeSelectSync(QueryFunc queryFunc)
+    typename std::invoke_result_t<QueryFunc, nx::sql::QueryContext*> executeSelectSync(
+        QueryFunc queryFunc)
     {
         std::invoke_result_t<QueryFunc, nx::sql::QueryContext*> result;
 
@@ -266,7 +260,8 @@ public:
     // Cursor operations.
 
     /**
-     * Create cursor for record-by-record access to the results of query defined by prepareCursorFunc.
+     * Create cursor for record-by-record access to the results of query defined by
+     * prepareCursorFunc.
      * @param prepareCursorFunc Invoked to prepare a query. The query is executed after return of
      * this function.
      * @param readRecordFunc Invoked to read the next record from the query prepared with
@@ -315,7 +310,8 @@ public:
      * See AbstractAsyncSqlQueryExecutor::createCursor.
      * NOTE: The method is public to allow delegation.
      */
-    virtual void createCursorImpl(std::unique_ptr<detail::AbstractCursorHandler> cursorHandler) = 0;
+    virtual void createCursorImpl(
+        std::unique_ptr<detail::AbstractCursorHandler> cursorHandler) = 0;
 
     /**
      * See AbstractAsyncSqlQueryExecutor::fetchNextRecordFromCursorImpl.
@@ -329,8 +325,7 @@ public:
  * Executes DB request asynchronously.
  * Scales DB operations on multiple threads
  */
-class NX_SQL_API AsyncSqlQueryExecutor:
-    public AbstractAsyncSqlQueryExecutor
+class NX_SQL_API AsyncSqlQueryExecutor: public AbstractAsyncSqlQueryExecutor
 {
 public:
     static const int kDefaultQueryPriority;

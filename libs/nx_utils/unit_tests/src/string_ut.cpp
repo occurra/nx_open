@@ -1,15 +1,13 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
+#include <array>
+#include <cstring>
 #include <functional>
+#include <list>
+#include <set>
 #include <vector>
 
 #include <gtest/gtest.h>
-
-#include <array>
-#include <cstring>
-#include <list>
-#include <array>
-#include <set>
 
 #include <QtCore/QList>
 #include <QtCore/QVector>
@@ -20,74 +18,49 @@ namespace nx::utils::test {
 
 TEST(replaceStrings, emptySubstitutionsLeaveIntact)
 {
-    ASSERT_EQ(replaceStrings(
-        "abc",
-        {}),
-        QString("abc"));
+    ASSERT_EQ(replaceStrings("abc", {}), QString("abc"));
 }
 
 TEST(replaceStrings, noMatch)
 {
-    ASSERT_EQ(replaceStrings(
-        "def",
-        {{"a", "b"}}),
-        QString("def"));
+    ASSERT_EQ(replaceStrings("def", {{"a", "b"}}), QString("def"));
 }
 
 TEST(replaceStrings, independentSubstitutions)
 {
-    ASSERT_EQ(replaceStrings(
-        "abc",
-        {{"a", "d"}, {"c", "e"}}),
-        QString("dbe"));
+    ASSERT_EQ(replaceStrings("abc", {{"a", "d"}, {"c", "e"}}), QString("dbe"));
 }
 
 TEST(replaceStrings, sequentiveSubstitutions)
 {
-    ASSERT_EQ(replaceStrings(
-        "abc",
-        {{"a", "b"}, {"b", "c"}, {"c", "a"}}),
-        QString("bca"));
+    ASSERT_EQ(replaceStrings("abc", {{"a", "b"}, {"b", "c"}, {"c", "a"}}), QString("bca"));
 }
 
 TEST(replaceStrings, sequentiveSubstitutionsOfDifferentSize)
 {
-    ASSERT_EQ(replaceStrings(
-        "abc",
-        {{"a", "abc"}, {"b", "abc"}, {"c", "abc"}}),
+    ASSERT_EQ(
+        replaceStrings("abc", {{"a", "abc"}, {"b", "abc"}, {"c", "abc"}}),
         QString("abcabcabc"));
 }
 
 TEST(replaceStrings, sequentiveSubstitutionsWithOverriding)
 {
-    ASSERT_EQ(replaceStrings(
-        "abc",
-        {{"ab", "b"}, {"b", "c"}}),
-        QString("bc"));
+    ASSERT_EQ(replaceStrings("abc", {{"ab", "b"}, {"b", "c"}}), QString("bc"));
 }
 
 TEST(replaceStrings, substitutionStartsWithSubstringOfAnotherSubstitution)
 {
-    ASSERT_EQ(replaceStrings(
-        "abac",
-        {{"ab", "b"}, {"a", "c"}}),
-        QString("bcc"));
+    ASSERT_EQ(replaceStrings("abac", {{"ab", "b"}, {"a", "c"}}), QString("bcc"));
 }
 
 TEST(replaceStrings, orderDoesMatter)
 {
-    ASSERT_EQ(replaceStrings(
-        "abc",
-        {{"a", "b"}, {"a", "c"}}),
-        QString("bbc"));
+    ASSERT_EQ(replaceStrings("abc", {{"a", "b"}, {"a", "c"}}), QString("bbc"));
 }
 
 TEST(replaceStrings, specialCharacters)
 {
-    ASSERT_EQ(replaceStrings(
-        "|.*",
-        {{".", "*"}, {"|", "*"}}),
-        QString("***"));
+    ASSERT_EQ(replaceStrings("|.*", {{".", "*"}, {"|", "*"}}), QString("***"));
 }
 
 TEST(replaceCharacters, nonFileNameCharacters)
@@ -152,7 +125,7 @@ TEST(String, strJoin)
     ASSERT_EQ(nx::utils::strJoin(source1, ", "), QString("s1, s2, s3"));
     ASSERT_EQ(nx::utils::strJoin(source1.begin() + 1, source1.end(), ", "), QString("s2, s3"));
 
-    std::list<QByteArray>source2{"s1", "s2", "s3"};
+    std::list<QByteArray> source2{"s1", "s2", "s3"};
     ASSERT_EQ(nx::utils::strJoin(source2, QByteArray()), QByteArray("s1s2s3"));
 
     std::set<std::string> source3{"s2", "s3", "s1"};
@@ -225,46 +198,21 @@ TEST_P(GenerateUniqueString, validateExpectedString)
         input.expectedString);
 }
 
-static std::vector<GenerateUniqueStringInput> kGenerateUniqueStringInput {
-    {
-        {},
-        "New Layout",
-        "New Layout %1",
-        "New Layout"
-    },
-    {
-        {{"New Layout"}},
-        "New Layout",
-        "New Layout %1",
-        "New Layout 2"
-    },
-    {
-        {{"New Layout 20"}},
-        "New Layout",
-        "New Layout %1",
-        "New Layout 21"
-    },
-    {
-        {},
-        "New Layout (copy)",
-        "New Layout (copy %2)",
-        "New Layout (copy)"
-    },
-    {
-        {{"New Layout (copy)"}},
-        "New Layout (copy)",
-        "New Layout (copy %2)",
-        "New Layout (copy 2)"
-    },
-    {
-        {{"New Layout (copy 20)"}},
-        "New Layout (copy)",
-        "New Layout (copy %2)",
-        "New Layout (copy 21)"
-    },
+static std::vector<GenerateUniqueStringInput> kGenerateUniqueStringInput{
+    {{}, "New Layout", "New Layout %1", "New Layout"},
+    {{{"New Layout"}}, "New Layout", "New Layout %1", "New Layout 2"},
+    {{{"New Layout 20"}}, "New Layout", "New Layout %1", "New Layout 21"},
+    {{}, "New Layout (copy)", "New Layout (copy %2)", "New Layout (copy)"},
+    {{{"New Layout (copy)"}}, "New Layout (copy)", "New Layout (copy %2)", "New Layout (copy 2)"},
+    {{{"New Layout (copy 20)"}},
+     "New Layout (copy)",
+     "New Layout (copy %2)",
+     "New Layout (copy 21)"},
 };
 
-INSTANTIATE_TEST_SUITE_P(String, GenerateUniqueString,
+INSTANTIATE_TEST_SUITE_P(
+    String,
+    GenerateUniqueString,
     ::testing::ValuesIn(kGenerateUniqueStringInput));
 
 //-------------------------------------------------------------------------------------------------
@@ -275,9 +223,7 @@ struct JsonFormatInput
     QString formattedJson;
 };
 
-class JsonFormatting:
-    public ::testing::Test,
-    public ::testing::WithParamInterface<JsonFormatInput>
+class JsonFormatting: public ::testing::Test, public ::testing::WithParamInterface<JsonFormatInput>
 {
 };
 
@@ -289,7 +235,7 @@ TEST_P(JsonFormatting, validateFormat)
         input.formattedJson.toStdString().c_str());
 }
 
-static std::vector<JsonFormatInput> kJsonFormatInput {
+static std::vector<JsonFormatInput> kJsonFormatInput{
     {
         "{}",
         "{}",
@@ -306,65 +252,44 @@ static std::vector<JsonFormatInput> kJsonFormatInput {
         "[",
         "[",
     },
-    {
-        "}",
-        "\n}"
-    },
-    {
-        "]",
-        "\n]"
-    },
-    {
-        "{{",
-/*suppress newline*/ 1 + (const char*) R"json(
+    {"}", "\n}"},
+    {"]", "\n]"},
+    {"{{",
+     /*suppress newline*/ 1 + (const char*) R"json(
 {
-    {)json"
-    },
-    {
-R"json({"someKey":0})json",
-/*suppress newline*/ 1 + (const char*) R"json(
+    {)json"},
+    {R"json({"someKey":0})json",
+     /*suppress newline*/ 1 + (const char*) R"json(
 {
     "someKey": 0
-})json"
-    },
-    {
-R"json({"someKey\"":0})json",
-/*suppress newline*/ 1 + (const char*) R"json(
+})json"},
+    {R"json({"someKey\"":0})json",
+     /*suppress newline*/ 1 + (const char*) R"json(
 {
     "someKey\"": 0
-})json"
-    },
-    {
-R"json({"someKey\\\"":0})json",
-/*suppress newline*/ 1 + (const char*) R"json(
+})json"},
+    {R"json({"someKey\\\"":0})json",
+     /*suppress newline*/ 1 + (const char*) R"json(
 {
     "someKey\\\"": 0
-})json"
-    },
-    {
-R"json("someKey":{"foo":"bar"})json",
-/*suppress newline*/ 1 + (const char*) R"json(
+})json"},
+    {R"json("someKey":{"foo":"bar"})json",
+     /*suppress newline*/ 1 + (const char*) R"json(
 "someKey": {
     "foo": "bar"
-})json"
-    },
-    {
-R"json({"someKey: [ 3, 4, 5]":0})json",
-/*suppress newline*/ 1 + (const char*) R"json(
+})json"},
+    {R"json({"someKey: [ 3, 4, 5]":0})json",
+     /*suppress newline*/ 1 + (const char*) R"json(
 {
     "someKey: [ 3, 4, 5]": 0
-})json"
-    },
-    {
-R"json({"someKey\"{":0})json",
-/*suppress newline*/ 1 + (const char*) R"json(
+})json"},
+    {R"json({"someKey\"{":0})json",
+     /*suppress newline*/ 1 + (const char*) R"json(
 {
     "someKey\"{": 0
-})json"
-    },
-    {
-R"json({"random":"10","random float":"37.234","bool":"true","date":"1991-06-12","regEx":"ooooooooooooooooooooooooooooooooooo what","enum":"generator","firstname":"Priscilla","lastname":"Wu","city":"Forked River","country":"Lebanon","countryCode":"GQ","email uses current data":"Priscilla.Wu@gmail.com","email from expression":"Priscilla.Wu@yopmail.com","array":["Adore","Orsola","Elka","Edyth","Bobbi"],"array of objects":[{"index":"0","index start at 5":"5"},{"index":"1","index start at 5":"6"},{"index":"2","index start at 5":"7"}],"Ardeen":{"age":"83"}})json",
-/*suppress newline*/ 1 + (const char*) R"json(
+})json"},
+    {R"json({"random":"10","random float":"37.234","bool":"true","date":"1991-06-12","regEx":"ooooooooooooooooooooooooooooooooooo what","enum":"generator","firstname":"Priscilla","lastname":"Wu","city":"Forked River","country":"Lebanon","countryCode":"GQ","email uses current data":"Priscilla.Wu@gmail.com","email from expression":"Priscilla.Wu@yopmail.com","array":["Adore","Orsola","Elka","Edyth","Bobbi"],"array of objects":[{"index":"0","index start at 5":"5"},{"index":"1","index start at 5":"6"},{"index":"2","index start at 5":"7"}],"Ardeen":{"age":"83"}})json",
+     /*suppress newline*/ 1 + (const char*) R"json(
 {
     "random": "10",
     "random float": "37.234",
@@ -403,10 +328,9 @@ R"json({"random":"10","random float":"37.234","bool":"true","date":"1991-06-12",
     "Ardeen": {
         "age": "83"
     }
-})json"
-    },
+})json"},
     {
-/*suppress newline*/ 1 + (const char*) R"json(
+        /*suppress newline*/ 1 + (const char*) R"json(
 {
     "already":     "slightly",
     "formatted": [
@@ -415,7 +339,7 @@ R"json({"random":"10","random float":"37.234","bool":"true","date":"1991-06-12",
       "bad whitespace"
     ]
 })json",
-/*suppress newline*/ 1 + (const char*) R"json(
+        /*suppress newline*/ 1 + (const char*) R"json(
 {
     "already": "slightly",
     "formatted": [
@@ -426,14 +350,14 @@ R"json({"random":"10","random float":"37.234","bool":"true","date":"1991-06-12",
 })json",
     },
     {
-/*suppress newline*/ 1 + (const char*) R"json(
+        /*suppress newline*/ 1 + (const char*) R"json(
 {
     "emptyContainerButWhiteSpace": [    ],
     "anotherEmpty": {
 
     }
 })json",
-/*suppress newline*/ 1 + (const char*) R"json(
+        /*suppress newline*/ 1 + (const char*) R"json(
 {
     "emptyContainerButWhiteSpace": [],
     "anotherEmpty": {}
@@ -461,119 +385,86 @@ class QuoteDelimitedTokens:
 TEST_P(QuoteDelimitedTokens, validateFormat)
 {
     const QuoteDelimitedTokensInput input = GetParam();
-    EXPECT_EQ(
-        quoteDelimitedTokens(input.input, input.delimiters),
-        input.expected);
+    EXPECT_EQ(quoteDelimitedTokens(input.input, input.delimiters), input.expected);
 }
 
 static std::vector<QuoteDelimitedTokensInput> kQuoteDelimitedTokensInput{
     // Basic cases
-    {
-        "", // empty input
-        {"OR", "AND"},
-        ""
-    },
-    {
-        "simple", // single word
-        {"OR", "AND"},
-        "simple"
-    },
-    {
-        "hello world", // two words
-        {"OR", "AND"},
-        "\"hello world\""
-    },
+    {"", // empty input
+     {"OR", "AND"},
+     ""},
+    {"simple", // single word
+     {"OR", "AND"},
+     "simple"},
+    {"hello world", // two words
+     {"OR", "AND"},
+     "\"hello world\""},
 
     // Cases with delimiters
-    {
-        "hello world OR test case", // basic OR case
-        {"OR", "AND"},
-        "\"hello world\" OR \"test case\""
-    },
-    {
-        "a b AND c d OR e f", // multiple delimiters
-        {"OR", "AND"},
-        "\"a b\" AND \"c d\" OR \"e f\""
-    },
+    {"hello world OR test case", // basic OR case
+     {"OR", "AND"},
+     "\"hello world\" OR \"test case\""},
+    {"a b AND c d OR e f", // multiple delimiters
+     {"OR", "AND"},
+     "\"a b\" AND \"c d\" OR \"e f\""},
 
     // Cases with quotes
-    {
-        "\"quoted text\" OR simple", // already quoted
-        {"OR", "AND"},
-        "\"quoted text\" OR simple"
-    },
-    {
-        "\"hello world\" AND \"test case\"", // all quoted
-        {"OR", "AND"},
-        "\"hello world\" AND \"test case\""
-    },
+    {"\"quoted text\" OR simple", // already quoted
+     {"OR", "AND"},
+     "\"quoted text\" OR simple"},
+    {"\"hello world\" AND \"test case\"", // all quoted
+     {"OR", "AND"},
+     "\"hello world\" AND \"test case\""},
 
     // Custom delimiters
-    {
-        "a b XOR c d", // custom delimiter
-        {"XOR"},
-        "\"a b\" XOR \"c d\""
-    },
-    {
-        "word1 PLUS word2 MINUS word3", // multiple custom delimiters
-        {"PLUS", "MINUS"},
-        "word1 PLUS word2 MINUS word3"
-    },
+    {"a b XOR c d", // custom delimiter
+     {"XOR"},
+     "\"a b\" XOR \"c d\""},
+    {"word1 PLUS word2 MINUS word3", // multiple custom delimiters
+     {"PLUS", "MINUS"},
+     "word1 PLUS word2 MINUS word3"},
 
     // Edge cases
-    {
-        "OR AND", // only delimiters
-        {"OR", "AND"},
-        "OR AND"
-    },
-    {
-        "\"complex quoted\" OR \"text with AND\" AND simple", // nested delimiters in quotes
-        {"OR", "AND"},
-        "\"complex quoted\" OR \"text with AND\" AND simple"
-    },
-    {
-        "hello   world    OR    test", // multiple spaces
-        {"OR"},
-        "\"hello world\" OR test"
-    },
+    {"OR AND", // only delimiters
+     {"OR", "AND"},
+     "OR AND"},
+    {"\"complex quoted\" OR \"text with AND\" AND simple", // nested delimiters in quotes
+     {"OR", "AND"},
+     "\"complex quoted\" OR \"text with AND\" AND simple"},
+    {"hello   world    OR    test", // multiple spaces
+     {"OR"},
+     "\"hello world\" OR test"},
 
     // Mixed quoted and unquoted cases
-    {
-        "\"first part\" second part OR test", // mixed quotes before delimiter
-        {"OR"},
-        "\"\"first part\" second part\" OR test"
-    },
-    {
-        "test OR \"quoted part\" unquoted part", // mixed quotes after delimiter
-        {"OR"},
-        "test OR \"\"quoted part\" unquoted part\""
-    },
-    {
-        "a \"b c\" d AND \"e f\" g h OR i", // mixed quotes with multiple delimiters
-        {"AND", "OR"},
-        "\"a \"b c\" d\" AND \"\"e f\" g h\" OR i"
-    },
-    {
-        "\"a b\" c d XOR e \"f g\" h", // mixed quotes on both sides
-        {"XOR"},
-        "\"\"a b\" c d\" XOR \"e \"f g\" h\""
-    },
+    {"\"first part\" second part OR test", // mixed quotes before delimiter
+     {"OR"},
+     "\"\"first part\" second part\" OR test"},
+    {"test OR \"quoted part\" unquoted part", // mixed quotes after delimiter
+     {"OR"},
+     "test OR \"\"quoted part\" unquoted part\""},
+    {"a \"b c\" d AND \"e f\" g h OR i", // mixed quotes with multiple delimiters
+     {"AND", "OR"},
+     "\"a \"b c\" d\" AND \"\"e f\" g h\" OR i"},
+    {"\"a b\" c d XOR e \"f g\" h", // mixed quotes on both sides
+     {"XOR"},
+     "\"\"a b\" c d\" XOR \"e \"f g\" h\""},
 
     // Multiple spaces cases
     {
         "\"quoted   text     here\" OR test", // multiple spaces in quotes
         {"OR"},
-        "\"quoted   text     here\" OR test"  // preserve multiple spaces in quotes
+        "\"quoted   text     here\" OR test" // preserve multiple spaces in quotes
     },
     {
         "hello   world     test OR simple", // multiple spaces without quotes
         {"OR"},
-        "\"hello world test\" OR simple"   // normalize multiple spaces
+        "\"hello world test\" OR simple" // normalize multiple spaces
     },
     {
         "test OR \"quoted    part\"   \"second     part\"", // varying spaces
         {"OR"},
-        "test OR \"\"quoted    part\" \"second     part\"\"" // preserve in quotes, normalize between
+        "test OR \"\"quoted    part\" \"second     part\"\"" // preserve in quotes, normalize
+        // between
     },
     {
         "test OR \"quoted    part\"\"second     part\"", // without space
@@ -583,11 +474,13 @@ static std::vector<QuoteDelimitedTokensInput> kQuoteDelimitedTokensInput{
     {
         "\"text   with    spaces\" AND normal   text    here", // mixed multiple spaces
         {"AND"},
-        "\"text   with    spaces\" AND \"normal text here\"" // preserve in quotes, normalize outside
-    }
-};
+        "\"text   with    spaces\" AND \"normal text here\"" // preserve in quotes, normalize
+        // outside
+    }};
 
-INSTANTIATE_TEST_SUITE_P(String, QuoteDelimitedTokens,
+INSTANTIATE_TEST_SUITE_P(
+    String,
+    QuoteDelimitedTokens,
     ::testing::ValuesIn(kQuoteDelimitedTokensInput));
 
 } // namespace nx::utils::test

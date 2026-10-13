@@ -15,10 +15,7 @@ namespace nx::test {
 class DummyMutex
 {
 public:
-    DummyMutex(
-        MutexLockAnalyzer* analyzer,
-        Mutex::RecursionMode mode = Mutex::NonRecursive)
-        :
+    DummyMutex(MutexLockAnalyzer* analyzer, Mutex::RecursionMode mode = Mutex::NonRecursive):
         m_analyzer(analyzer),
         m_mode(mode)
     {
@@ -61,8 +58,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class MutexLockAnalyzer:
-    public ::testing::Test
+class MutexLockAnalyzer: public ::testing::Test
 {
 public:
     MutexLockAnalyzer()
@@ -77,15 +73,9 @@ public:
 protected:
     nx::MutexLockAnalyzer m_analyzer;
 
-    void assertDeadlockIsReported()
-    {
-        ASSERT_TRUE(!m_detectedDeadlocks.empty());
-    }
+    void assertDeadlockIsReported() { ASSERT_TRUE(!m_detectedDeadlocks.empty()); }
 
-    void assertNoDeadlockIsReported()
-    {
-        ASSERT_TRUE(m_detectedDeadlocks.empty());
-    }
+    void assertNoDeadlockIsReported() { ASSERT_TRUE(m_detectedDeadlocks.empty()); }
 
     void lockInANewThread(const std::vector<DummyMutex*>& mutexes)
     {
@@ -94,8 +84,8 @@ protected:
             {
                 std::for_each(mutexes.begin(), mutexes.end(), std::mem_fn(&DummyMutex::lock));
                 std::for_each(mutexes.rbegin(), mutexes.rend(), std::mem_fn(&DummyMutex::unlock));
-            }
-        ).join();
+            })
+            .join();
     }
 
 private:
@@ -148,7 +138,7 @@ TEST_F(MutexLockAnalyzer, deadlock_between_N_threads_is_detected)
 
     std::vector<DummyMutex> mutexes(kMutexCount, DummyMutex(&m_analyzer));
     for (int i = 0; i < kMutexCount; ++i)
-        lockInANewThread({&mutexes[i], &mutexes[(i+1) % kMutexCount]});
+        lockInANewThread({&mutexes[i], &mutexes[(i + 1) % kMutexCount]});
 
     assertDeadlockIsReported();
 }

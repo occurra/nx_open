@@ -4,9 +4,8 @@
 #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "socket_common.h"
-
 #include <bit>
+#include <cstring>
 
 #include <QtCore/QJsonObject>
 #include <QtCore/QJsonValue>
@@ -17,20 +16,16 @@
 #include <nx/utils/timer_manager.h>
 #include <nx/utils/url.h>
 
-#include <cstring>
-
+#include "socket_common.h"
 #include "socket_global.h"
 
 namespace nx::network {
 
 bool socketCannotRecoverFromError(SystemError::ErrorCode sysErrorCode)
 {
-    return sysErrorCode != SystemError::noError
-        && sysErrorCode != SystemError::wouldBlock
-        && sysErrorCode != SystemError::again
-        && sysErrorCode != SystemError::timedOut
-        && sysErrorCode != SystemError::interrupted
-        && sysErrorCode != SystemError::inProgress;
+    return sysErrorCode != SystemError::noError && sysErrorCode != SystemError::wouldBlock
+        && sysErrorCode != SystemError::again && sysErrorCode != SystemError::timedOut
+        && sysErrorCode != SystemError::interrupted && sysErrorCode != SystemError::inProgress;
 }
 
 HostAddress::HostAddress():
@@ -44,8 +39,7 @@ HostAddress::HostAddress():
 HostAddress::HostAddress(
     std::optional<std::string_view> addressString,
     std::optional<in_addr> ipV4,
-    std::optional<in6_addr> ipV6)
-    :
+    std::optional<in6_addr> ipV6):
     m_string(std::move(addressString)),
     m_ipV4(ipV4 ? std::optional{std::bit_cast<InAddr>(*ipV4)} : std::nullopt),
     m_ipV6(ipV6 ? std::optional{std::bit_cast<In6Addr>(*ipV6)} : std::nullopt)
@@ -58,7 +52,9 @@ HostAddress::HostAddress(
 }
 
 const HostAddress HostAddress::localhost(
-    std::string_view("localhost"), in4addr_loopback, in6addr_loopback);
+    std::string_view("localhost"),
+    in4addr_loopback,
+    in6addr_loopback);
 
 const HostAddress HostAddress::anyHost(*ipV4from("0.0.0.0"));
 
@@ -73,12 +69,12 @@ HostAddress::HostAddress(const in6_addr& addr, std::optional<uint32_t> scopeId):
 {
 }
 
-HostAddress::HostAddress(std::string_view host): m_string(host)
+HostAddress::HostAddress(std::string_view host):
+    m_string(host)
 {
     if (!host.empty())
     {
-        NX_ASSERT_HEAVY_CONDITION(
-            nx::Url::isValidHost(host), "Invalid host address: [%1]", host);
+        NX_ASSERT_HEAVY_CONDITION(nx::Url::isValidHost(host), "Invalid host address: [%1]", host);
     }
 }
 
@@ -101,8 +97,7 @@ HostAddress::~HostAddress() = default;
 
 bool HostAddress::operator==(const HostAddress& rhs) const
 {
-    return isIpAddress() == rhs.isIpAddress()
-        && toString() == rhs.toString()
+    return isIpAddress() == rhs.isIpAddress() && toString() == rhs.toString()
         && m_scopeId.value_or(0) == rhs.m_scopeId.value_or(0);
 }
 
@@ -224,7 +219,8 @@ bool HostAddress::isLocalNetwork() const
 {
     if (const auto& ip = ipV4())
     {
-        // TODO: Incorrect check for localhost! IPv4 should be 127.0.0.0/8, should call isLocalHost.
+        // TODO: Incorrect check for localhost! IPv4 should be 127.0.0.0/8, should call
+        // isLocalHost.
         const auto addr = ntohl(ip->s_addr);
         return (addr == 0x7F000001) // 127.0.0.1
             || (addr >= 0x0A000000 && addr <= 0x0AFFFFFF) // 10.*.*.*
@@ -309,7 +305,7 @@ std::optional<uint32_t> HostAddress::scopeId() const
 std::optional<std::string> HostAddress::ipToString(const in_addr& addr)
 {
     char buffer[1024];
-    if (inet_ntop(AF_INET, (void*)&addr, buffer, sizeof(buffer)))
+    if (inet_ntop(AF_INET, (void*) &addr, buffer, sizeof(buffer)))
         return std::string(buffer);
 
     return std::nullopt;
@@ -322,7 +318,7 @@ std::optional<std::string> HostAddress::ipToString(
     char buffer[1024];
     std::string result;
 
-    if (inet_ntop(AF_INET6, (void*)&addr, buffer, sizeof(buffer)))
+    if (inet_ntop(AF_INET6, (void*) &addr, buffer, sizeof(buffer)))
         result = std::string(buffer);
     else
         return std::nullopt;
@@ -365,7 +361,10 @@ IpV6WithScope HostAddress::ipV6from(std::string_view str)
     static constexpr auto maxIpv6AddressStrSize = 16 * 2 + 7;
 
     const auto [tokens, count] = nx::utils::split_n<2>(
-        str, '%', nx::utils::GroupToken::none, nx::utils::SplitterFlag::noFlags);
+        str,
+        '%',
+        nx::utils::GroupToken::none,
+        nx::utils::SplitterFlag::noFlags);
 
     if (count == 0)
         return IpV6WithScope();
@@ -477,8 +476,7 @@ SocketAddress::SocketAddress(std::string_view str):
         [](std::string_view str)
         {
             const auto [hostStr, parsedPort] = split(str);
-            return SocketAddress(HostAddress(hostStr),
-                parsedPort.value_or(kAnyPort));
+            return SocketAddress(HostAddress(hostStr), parsedPort.value_or(kAnyPort));
         }(str))
 {
     NX_ASSERT_HEAVY_CONDITION(!toString().empty());
@@ -535,14 +533,15 @@ bool SocketAddress::isNull() const
 
 const SocketAddress SocketAddress::anyAddress(HostAddress::anyHost, 0);
 
-const SocketAddress SocketAddress::anyPrivateAddress(
-    HostAddress::localhost, 0);
+const SocketAddress SocketAddress::anyPrivateAddress(HostAddress::localhost, 0);
 
 const SocketAddress SocketAddress::anyPrivateAddressV4(
-    HostAddress::localhost.toPureIpAddress(AF_INET), 0);
+    HostAddress::localhost.toPureIpAddress(AF_INET),
+    0);
 
 const SocketAddress SocketAddress::anyPrivateAddressV6(
-    HostAddress::localhost.toPureIpAddress(AF_INET6), 0);
+    HostAddress::localhost.toPureIpAddress(AF_INET6),
+    0);
 
 std::string_view SocketAddress::trimIpV6(std::string_view ip)
 {
@@ -568,12 +567,13 @@ SocketAddress SocketAddress::fromUrl(const nx::Url& url, bool useDefaultPortFrom
     return {url.host().toStdString(), quint16(url.port(defaultPort))};
 }
 
-std::pair<std::string_view, std::optional<int>> SocketAddress::split(
-    std::string_view str)
+std::pair<std::string_view, std::optional<int>> SocketAddress::split(std::string_view str)
 {
     const auto [tokens, count] = nx::utils::split_n<3>(
-        str, ':',
-        nx::utils::GroupToken::squareBrackets, nx::utils::SplitterFlag::noFlags);
+        str,
+        ':',
+        nx::utils::GroupToken::squareBrackets,
+        nx::utils::SplitterFlag::noFlags);
     if (count > 2) // IPv6 address with no brackets?
         return {str, std::nullopt};
 
@@ -622,8 +622,7 @@ bool deserialize(QnJsonContext*, const QJsonValue& source, SocketAddress* value)
 KeepAliveOptions::KeepAliveOptions(
     std::chrono::milliseconds inactivityPeriodBeforeFirstProbe,
     std::chrono::milliseconds probeSendPeriod,
-    int probeCount)
-    :
+    int probeCount):
     inactivityPeriodBeforeFirstProbe(inactivityPeriodBeforeFirstProbe),
     probeSendPeriod(probeSendPeriod),
     probeCount(probeCount)
@@ -647,7 +646,8 @@ std::string KeepAliveOptions::toString() const
     QString result;
     result += "{";
     if (inactivityPeriodBeforeFirstProbe.count() % kMillisPerSec == 0)
-        result += QString::number(duration_cast<seconds>(inactivityPeriodBeforeFirstProbe).count());
+        result +=
+            QString::number(duration_cast<seconds>(inactivityPeriodBeforeFirstProbe).count());
     else
         result += QString::number(inactivityPeriodBeforeFirstProbe.count()) + "ms";
     result += ",";
@@ -664,16 +664,15 @@ std::string KeepAliveOptions::toString() const
 
 void KeepAliveOptions::resetUnsupportedFieldsToSystemDefault()
 {
-    #if defined(_WIN32)
-        probeCount = 10;
-    #elif defined(__APPLE__)
-        probeSendPeriod = std::chrono::seconds::zero();
-        probeCount = 0;
-    #endif // _WIN32
+#if defined(_WIN32)
+    probeCount = 10;
+#elif defined(__APPLE__)
+    probeSendPeriod = std::chrono::seconds::zero();
+    probeCount = 0;
+#endif // _WIN32
 }
 
-std::optional<KeepAliveOptions> KeepAliveOptions::fromString(
-    std::string_view str)
+std::optional<KeepAliveOptions> KeepAliveOptions::fromString(std::string_view str)
 {
     str = nx::utils::trim(str, "{}");
     const auto [tokens, count] = nx::utils::split_n<3>(str, ',');
@@ -683,8 +682,7 @@ std::optional<KeepAliveOptions> KeepAliveOptions::fromString(
     KeepAliveOptions options;
     options.inactivityPeriodBeforeFirstProbe =
         nx::utils::parseTimerDuration(nx::utils::trim(tokens[0]));
-    options.probeSendPeriod =
-        nx::utils::parseTimerDuration(nx::utils::trim(tokens[1]));
+    options.probeSendPeriod = nx::utils::parseTimerDuration(nx::utils::trim(tokens[1]));
     options.probeCount = nx::utils::stoi(nx::utils::trim(tokens[2]));
     return options;
 }

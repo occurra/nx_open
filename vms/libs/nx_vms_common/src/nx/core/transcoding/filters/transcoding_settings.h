@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <QtCore/QList>
 #include <QtCore/QRectF>
 #include <QtCore/QSharedPointer>
 #include <QtCore/QTimeZone>
-#include <QtCore/QList>
 #include <QtGui/QColor>
 #include <QtGui/QImage>
 

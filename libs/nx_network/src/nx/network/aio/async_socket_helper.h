@@ -42,9 +42,9 @@ public:
     virtual void bindToAioThread(nx::network::aio::AbstractAioThread* aioThread)
     {
         NX_ASSERT(
-            this->m_socket->impl()->aioThread->load() == aioThread ||
-            !this->m_socket->impl()->aioThread->load() ||
-            !this->m_socket->impl()->aioThread->load()->isSocketBeingMonitored(this->m_socket));
+            this->m_socket->impl()->aioThread->load() == aioThread
+            || !this->m_socket->impl()->aioThread->load()
+            || !this->m_socket->impl()->aioThread->load()->isSocketBeingMonitored(this->m_socket));
 
         if (this->m_socket->impl()->aioThread->load() != aioThread)
             m_socketInterruptionFlag.interrupt();
@@ -72,8 +72,8 @@ protected:
 };
 
 /**
- * Implements asynchronous socket operations (connect, send, recv) and async cancellation routines using AIOService.
- * NOTE: When adding support for win32 I/O completion ports this class should
+ * Implements asynchronous socket operations (connect, send, recv) and async cancellation routines
+ * using AIOService. NOTE: When adding support for win32 I/O completion ports this class should
  *   become an abstraction level on top of completion ports and AIOService.
  */
 template<class SocketType>
@@ -84,10 +84,7 @@ class AsyncSocketImplHelper:
     using base_type = BaseAsyncSocketImplHelper<SocketType>;
 
 public:
-    AsyncSocketImplHelper(
-        SocketType* _socket,
-        int _ipVersion)
-        :
+    AsyncSocketImplHelper(SocketType* _socket, int _ipVersion):
         base_type(_socket),
         m_addressResolver(&SocketGlobals::addressResolver()),
         m_ipVersion(_ipVersion),
@@ -109,7 +106,8 @@ public:
      */
     void terminate()
     {
-        // This method is to cancel all asynchronous operations when called within socket's aio thread.
+        // This method is to cancel all asynchronous operations when called within socket's aio
+        // thread.
         // TODO: #akolesnikov What's the difference of this method from cancelAsyncIO(aio::etNone)?
 
         ++this->m_socket->impl()->terminated;
@@ -135,7 +133,8 @@ public:
             if (this->m_socket->impl()->aioThread->load())
             {
                 NX_CRITICAL(
-                    !this->m_socket->impl()->aioThread->load()->isSocketBeingMonitored(this->m_socket),
+                    !this->m_socket->impl()->aioThread->load()->isSocketBeingMonitored(
+                        this->m_socket),
                     "You MUST cancel running async socket operation before "
                     "deleting socket if you delete socket from non-aio thread");
             }
@@ -157,7 +156,8 @@ public:
         m_addressResolver->resolveAsync(
             address.toString(),
             [this, handler = std::move(handler)](
-                SystemError::ErrorCode code, std::deque<AddressEntry> addresses) mutable
+                SystemError::ErrorCode code,
+                std::deque<AddressEntry> addresses) mutable
             {
                 std::deque<HostAddress> ips;
                 for (auto& entry: addresses)
@@ -197,15 +197,22 @@ public:
         resolve(
             endpoint.address,
             [this, endpoint, port = endpoint.port, handler = std::move(handler)](
-                SystemError::ErrorCode code, std::deque<HostAddress> ips) mutable
+                SystemError::ErrorCode code,
+                std::deque<HostAddress> ips) mutable
             {
                 if (code != SystemError::noError)
                 {
-                    NX_VERBOSE(this, "%1 resolve failed. %2",
-                        endpoint, SystemError::toString(code));
+                    NX_VERBOSE(
+                        this,
+                        "%1 resolve failed. %2",
+                        endpoint,
+                        SystemError::toString(code));
 
                     return this->m_resolveResultScheduler.post(
-                        [h = std::move(handler), code]() { h(code); });
+                        [h = std::move(handler), code]()
+                        {
+                            h(code);
+                        });
                 }
 
                 connectToIpsAsync(std::move(ips), port, std::move(handler));
@@ -213,7 +220,8 @@ public:
     }
 
     void connectToIpsAsync(
-        std::deque<HostAddress> ips, uint16_t port,
+        std::deque<HostAddress> ips,
+        uint16_t port,
         nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
     {
         SocketAddress firstAddress(std::move(ips.front()), port);
@@ -248,16 +256,14 @@ public:
         {
             this->m_resolveResultScheduler.post(
                 [handler = std::move(m_connectHandler),
-                    code = SystemError::getLastOSErrorCode()]() mutable
+                 code = SystemError::getLastOSErrorCode()]() mutable
                 {
                     handler(code);
                 });
         }
     }
 
-    void readSomeAsync(
-        nx::Buffer* const buf,
-        IoCompletionHandler handler)
+    void readSomeAsync(nx::Buffer* const buf, IoCompletionHandler handler)
     {
         if (this->m_socket->impl()->terminated.load() > 0)
             return;
@@ -278,13 +284,13 @@ public:
             {
                 ++m_recvAsyncCallCounter;
                 this->m_socket->impl()->aioThread->load()->startMonitoring(
-                    this->m_socket, aio::etRead, this);
+                    this->m_socket,
+                    aio::etRead,
+                    this);
             });
     }
 
-    void sendAsync(
-        const nx::Buffer* buf,
-        IoCompletionHandler handler)
+    void sendAsync(const nx::Buffer* buf, IoCompletionHandler handler)
     {
         if (this->m_socket->impl()->terminated.load() > 0)
             return;
@@ -312,13 +318,13 @@ public:
 
                 ++m_connectSendAsyncCallCounter;
                 this->m_socket->impl()->aioThread->load()->startMonitoring(
-                    this->m_socket, aio::etWrite, this);
+                    this->m_socket,
+                    aio::etWrite,
+                    this);
             });
     }
 
-    void registerTimer(
-        std::chrono::milliseconds timeoutMs,
-        nx::MoveOnlyFunc<void()> handler)
+    void registerTimer(std::chrono::milliseconds timeoutMs, nx::MoveOnlyFunc<void()> handler)
     {
         NX_CRITICAL(timeoutMs.count(), "Timer with timeout 0 does not make any sense");
         if (this->m_socket->impl()->terminated.load() > 0)
@@ -342,12 +348,13 @@ public:
     {
         if (this->m_socket->impl()->aioThread->load() == QThread::currentThread())
         {
-            // TODO: #akolesnikov We must cancel resolve task here, but must do it without blocking!
+            // TODO: #akolesnikov We must cancel resolve task here, but must do it without
+            // blocking!
             cancelAsyncIOWhileInAioThread(eventType);
         }
         else
         {
-            //NX_ASSERT(!this->m_socket->impl()->aioThread->load()->isInAnyAioThread());
+            // NX_ASSERT(!this->m_socket->impl()->aioThread->load()->isInAnyAioThread());
 
             std::promise<void> promise;
             this->m_socket->impl()->aioThread->load()->post(
@@ -364,7 +371,8 @@ public:
     void cancelAsyncIOWhileInAioThread(const aio::EventType eventType)
     {
         stopPollingSocket(eventType);
-        std::atomic_thread_fence(std::memory_order_acquire);    //< TODO: #akolesnikov Looks like it is not needed.
+        std::atomic_thread_fence(
+            std::memory_order_acquire); //< TODO: #akolesnikov Looks like it is not needed.
 
         // We are in aio thread, CommunicatingSocketImpl::eventTriggered is down the stack
         //  avoiding unnecessary stopMonitoring calls in eventTriggered.
@@ -397,12 +405,11 @@ private:
     std::size_t m_sendBufPos = 0;
 
     /**
-     * Passing not more than this value to each socket->send call to avoid reporting send completion
-     * too early.
-     * So, when send completion is reported there is not more than this amount of data
-     * in the socket's send buffer.
+     * Passing not more than this value to each socket->send call to avoid reporting send
+     * completion too early. So, when send completion is reported there is not more than this
+     * amount of data in the socket's send buffer.
      */
-    std::size_t m_maxSendDataSize = 128*1024;
+    std::size_t m_maxSendDataSize = 128 * 1024;
     bool m_maxSendDataSizeSet = false;
 
     nx::MoveOnlyFunc<void()> m_timerHandler;
@@ -428,16 +435,14 @@ private:
         return value;
     }
 
-    virtual void eventTriggered(
-        Pollable* sock,
-        aio::EventType eventType) throw() override
+    virtual void eventTriggered(Pollable* sock, aio::EventType eventType) throw() override
     {
         try
         {
             NX_ASSERT(static_cast<Pollable*>(this->m_socket) == sock);
 
-            // NOTE: Aio guarantees that all events on the socket are handled in the same aio thread,
-            // so no synchronization is required.
+            // NOTE: Aio guarantees that all events on the socket are handled in the same aio
+            // thread, so no synchronization is required.
 
             if (eventType & aio::etRead)
             {
@@ -457,18 +462,22 @@ private:
             }
             else
             {
-                NX_CRITICAL(false, nx::format("Unexpected value: 0b%1").arg(static_cast<int>(eventType), 0, 2));
+                NX_CRITICAL(
+                    false,
+                    nx::format("Unexpected value: 0b%1").arg(static_cast<int>(eventType), 0, 2));
             }
         }
         catch (const std::exception& e)
         {
-            NX_WARNING(typeid(decltype(*this)),
+            NX_WARNING(
+                typeid(decltype(*this)),
                 nx::format("User exception caught while processing socket I/O event %1. %2")
                     .args(eventType, e.what()));
         }
         catch (...)
         {
-            NX_WARNING(typeid(decltype(*this)),
+            NX_WARNING(
+                typeid(decltype(*this)),
                 nx::format("Unknown user exception caught while processing socket I/O event %1")
                     .args(eventType));
         }
@@ -526,7 +535,8 @@ private:
                 if (registerTimerCallCounterBak == m_registerTimerCallCounter)
                 {
                     this->m_socket->impl()->aioThread->load()->stopMonitoring(
-                        this->m_socket, aio::etTimedOut);
+                        this->m_socket,
+                        aio::etTimedOut);
                 }
             });
 
@@ -547,7 +557,8 @@ private:
             // Reading to buffer.
             auto newSize = m_recvBuffer->capacity();
 
-            NX_ASSERT(newSize > m_recvBuffer->size(),
+            NX_ASSERT(
+                newSize > m_recvBuffer->size(),
                 nx::format("%1, %2").args(newSize, m_recvBuffer->size()));
 
             if (newSize == m_recvBuffer->size())
@@ -555,22 +566,19 @@ private:
             const auto bufSizeBak = m_recvBuffer->size();
             m_recvBuffer->resize(newSize);
             const auto bytesToRead = m_recvBuffer->size() - bufSizeBak;
-            const int bytesRead = this->m_socket->recv(
-                m_recvBuffer->data() + bufSizeBak,
-                bytesToRead,
-                0);
+            const int bytesRead =
+                this->m_socket->recv(m_recvBuffer->data() + bufSizeBak, bytesToRead, 0);
             if (bytesRead == -1)
             {
                 const auto lastError = SystemError::getLastOSErrorCode();
                 m_recvBuffer->resize(bufSizeBak);
 
-                if (lastError == SystemError::again ||
-                    lastError == SystemError::wouldBlock)
+                if (lastError == SystemError::again || lastError == SystemError::wouldBlock)
                 {
                     return; //< Continuing waiting for data.
                 }
 
-                reportReadCompletion(lastError, (size_t)-1);
+                reportReadCompletion(lastError, (size_t) -1);
             }
             else
             {
@@ -582,12 +590,11 @@ private:
         {
             NX_ASSERT(m_recvHandler);
 
-            reportReadCompletion(SystemError::timedOut, (size_t)-1);
+            reportReadCompletion(SystemError::timedOut, (size_t) -1);
         }
     }
 
-    void reportReadCompletion(
-        SystemError::ErrorCode errorCode, size_t bytesRead)
+    void reportReadCompletion(SystemError::ErrorCode errorCode, size_t bytesRead)
     {
         m_recvBuffer = nullptr;
 
@@ -602,7 +609,8 @@ private:
                 if (recvAsyncCallCounterBak == m_recvAsyncCallCounter)
                 {
                     this->m_socket->impl()->aioThread->load()->stopMonitoring(
-                        this->m_socket, aio::etRead);
+                        this->m_socket,
+                        aio::etRead);
                 }
             });
 
@@ -628,18 +636,15 @@ private:
                     return;
                 }
 
-                std::size_t dataToSend = std::min<std::size_t>(
-                    m_sendBuffer->size() - m_sendBufPos,
-                    m_maxSendDataSize);
+                std::size_t dataToSend =
+                    std::min<std::size_t>(m_sendBuffer->size() - m_sendBufPos, m_maxSendDataSize);
 
-                const int bytesWritten = this->m_socket->send(
-                    m_sendBuffer->data() + m_sendBufPos,
-                    dataToSend);
+                const int bytesWritten =
+                    this->m_socket->send(m_sendBuffer->data() + m_sendBufPos, dataToSend);
                 if (bytesWritten == -1)
                 {
                     const auto lastError = SystemError::getLastOSErrorCode();
-                    if (lastError == SystemError::again ||
-                        lastError == SystemError::wouldBlock)
+                    if (lastError == SystemError::again || lastError == SystemError::wouldBlock)
                     {
                         return; //< False positive.
                     }
@@ -668,7 +673,7 @@ private:
             else
             {
                 NX_ASSERT(m_sendHandler);
-                reportSendCompletion(SystemError::timedOut, (size_t)-1);
+                reportSendCompletion(SystemError::timedOut, (size_t) -1);
             }
         }
     }
@@ -678,8 +683,7 @@ private:
         reportConnectOrSendCompletion(m_connectHandler, errorCode);
     }
 
-    void reportSendCompletion(
-        SystemError::ErrorCode errorCode, size_t bytesSent)
+    void reportSendCompletion(SystemError::ErrorCode errorCode, size_t bytesSent)
     {
         m_sendBuffer = nullptr;
         m_sendBufPos = 0;
@@ -687,7 +691,7 @@ private:
         reportConnectOrSendCompletion(m_sendHandler, errorCode, bytesSent);
     }
 
-    template<typename Handler, typename ... Args>
+    template<typename Handler, typename... Args>
     void reportConnectOrSendCompletion(Handler& handler, Args... args)
     {
         m_asyncSendIssued = false;
@@ -703,7 +707,8 @@ private:
                 if (connectSendAsyncCallCounterBak == m_connectSendAsyncCallCounter)
                 {
                     this->m_socket->impl()->aioThread->load()->stopMonitoring(
-                        this->m_socket, aio::etWrite);
+                        this->m_socket,
+                        aio::etWrite);
                 }
             });
 
@@ -717,14 +722,17 @@ private:
         if (!this->m_socket->getLastError(&sockErrorCode))
             sockErrorCode = SystemError::notConnected;
         else if (sockErrorCode == SystemError::noError)
-            sockErrorCode = SystemError::notConnected;  //< MUST report some error.
+            sockErrorCode = SystemError::notConnected; //< MUST report some error.
 
         nx::utils::InterruptionFlag::Watcher watcher(&this->m_socketInterruptionFlag);
 
         if (m_connectHandler)
         {
-            NX_VERBOSE(this, "Socket %1. Reporting connect failure. %2",
-                this->m_socket, SystemError::toString(sockErrorCode));
+            NX_VERBOSE(
+                this,
+                "Socket %1. Reporting connect failure. %2",
+                this->m_socket,
+                SystemError::toString(sockErrorCode));
             reportConnectCompletion(sockErrorCode);
             if (watcher.interrupted())
                 return;
@@ -732,14 +740,14 @@ private:
 
         if (m_recvHandler)
         {
-            reportReadCompletion(sockErrorCode, (size_t)-1);
+            reportReadCompletion(sockErrorCode, (size_t) -1);
             if (watcher.interrupted())
                 return;
         }
 
         if (m_sendHandler)
         {
-            reportSendCompletion(sockErrorCode, (size_t)-1);
+            reportSendCompletion(sockErrorCode, (size_t) -1);
             if (watcher.interrupted())
                 return;
         }
@@ -758,9 +766,9 @@ private:
 
         if (eventType == aio::EventType::etNone)
         {
-            // TODO: #akolesnikov For now doing this only in case of cancellation of every event type
-            // to support popular use case: cancel socket operation, pass socket to another thread.
-            // But, same should be done separately for every event type.
+            // TODO: #akolesnikov For now doing this only in case of cancellation of every event
+            // type to support popular use case: cancel socket operation, pass socket to another
+            // thread. But, same should be done separately for every event type.
             this->m_socketInterruptionFlag.interrupt();
         }
 
@@ -774,7 +782,9 @@ private:
         {
             // Cancelling dispatch call in resolve handler.
             this->m_resolveResultScheduler.cancelPostedCallsSync();
-            this->m_socket->impl()->aioThread->load()->stopMonitoring(this->m_socket, aio::etWrite);
+            this->m_socket->impl()->aioThread->load()->stopMonitoring(
+                this->m_socket,
+                aio::etWrite);
             m_connectHandler = nullptr;
             m_sendHandler = nullptr;
             m_asyncSendIssued = false;
@@ -782,14 +792,16 @@ private:
 
         if (eventType == aio::etNone || eventType == aio::etTimedOut)
         {
-            this->m_socket->impl()->aioThread->load()->stopMonitoring(this->m_socket, aio::etTimedOut);
+            this->m_socket->impl()->aioThread->load()->stopMonitoring(
+                this->m_socket,
+                aio::etTimedOut);
             m_timerHandler = nullptr;
         }
     }
 };
 
 // TODO: #akolesnikov Part of code of this class should be shared with AsyncSocketImplHelper.
-template <class SocketType>
+template<class SocketType>
 class AsyncServerSocketHelper:
     public BaseAsyncSocketImplHelper<SocketType>,
     public aio::AIOEventHandler
@@ -797,9 +809,7 @@ class AsyncServerSocketHelper:
     using base_type = BaseAsyncSocketImplHelper<SocketType>;
 
 public:
-    AsyncServerSocketHelper(
-        SocketType* _sock)
-        :
+    AsyncServerSocketHelper(SocketType* _sock):
         base_type(_sock),
         m_acceptAsyncCallCount(0)
     {
@@ -831,7 +841,8 @@ public:
                         if (i > 0 && !newSocket && errCode == SystemError::wouldBlock)
                             break; // accept queue has been exhausted.
 
-                        const auto resultCode = newSocket != nullptr ? SystemError::noError : errCode;
+                        const auto resultCode =
+                            newSocket != nullptr ? SystemError::noError : errCode;
                         if (!reportAcceptResult(resultCode, std::move(newSocket)))
                             break; // Subsequent operations were cancelled.
                     }
@@ -860,14 +871,17 @@ public:
         }
         catch (const std::exception& e)
         {
-            NX_WARNING(this,
+            NX_WARNING(
+                this,
                 nx::format("User exception caught while processing server socket I/O event %1. %2")
                     .args(eventType, e.what()));
         }
         catch (...)
         {
-            NX_WARNING(this,
-                nx::format("Unknown user exception caught while processing server socket I/O event %1")
+            NX_WARNING(
+                this,
+                nx::format(
+                    "Unknown user exception caught while processing server socket I/O event %1")
                     .args(eventType));
         }
     }
@@ -883,7 +897,9 @@ public:
                 // TODO: #akolesnikov Usually, acceptAsync() is called repeatedly. We should avoid
                 // unnecessary startMonitoring() and stopMonitoring() calls.
                 return this->m_socket->impl()->aioThread->load()->startMonitoring(
-                    this->m_socket, aio::etRead, this);
+                    this->m_socket,
+                    aio::etRead,
+                    this);
             });
     }
 
@@ -939,19 +955,21 @@ private:
 
         auto execFinally =
             [this, &watcher, acceptAsyncCallCountBak = m_acceptAsyncCallCount.load()]()
+        {
+            if (watcher.interrupted())
+                return false;
+
+            // If asyncAccept has been called from onNewConnection, no need to call stopMonitoring.
+            if (m_acceptAsyncCallCount == acceptAsyncCallCountBak)
             {
-                if (watcher.interrupted())
-                    return false;
+                this->m_socket->impl()->aioThread->load()->stopMonitoring(
+                    this->m_socket,
+                    aio::etRead);
+                return false;
+            }
 
-                // If asyncAccept has been called from onNewConnection, no need to call stopMonitoring.
-                if (m_acceptAsyncCallCount == acceptAsyncCallCountBak)
-                {
-                    this->m_socket->impl()->aioThread->load()->stopMonitoring(this->m_socket, aio::etRead);
-                    return false;
-                }
-
-                return true;
-            };
+            return true;
+        };
 
         try
         {

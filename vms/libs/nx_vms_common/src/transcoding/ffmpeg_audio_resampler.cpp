@@ -11,8 +11,8 @@ extern "C" {
 #include <nx/media/ffmpeg/ffmpeg_utils.h>
 #include <nx/utils/log/log.h>
 
-FfmpegAudioResampler::FfmpegAudioResampler()
-    : m_frame(av_frame_alloc())
+FfmpegAudioResampler::FfmpegAudioResampler():
+    m_frame(av_frame_alloc())
 {
 }
 
@@ -35,10 +35,14 @@ bool FfmpegAudioResampler::init(const Config& config)
 
 bool FfmpegAudioResampler::initSwr(const Config& config)
 {
-    NX_DEBUG(this, "Initialize: source channels: %1, target channels: %2, "
+    NX_DEBUG(
+        this,
+        "Initialize: source channels: %1, target channels: %2, "
         "source sample rate: %3, target sample rate: %4",
-        config.srcChannelLayout.nb_channels, config.dstChannelLayout.nb_channels,
-        config.srcSampleRate, config.dstSampleRate);
+        config.srcChannelLayout.nb_channels,
+        config.dstChannelLayout.nb_channels,
+        config.srcSampleRate,
+        config.dstSampleRate);
 
     m_samplePts.clear();
     m_config = config;
@@ -60,7 +64,9 @@ bool FfmpegAudioResampler::initSwr(const Config& config)
     int status = swr_init(m_swrContext);
     if (status < 0)
     {
-        NX_ERROR(this, "Could not open resample context, error: %1",
+        NX_ERROR(
+            this,
+            "Could not open resample context, error: %1",
             nx::media::ffmpeg::avErrorToString(status));
         swr_free(&m_swrContext);
         m_swrContext = nullptr;
@@ -78,7 +84,7 @@ bool FfmpegAudioResampler::pushFrame(AVFrame* inputFrame)
     {
         NX_DEBUG(this, "Source audio format changed, reinit resampler");
         m_config.srcSampleRate = inputFrame->sample_rate;
-        m_config.srcSampleFormat = (AVSampleFormat)inputFrame->format;
+        m_config.srcSampleFormat = (AVSampleFormat) inputFrame->format;
         m_config.srcChannelLayout = inputFrame->ch_layout;
         if (!initSwr(m_config))
             return false;
@@ -100,7 +106,9 @@ bool FfmpegAudioResampler::pushFrame(AVFrame* inputFrame)
 
     if (result < 0)
     {
-        NX_ERROR(this, "Failed to resample audio data %1",
+        NX_ERROR(
+            this,
+            "Failed to resample audio data %1",
             nx::media::ffmpeg::avErrorToString(result));
         return false;
     }
@@ -140,8 +148,7 @@ AVFrame* FfmpegAudioResampler::nextFrame()
 
     m_samplePts.front().sampleCount -= sampleCount;
     NX_ASSERT(m_samplePts.front().sampleCount > 0);
-    m_samplePts.front().ptsUs +=
-        (1'000'000LL * sampleCount) / m_config.dstSampleRate;
+    m_samplePts.front().ptsUs += (1'000'000LL * sampleCount) / m_config.dstSampleRate;
 
     return m_frame;
 }

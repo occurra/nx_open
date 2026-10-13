@@ -48,29 +48,25 @@ public:
     bool operator==(const AuthToken& other) const = default;
 };
 
-class NX_NETWORK_API PasswordAuthToken:
-    public AuthToken
+class NX_NETWORK_API PasswordAuthToken: public AuthToken
 {
 public:
     PasswordAuthToken(std::string_view password);
 };
 
-class NX_NETWORK_API Ha1AuthToken:
-    public AuthToken
+class NX_NETWORK_API Ha1AuthToken: public AuthToken
 {
 public:
     Ha1AuthToken(std::string_view ha1);
 };
 
-class NX_NETWORK_API BearerAuthToken:
-    public AuthToken
+class NX_NETWORK_API BearerAuthToken: public AuthToken
 {
 public:
     BearerAuthToken(std::string_view token);
 };
 
-class NX_NETWORK_API VideoWallAuthToken:
-    public AuthToken
+class NX_NETWORK_API VideoWallAuthToken: public AuthToken
 {
 public:
     static inline const std::string prefix = "videoWall-";
@@ -88,8 +84,8 @@ public:
     Credentials(std::string_view username, const AuthToken& authToken);
     Credentials(const BearerAuthToken& authToken);
 
-    // TODO: #akolesnikov get rid of this constructor. Credentials can be used instead of QAuthenticator
-    // across the code.
+    // TODO: #akolesnikov get rid of this constructor. Credentials can be used instead of
+    // QAuthenticator across the code.
     Credentials(const QAuthenticator& credentials);
 
     bool operator==(const Credentials& other) const = default;
@@ -127,7 +123,7 @@ struct NX_NETWORK_API SerializableCredentials
     operator Credentials() const;
     bool operator==(const SerializableCredentials& other) const = default;
 };
-#define SerializableCredentials_Fields (user)(password)(ha1)(token)
+#define SerializableCredentials_Fields (user)(password)(ha1) (token)
 NX_REFLECTION_INSTRUMENT(SerializableCredentials, SerializableCredentials_Fields);
 
 //-------------------------------------------------------------------------------------------------
@@ -181,7 +177,8 @@ NX_NETWORK_API std::string calcResponseAuthInt(
     std::string_view algorithm = {});
 
 /**
- * NOTE: If predefinedHa1 is present, then it is used. Otherwise, HA1 is calculated based on userPassword.
+ * NOTE: If predefinedHa1 is present, then it is used. Otherwise, HA1 is calculated based on
+ * userPassword.
  */
 NX_NETWORK_API bool calcDigestResponse(
     const Method& method,
@@ -248,16 +245,15 @@ NX_NETWORK_API bool validateAuthorizationByIntemerdiateResponse(
  * WARNING: ha1.size() + 1 + nonce.size() MUST be divisible by 64!
  *   This is requirement of MD5 algorithm.
  */
-NX_NETWORK_API std::string calcIntermediateResponse(
-    std::string_view ha1,
-    std::string_view nonce);
+NX_NETWORK_API std::string calcIntermediateResponse(std::string_view ha1, std::string_view nonce);
 
 /**
  * Calculates MD5(ha1:nonce:ha2).
  * nonce is concatenation of nonceBase and nonceTrailer.
  * intermediateResponse is result of nx::network::http::calcIntermediateResponse.
  * @param intermediateResponse Calculated with calcIntermediateResponse.
- * @param intermediateResponseNonceLen Length of nonce (bytes) used to generate intermediateResponse.
+ * @param intermediateResponseNonceLen Length of nonce (bytes) used to generate
+ * intermediateResponse.
  */
 NX_NETWORK_API std::string calcResponseFromIntermediate(
     std::string_view intermediateResponse,
@@ -268,8 +264,7 @@ NX_NETWORK_API std::string calcResponseFromIntermediate(
 /**
  * Generates nonce according to rfc7616.
  */
-NX_NETWORK_API std::string generateNonce(
-    const std::string& eTag = std::string());
+NX_NETWORK_API std::string generateNonce(const std::string& eTag = std::string());
 
 NX_NETWORK_API header::WWWAuthenticate generateWwwAuthenticateBasicHeader(
     const std::string& realm = AppInfo::realm());

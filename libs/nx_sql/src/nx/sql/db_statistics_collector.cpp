@@ -8,14 +8,15 @@
 
 namespace nx::sql {
 
-StatisticsCollector::QueryExecutionTaskContext::QueryExecutionTaskContext(std::chrono::milliseconds period)
-    :
+StatisticsCollector::QueryExecutionTaskContext::QueryExecutionTaskContext(
+    std::chrono::milliseconds period):
     successfulRequestsCounter(period),
     failedRequestsCounter(period),
     cancelledRequestsCounter(period),
     taskExecutionTimeCounter(period),
     tasksWaitingForExecutionCounter(period)
-{}
+{
+}
 
 void StatisticsCollector::QueryExecutionTaskContext::reset()
 {
@@ -27,11 +28,11 @@ void StatisticsCollector::QueryExecutionTaskContext::reset()
 }
 
 StatisticsCollector::SingleQueryStatisticsContext::SingleQueryStatisticsContext(
-    std::chrono::milliseconds period)
-    :
+    std::chrono::milliseconds period):
     statisticsCalculator(period),
     frequencyCounter(period)
-{}
+{
+}
 
 void StatisticsCollector::SingleQueryStatisticsContext::reset()
 {
@@ -43,8 +44,7 @@ void StatisticsCollector::SingleQueryStatisticsContext::reset()
 StatisticsCollector::StatisticsCollector(
     std::chrono::milliseconds period,
     const detail::QueryQueue& queryQueue,
-    std::atomic<std::size_t>* dbThreadPoolSize)
-    :
+    std::atomic<std::size_t>* dbThreadPoolSize):
     m_period(period),
     m_queryQueue(queryQueue),
     m_dbThreadPoolSize(dbThreadPoolSize),
@@ -59,7 +59,8 @@ void StatisticsCollector::recordQueryExecutionTask(QueryExecutionTaskRecord reco
     if (record.executionDuration)
         m_queryExecutionTaskStatistics.taskExecutionTimeCounter.add(*record.executionDuration);
 
-    m_queryExecutionTaskStatistics.tasksWaitingForExecutionCounter.add(record.waitForExecutionDuration);
+    m_queryExecutionTaskStatistics.tasksWaitingForExecutionCounter.add(
+        record.waitForExecutionDuration);
 
     if (!record.result)
     {
@@ -73,9 +74,7 @@ void StatisticsCollector::recordQueryExecutionTask(QueryExecutionTaskRecord reco
         m_queryExecutionTaskStatistics.failedRequestsCounter.add(1);
 }
 
-void StatisticsCollector::recordQuery(
-    std::string query,
-    std::chrono::milliseconds executionTime)
+void StatisticsCollector::recordQuery(std::string query, std::chrono::milliseconds executionTime)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
     auto& queryStatistics = m_queryStatistics.emplace(std::move(query), m_period).first->second;
@@ -89,8 +88,7 @@ Statistics StatisticsCollector::getStatistics() const
 
     NX_MUTEX_LOCKER lock(&m_mutex);
 
-    return Statistics
-    {
+    return Statistics{
         .statisticalPeriod = m_period,
         .requestsSucceeded =
             self->m_queryExecutionTaskStatistics.successfulRequestsCounter.getSumPerLastPeriod(),
@@ -99,10 +97,10 @@ Statistics StatisticsCollector::getStatistics() const
         .requestsCancelled =
             self->m_queryExecutionTaskStatistics.cancelledRequestsCounter.getSumPerLastPeriod(),
         .dbThreadPoolSize = m_dbThreadPoolSize->load(),
-        .requestExecutionTimes =
-            self->getDurationStatistics(&self->m_queryExecutionTaskStatistics.taskExecutionTimeCounter),
-        .waitingForExecutionTimes =
-            self->getDurationStatistics(&self->m_queryExecutionTaskStatistics.tasksWaitingForExecutionCounter),
+        .requestExecutionTimes = self->getDurationStatistics(
+            &self->m_queryExecutionTaskStatistics.taskExecutionTimeCounter),
+        .waitingForExecutionTimes = self->getDurationStatistics(
+            &self->m_queryExecutionTaskStatistics.tasksWaitingForExecutionCounter),
         .queryQueue = m_queryQueue.stats(),
         .queries = getQueryStatistics(lock),
     };
@@ -119,7 +117,7 @@ void StatisticsCollector::clearStatistics()
 
     m_queryExecutionTaskStatistics.reset();
 
-    for (auto& query : m_queryStatistics)
+    for (auto& query: m_queryStatistics)
         query.second.reset();
 }
 
@@ -130,11 +128,11 @@ DurationStatistics StatisticsCollector::getDurationStatistics(
     return DurationStatistics{
         .min = summaryStatistics.min,
         .max = summaryStatistics.max,
-        .average = summaryStatistics.average
-    };
+        .average = summaryStatistics.average};
 }
 
-std::map<std::string, QueryStatistics> StatisticsCollector::getQueryStatistics(const nx::MutexLocker& /*lock*/) const
+std::map<std::string, QueryStatistics> StatisticsCollector::getQueryStatistics(
+    const nx::MutexLocker& /*lock*/) const
 {
     static constexpr int kQueryCount = 5;
 
@@ -145,9 +143,8 @@ std::map<std::string, QueryStatistics> StatisticsCollector::getQueryStatistics(c
     std::map<std::string, QueryStatistics> result;
 
     int i = 0;
-    for (auto it = queriesByCount.begin();
-        i < kQueryCount && it != queriesByCount.end();
-        ++i, ++it)
+    for (auto it = queriesByCount.begin(); i < kQueryCount && it != queriesByCount.end();
+         ++i, ++it)
     {
         auto& queryStatisticsResult = result[it->second->first];
         auto& queryStatisticsCtx = it->second->second;

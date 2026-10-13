@@ -1,13 +1,13 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <QJsonValue>
 
+#include <gtest/gtest.h>
+
 #include <nx/utils/elapsed_timer.h>
+#include <nx/utils/log/log.h>
 #include <nx/utils/random.h>
 #include <nx/utils/value_history.h>
-#include <nx/utils/log/log.h>
 
 namespace nx::utils::test {
 
@@ -26,15 +26,14 @@ public:
     QString values(std::optional<milliseconds> maxAge, Border border) const
     {
         std::vector<std::pair<int, QString>> values;
-        const auto addValue =
-            [&values](int value, milliseconds age)
-            {
-                const auto h = round<hours>(age);
-                auto ts = QString::number(h.count());
-                if (const auto m = round<minutes>(age) - h; m.count())
-                    ts += QString(":%1").arg((int) m.count(), 2, 10, QChar('0'));
-                values.emplace_back(value, ts);
-            };
+        const auto addValue = [&values](int value, milliseconds age)
+        {
+            const auto h = round<hours>(age);
+            auto ts = QString::number(h.count());
+            if (const auto m = round<minutes>(age) - h; m.count())
+                ts += QString(":%1").arg((int) m.count(), 2, 10, QChar('0'));
+            values.emplace_back(value, ts);
+        };
 
         maxAge ? history.forEach(*maxAge, addValue, border) : history.forEach(addValue, border);
         return containerString(values);
@@ -138,7 +137,9 @@ struct Times
     std::chrono::milliseconds select;
 };
 
-class Performance: public testing::TestWithParam<Times> {};
+class Performance: public testing::TestWithParam<Times>
+{
+};
 
 } // namespace
 
@@ -171,13 +172,17 @@ TEST_P(Performance, ForEach)
     EXPECT_GT(double(count), double(times.select / times.step) * 0.9);
     EXPECT_GT(sum / count, 0);
     EXPECT_LT(sum / count, 10000);
-    EXPECT_GT(duration.count(), std::chrono::round<decltype(duration)>(times.select).count() * 0.9);
+    EXPECT_GT(
+        duration.count(),
+        std::chrono::round<decltype(duration)>(times.select).count() * 0.9);
 }
 
-INSTANTIATE_TEST_SUITE_P(ValueHistoryTest, Performance, ::testing::Values(
-   Times{std::chrono::hours(24), std::chrono::seconds(5), std::chrono::hours(24)},
-   Times{std::chrono::hours(24), std::chrono::seconds(5), std::chrono::hours(1)},
-   Times{std::chrono::hours(24), std::chrono::seconds(1), std::chrono::hours(1)}
-));
+INSTANTIATE_TEST_SUITE_P(
+    ValueHistoryTest,
+    Performance,
+    ::testing::Values(
+        Times{std::chrono::hours(24), std::chrono::seconds(5), std::chrono::hours(24)},
+        Times{std::chrono::hours(24), std::chrono::seconds(5), std::chrono::hours(1)},
+        Times{std::chrono::hours(24), std::chrono::seconds(1), std::chrono::hours(1)}));
 
 } // namespace nx::utils::test

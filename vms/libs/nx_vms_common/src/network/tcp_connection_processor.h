@@ -27,7 +27,7 @@ class NX_VMS_COMMON_API QnTCPConnectionProcessor:
     using base_type = QnLongRunnable;
 
 public:
-    static const int KEEP_ALIVE_TIMEOUT = 5  * 1000;
+    static const int KEEP_ALIVE_TIMEOUT = 5 * 1000;
     static constexpr qint64 kLargeTcpRequestSize = 4 * 1024 * 1024 * 1024ll;
 
     /**
@@ -46,17 +46,19 @@ public:
     virtual void stop() override;
 
     /**
-     * Check for request or response is completed: finished with /r/n/r/n or contains full content len data
-     * \param outContentLen If Content-Length header found, saves its value to \a *outContentLen (if not null)
-     * Returns -1 if message parsing fails, 0 if message is incomplete and message size if it is complete.
+     * Check for request or response is completed: finished with /r/n/r/n or contains full content
+     * len data
+     * \param outContentLen If Content-Length header found, saves its value to \a *outContentLen
+     * (if not null) Returns -1 if message parsing fails, 0 if message is incomplete and message
+     * size if it is complete.
      */
     static int isFullMessage(
         const QByteArray& message,
-        std::optional<qint64>* const fullMessageSize = nullptr );
+        std::optional<qint64>* const fullMessageSize = nullptr);
 
     static int isFullMessage(
         const nx::Buffer& message,
-        std::optional<qint64>* const fullMessageSize = nullptr );
+        std::optional<qint64>* const fullMessageSize = nullptr);
 
     bool isLargeRequestAllowed(const nx::Url& url);
     bool isLargeRequestAllowed(const QByteArray& message);
@@ -79,13 +81,17 @@ public:
     nx::Url getDecodedUrl() const;
 
     bool sendBuffer(
-        const nx::utils::ByteArray& sendBuffer, std::optional<int64_t> timestampForLogging = std::nullopt);
+        const nx::utils::ByteArray& sendBuffer,
+        std::optional<int64_t> timestampForLogging = std::nullopt);
 
     bool sendBuffer(
-        const QByteArray& sendBuffer, std::optional<int64_t> timestampForLogging = std::nullopt);
+        const QByteArray& sendBuffer,
+        std::optional<int64_t> timestampForLogging = std::nullopt);
 
     bool sendBuffer(
-        const char* data, int size, std::optional<int64_t> timestampForLogging = std::nullopt);
+        const char* data,
+        int size,
+        std::optional<int64_t> timestampForLogging = std::nullopt);
 
     enum ReadResult
     {
@@ -95,7 +101,8 @@ public:
     };
 
     /*!
-        \bug In case of interleaved requests, this method reads everything after first HTTP request as message body
+        \bug In case of interleaved requests, this method reads everything after first HTTP request
+       as message body
     */
     ReadResult readRequest();
     /*!
@@ -109,9 +116,12 @@ public:
 
     bool isConnectionSecure() const;
     std::unique_ptr<nx::network::AbstractStreamSocket> takeSocket();
-    //void releaseSocket();
+    // void releaseSocket();
 
-    int redirectTo(const nx::network::http::Method& method, const QByteArray& page, QByteArray* contentType);
+    int redirectTo(
+        const nx::network::http::Method& method,
+        const QByteArray& page,
+        QByteArray* contentType);
     int notFound(QByteArray& contentType);
     nx::network::rest::AuthSession authSession() const;
 
@@ -126,7 +136,8 @@ public:
         const nx::Buffer& httpMessageBodyOnly);
 
 protected:
-    nx::network::rest::AuthSession authSession(const nx::network::rest::UserAccessData& accessRights) const;
+    nx::network::rest::AuthSession authSession(
+        const nx::network::rest::UserAccessData& accessRights) const;
     QString extractPath() const;
     static QString extractPath(const QString& fullUrl);
 
@@ -135,10 +146,10 @@ protected:
         const nx::String& errorDetails = {},
         std::optional<nx::network::rest::ErrorId> errorId = std::nullopt) const;
 
-    //nx::utils::ByteArray& getSendBuffer();
-    //void bufferData(const char* data, int size);
-    //void bufferData(const QByteArray& data) { bufferData(data.constData(), data.size()); }
-    //void clearBuffer();
+    // nx::utils::ByteArray& getSendBuffer();
+    // void bufferData(const char* data, int size);
+    // void bufferData(const QByteArray& data) { bufferData(data.constData(), data.size()); }
+    // void clearBuffer();
 
     nx::String createResponse(
         int httpStatusCode,
@@ -173,7 +184,8 @@ protected:
     int maxTcpRequestSize() const { return m_maxTcpRequestSize; }
 
     void sendErrorResponse(
-        nx::network::http::StatusCode::Value httpResult, const nx::String& errorDetails = {});
+        nx::network::http::StatusCode::Value httpResult,
+        const nx::String& errorDetails = {});
 
     void sendUnauthorizedResponse(
         nx::network::http::StatusCode::Value httpResult,
@@ -183,13 +195,15 @@ protected:
 protected:
     Q_DECLARE_PRIVATE(QnTCPConnectionProcessor);
 
-    QnTCPConnectionProcessorPrivate *d_ptr;
+    QnTCPConnectionProcessorPrivate* d_ptr;
 
     bool isConnectionCanBePersistent() const;
 
 private:
     bool sendBufferThreadSafe(
-        const char* data, int size, std::optional<int64_t> timestampForLogging);
+        const char* data,
+        int size,
+        std::optional<int64_t> timestampForLogging);
 
 private:
     int m_maxTcpRequestSize;

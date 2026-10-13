@@ -20,10 +20,14 @@ AVCodecID codecIdFromMpegLayer(MpegLayer mpegLayer)
 {
     switch (mpegLayer)
     {
-        case MpegLayer::layer1: return AV_CODEC_ID_MP1;
-        case MpegLayer::layer2: return AV_CODEC_ID_MP2;
-        case MpegLayer::layer3: return AV_CODEC_ID_MP3;
-        default: return AV_CODEC_ID_NONE;
+        case MpegLayer::layer1:
+            return AV_CODEC_ID_MP1;
+        case MpegLayer::layer2:
+            return AV_CODEC_ID_MP2;
+        case MpegLayer::layer3:
+            return AV_CODEC_ID_MP3;
+        default:
+            return AV_CODEC_ID_NONE;
     }
 }
 
@@ -31,16 +35,22 @@ int channelNumberFromChannelMode(MpegChannelMode mpegChannelMode)
 {
     switch (mpegChannelMode)
     {
-        case MpegChannelMode::dualChannel: [[fallthrough]];
-        case MpegChannelMode::jointStereo: [[fallthrough]];
-        case MpegChannelMode::stereo: return 2;
-        case MpegChannelMode::singleChannel: return 1;
-        default: return 1;
+        case MpegChannelMode::dualChannel:
+            [[fallthrough]];
+        case MpegChannelMode::jointStereo:
+            [[fallthrough]];
+        case MpegChannelMode::stereo:
+            return 2;
+        case MpegChannelMode::singleChannel:
+            return 1;
+        default:
+            return 1;
     }
 }
 
 Mpeg12AudioParser::Mpeg12AudioParser()
-{}
+{
+}
 
 void Mpeg12AudioParser::setSdpInfo(const Sdp::Media& sdp)
 {
@@ -60,8 +70,10 @@ Result Mpeg12AudioParser::processData(
         clear();
         return {
             false,
-            NX_FMT("Failed to parse RTP packet, invalid RTP packet size: %1, expected at least %2",
-                bytesRead, kMinimalPacketSize) };
+            NX_FMT(
+                "Failed to parse RTP packet, invalid RTP packet size: %1, expected at least %2",
+                bytesRead,
+                kMinimalPacketSize)};
     }
 
     const uint8_t* currentPtr = rtpBufferBase + bufferOffset;
@@ -78,10 +90,12 @@ Result Mpeg12AudioParser::processData(
     }
 
     currentPtr += kAudioHeaderMbzFieldSize;
-    const int fragmentOffset = ntohs(*(uint16_t*)(currentPtr));
+    const int fragmentOffset = ntohs(*(uint16_t*) (currentPtr));
     currentPtr += kAudioHeaderFragmentOffsetFieldSize;
 
-    int payloadSize = bytesRead - kAudioHeaderSize; // TODO is it ok?? we ignore here kAudioHeaderFragmentOffsetFieldSize and kAudioHeaderMbzFieldSize
+    int payloadSize = bytesRead
+        - kAudioHeaderSize; // TODO is it ok?? we ignore here kAudioHeaderFragmentOffsetFieldSize
+                            // and kAudioHeaderMbzFieldSize
 
     if (fragmentOffset == 0)
     {
@@ -93,9 +107,8 @@ Result Mpeg12AudioParser::processData(
 
         if (mpegAudioHeader->isPadded)
         {
-            payloadSize -= (mpegAudioHeader->layer == MpegLayer::layer1)
-                ? kLayer1PaddingBytes
-                : kLayer23PaddingBytes;
+            payloadSize -= (mpegAudioHeader->layer == MpegLayer::layer1) ? kLayer1PaddingBytes
+                                                                         : kLayer23PaddingBytes;
 
             // Disabling padding bit just in case to not confuse decoders that handle it.
             *const_cast<uint8_t*>(currentPtr + 2) &= ~(1 << 1);
@@ -116,8 +129,7 @@ Result Mpeg12AudioParser::processData(
     return {true};
 }
 
-Result Mpeg12AudioParser::updateFromMpegAudioHeader(
-    const Mpeg12AudioHeader& mpegAudioHeader)
+Result Mpeg12AudioParser::updateFromMpegAudioHeader(const Mpeg12AudioHeader& mpegAudioHeader)
 {
     const AVCodecID codecId = codecIdFromMpegLayer(mpegAudioHeader.layer);
     if (!NX_ASSERT(codecId != AV_CODEC_ID_NONE))
@@ -128,7 +140,8 @@ Result Mpeg12AudioParser::updateFromMpegAudioHeader(
     codecParams->codec_type = AVMEDIA_TYPE_AUDIO;
     codecParams->codec_id = codecId;
     av_channel_layout_default(
-        &codecParams->ch_layout, channelNumberFromChannelMode(mpegAudioHeader.channelMode));
+        &codecParams->ch_layout,
+        channelNumberFromChannelMode(mpegAudioHeader.channelMode));
     codecParams->sample_rate = mpegAudioHeader.samplingRate;
     return {true};
 }
@@ -144,7 +157,7 @@ void Mpeg12AudioParser::createAudioFrame()
         new QnWritableCompressedAudioData(m_audioFrameSize));
 
     for (const DataChunk& dataChunk: m_audioDataChunks)
-        audioFrame->m_data.write((const char*)dataChunk.start, dataChunk.length);
+        audioFrame->m_data.write((const char*) dataChunk.start, dataChunk.length);
 
     audioFrame->compressionType = m_mediaContext->getCodecId();
     audioFrame->context = m_mediaContext;

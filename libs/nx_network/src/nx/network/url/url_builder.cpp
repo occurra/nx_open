@@ -51,7 +51,7 @@ Builder& Builder::setPassword(const QString& password, QUrl::ParsingMode mode)
     return *this;
 }
 
-Builder& Builder::setHost(const nx::network::HostAddress &hostAddress)
+Builder& Builder::setHost(const nx::network::HostAddress& hostAddress)
 {
     m_url.setHost(hostAddress.toString(), QUrl::DecodedMode);
     setPath(m_url.path().toStdString());
@@ -183,4 +183,4 @@ Builder& Builder::setPathAndQuery(const QString& pathAndQuery)
     return *this;
 }
 
-}// namespace nx::network::url
+} // namespace nx::network::url

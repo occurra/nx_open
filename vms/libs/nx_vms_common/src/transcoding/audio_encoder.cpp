@@ -22,7 +22,7 @@ int getMaxAudioChannels(const AVCodec* avCodec)
 int getDefaultDstSampleRate(int srcSampleRate, const AVCodec* avCodec)
 {
     int result = srcSampleRate;
-    switch(avCodec->id)
+    switch (avCodec->id)
     {
         case AV_CODEC_ID_VORBIS: //< Supported_samplerates is empty for this codec type.
             result = std::min(result, 44100);
@@ -54,7 +54,7 @@ int getDefaultDstSampleRate(int srcSampleRate, const AVCodec* avCodec)
 
 int getDefaultFrameSize(const AVCodec* avCodec)
 {
-    switch(avCodec->id)
+    switch (avCodec->id)
     {
         case AV_CODEC_ID_ADPCM_G726:
         case AV_CODEC_ID_PCM_MULAW:
@@ -72,7 +72,7 @@ int getDefaultBitrate(AVCodecContext* context)
     return 64'000 * context->ch_layout.nb_channels;
 }
 
-}
+} // namespace
 
 namespace nx::media::ffmpeg {
 
@@ -125,13 +125,14 @@ bool AudioEncoder::open(
     }
     m_sourceformat = format;
     m_encoderContext = avcodec_alloc_context3(codec);
-    m_encoderContext->sample_fmt = codec->sample_fmts[0] != AV_SAMPLE_FMT_NONE
-        ? codec->sample_fmts[0] : format;
+    m_encoderContext->sample_fmt =
+        codec->sample_fmts[0] != AV_SAMPLE_FMT_NONE ? codec->sample_fmts[0] : format;
     av_channel_layout_default(
-        &m_encoderContext->ch_layout, std::min(layout.nb_channels, getMaxAudioChannels(codec)));
+        &m_encoderContext->ch_layout,
+        std::min(layout.nb_channels, getMaxAudioChannels(codec)));
     m_encoderContext->time_base = {1, kTimeScale};
-    m_encoderContext->sample_rate = m_dstSampleRate > 0
-        ? m_dstSampleRate : getDefaultDstSampleRate(sampleRate, codec);
+    m_encoderContext->sample_rate =
+        m_dstSampleRate > 0 ? m_dstSampleRate : getDefaultDstSampleRate(sampleRate, codec);
 
     m_encoderContext->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     m_encoderContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
@@ -141,17 +142,17 @@ bool AudioEncoder::open(
     auto status = avcodec_open2(m_encoderContext, codec, nullptr);
     if (status < 0)
     {
-        NX_WARNING(this, "Failed to open audio encoder: %1",
-            avErrorToString(status));
+        NX_WARNING(this, "Failed to open audio encoder: %1", avErrorToString(status));
         return false;
     }
 
     if (m_encoderContext->frame_size == 0)
-        m_encoderContext->frame_size = (dstFrameSize > 0 ? dstFrameSize : getDefaultFrameSize(codec));
+        m_encoderContext->frame_size =
+            (dstFrameSize > 0 ? dstFrameSize : getDefaultFrameSize(codec));
 
     m_codecParams.reset(new CodecParameters(m_encoderContext));
 
-    FfmpegAudioResampler::Config config {
+    FfmpegAudioResampler::Config config{
         sampleRate,
         layout,
         format,
@@ -222,7 +223,9 @@ bool AudioEncoder::receivePacket(QnWritableCompressedAudioDataPtr& result)
 
         if (status && status != AVERROR(EAGAIN))
         {
-            NX_WARNING(this, "Could not receive audio packet from encoder, Error code: %1.",
+            NX_WARNING(
+                this,
+                "Could not receive audio packet from encoder, Error code: %1.",
                 avErrorToString(status));
             return false;
         }
@@ -235,7 +238,9 @@ bool AudioEncoder::receivePacket(QnWritableCompressedAudioDataPtr& result)
         status = avcodec_send_frame(m_encoderContext, resampledFrame);
         if (status && status != AVERROR_EOF)
         {
-            NX_WARNING(this, "Could not send audio frame to encoder, Error code: %1.",
+            NX_WARNING(
+                this,
+                "Could not send audio frame to encoder, Error code: %1.",
                 avErrorToString(status));
             return false;
         }
@@ -243,13 +248,13 @@ bool AudioEncoder::receivePacket(QnWritableCompressedAudioDataPtr& result)
     return true;
 }
 
-QnWritableCompressedAudioDataPtr AudioEncoder::createMediaDataFromAVPacket(const AVPacket &packet)
+QnWritableCompressedAudioDataPtr AudioEncoder::createMediaDataFromAVPacket(const AVPacket& packet)
 {
     auto resultAudioData = new QnWritableCompressedAudioData(packet.size, m_codecParams);
     resultAudioData->compressionType = m_encoderContext->codec_id;
     resultAudioData->timestamp = packet.pts;
-    resultAudioData->m_data.write((const char*)packet.data, packet.size);
-    return  QnWritableCompressedAudioDataPtr(resultAudioData);
+    resultAudioData->m_data.write((const char*) packet.data, packet.size);
+    return QnWritableCompressedAudioDataPtr(resultAudioData);
 }
 
 } // namespace nx::media::ffmpeg

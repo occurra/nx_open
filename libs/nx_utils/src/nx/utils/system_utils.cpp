@@ -15,10 +15,10 @@ float calculateSystemUsageFrequency(
     constexpr const int kSecondsPerDay = 60 * 60 * 24;
 
     const auto fullDaysSinceLastLogin =
-        duration_cast<seconds>(
-            utcTime() - lastLoginTime).count() / kSecondsPerDay;
+        duration_cast<seconds>(utcTime() - lastLoginTime).count() / kSecondsPerDay;
     return std::max<float>(
-        (1 - fullDaysSinceLastLogin / kSystemAccessBurnPeriodFullDays) * currentUsageFrequency, 0);
+        (1 - fullDaysSinceLastLogin / kSystemAccessBurnPeriodFullDays) * currentUsageFrequency,
+        0);
 }
 
 } // namespace nx::utils

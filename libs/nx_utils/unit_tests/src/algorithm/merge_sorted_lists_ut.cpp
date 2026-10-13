@@ -1,8 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <vector>
+
+#include <gtest/gtest.h>
 
 #include <QtCore/QScopedValueRollback>
 
@@ -16,18 +16,18 @@ namespace test {
 
 namespace {
 
-NX_REFLECTION_ENUM(SortOrder,
-    AscendingOrder,
-    DescendingOrder
-);
+NX_REFLECTION_ENUM(SortOrder, AscendingOrder, DescendingOrder);
 
-NX_REFLECTION_ENUM(Duplicates,
-    KeepDuplicates,
-    RemoveDuplicates
-);
+NX_REFLECTION_ENUM(Duplicates, KeepDuplicates, RemoveDuplicates);
 
-void PrintTo(SortOrder value, std::ostream* os) { *os << nx::reflect::toString(value); }
-void PrintTo(Duplicates value, std::ostream* os) { *os << nx::reflect::toString(value); }
+void PrintTo(SortOrder value, std::ostream* os)
+{
+    *os << nx::reflect::toString(value);
+}
+void PrintTo(Duplicates value, std::ostream* os)
+{
+    *os << nx::reflect::toString(value);
+}
 
 class MergeSortedLists: public ::testing::TestWithParam<std::tuple<SortOrder, Duplicates, int>>
 {
@@ -37,11 +37,21 @@ protected:
         using base_type = std::vector<int>;
 
     public:
-        Vector(const MergeSortedLists* test = nullptr): base_type(), test(test) {}
+        Vector(const MergeSortedLists* test = nullptr):
+            base_type(),
+            test(test)
+        {
+        }
 
-        Vector(Vector&& other): base_type(other), test(other.test) {}
+        Vector(Vector&& other):
+            base_type(other),
+            test(other.test)
+        {
+        }
 
-        Vector(const Vector& other): base_type(other), test(other.test)
+        Vector(const Vector& other):
+            base_type(other),
+            test(other.test)
         {
             if (!test || test->m_detectCopy)
                 check_deep_copy();
@@ -84,29 +94,22 @@ protected:
 
     const std::vector<std::vector<int>>& sourceMultipleLists() const
     {
-        static const std::vector<std::vector<int>> value{
-            {1, 3, 5},
-            {2, 3, 3, 4},
-            {},
-            {8, 9, 10, 11, 11, 12, 13},
-            {6},
-            {1, 7, 7, 13},
-            {}};
+        static const std::vector<std::vector<int>>
+            value{{1, 3, 5}, {2, 3, 3, 4}, {}, {8, 9, 10, 11, 11, 12, 13}, {6}, {1, 7, 7, 13}, {}};
 
         return value;
     };
 
     const std::vector<int>& referenceMergedMultipleLists() const
     {
-        static const std::vector<int> value =
-            [this]()
-            {
-                std::vector<int> result;
-                for (const auto& list: sourceMultipleLists())
-                    result.insert(result.end(), list.begin(), list.end());
-                std::ranges::sort(result);
-                return result;
-            }();
+        static const std::vector<int> value = [this]()
+        {
+            std::vector<int> result;
+            for (const auto& list: sourceMultipleLists())
+                result.insert(result.end(), list.begin(), list.end());
+            std::ranges::sort(result);
+            return result;
+        }();
 
         return value;
     }
@@ -154,20 +157,13 @@ protected:
 private:
     Qt::SortOrder sortOrderParam() const
     {
-        return std::get<0>(GetParam()) == AscendingOrder
-            ? Qt::AscendingOrder
-            : Qt::DescendingOrder;
+        return std::get<0>(GetParam()) == AscendingOrder ? Qt::AscendingOrder
+                                                         : Qt::DescendingOrder;
     }
 
-    bool removeDuplicatesParam() const
-    {
-        return std::get<1>(GetParam()) == RemoveDuplicates;
-    }
+    bool removeDuplicatesParam() const { return std::get<1>(GetParam()) == RemoveDuplicates; }
 
-    int limitParam() const
-    {
-        return std::get<2>(GetParam());
-    }
+    int limitParam() const { return std::get<2>(GetParam()); }
 
     Vector createVector(const std::vector<int>& init) const
     {
@@ -259,7 +255,9 @@ TEST_P(MergeSortedLists, NonDestructive)
     ASSERT_EQ(source, sourceCopy); //< `source` is not changed.
 }
 
-INSTANTIATE_TEST_SUITE_P(MergeSortedLists,MergeSortedLists,
+INSTANTIATE_TEST_SUITE_P(
+    MergeSortedLists,
+    MergeSortedLists,
     ::testing::Combine(
         ::testing::Values(AscendingOrder, DescendingOrder),
         ::testing::Values(KeepDuplicates, RemoveDuplicates),

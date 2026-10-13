@@ -12,8 +12,8 @@ extern "C" {
 
 #include <core/resource/avi/avi_archive_metadata.h>
 #include <export/signer.h>
-#include <nx/media/media_data_packet.h>
 #include <nx/media/ffmpeg/io_context.h>
+#include <nx/media/media_data_packet.h>
 #include <nx/utils/cryptographic_hash.h>
 #include <transcoding/timestamp_corrector.h>
 
@@ -36,9 +36,9 @@ public:
     ~FfmpegMuxer();
 
     /*
-    * Set ffmpeg container by name
-    * @return Returns true if no error or false on error
-    */
+     * Set ffmpeg container by name
+     * @return Returns true if no error or false on error
+     */
     bool setContainer(const QString& value);
     QString container() { return m_container; };
     void setFormatOption(const QString& option, const QString& value);
@@ -51,15 +51,15 @@ public:
     bool open(std::optional<QnAviArchiveMetadata> metadata = std::nullopt);
 
     /*
-    * Process media data and write it to specified nx::utils::ByteArray
-    * @param result transcoded data block. If NULL, only decoding is done
-    * @return Returns OperationResult::Success if no error or error code otherwise
-    */
+     * Process media data and write it to specified nx::utils::ByteArray
+     * @param result transcoded data block. If NULL, only decoding is done
+     * @return Returns OperationResult::Success if no error or error code otherwise
+     */
     bool process(const QnConstAbstractMediaDataPtr& media);
     bool finalize();
     void getResult(nx::utils::ByteArray* const result);
 
-    //!Adds tag to the file. Maximum length of tags and allowed names are format dependent
+    //! Adds tag to the file. Maximum length of tags and allowed names are format dependent
     /*!
         This implementation always returns \a false
         \return true on success

@@ -7,7 +7,8 @@
 
 namespace nx::core::transcoding {
 
-WatermarkImageFilter::WatermarkImageFilter(const Watermark& watermark): m_watermark(watermark)
+WatermarkImageFilter::WatermarkImageFilter(const Watermark& watermark):
+    m_watermark(watermark)
 {
 }
 

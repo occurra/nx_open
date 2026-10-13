@@ -19,7 +19,8 @@ CLVideoDecoderOutputPtr rotateImage(const CLConstVideoDecoderOutputPtr& frame, i
         qSwap(dstWidth, dstHeight);
 
     bool transposeChroma = false;
-    if (angle == 90 || angle == 270) {
+    if (angle == 90 || angle == 270)
+    {
         if (frame->format == AV_PIX_FMT_YUV422P || frame->format == AV_PIX_FMT_YUVJ422P)
             transposeChroma = true;
     }
@@ -56,8 +57,9 @@ CLVideoDecoderOutputPtr rotateImage(const CLConstVideoDecoderOutputPtr& frame, i
                 for (int y = 0; y < h; y += 2)
                 {
                     quint8* src = frame->data[i] + frame->linesize[i] * y;
-                    quint8* dst = dstPict->data[i] + (h - y)/2 - 1;
-                    for (int x = 0; x < w/2; ++x) {
+                    quint8* dst = dstPict->data[i] + (h - y) / 2 - 1;
+                    for (int x = 0; x < w / 2; ++x)
+                    {
                         quint8 pixel = ((quint16) src[0] + (quint16) src[frame->linesize[i]]) >> 1;
                         dst[0] = pixel;
                         dst += dstLineStep;
@@ -67,14 +69,16 @@ CLVideoDecoderOutputPtr rotateImage(const CLConstVideoDecoderOutputPtr& frame, i
                     }
                 }
             }
-            else {
+            else
+            {
                 for (int y = 0; y < h; ++y)
                 {
                     quint8* src = frame->data[i] + frame->linesize[i] * y;
-                    quint8* dst = dstPict->data[i] + h - y -1;
+                    quint8* dst = dstPict->data[i] + h - y - 1;
                     if (angle == 270)
-                        dst += (w-1) * dstPict->linesize[i];
-                    for (int x = 0; x < w; ++x) {
+                        dst += (w - 1) * dstPict->linesize[i];
+                    for (int x = 0; x < w; ++x)
+                    {
                         *dst = *src++;
                         dst += dstLineStep;
                     }
@@ -90,8 +94,9 @@ CLVideoDecoderOutputPtr rotateImage(const CLConstVideoDecoderOutputPtr& frame, i
                 for (int y = 0; y < h; y += 2)
                 {
                     quint8* src = frame->data[i] + frame->linesize[i] * y;
-                    quint8* dst = dstPict->data[i] + (w-1) * dstPict->linesize[i] + y/2;
-                    for (int x = 0; x < w/2; ++x) {
+                    quint8* dst = dstPict->data[i] + (w - 1) * dstPict->linesize[i] + y / 2;
+                    for (int x = 0; x < w / 2; ++x)
+                    {
                         quint8 pixel = ((quint16) src[0] + (quint16) src[frame->linesize[i]]) >> 1;
                         dst[0] = pixel;
                         dst += dstLineStep;
@@ -101,12 +106,14 @@ CLVideoDecoderOutputPtr rotateImage(const CLConstVideoDecoderOutputPtr& frame, i
                     }
                 }
             }
-            else {
+            else
+            {
                 for (int y = 0; y < h; ++y)
                 {
                     quint8* src = frame->data[i] + frame->linesize[i] * y;
-                    quint8* dst = dstPict->data[i] + (w-1) * dstPict->linesize[i] + y;
-                    for (int x = 0; x < w; ++x) {
+                    quint8* dst = dstPict->data[i] + (w - 1) * dstPict->linesize[i] + y;
+                    for (int x = 0; x < w; ++x)
+                    {
                         *dst = *src++;
                         dst += dstLineStep;
                     }
@@ -114,11 +121,13 @@ CLVideoDecoderOutputPtr rotateImage(const CLConstVideoDecoderOutputPtr& frame, i
             }
         }
         else
-        {  // 180
-            for (int y = 0; y < h; ++y) {
+        { // 180
+            for (int y = 0; y < h; ++y)
+            {
                 quint8* src = frame->data[i] + frame->linesize[i] * y;
-                quint8* dst = dstPict->data[i] + dstPict->linesize[i] * (h-1 - y) + w-1;
-                for (int x = 0; x < w; ++x) {
+                quint8* dst = dstPict->data[i] + dstPict->linesize[i] * (h - 1 - y) + w - 1;
+                for (int x = 0; x < w; ++x)
+                {
                     *dst-- = *src++;
                 }
             }
@@ -128,7 +137,8 @@ CLVideoDecoderOutputPtr rotateImage(const CLConstVideoDecoderOutputPtr& frame, i
     return dstPict;
 }
 
-QnRotateImageFilter::QnRotateImageFilter(int angle): m_angle(angle)
+QnRotateImageFilter::QnRotateImageFilter(int angle):
+    m_angle(angle)
 {
     // normalize value
     m_angle = m_angle % 360;

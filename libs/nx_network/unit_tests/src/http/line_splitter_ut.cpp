@@ -10,8 +10,7 @@ namespace nx::network::http::test {
 
 // TODO: #akolesnikov These tests should be re-written.
 
-class LineSplitter:
-    public ::testing::Test
+class LineSplitter: public ::testing::Test
 {
 protected:
     void splitToLines(
@@ -19,7 +18,7 @@ protected:
         const nx::Buffer& sourceText,
         std::vector<nx::Buffer>* lines)
     {
-        for (std::size_t pos = 0; pos < sourceText.size(); )
+        for (std::size_t pos = 0; pos < sourceText.size();)
         {
             nx::ConstBufferRefType readLine;
             size_t bytesRead = 0;
@@ -63,14 +62,12 @@ TEST(LineSplitter, GeneralTest)
 
 TEST_F(LineSplitter, TrailingLFTest)
 {
-    static const nx::Buffer testData =
-        "line1\r\n"
-        "line2\r\n"
-        "\r\n"
-        "xxxxxxxx"
-        "xxxxxxxx"
-        "xxxxxxxx"
-        ;
+    static const nx::Buffer testData = "line1\r\n"
+                                       "line2\r\n"
+                                       "\r\n"
+                                       "xxxxxxxx"
+                                       "xxxxxxxx"
+                                       "xxxxxxxx";
 
     nx::network::http::LineSplitter lineSplitter;
     std::vector<nx::Buffer> lines;
@@ -79,10 +76,9 @@ TEST_F(LineSplitter, TrailingLFTest)
         readingLines,
         readingTrailingLineEnding,
         done
-    }
-    state = readingLines;
+    } state = readingLines;
     std::size_t pos = 0;
-    for (; (pos < testData.size()) && (state != done); )
+    for (; (pos < testData.size()) && (state != done);)
     {
         size_t bytesRead = 0;
         switch (state)
@@ -133,10 +129,9 @@ TEST_F(LineSplitter, TrailingLFTest)
 
 TEST_F(LineSplitter, common)
 {
-    static const nx::Buffer testData =
-        "line1\r\n"
-        "line2\r\n"
-        "line3";
+    static const nx::Buffer testData = "line1\r\n"
+                                       "line2\r\n"
+                                       "line3";
 
     nx::network::http::LineSplitter lineSplitter;
     std::vector<nx::Buffer> lines;
@@ -150,8 +145,7 @@ TEST_F(LineSplitter, common)
 
 //-------------------------------------------------------------------------------------------------
 
-class StringLineIterator:
-    public ::testing::Test
+class StringLineIterator: public ::testing::Test
 {
 protected:
     std::vector<std::string> split(const std::string& text)

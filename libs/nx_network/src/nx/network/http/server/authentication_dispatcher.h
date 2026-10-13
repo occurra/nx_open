@@ -15,13 +15,13 @@ namespace nx::network::http::server {
  * selected by request path.
  * If a defaultHandler was supplied to the constructor, then it receives requests not matched for
  * any authentication manager.
- * If no defaultHandler present, then not matched requests are completed with 403 Forbidden status code.
- * Note: the class methods are not thread-safe. So, the class must be configured before first usage.
+ * If no defaultHandler present, then not matched requests are completed with 403 Forbidden status
+ * code. Note: the class methods are not thread-safe. So, the class must be configured before first
+ * usage.
  *
  * TODO: #akolesnikov remove this class and replaces usages with rest::MessageDispatcher.
  */
-class NX_NETWORK_API AuthenticationDispatcher:
-    public AbstractAuthenticationManager
+class NX_NETWORK_API AuthenticationDispatcher: public AbstractAuthenticationManager
 {
     using base_type = AbstractAuthenticationManager;
 
@@ -36,9 +36,7 @@ public:
      * Authentication of request is passed to authenticator if Request::requestLine.url.path()
      * is matched against pathPattern.
      */
-    void add(
-        const std::regex& pathPattern,
-        AbstractRequestHandler* authenticator);
+    void add(const std::regex& pathPattern, AbstractRequestHandler* authenticator);
 
     /**
      * Register authenticator that is chosen not only by path, but also by auxiliaryCondition.
@@ -48,9 +46,7 @@ public:
         nx::MoveOnlyFunc<bool(const RequestContext&)> auxiliaryCondition,
         AbstractRequestHandler* authenticator);
 
-    void add(
-        const std::string& pathPattern,
-        AbstractRequestHandler* authenticator);
+    void add(const std::string& pathPattern, AbstractRequestHandler* authenticator);
 
     virtual void serve(
         RequestContext requestContext,

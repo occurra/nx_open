@@ -28,8 +28,7 @@ public:
 
 Uncompressor::Uncompressor(
     const std::shared_ptr<AbstractByteStreamFilter>& nextFilter,
-    Method method)
-    :
+    Method method):
     AbstractByteStreamFilter(nextFilter),
     d(new Private())
 {
@@ -69,7 +68,8 @@ bool Uncompressor::processData(const ConstBufferRefType& data)
                 // detection. Using negative windowBits parameter turns off looking for header.
                 // See http://www.zlib.net/manual.html#Advanced.
                 zResult = inflateInit2(
-                    &d->zStream, d->method == Method::gzip ? (32 + MAX_WBITS) : -MAX_WBITS);
+                    &d->zStream,
+                    d->method == Method::gzip ? (32 + MAX_WBITS) : -MAX_WBITS);
                 NX_ASSERT(zResult == Z_OK);
                 d->state = Private::State::inProgress;
                 continue;
@@ -136,7 +136,7 @@ bool Uncompressor::processData(const ConstBufferRefType& data)
                                 d->zStream.avail_out = (uInt) d->outputBuffer.size();
                             }
                             else if (inBytesConsumed == 0)
-                                //< && d->zStream.avail_out == d->outputBuffer.size()
+                            //< && d->zStream.avail_out == d->outputBuffer.size()
                             {
                                 // Zlib does not consume any input data and does not write anything
                                 // to output.

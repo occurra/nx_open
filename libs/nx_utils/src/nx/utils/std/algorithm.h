@@ -10,12 +10,16 @@
 namespace nx {
 namespace utils {
 
-template <typename L, typename R, typename = void>
-struct IsComparable: std::false_type {};
+template<typename L, typename R, typename = void>
+struct IsComparable: std::false_type
+{
+};
 
-template <typename L, typename R>
-struct IsComparable<L, R,
-    std::void_t<decltype(std::declval<L>() == std::declval<R>())>> : std::true_type {};
+template<typename L, typename R>
+struct IsComparable<L, R, std::void_t<decltype(std::declval<L>() == std::declval<R>())>>:
+    std::true_type
+{
+};
 
 template<typename ForwardIt, typename T>
 ForwardIt binary_find(ForwardIt first, ForwardIt last, const T& value)
@@ -37,28 +41,28 @@ ForwardIt binary_find(ForwardIt first, ForwardIt last, const T& value, Compare c
     return last;
 }
 
-template <typename Container, typename T>
+template<typename Container, typename T>
 typename Container::value_type* binary_find(const Container& c, const T& value)
 {
     const auto it = binary_find(c.begin(), c.end(), value);
     return it != c.end() ? &*it : nullptr;
 }
 
-template <typename Container, typename T>
+template<typename Container, typename T>
 typename Container::value_type* binary_find(Container& c, const T& value)
 {
     const auto it = binary_find(c.begin(), c.end(), value);
     return it != c.end() ? &*it : nullptr;
 }
 
-template <typename Container, typename T, typename Compare>
+template<typename Container, typename T, typename Compare>
 typename Container::value_type* binary_find(const Container& c, const T& value, Compare comp)
 {
     const auto it = binary_find(c.begin(), c.end(), value, comp);
     return it != c.end() ? &*it : nullptr;
 }
 
-template <typename Container, typename T, typename Compare>
+template<typename Container, typename T, typename Compare>
 typename Container::value_type* binary_find(Container& c, const T& value, Compare comp)
 {
     const auto it = binary_find(c.begin(), c.end(), value, comp);
@@ -76,7 +80,8 @@ InputIt move_if(InputIt first, InputIt last, OutputIt outFirst, UnaryPredicate p
     using ValueType = decltype(*first);
 
     InputIt newRangeEndIt = std::stable_partition(
-        first, last,
+        first,
+        last,
         [&p](const ValueType& elem)
         {
             return !p(elem);
@@ -92,7 +97,8 @@ bool contains(InputIt first, InputIt last, const T& value)
 {
     using RangeElement = decltype(*first);
     return std::any_of(
-        first, last,
+        first,
+        last,
         [&value](const RangeElement& elementValue)
         {
             return elementValue == value;
@@ -137,15 +143,25 @@ size_t erase_if(Container& container, UnaryPredicate p)
 template<typename Container, typename UnaryPredicate>
 Container copy_if(Container values, UnaryPredicate filter)
 {
-    erase_if(values, [&filter](const auto& v) { return !filter(v); });
+    erase_if(
+        values,
+        [&filter](const auto& v)
+        {
+            return !filter(v);
+        });
     return values;
 }
 
 template<typename Key, typename Value, typename UnaryPredicate>
 std::map<Key, Value> copy_if(std::map<Key, Value> values, UnaryPredicate filter)
 {
-    std::erase_if(values,
-        [&filter](const auto& item) { auto const& [k, v] = item; return !filter(k, v); });
+    std::erase_if(
+        values,
+        [&filter](const auto& item)
+        {
+            auto const& [k, v] = item;
+            return !filter(k, v);
+        });
     return values;
 }
 
@@ -205,7 +221,10 @@ public:
     y_combinator_result(const y_combinator_result&) = delete;
 
     template<class T>
-    explicit y_combinator_result(T&& impl): functor(std::forward<T>(impl)) {}
+    explicit y_combinator_result(T&& impl):
+        functor(std::forward<T>(impl))
+    {
+    }
 
     template<class... Args>
     decltype(auto) operator()(Args&&... args) const
@@ -238,23 +257,26 @@ decltype(auto) y_combinator(Functor&& functor)
  *     The signature of the comparison function should be equivalent to the following:<br>
  *     `bool cmp(const Type1& a, const Type2& b);`
  */
-template <typename T, typename Allocator, typename Compare>
+template<typename T, typename Allocator, typename Compare>
 void unique_sort(std::vector<T, Allocator>* vec, Compare comp)
 {
     std::ranges::sort(*vec, comp);
     vec->erase(
-        std::unique(vec->begin(), vec->end(),
+        std::unique(
+            vec->begin(),
+            vec->end(),
             [comp = std::move(comp)](const auto& lhs, const auto& rhs) -> bool
             {
                 return !comp(lhs, rhs) && !comp(rhs, lhs);
-            }), vec->end());
+            }),
+        vec->end());
 }
 
 /**
  * Sorts and removes duplicate elements of the `vector` in place.
  * @param vec vector to sort
  */
-template <typename T, typename Allocator>
+template<typename T, typename Allocator>
 void unique_sort(std::vector<T, Allocator>* vec)
 {
     return unique_sort(vec, std::less<T>{});
@@ -276,12 +298,13 @@ void sort(std::vector<T, Allocator>* v, SortPredicate p = {})
  *     `bool cmp(const Type1& a, const Type2& b);`
  * @return sorted vector of unique items.
  */
-template <typename Container, typename Compare>
+template<typename Container, typename Compare>
 [[nodiscard]] auto unique_sorted(Container items, Compare comp)
 {
     using value_type = typename std::decay_t<Container>::value_type;
     std::vector<value_type> result(
-        std::move_iterator(items.begin()), std::move_iterator(items.end()));
+        std::move_iterator(items.begin()),
+        std::move_iterator(items.end()));
     unique_sort(result, comp);
     return result;
 }
@@ -291,12 +314,13 @@ template <typename Container, typename Compare>
  * @param items container to sort
  * @return sorted vector of unique items.
  */
-template <typename Container>
+template<typename Container>
 [[nodiscard]] auto unique_sorted(Container items)
 {
     using value_type = typename std::decay_t<Container>::value_type;
     std::vector<value_type> result(
-        std::move_iterator(items.begin()), std::move_iterator(items.end()));
+        std::move_iterator(items.begin()),
+        std::move_iterator(items.end()));
     unique_sort(result);
     return result;
 }
@@ -313,8 +337,10 @@ template <typename Container>
  *
  * @example `items = unique_sorted(std::move(items), isLess);`
  */
-template <typename Compare, typename T, typename Allocator>
-[[nodiscard]] std::vector<T, Allocator> unique_sorted(std::vector<T, Allocator> items, Compare comp)
+template<typename Compare, typename T, typename Allocator>
+[[nodiscard]] std::vector<T, Allocator> unique_sorted(
+    std::vector<T, Allocator> items,
+    Compare comp)
 {
     unique_sort(&items, comp);
     return items;
@@ -327,7 +353,7 @@ template <typename Compare, typename T, typename Allocator>
  *
  * @example `items = unique_sorted(std::move(items));`
  */
-template <typename T, typename Allocator>
+template<typename T, typename Allocator>
 [[nodiscard]] std::vector<T, Allocator> unique_sorted(std::vector<T, Allocator> items)
 {
     unique_sort(&items);
@@ -341,55 +367,72 @@ template<typename T, typename Allocator, typename SortPredicate = std::less<>>
     return v;
 }
 
-template<typename Container, typename UnaryPred,
+template<
+    typename Container,
+    typename UnaryPred,
     typename = std::enable_if_t<std::is_invocable_v<UnaryPred, typename Container::value_type>>>
-[[nodiscard]] bool any_of(const Container &c, UnaryPred &&p)
+[[nodiscard]] bool any_of(const Container& c, UnaryPred&& p)
 {
     return std::any_of(c.cbegin(), c.cend(), std::forward<UnaryPred>(p));
 }
 
-template<typename Container, typename T,
+template<
+    typename Container,
+    typename T,
     typename = std::enable_if_t<IsComparable<typename Container::value_type, T>::value>>
-[[nodiscard]] bool any_of(const Container &c, const T& v)
+[[nodiscard]] bool any_of(const Container& c, const T& v)
 {
-    return std::any_of(c.cbegin(), c.cend(), [&v](const auto& e) { return v == e; });
+    return std::any_of(
+        c.cbegin(),
+        c.cend(),
+        [&v](const auto& e)
+        {
+            return v == e;
+        });
 }
 
-template <typename T>
+template<typename T>
 [[nodiscard]] bool any_of(const std::initializer_list<T>& list, const T& v)
 {
-    return std::any_of(list.begin(), list.end(), [&v](const T& e) { return v == e; });
+    return std::any_of(
+        list.begin(),
+        list.end(),
+        [&v](const T& e)
+        {
+            return v == e;
+        });
 }
 
-template <typename T>
+template<typename T>
 std::set<T> set_intersection(const std::set<T>& a, const std::set<T>& b)
 {
     std::set<T> result;
     std::set_intersection(
-        a.begin(), a.end(),
-        b.begin(), b.end(),
+        a.begin(),
+        a.end(),
+        b.begin(),
+        b.end(),
         std::inserter(result, result.begin()));
     return result;
 }
 
-template <typename T>
+template<typename T>
 std::set<T> set_union(const std::set<T>& a, const std::set<T>& b)
 {
     std::set<T> result;
-    std::set_union(
-        a.begin(), a.end(),
-        b.begin(), b.end(),
-        std::inserter(result, result.begin()));
+    std::set_union(a.begin(), a.end(), b.begin(), b.end(), std::inserter(result, result.begin()));
     return result;
 }
 
-template <typename T>
+template<typename T>
 std::set<T> set_difference(const std::set<T>& a, const std::set<T>& b)
 {
     std::set<T> result;
     std::set_difference(
-        a.begin(), a.end(),
-        b.begin(), b.end(),
+        a.begin(),
+        a.end(),
+        b.begin(),
+        b.end(),
         std::inserter(result, result.begin()));
     return result;
 }
@@ -408,10 +451,11 @@ std::vector<T, Alloc> concat(std::vector<T, Alloc> first, Other&&... other)
 {
     const size_t total_size = (first.size() + ... + other.size());
     first.reserve(total_size);
-    (first.insert(first.end(),
+    (first.insert(
+         first.end(),
          std::make_move_iterator(other.begin()),
          std::make_move_iterator(other.end())),
-        ...);
+     ...);
     return first;
 }
 

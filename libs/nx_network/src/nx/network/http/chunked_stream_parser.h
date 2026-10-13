@@ -21,18 +21,16 @@ public:
      * TODO: #akolesnikov Make it non-template and move to cpp.
      */
     template<class Func>
-    size_t parse(
-        const ConstBufferRefType& data,
-        Func func)
+    size_t parse(const ConstBufferRefType& data, Func func)
     {
         // TODO: #akolesnikov Split this function after it is merged to the cloud_backend branch.
 
         size_t currentOffset = 0;
-        for (; currentOffset < data.size(); )
+        for (; currentOffset < data.size();)
         {
             const size_t currentOffsetBak = currentOffset;
 
-            const nx::Buffer::value_type currentChar = data[(unsigned int)currentOffset];
+            const nx::Buffer::value_type currentChar = data[(unsigned int) currentOffset];
             switch (m_chunkStreamParseState)
             {
                 case State::waitingChunkStart:
@@ -42,9 +40,9 @@ public:
                     break;
 
                 case State::readingChunkSize:
-                    if ((currentChar >= '0' && currentChar <= '9') ||
-                        (currentChar >= 'a' && currentChar <= 'f') ||
-                        (currentChar >= 'A' && currentChar <= 'F'))
+                    if ((currentChar >= '0' && currentChar <= '9')
+                        || (currentChar >= 'a' && currentChar <= 'f')
+                        || (currentChar >= 'A' && currentChar <= 'F'))
                     {
                         m_currentChunkSize <<= 4;
                         m_currentChunkSize += hexCharToInt(currentChar);
@@ -84,13 +82,15 @@ public:
                     break;
 
                 case State::skippingCRLF:
-                    // Supporting CR, LF and CRLF as line-ending, since some buggy rtsp-implementation can do that.
-                    if ((m_lineEndingOffset < 2) &&
-                        ((currentChar == '\r' && m_lineEndingOffset == 0) ||
-                        (currentChar == '\n' && (m_lineEndingOffset == 0 || m_prevChar == '\r'))))
+                    // Supporting CR, LF and CRLF as line-ending, since some buggy
+                    // rtsp-implementation can do that.
+                    if ((m_lineEndingOffset < 2)
+                        && ((currentChar == '\r' && m_lineEndingOffset == 0)
+                            || (currentChar == '\n'
+                                && (m_lineEndingOffset == 0 || m_prevChar == '\r'))))
                     {
                         ++m_lineEndingOffset;
-                        ++currentOffset;    //< Skipping.
+                        ++currentOffset; //< Skipping.
 
                         if (!(m_prevChar == '\r' && currentChar == '\n'))
                             break;
@@ -171,10 +171,7 @@ public:
         return currentOffset;
     }
 
-    bool eof() const
-    {
-        return m_chunkStreamParseState == State::reachedChunkStreamEnd;
-    }
+    bool eof() const { return m_chunkStreamParseState == State::reachedChunkStreamEnd; }
 
     void reset()
     {

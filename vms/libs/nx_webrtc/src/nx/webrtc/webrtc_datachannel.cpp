@@ -42,8 +42,7 @@ AbstractDataChannelDelegate::~AbstractDataChannelDelegate()
 DataChannel::DataChannel(
     AbstractDataChannelDelegate* ice,
     uint16_t sctpPort,
-    const SessionConfig& config)
-    :
+    const SessionConfig& config):
     m_ice(ice),
     m_sctpPort(sctpPort),
     m_config(config)
@@ -137,9 +136,10 @@ bool DataChannel::init()
                 &DataChannel::usrsctpWriteCallback,
                 &DataChannel::usrsctpDebugCallback);
             usrsctp_enable_crc32c_offload(); //< Computing CRC32 only for outgoing packets.
-            usrsctp_sysctl_set_sctp_pr_enable(1); //< Enable Partial Reliability Extension (RFC 3758).
+            usrsctp_sysctl_set_sctp_pr_enable(
+                1); //< Enable Partial Reliability Extension (RFC 3758).
             usrsctp_sysctl_set_sctp_ecn_enable(0); //< Disable Explicit Congestion Notification.
-            // Uncomment if you need a verbose debug output with usrsctp internals.
+        // Uncomment if you need a verbose debug output with usrsctp internals.
 #if 0
             usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 #endif
@@ -173,11 +173,11 @@ bool DataChannel::init()
     socketLinger.l_onoff = 1;
     socketLinger.l_linger = 0;
     if (usrsctp_setsockopt(
-        m_sctpSocket,
-        SOL_SOCKET,
-        SO_LINGER,
-        &socketLinger,
-        sizeof(socketLinger)))
+            m_sctpSocket,
+            SOL_SOCKET,
+            SO_LINGER,
+            &socketLinger,
+            sizeof(socketLinger)))
     {
         NX_DEBUG(this, "Can't set SO_LINGER on SCTP socket: errno %1", errno);
         return false;
@@ -187,11 +187,11 @@ bool DataChannel::init()
     sctpAssocValue.assoc_id = SCTP_ALL_ASSOC;
     sctpAssocValue.assoc_value = 1;
     if (usrsctp_setsockopt(
-        m_sctpSocket,
-        IPPROTO_SCTP,
-        SCTP_ENABLE_STREAM_RESET,
-        &sctpAssocValue,
-        sizeof(sctpAssocValue)))
+            m_sctpSocket,
+            IPPROTO_SCTP,
+            SCTP_ENABLE_STREAM_RESET,
+            &sctpAssocValue,
+            sizeof(sctpAssocValue)))
     {
         NX_DEBUG(this, "Can't set SCTP_ENABLE_STREAM_RESET on SCTP socket: errno %1", errno);
         return false;
@@ -259,12 +259,11 @@ bool DataChannel::init()
     // RFC 8261 5. DTLS considerations:
     // If path MTU discovery is performed by the SCTP layer and IPv4 is used as the network-layer
     // protocol, the DTLS implementation SHOULD allow the DTLS user to enforce that the
-    // corresponding IPv4 packet is sent with the Don't Fragment (DF) bit set. If controlling the DF
-    // bit is not possible (for example, due to implementation restrictions), a safe value for the
-    // path MTU has to be used by the SCTP stack. It is RECOMMENDED that the safe value not exceed
-    // 1200 bytes.
-    // See https://www.rfc-editor.org/rfc/rfc8261.html#section-5
-    // Fall back to a safe MTU value.
+    // corresponding IPv4 packet is sent with the Don't Fragment (DF) bit set. If controlling the
+    // DF bit is not possible (for example, due to implementation restrictions), a safe value for
+    // the path MTU has to be used by the SCTP stack. It is RECOMMENDED that the safe value not
+    // exceed 1200 bytes. See https://www.rfc-editor.org/rfc/rfc8261.html#section-5 Fall back to a
+    // safe MTU value.
     paddrparams.spp_flags |= SPP_PMTUD_DISABLE;
     // The MTU value provided specifies the space available for chunks in the
     // packet, so we also subtract the SCTP header size.
@@ -273,11 +272,11 @@ bool DataChannel::init()
     paddrparams.spp_pathmtu = kDefaultSctpMtu;
 
     if (usrsctp_setsockopt(
-        m_sctpSocket,
-        IPPROTO_SCTP,
-        SCTP_PEER_ADDR_PARAMS,
-        &paddrparams,
-        sizeof(paddrparams)))
+            m_sctpSocket,
+            IPPROTO_SCTP,
+            SCTP_PEER_ADDR_PARAMS,
+            &paddrparams,
+            sizeof(paddrparams)))
     {
         NX_DEBUG(this, "Can't set SCTP_PEER_ADDR_PARAMS for SCTP socket: errno %1", errno);
         return false;
@@ -287,9 +286,9 @@ bool DataChannel::init()
     // The number of streams negotiated during SCTP association setup SHOULD be 65535, which is the
     // maximum number of streams that can be negotiated during the association setup.
     // See https://www.rfc-editor.org/rfc/rfc8831.html#section-6.2
-    // However, usrsctp allocates tables to hold the stream states. For 65535 streams, it results in
-    // the waste of a few MBs for each association. Therefore, we use a lower limit to save memory.
-    // See https://github.com/sctplab/usrsctp/issues/121
+    // However, usrsctp allocates tables to hold the stream states. For 65535 streams, it results
+    // in the waste of a few MBs for each association. Therefore, we use a lower limit to save
+    // memory. See https://github.com/sctplab/usrsctp/issues/121
     struct sctp_initmsg initMsg = {};
     constexpr int kMaxSctpStreamsCount = 1024;
     initMsg.sinit_num_ostreams = kMaxSctpStreamsCount;
@@ -305,11 +304,11 @@ bool DataChannel::init()
     // may also be interleaved with partially delivered messages.
     int level = 0;
     if (usrsctp_setsockopt(
-        m_sctpSocket,
-        IPPROTO_SCTP,
-        SCTP_FRAGMENT_INTERLEAVE,
-        &level,
-        sizeof(level)))
+            m_sctpSocket,
+            IPPROTO_SCTP,
+            SCTP_FRAGMENT_INTERLEAVE,
+            &level,
+            sizeof(level)))
     {
         NX_DEBUG(this, "Can't disable SCTP fragmented interleave: errno %1", errno);
         return false;
@@ -426,8 +425,16 @@ bool DataChannel::handleRead()
         socklen_t infoLen = sizeof(info);
         unsigned int infoType = 0;
         int flags = 0;
-        ssize_t len = usrsctp_recvv(m_sctpSocket, m_receiveBuffer.data(), kSctpMaxMessageSize,
-            /*from*/ nullptr, &fromLen, &info, &infoLen, &infoType, &flags);
+        ssize_t len = usrsctp_recvv(
+            m_sctpSocket,
+            m_receiveBuffer.data(),
+            kSctpMaxMessageSize,
+            /*from*/ nullptr,
+            &fromLen,
+            &info,
+            &infoLen,
+            &infoType,
+            &flags);
         NX_CRITICAL(len < kSctpMaxMessageSize);
 
         const auto savedErrno = errno;
@@ -471,9 +478,8 @@ bool DataChannel::handleRead()
                     return false;
                 }
                 bool openedBefore = m_dataChannelOpened;
-                bool ret = processReceivedData(
-                    (int) info.rcv_sid,
-                    (PayloadId) ntohl(info.rcv_ppid));
+                bool ret =
+                    processReceivedData((int) info.rcv_sid, (PayloadId) ntohl(info.rcv_ppid));
                 m_lastMessage.clear();
                 if (!openedBefore && m_dataChannelOpened)
                     return ret && flushSavedMessages();
@@ -602,7 +608,8 @@ bool DataChannel::sendStreamReset(int streamId)
     resetStreams.srs_number_streams = 1;
     resetStreams.srs_stream_list[0] = streamId;
 
-    if (usrsctp_setsockopt(m_sctpSocket, IPPROTO_SCTP, SCTP_RESET_STREAMS, &resetStreams, len) == 0)
+    if (usrsctp_setsockopt(m_sctpSocket, IPPROTO_SCTP, SCTP_RESET_STREAMS, &resetStreams, len)
+        == 0)
         return true;
     if (errno == EINVAL)
     {
@@ -717,7 +724,11 @@ bool DataChannel::writeMessage(Message message)
         NX_DEBUG(this, "Output queue size overflow: %1", m_outputQueue.size());
         return false;
     }
-    NX_VERBOSE(this, "Added message with type %1 size %2", (int) message.type, message.data.size());
+    NX_VERBOSE(
+        this,
+        "Added message with type %1 size %2",
+        (int) message.type,
+        message.data.size());
     m_lastUpcallEvents |= SCTP_EVENT_WRITE;
     if (message.data.size() <= kDataChannelFragment)
     {
@@ -732,13 +743,11 @@ bool DataChannel::writeMessage(Message message)
         // So we need to fragment message first.
         size_t len = std::min(kDataChannelFragment, message.data.size() - offset);
         // Fragment original message.
-        Message fragmentedMessage
-        {
+        Message fragmentedMessage{
             message.type,
             message.streamId,
             {message.data.data() + offset, len},
-            len + offset == message.data.size() ? message.eor : false
-        };
+            len + offset == message.data.size() ? message.eor : false};
         m_outputQueue.emplace(std::move(fragmentedMessage));
         offset += len;
     }
@@ -768,12 +777,7 @@ bool DataChannel::processReceivedData(int streamId, PayloadId payloadId)
         case control:
         {
             NX_VERBOSE(this, "Got control, type = %1", (int) m_lastMessage[0]);
-            return processReceivedMessage(
-                {
-                    Message::Type::control,
-                    streamId,
-                    m_lastMessage
-                });
+            return processReceivedMessage({Message::Type::control, streamId, m_lastMessage});
         }
 
         case stringPart: //< Deprecated.
@@ -786,25 +790,14 @@ bool DataChannel::processReceivedData(int streamId, PayloadId payloadId)
         {
             if (m_partialString.empty())
             {
-                return processReceivedMessage(
-                    {
-                        Message::Type::string,
-                        streamId,
-                        m_lastMessage
-                    });
+                return processReceivedMessage({Message::Type::string, streamId, m_lastMessage});
             }
             else
             {
                 std::string tempstr(m_partialString);
                 tempstr.insert(tempstr.size(), m_lastMessage);
                 m_partialString.clear();
-                return processReceivedMessage(
-                    {
-                        Message::Type::string,
-                        streamId,
-                        tempstr,
-                        true
-                    });
+                return processReceivedMessage({Message::Type::string, streamId, tempstr, true});
             }
             break;
         }
@@ -827,25 +820,14 @@ bool DataChannel::processReceivedData(int streamId, PayloadId payloadId)
             if (m_partialBinary.empty())
             {
                 return processReceivedMessage(
-                    {
-                        Message::Type::binary,
-                        streamId,
-                        m_lastMessage,
-                        true
-                    });
+                    {Message::Type::binary, streamId, m_lastMessage, true});
             }
             else
             {
                 std::string tempbin(m_partialBinary);
                 tempbin.insert(tempbin.size(), m_lastMessage);
                 m_partialBinary.clear();
-                return processReceivedMessage(
-                    {
-                        Message::Type::binary,
-                        streamId,
-                        tempbin,
-                        true
-                    });
+                return processReceivedMessage({Message::Type::binary, streamId, tempbin, true});
             }
             break;
         }
@@ -887,8 +869,11 @@ bool DataChannel::processNotification(const union sctp_notification* notificatio
             const struct sctp_assoc_change& assocChange = notification->sn_assoc_change;
             if (assocChange.sac_state == SCTP_COMM_UP)
             {
-                NX_VERBOSE(this, "SCTP negotiated streams: incoming = %1, outgoing = %2",
-                    assocChange.sac_inbound_streams, assocChange.sac_outbound_streams);
+                NX_VERBOSE(
+                    this,
+                    "SCTP negotiated streams: incoming = %1, outgoing = %2",
+                    assocChange.sac_inbound_streams,
+                    assocChange.sac_outbound_streams);
                 // Not used at this moment.
                 m_negotiatedStreamCount.emplace(
                     std::min(assocChange.sac_inbound_streams, assocChange.sac_outbound_streams));
@@ -918,8 +903,7 @@ bool DataChannel::processNotification(const union sctp_notification* notificatio
             {
                 std::ostringstream description;
                 description << "flags=";
-                if (
-                    (flags & SCTP_STREAM_RESET_OUTGOING_SSN && flags)
+                if ((flags & SCTP_STREAM_RESET_OUTGOING_SSN && flags)
                     & SCTP_STREAM_RESET_INCOMING_SSN)
                 {
                     description << "outgoing|incoming";
@@ -961,12 +945,10 @@ bool DataChannel::processNotification(const union sctp_notification* notificatio
                     uint16_t streamId = resetEvent.strreset_stream_list[i];
                     // Pass reset as control with `close` message into dataChannel level.
                     return processReceivedMessage(
-                        {
-                            Message::Type::control,
-                            streamId,
-                            std::string(&dataChannelCloseMessage, &dataChannelCloseMessage + 1),
-                            true
-                        });
+                        {Message::Type::control,
+                         streamId,
+                         std::string(&dataChannelCloseMessage, &dataChannelCloseMessage + 1),
+                         true});
                 }
             }
             break;
@@ -1031,7 +1013,8 @@ bool DataChannel::processOpenMessage(const Message& message)
 {
     if (message.data.size() < sizeof(OpenMessage))
     {
-        NX_DEBUG(this,
+        NX_DEBUG(
+            this,
             "Invalid open message size: %1 vs %2",
             message.data.size(),
             sizeof(OpenMessage));
@@ -1044,10 +1027,12 @@ bool DataChannel::processOpenMessage(const Message& message)
     openMessage.labelLength = ntohs(openMessage.labelLength);
     openMessage.protocolLength = ntohs(openMessage.protocolLength);
 
-    if (message.data.size() <
-        sizeof(OpenMessage) + (size_t) (openMessage.labelLength + openMessage.protocolLength))
+    if (message.data.size()
+        < sizeof(OpenMessage) + (size_t) (openMessage.labelLength + openMessage.protocolLength))
     {
-        NX_DEBUG(this, "Truncated open message size: %1 vs %2",
+        NX_DEBUG(
+            this,
+            "Truncated open message size: %1 vs %2",
             message.data.size(),
             sizeof(OpenMessage) + (size_t) (openMessage.labelLength + openMessage.protocolLength));
         return false;
@@ -1076,8 +1061,12 @@ bool DataChannel::processOpenMessage(const Message& message)
         m_dataChannelOpened = true;
     }
 
-    NX_DEBUG(this, "Opened remote Data Channel with stream %1, label %2, protocol %3",
-        message.streamId, m_label, m_protocol);
+    NX_DEBUG(
+        this,
+        "Opened remote Data Channel with stream %1, label %2, protocol %3",
+        message.streamId,
+        m_label,
+        m_protocol);
 
     uint8_t ack = MessageType::ack;
     return writeMessage(

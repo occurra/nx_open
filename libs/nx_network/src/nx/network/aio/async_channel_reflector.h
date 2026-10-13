@@ -18,13 +18,13 @@ namespace aio {
  * Listens supplied channel for incoming data and sends same data in response.
  */
 template<typename ChannelToReflectType>
-class AsyncChannelReflector:
-    public BasicPollable
+class AsyncChannelReflector: public BasicPollable
 {
     using base_type = BasicPollable;
     using self_type = AsyncChannelReflector<ChannelToReflectType>;
 
-    // TODO: #akolesnikov Get rid of template after inheriting AbstractCommunicatingSocket from AbstractAsyncChannel.
+    // TODO: #akolesnikov Get rid of template after inheriting AbstractCommunicatingSocket from
+    // AbstractAsyncChannel.
 public:
     static constexpr int kDefaultReadBufferSize = 16 * 1024;
 
@@ -73,10 +73,7 @@ private:
     std::size_t m_readBufferSize;
     std::deque<nx::Buffer> m_sendQueue;
 
-    virtual void stopWhileInAioThread() override
-    {
-        m_channelToReflect.reset();
-    }
+    virtual void stopWhileInAioThread() override { m_channelToReflect.reset(); }
 
     void scheduleRead()
     {
@@ -90,14 +87,13 @@ private:
 
     void onDataRead(SystemError::ErrorCode sysErrorCode, std::size_t bytesRead)
     {
-        if (sysErrorCode != SystemError::noError &&
-            socketCannotRecoverFromError(sysErrorCode))
+        if (sysErrorCode != SystemError::noError && socketCannotRecoverFromError(sysErrorCode))
         {
             return reportDone(sysErrorCode);
         }
 
         if (sysErrorCode != SystemError::noError)
-            return scheduleRead();  //< Recoverable error. Retrying...
+            return scheduleRead(); //< Recoverable error. Retrying...
 
         m_readBuffer.resize(static_cast<int>(bytesRead));
         decltype(m_readBuffer) readBuffer;
@@ -131,8 +127,7 @@ private:
 
     void onDataSent(SystemError::ErrorCode sysErrorCode, std::size_t bytesSent)
     {
-        if (sysErrorCode != SystemError::noError &&
-            socketCannotRecoverFromError(sysErrorCode))
+        if (sysErrorCode != SystemError::noError && socketCannotRecoverFromError(sysErrorCode))
         {
             return reportDone(sysErrorCode);
         }
@@ -144,7 +139,7 @@ private:
             return;
         }
 
-        NX_ASSERT(bytesSent == (std::size_t)m_sendQueue.front().size());
+        NX_ASSERT(bytesSent == (std::size_t) m_sendQueue.front().size());
 
         m_sendQueue.pop_front();
         if (!m_sendQueue.empty())

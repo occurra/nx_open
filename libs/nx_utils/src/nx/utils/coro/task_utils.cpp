@@ -14,17 +14,17 @@ nx::coro::Task<QVariant> whenProperty(
 {
     struct Awaiter
     {
-        Awaiter(QObject* object, int propertyIndex, std::function<bool(const QVariant&)> condition):
+        Awaiter(
+            QObject* object,
+            int propertyIndex,
+            std::function<bool(const QVariant&)> condition):
             m_object(object),
             m_index(propertyIndex),
             m_condition(condition)
         {
         }
 
-        bool await_ready() const
-        {
-            return false;
-        }
+        bool await_ready() const { return false; }
 
         void await_suspend(std::coroutine_handle<> h)
         {

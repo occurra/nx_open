@@ -33,10 +33,7 @@ public:
                 m_mutex->unlock();
         }
 
-        bool locked() const
-        {
-            return m_locked;
-        }
+        bool locked() const { return m_locked; }
 
         bool lock()
         {

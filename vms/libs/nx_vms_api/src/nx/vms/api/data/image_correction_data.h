@@ -38,12 +38,13 @@ struct NX_VMS_API ImageCorrectionData
      */
     static ImageCorrectionData fromByteArray(const QByteArray& data);
 };
-#define ImageCorrectionData_Fields (enabled)(blackLevel)(whiteLevel)(gamma)
-NX_VMS_API_DECLARE_STRUCT_EX(ImageCorrectionData, (ubjson)(json)(xml)(csv_record))
+#define ImageCorrectionData_Fields (enabled)(blackLevel)(whiteLevel) (gamma)
+NX_VMS_API_DECLARE_STRUCT_EX(ImageCorrectionData, (ubjson) (json) (xml) (csv_record))
 NX_REFLECTION_INSTRUMENT(ImageCorrectionData, ImageCorrectionData_Fields)
 
 } // namespace nx::vms::api
 
 // Compatibility-layer functions to maintain old way of (de)serializing in the server sql database.
 void NX_VMS_API serialize_field(const nx::vms::api::ImageCorrectionData& data, QVariant* target);
-void NX_VMS_API deserialize_field(const QVariant& value, nx::vms::api::ImageCorrectionData* target);
+void NX_VMS_API
+    deserialize_field(const QVariant& value, nx::vms::api::ImageCorrectionData* target);

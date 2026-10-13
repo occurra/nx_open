@@ -106,4 +106,4 @@ NX_UTILS_API std::string getLastOSErrorText();
 
 NX_UTILS_API void setLastErrorCode(ErrorCode errorCode);
 
-} // SystemError
+} // namespace SystemError

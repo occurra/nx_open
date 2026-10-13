@@ -31,7 +31,8 @@ namespace nx::utils::algorithm {
  *
  * // When we need to choose a connection method we invoke
  * const auto choice1 = selector.topItem();
- * // It returns the item with minimal depth and the first added item among items having the same depth.
+ * // It returns the item with minimal depth and the first added item among items having the same
+ * depth.
  * // The first item ("the most preferred method") is returned.
  *
  * // We establish connection. If it was not successful, then
@@ -57,8 +58,8 @@ class ItemSelector
 {
 public:
     /**
-     * @param popupTimePerWeightUnit The time it takes for one weight unit to pop up to 1 depth unit.
-     * E.g., given speed on 1 weight unit per second it will take:
+     * @param popupTimePerWeightUnit The time it takes for one weight unit to pop up to 1 depth
+     * unit. E.g., given speed on 1 weight unit per second it will take:
      * - 1 second  for key of weight 1 to popup from depth 1
      * - 2 seconds for key of weight 1 to popup from depth 2
      * - 2 seconds for key of weight 2 to popup from depth 1
@@ -135,17 +136,13 @@ private:
 
     void popupItems();
 
-    void popupItem(
-        std::chrono::steady_clock::time_point currentTime,
-        Item* item);
+    void popupItem(std::chrono::steady_clock::time_point currentTime, Item* item);
 };
 
 //-------------------------------------------------------------------------------------------------
 
 template<typename ItemKey>
-ItemSelector<ItemKey>::ItemSelector(
-    std::chrono::milliseconds popupTimePerWeightUnit)
-    :
+ItemSelector<ItemKey>::ItemSelector(std::chrono::milliseconds popupTimePerWeightUnit):
     m_popupTimePerWeightUnit(popupTimePerWeightUnit)
 {
 }
@@ -174,9 +171,8 @@ bool ItemSelector<ItemKey>::add(ItemKey key, int weight, int minDepth)
     if (weight <= 0)
         return false;
 
-    return m_items.emplace(
-        std::move(key),
-        Item{weight, minDepth, minDepth, monotonicTime()}).second;
+    return m_items.emplace(std::move(key), Item{weight, minDepth, minDepth, monotonicTime()})
+        .second;
 }
 
 template<typename ItemKey>
@@ -185,11 +181,13 @@ ItemKey ItemSelector<ItemKey>::topItem() const
     const_cast<ItemSelector*>(this)->popupItems();
 
     return std::min_element(
-        m_items.begin(), m_items.end(),
-        [](auto& left, auto& right)
-        {
-            return left.second.currentDepth < right.second.currentDepth;
-        })->first;
+               m_items.begin(),
+               m_items.end(),
+               [](auto& left, auto& right)
+               {
+                   return left.second.currentDepth < right.second.currentDepth;
+               })
+        ->first;
 }
 
 template<typename ItemKey>
@@ -226,9 +224,7 @@ void ItemSelector<ItemKey>::sinkItem(const ItemKey& key, unsigned int depth)
     if (it == m_items.end())
         return;
 
-    it->second.currentDepth = std::min<int>(
-        it->second.currentDepth + (int) depth,
-        m_maxSinkDepth);
+    it->second.currentDepth = std::min<int>(it->second.currentDepth + (int) depth, m_maxSinkDepth);
     it->second.lastUpdateTime = monotonicTime();
 }
 
@@ -239,8 +235,8 @@ void ItemSelector<ItemKey>::ascendItem(const ItemKey& key, unsigned int height)
 
     if (auto it = m_items.find(key); it != m_items.end())
     {
-        it->second.currentDepth = std::max<int>(
-            it->second.currentDepth - (int) height, -m_maxAscendLevel);
+        it->second.currentDepth =
+            std::max<int>(it->second.currentDepth - (int) height, -m_maxAscendLevel);
     }
 }
 
@@ -282,8 +278,7 @@ void ItemSelector<ItemKey>::popupItem(
 {
     using namespace std::chrono;
 
-    const auto timePassed = duration_cast<milliseconds>(
-        currentTime - item->lastUpdateTime);
+    const auto timePassed = duration_cast<milliseconds>(currentTime - item->lastUpdateTime);
 
     const auto distance = (timePassed / m_popupTimePerWeightUnit) / item->weight;
 
@@ -300,4 +295,4 @@ void ItemSelector<ItemKey>::popupItem(
     }
 }
 
-} // nx::utils::algorithm
+} // namespace nx::utils::algorithm

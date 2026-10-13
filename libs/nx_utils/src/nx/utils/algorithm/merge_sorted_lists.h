@@ -36,38 +36,37 @@ auto merge_sorted_lists(
     if (totalLimit <= 0)
         totalLimit = std::numeric_limits<int>::max(); //< No limit.
 
-    const auto processOneList =
-        [removeDuplicates, lessItem](DestinationList list, int limit)
+    const auto processOneList = [removeDuplicates, lessItem](DestinationList list, int limit)
+    {
+        if (removeDuplicates)
         {
-            if (removeDuplicates)
+            const auto equals = [lessItem](const auto& l, const auto& r)
             {
-                const auto equals =
-                    [lessItem](const auto& l, const auto& r)
-                    {
-                        return !(lessItem(l, r) || lessItem(r, l));
-                    };
+                return !(lessItem(l, r) || lessItem(r, l));
+            };
 
-                list.erase(
-                    std::unique(list.begin(), list.end(), equals),
-                    list.end());
-            }
+            list.erase(std::unique(list.begin(), list.end(), equals), list.end());
+        }
 
-            if ((int) list.size() <= limit)
-                return list;
-
-            // Truncate.
-            auto outOfLimit = list.begin();
-            std::advance(outOfLimit, limit);
-            list.erase(outOfLimit, list.end());
-
+        if ((int) list.size() <= limit)
             return list;
-        };
+
+        // Truncate.
+        auto outOfLimit = list.begin();
+        std::advance(outOfLimit, limit);
+        list.erase(outOfLimit, list.end());
+
+        return list;
+    };
 
     switch (sortedLists.size())
     {
-        case 0: return SortedList();
-        case 1: return processOneList(std::move(*sortedLists.begin()), totalLimit);
-        default: break;
+        case 0:
+            return SortedList();
+        case 1:
+            return processOneList(std::move(*sortedLists.begin()), totalLimit);
+        default:
+            break;
     }
 
     using Iterator = decltype(sortedLists.begin()->begin());
@@ -88,9 +87,12 @@ auto merge_sorted_lists(
 
     switch (queueData.size())
     {
-        case 0: return SortedList();
-        case 1: return processOneList(std::move(*lastNonEmptyList), totalLimit);
-        default: break;
+        case 0:
+            return SortedList();
+        case 1:
+            return processOneList(std::move(*lastNonEmptyList), totalLimit);
+        default:
+            break;
     }
 
     DestinationList result;
@@ -100,9 +102,9 @@ auto merge_sorted_lists(
 
     const auto lessPriority =
         [lessItem](const IteratorRange& left, const IteratorRange& right) -> bool
-        {
-            return lessItem(*right.first, *left.first);
-        };
+    {
+        return lessItem(*right.first, *left.first);
+    };
 
     std::make_heap(queueData.begin(), queueData.end(), lessPriority);
 
@@ -150,8 +152,16 @@ auto merge_sorted_lists(
 
     using Less = std::function<bool(const Item&, const Item&)>;
     const auto less = sortOrder == Qt::AscendingOrder
-        ? Less([key = sortFieldGetter](const Item& l, const Item& r) { return key(l) < key(r); })
-        : Less([key = sortFieldGetter](const Item& l, const Item& r) { return key(l) > key(r); });
+        ? Less(
+              [key = sortFieldGetter](const Item& l, const Item& r)
+              {
+                  return key(l) < key(r);
+              })
+        : Less(
+              [key = sortFieldGetter](const Item& l, const Item& r)
+              {
+                  return key(l) > key(r);
+              });
 
     return merge_sorted_lists(std::move(sortedLists), less, totalLimit, removeDuplicates);
 };
@@ -176,9 +186,15 @@ auto merge_sorted_lists(
 {
     using SortedList = std::remove_reference_t<decltype(*sortedLists.begin())>;
 
-    return merge_sorted_lists(std::move(sortedLists),
-        [](const typename SortedList::value_type& value) { return value; },
-        sortOrder, totalLimit, removeDuplicates);
+    return merge_sorted_lists(
+        std::move(sortedLists),
+        [](const typename SortedList::value_type& value)
+        {
+            return value;
+        },
+        sortOrder,
+        totalLimit,
+        removeDuplicates);
 }
 
 } // namespace nx::utils::algorithm

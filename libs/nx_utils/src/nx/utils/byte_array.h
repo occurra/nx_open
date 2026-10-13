@@ -19,10 +19,7 @@ public:
      * @param padding Additional data beyond the array capacity, which will be filled with zeros.
      *     Used to prevent overread and segfault for damaged MPEG bitstreams.
      */
-    explicit ByteArray(
-        size_t alignment,
-        size_t capacity,
-        size_t padding);
+    explicit ByteArray(size_t alignment, size_t capacity, size_t padding);
     ~ByteArray();
 
     ByteArray() = default;
@@ -39,17 +36,17 @@ public:
     /**
      * Pointer to the data stored in this array.
      */
-    const char *constData() const { return m_data + m_ignore; }
+    const char* constData() const { return m_data + m_ignore; }
 
     /**
      * Pointer to the data stored in this array.
      */
-    const char *data() const { return constData(); }
+    const char* data() const { return constData(); }
 
     /**
      * Pointer to the data stored in this array.
      */
-    char *data();
+    char* data();
 
     /**
      * Size of this array.

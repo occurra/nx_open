@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <rapidjson/document.h>
-
 #include <nx/reflect/json/utils.h>
 #include <nx/utils/log/assert.h>
+#include <rapidjson/document.h>
 
 namespace nx::utils::reflect {
 
@@ -31,7 +30,8 @@ inline std::string asString(const rapidjson::Value::StringRefType& value)
 }
 
 inline rapidjson::Value::StringRefType asStringRef(
-    const rapidjson::Value& value, const QString& assertMessage = {})
+    const rapidjson::Value& value,
+    const QString& assertMessage = {})
 {
     NX_ASSERT(value.IsString(), "%1 is not a string (%2)", toString(value), assertMessage);
     return {value.GetString(), value.GetStringLength()};
@@ -42,14 +42,17 @@ inline std::string asString(const rapidjson::Value& value, const QString& assert
     return asString(asStringRef(value, assertMessage));
 }
 
-inline rapidjson::Value::Object asObject(rapidjson::Value& value, const QString& assertMessage = {})
+inline rapidjson::Value::Object asObject(
+    rapidjson::Value& value,
+    const QString& assertMessage = {})
 {
     NX_ASSERT(value.IsObject(), "%1 is not an object (%2)", toString(value), assertMessage);
     return value.GetObject();
 }
 
 inline rapidjson::Value::ConstObject asObject(
-    const rapidjson::Value& value, const QString& assertMessage = {})
+    const rapidjson::Value& value,
+    const QString& assertMessage = {})
 {
     NX_ASSERT(value.IsObject(), "%1 is not an object (%2)", toString(value), assertMessage);
     return value.GetObject();
@@ -62,7 +65,8 @@ inline rapidjson::Value::Array asArray(rapidjson::Value& value, const QString& a
 }
 
 inline rapidjson::Value::ConstArray asArray(
-    const rapidjson::Value& value, const QString& assertMessage = {})
+    const rapidjson::Value& value,
+    const QString& assertMessage = {})
 {
     NX_ASSERT(value.IsArray(), "%1 is not an array (%2)", toString(value), assertMessage);
     return value.GetArray();
@@ -298,9 +302,8 @@ inline rapidjson::Value::StringRefType optStringRef(
     const QString& assertMessage = {})
 {
     const auto it = object.FindMember(key);
-    return it != object.MemberEnd()
-        ? asStringRef(it->value, assertMessage)
-        : rapidjson::Value::StringRefType{nullptr, 0};
+    return it != object.MemberEnd() ? asStringRef(it->value, assertMessage)
+                                    : rapidjson::Value::StringRefType{nullptr, 0};
 }
 
 inline rapidjson::Value::StringRefType optStringRef(

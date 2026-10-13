@@ -3,11 +3,12 @@
 #pragma once
 
 #include <audit/audit_manager_fwd.h>
+#include <core/dataconsumer/abstract_data_receptor.h>
 #include <nx/media/annexb_to_mp4.h>
 #include <nx/streaming/abstract_archive_stream_reader.h>
 #include <nx/streaming/abstract_data_consumer.h>
-#include <core/dataconsumer/abstract_data_receptor.h>
 #include <transcoding/media_transcoder.h>
+
 #include "media_queue.h"
 
 namespace nx::metric { struct Storage; }
@@ -16,26 +17,25 @@ namespace nx::webrtc {
 
 class Consumer;
 
-class NX_WEBRTC_API AbstractCameraDataProvider:
-    public QnAbstractMediaDataReceptor
+class NX_WEBRTC_API AbstractCameraDataProvider: public QnAbstractMediaDataReceptor
 {
 public:
-
     // Data handler, will put nullptr on EOF.
-    using OnDataHandler =
-        std::function<void (const QnConstAbstractMediaDataPtr& packet)>;
+    using OnDataHandler = std::function<void(const QnConstAbstractMediaDataPtr& packet)>;
 
     int64_t getPosition() const { return m_positionUs; }
-    void setPosition(int64_t positionUs) { m_positionUs = (positionUs >= 0 ? positionUs : DATETIME_NOW); }
+    void setPosition(int64_t positionUs)
+    {
+        m_positionUs = (positionUs >= 0 ? positionUs : DATETIME_NOW);
+    }
 
-    bool isInitialized() const { return m_initialized;}
+    bool isInitialized() const { return m_initialized; }
     void setInitialized(bool value) { m_initialized = value; }
     virtual bool isStarted() const = 0;
 
     void setDataConsumer(Consumer* consumer);
 
 public: // Initialize.
-
     void setAuditHandle(const AuditHandle& handle) { m_auditHandle = handle; }
 
     virtual bool addVideoTranscoder(

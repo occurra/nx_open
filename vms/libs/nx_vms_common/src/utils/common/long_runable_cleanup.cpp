@@ -29,12 +29,16 @@ QnLongRunableCleanup::~QnLongRunableCleanup()
 }
 
 void QnLongRunableCleanup::cleanupAsync(
-    std::unique_ptr<QnLongRunnable> threadUniquePtr, QObject* context)
+    std::unique_ptr<QnLongRunnable> threadUniquePtr,
+    QObject* context)
 {
     QnLongRunnable* thread = threadUniquePtr.get();
     NX_MUTEX_LOCKER locker(&m_mutex);
 
-    connect(thread, &QThread::finished, this,
+    connect(
+        thread,
+        &QThread::finished,
+        this,
         [this]()
         {
             auto thread = (QnLongRunnable*) sender();
@@ -48,7 +52,6 @@ void QnLongRunableCleanup::cleanupAsync(
                 m_threadsToStop.erase(itr);
                 tryClearContext(context);
             }
-
         });
 
     if (thread->isRunning())
@@ -77,8 +80,10 @@ void QnLongRunableCleanup::tryClearContext(QObject* context)
     if (!context)
         return;
 
-    NX_ASSERT(QThread::currentThread() == this->thread(),
-        "Context is deleted outside of main thread: %1", QThread::currentThread());
+    NX_ASSERT(
+        QThread::currentThread() == this->thread(),
+        "Context is deleted outside of main thread: %1",
+        QThread::currentThread());
 
     auto& data = m_contextsToStop[context];
     if (--data.refCount == 0 && data.cleanup)

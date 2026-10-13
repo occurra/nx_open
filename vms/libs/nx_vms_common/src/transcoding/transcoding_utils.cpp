@@ -65,15 +65,14 @@ AVCodecID findEncoderCodecId(const QString& codecName)
         return avCodec->id;
 
     // Try to check codec substitutes if requested codecs not found.
-    static std::map<std::string, std::vector<std::string>> codecSubstitutesMap
-    {
-        { "h264", {"libopenh264"} },
+    static std::map<std::string, std::vector<std::string>> codecSubstitutesMap{
+        {"h264", {"libopenh264"}},
     };
     auto substitutes = codecSubstitutesMap.find(codecLower.toUtf8().constData());
     if (substitutes == codecSubstitutesMap.end())
         return AV_CODEC_ID_NONE;
 
-    for(auto& substitute: substitutes->second)
+    for (auto& substitute: substitutes->second)
     {
         avCodec = avcodec_find_encoder_by_name(substitute.c_str());
         if (avCodec)
@@ -84,13 +83,13 @@ AVCodecID findEncoderCodecId(const QString& codecName)
 
 QSize downscaleByHeight(const QSize& source, int newHeight)
 {
-    float ar = source.width() / (float)source.height();
+    float ar = source.width() / (float) source.height();
     return QSize(newHeight * ar, newHeight);
 }
 
 QSize downscaleByWidth(const QSize& source, int newWidth)
 {
-    float ar = source.width() / (float)source.height();
+    float ar = source.width() / (float) source.height();
     return QSize(newWidth, newWidth / ar);
 }
 
@@ -114,14 +113,14 @@ QSize maxResolution(AVCodecID codec)
         AVCodecID codec;
         QSize maxSize;
     };
-    static const CodecMaxSize maxSizes[] =
-    {
-        { AV_CODEC_ID_H263P, QSize(h263::kMaxWidth, h263::kMaxHeight)},
-        { AV_CODEC_ID_MPEG2VIDEO, QSize(4092, 4092) }, // Temporary limit mpeg2video to simplify code, will fix it in 4.2.
-        { AV_CODEC_ID_MJPEG, QSize(2032, 2032)},
+    static const CodecMaxSize maxSizes[] = {
+        {AV_CODEC_ID_H263P, QSize(h263::kMaxWidth, h263::kMaxHeight)},
+        {AV_CODEC_ID_MPEG2VIDEO,
+         QSize(4092, 4092)}, // Temporary limit mpeg2video to simplify code, will fix it in 4.2.
+        {AV_CODEC_ID_MJPEG, QSize(2032, 2032)},
     };
 
-    for(auto& size: maxSizes)
+    for (auto& size: maxSizes)
     {
         if (size.codec == codec)
             return size.maxSize;
@@ -138,8 +137,12 @@ QSize adjustCodecRestrictions(AVCodecID codec, const QSize& source)
         result = cropResolution(result, maxSize);
         result.setWidth(qPower2Round(result.width(), kWidthAlign));
         result.setHeight(qPower2Round(result.height(), kHeightAlign));
-        NX_DEBUG(NX_SCOPE_TAG, "Codec '%1' does not support resolution %2, downscale to %3",
-            avcodec_get_name(codec), source, result);
+        NX_DEBUG(
+            NX_SCOPE_TAG,
+            "Codec '%1' does not support resolution %2, downscale to %3",
+            avcodec_get_name(codec),
+            source,
+            result);
     }
     switch (codec)
     {
@@ -153,8 +156,11 @@ QSize adjustCodecRestrictions(AVCodecID codec, const QSize& source)
 
             if (source != result)
             {
-                NX_DEBUG(NX_SCOPE_TAG, "mpeg2video does not support resolution %1, change it to %2",
-                    source, result);
+                NX_DEBUG(
+                    NX_SCOPE_TAG,
+                    "mpeg2video does not support resolution %1, change it to %2",
+                    source,
+                    result);
             }
             return result;
 
@@ -214,8 +220,8 @@ int suggestBitrate(
             break;
     }
 
-    float resolutionFactor = resolution.width()*resolution.height() / 1920.0 / 1080;
-    resolutionFactor = pow(resolutionFactor, (float)0.63); // 256kbps for 320x240 for Mq quality
+    float resolutionFactor = resolution.width() * resolution.height() / 1920.0 / 1080;
+    resolutionFactor = pow(resolutionFactor, (float) 0.63); // 256kbps for 320x240 for Mq quality
 
     float codecFactor = 1;
     if (codecName)
@@ -231,9 +237,7 @@ int suggestBitrate(
     return qMax(128, result) * 1024;
 }
 
-QnCodecParams::Value suggestMediaStreamParams(
-    AVCodecID codec,
-    Qn::StreamQuality quality)
+QnCodecParams::Value suggestMediaStreamParams(AVCodecID codec, Qn::StreamQuality quality)
 {
     QnCodecParams::Value params;
 
@@ -242,7 +246,7 @@ QnCodecParams::Value suggestMediaStreamParams(
         case AV_CODEC_ID_MJPEG:
         {
             int qVal = 1;
-            switch( quality )
+            switch (quality)
             {
                 case Qn::StreamQuality::lowest:
                     qVal = 8;
@@ -264,8 +268,8 @@ QnCodecParams::Value suggestMediaStreamParams(
                     break;
             }
 
-            params.insert( QnCodecParams::qmin, qVal );
-            params.insert( QnCodecParams::qmax, 20);
+            params.insert(QnCodecParams::qmin, qVal);
+            params.insert(QnCodecParams::qmax, 20);
         }
         break;
         case AV_CODEC_ID_VP8:

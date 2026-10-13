@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 #include <nx/media/video_data_packet.h>
 
@@ -15,7 +15,9 @@ public:
     RtpChunkBuffer();
     void addChunk(int bufferOffset, uint16_t len, bool nalStart = false);
     QnWritableCompressedVideoDataPtr buildFrame(
-        const uint8_t* rtpBuffer, const uint8_t* header, int headerSize);
+        const uint8_t* rtpBuffer,
+        const uint8_t* header,
+        int headerSize);
     void backupCurrentData(const uint8_t* currentBufferBase);
     void clear();
     int size() const;

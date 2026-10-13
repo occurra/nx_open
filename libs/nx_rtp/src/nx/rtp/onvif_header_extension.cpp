@@ -34,7 +34,7 @@ bool OnvifHeaderExtension::read(const uint8_t* data, int size)
             uint64_t(fractions) * std::micro::den / std::numeric_limits<uint32_t>::max();
         ntp = std::chrono::seconds(seconds) + std::chrono::microseconds(msec) - kNtpEpochTimeDiff;
     }
-    catch(const nx::utils::BitStreamException&)
+    catch (const nx::utils::BitStreamException&)
     {
         return false;
     }
@@ -64,7 +64,7 @@ int OnvifHeaderExtension::write(uint8_t* data, int size) const
         bitstream.flushBits();
         return bitstream.getBytesCount();
     }
-    catch(const nx::utils::BitStreamException&)
+    catch (const nx::utils::BitStreamException&)
     {
         return 0;
     }

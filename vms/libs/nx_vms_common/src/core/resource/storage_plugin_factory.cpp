@@ -14,7 +14,6 @@ QnStoragePluginFactory::QnStoragePluginFactory(QObject* parent):
 
 QnStoragePluginFactory::~QnStoragePluginFactory()
 {
-
 }
 
 void QnStoragePluginFactory::registerStoragePlugin(

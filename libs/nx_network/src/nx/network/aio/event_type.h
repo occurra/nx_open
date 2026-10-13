@@ -13,9 +13,10 @@ enum EventType
     etAll = 0,
     etRead = 1,
     etWrite = 2,
-    //!Error occurred on socket. Output only event. To get socket error code use Socket::getLastError
+    //! Error occurred on socket. Output only event. To get socket error code use
+    //! Socket::getLastError
     etError = 4,
-    //!Used for periodic operations and for socket timers
+    //! Used for periodic operations and for socket timers
     etTimedOut = 8,
     etReadTimedOut = etRead | etTimedOut,
     etWriteTimedOut = etWrite | etTimedOut,

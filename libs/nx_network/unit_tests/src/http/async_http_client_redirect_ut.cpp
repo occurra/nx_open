@@ -1,8 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <QUrlQuery>
+
+#include <gtest/gtest.h>
 
 #include <nx/network/http/http_client.h>
 #include <nx/network/http/test_http_server.h>
@@ -18,8 +18,7 @@ static constexpr char kTestPath[] = "/test/test";
 static constexpr char kContentServerPathPrefix[] = "/AsyncHttpClientRedirectTest/";
 static constexpr char kTestMessageBody[] = "test message body";
 
-class AsyncHttpClientRedirect:
-    public ::testing::Test
+class AsyncHttpClientRedirect: public ::testing::Test
 {
 public:
     AsyncHttpClientRedirect():
@@ -57,9 +56,10 @@ protected:
     void givenResourceServer()
     {
         ASSERT_TRUE(m_resourceServer->bindAndListen());
-        m_actualUrl = nx::Url(nx::format("http://localhost:%1%2")
-            .arg(m_resourceServer->serverAddress().port)
-            .arg(nx::network::url::joinPath(kContentServerPathPrefix, kTestPath)));
+        m_actualUrl = nx::Url(
+            nx::format("http://localhost:%1%2")
+                .arg(m_resourceServer->serverAddress().port)
+                .arg(nx::network::url::joinPath(kContentServerPathPrefix, kTestPath)));
     }
 
     void givenHttpsResourceServer()
@@ -82,31 +82,33 @@ protected:
     void givenRedirectServer()
     {
         ASSERT_TRUE(m_redirector->bindAndListen());
-        m_redirectUrl = nx::Url(nx::format("http://127.0.0.1:%1%2")
-            .arg(m_redirector->serverAddress().port).arg(kTestPath));
+        m_redirectUrl = nx::Url(
+            nx::format("http://127.0.0.1:%1%2")
+                .arg(m_redirector->serverAddress().port)
+                .arg(kTestPath));
         ASSERT_TRUE(m_redirector->registerRedirectHandler(kTestPath, m_actualUrl));
     }
 
     void enableAuthenticationOnContentServer()
     {
         const auto credentials = nx::network::http::PasswordCredentials(
-            nx::utils::generateRandomName(7), nx::utils::generateRandomName(7));
+            nx::utils::generateRandomName(7),
+            nx::utils::generateRandomName(7));
         m_httpClient.setCredentials(credentials);
 
         m_resourceServer->enableAuthentication(".*");
         m_resourceServer->registerUserCredentials(credentials);
     }
 
-    void whenRequestingRedirectedResource()
-    {
-        ASSERT_TRUE(m_httpClient.doGet(m_redirectUrl));
-    }
+    void whenRequestingRedirectedResource() { ASSERT_TRUE(m_httpClient.doGet(m_redirectUrl)); }
 
     void whenPostingResourceToRedirectionServer(std::map<std::string, std::string> params = {})
     {
         QUrlQuery query;
         for (const auto& param: params)
-            query.addQueryItem(QString::fromStdString(param.first), QString::fromStdString(param.second));
+            query.addQueryItem(
+                QString::fromStdString(param.first),
+                QString::fromStdString(param.second));
 
         auto url = m_redirectUrl;
         url.setQuery(query.query());
@@ -144,10 +146,7 @@ protected:
         ASSERT_EQ(kTestMessageBody, m_postResourceRequests.pop().messageBody);
     }
 
-    void thenPostRequestIsReceived()
-    {
-        m_prevReceivedPostRequest = m_postResourceRequests.pop();
-    }
+    void thenPostRequestIsReceived() { m_prevReceivedPostRequest = m_postResourceRequests.pop(); }
 
     void andPostRequestToContentServerDoesNotContainDuplicateHeaders()
     {
@@ -169,12 +168,14 @@ protected:
 
     void andDigestUrlIsCorrectAndFullyEncoded()
     {
-        const auto authHeader =
-            m_prevReceivedPostRequest->headers.find(nx::network::http::header::Authorization::NAME);
+        const auto authHeader = m_prevReceivedPostRequest->headers.find(
+            nx::network::http::header::Authorization::NAME);
         ASSERT_NE(authHeader, m_prevReceivedPostRequest->headers.end());
-        nx::network::http::header::Authorization auth(nx::network::http::header::AuthScheme::digest);
+        nx::network::http::header::Authorization auth(
+            nx::network::http::header::AuthScheme::digest);
         ASSERT_TRUE(auth.parse(authHeader->second));
-        ASSERT_EQ(auth.digest->params["uri"],
+        ASSERT_EQ(
+            auth.digest->params["uri"],
             m_prevReceivedPostRequest->requestLine.url.toStdString(QUrl::FullyEncoded));
     }
 

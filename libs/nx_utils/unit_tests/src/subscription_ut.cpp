@@ -1,8 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
 #include <atomic>
-#include <thread>
 #include <future>
+#include <thread>
 
 #include <gtest/gtest.h>
 
@@ -10,8 +10,7 @@
 
 namespace nx::utils::test {
 
-class Subscription:
-    public ::testing::Test
+class Subscription: public ::testing::Test
 {
 protected:
     ~Subscription()
@@ -30,7 +29,7 @@ protected:
 
                 if (v > 0)
                 {
-                    m_subscription.notify(v-1);
+                    m_subscription.notify(v - 1);
                     if (func)
                         func();
                 }
@@ -47,14 +46,14 @@ protected:
     void installEventHandler(std::function<void()> func)
     {
         m_subscription.subscribe(
-            [func = std::move(func)](auto&&...) { func(); },
+            [func = std::move(func)](auto&&...)
+            {
+                func();
+            },
             &m_id);
     }
 
-    void whenNotify()
-    {
-        m_subscription.notify(1);
-    }
+    void whenNotify() { m_subscription.notify(1); }
 
     // Returns tuple<startedFuture, doneFuture>
     std::tuple<std::future<void>, std::future<void>> whenNotifyConcurrently()
@@ -65,17 +64,16 @@ protected:
         auto startedFuture = m_startedPromise->get_future();
         auto doneFuture = m_donePromise->get_future();
 
-        m_thread = std::thread([this]() {
-            m_subscription.notify(m_notifyParam);
-        });
+        m_thread = std::thread(
+            [this]()
+            {
+                m_subscription.notify(m_notifyParam);
+            });
 
         return std::make_tuple(std::move(startedFuture), std::move(doneFuture));
     }
 
-    void whenRemoveSubscription()
-    {
-        m_subscription.removeSubscription(m_id);
-    }
+    void whenRemoveSubscription() { m_subscription.removeSubscription(m_id); }
 
 private:
     nx::utils::Subscription<int> m_subscription;
@@ -93,7 +91,10 @@ TEST_F(Subscription, works)
     int a = 1;
     nx::utils::SubscriptionId subscription1 = nx::utils::kInvalidSubscriptionId;
     subscription.subscribe(
-        [&](int v) { a = v; },
+        [&](int v)
+        {
+            a = v;
+        },
         &subscription1);
 
     subscription.notify(2);
@@ -103,7 +104,10 @@ TEST_F(Subscription, works)
     {
         nx::utils::SubscriptionId subscription2 = nx::utils::kInvalidSubscriptionId;
         subscription.subscribe(
-            [&](int v) { b = v; },
+            [&](int v)
+            {
+                b = v;
+            },
             &subscription2);
 
         subscription.notify(3);
@@ -135,7 +139,11 @@ TEST_F(Subscription, is_thread_safe)
         &subscription1);
 
     // notify from different thread
-    std::thread thread([&]() { subscription.notify(3); });
+    std::thread thread(
+        [&]()
+        {
+            subscription.notify(3);
+        });
 
     // wait for thread to start
     inHandler.get_future().wait();
@@ -173,7 +181,10 @@ TEST_F(Subscription, concurrent_removeSubscription_waits_for_all_recursive_notif
 {
     installRecursiveEventHandler(
         /*recursionDepth*/ 17,
-        []() { std::this_thread::sleep_for(std::chrono::milliseconds(10)); });
+        []()
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        });
 
     auto [startedFuture, doneFuture] = whenNotifyConcurrently();
     startedFuture.wait();
@@ -185,7 +196,11 @@ TEST_F(Subscription, concurrent_removeSubscription_waits_for_all_recursive_notif
 
 TEST_F(Subscription, notify_is_exception_safe)
 {
-    installEventHandler([]() { throw std::runtime_error("test"); });
+    installEventHandler(
+        []()
+        {
+            throw std::runtime_error("test");
+        });
 
     try
     {

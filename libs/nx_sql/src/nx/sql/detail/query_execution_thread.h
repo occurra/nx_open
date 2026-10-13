@@ -19,8 +19,7 @@ namespace nx::sql::detail {
  * Connection can be closed by timeout or due to error.
  * Use QueryExecutionThread::isOpen to test it.
  */
-class NX_SQL_API QueryExecutionThread:
-    public BaseQueryExecutor
+class NX_SQL_API QueryExecutionThread: public BaseQueryExecutor
 {
     using base_type = BaseQueryExecutor;
 
@@ -43,7 +42,8 @@ public:
 
     virtual ConnectionState state() const override;
     virtual void setOnClosedHandler(nx::MoveOnlyFunc<void()> handler) override;
-    virtual void start(std::chrono::milliseconds connectDelay = std::chrono::milliseconds::zero()) override;
+    virtual void start(
+        std::chrono::milliseconds connectDelay = std::chrono::milliseconds::zero()) override;
 
 private:
     void handleExecutionResult(DBResult result, DbConnectionHolder* dbConnectionHolder);

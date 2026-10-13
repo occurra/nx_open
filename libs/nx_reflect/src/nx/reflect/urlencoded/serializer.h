@@ -56,10 +56,15 @@ struct SerializationContext
     bool uuidWithBraces() const { return flags & ((int) SerializationFlag::uuidWithBraces); }
 
     template<typename T>
-    int beforeSerialize(const T&) { return -1; /*dummy*/ }
+    int beforeSerialize(const T&)
+    {
+        return -1; /*dummy*/
+    }
 
     template<typename T>
-    void afterSerialize(const T&, int) {}
+    void afterSerialize(const T&, int)
+    {
+    }
 };
 
 } // namespace detail

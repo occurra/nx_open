@@ -3,12 +3,13 @@
 #include "symmetrical.h"
 
 #include <array>
-#include <stdint.h>
 #include <cstring> //< CBC mode, for memset
 
-#include <nx/utils/uuid.h>
+#include <stdint.h>
+
 #include <nx/utils/log/assert.h>
 #include <nx/utils/thread/mutex.h>
+#include <nx/utils/uuid.h>
 
 extern "C" {
 #include <tiny_aes_c/aes.h>
@@ -18,8 +19,23 @@ namespace nx::crypt {
 
 namespace detail {
 
-const uint8_t iv[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
-    0x0d, 0x0e, 0x0f};
+const uint8_t iv[] = {
+    0x00,
+    0x01,
+    0x02,
+    0x03,
+    0x04,
+    0x05,
+    0x06,
+    0x07,
+    0x08,
+    0x09,
+    0x0a,
+    0x0b,
+    0x0c,
+    0x0d,
+    0x0e,
+    0x0f};
 
 static nx::Mutex& stateMutex()
 {
@@ -38,12 +54,12 @@ using KeyType = std::array<uint8_t, kKeySize>;
 KeyType keyFromByteArray(const QByteArray& data)
 {
     KeyType result;
-    for (int i = 0; i < (int)result.size(); ++i)
+    for (int i = 0; i < (int) result.size(); ++i)
     {
         if (i < data.size())
-            result[(size_t)i] = (uint8_t)data[i];
+            result[(size_t) i] = (uint8_t) data[i];
         else if (i == data.size())
-            result[i] = (uint8_t)(0x1);
+            result[i] = (uint8_t) (0x1);
         else
             result[i] = result[i - 1] + 1;
     }
@@ -87,8 +103,8 @@ QByteArray encodeAES128CBC(const QByteArray& data, const std::array<uint8_t, 16>
     QByteArray result;
     result.resize(pdata->size());
     AES128_CBC_encrypt_buffer(
-        (uint8_t*)result.data(),
-        (uint8_t*)pdata->data(),
+        (uint8_t*) result.data(),
+        (uint8_t*) pdata->data(),
         pdata->size(),
         key.data(),
         detail::iv);
@@ -107,12 +123,12 @@ QByteArray decodeAES128CBC(const QByteArray& data, const std::array<uint8_t, 16>
     QByteArray result;
     result.resize(data.size());
     AES128_CBC_decrypt_buffer(
-        (uint8_t*)result.data(),
-        (uint8_t*)data.data(),
+        (uint8_t*) result.data(),
+        (uint8_t*) data.data(),
         data.size(),
         key.data(),
         detail::iv);
-    return result.left(result.indexOf((char)0));
+    return result.left(result.indexOf((char) 0));
 }
 
 QByteArray encodeAES128CBC(const QByteArray& data, const QByteArray& key)

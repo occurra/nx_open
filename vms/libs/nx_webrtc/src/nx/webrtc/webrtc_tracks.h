@@ -2,13 +2,14 @@
 
 #pragma once
 
-#include "webrtc_utils.h"
-
 #include <nx/utils/uuid.h>
+
+#include "webrtc_utils.h"
 
 namespace nx::webrtc {
 
-enum class TrackType {
+enum class TrackType
+{
     unknown,
     video,
     audio
@@ -39,7 +40,6 @@ class NX_WEBRTC_API Tracks
     Tracks& operator=(const Tracks&) = delete;
 
 public:
-
     void addTrack(std::unique_ptr<Track> track);
 
     Tracks(Session* session);
@@ -67,6 +67,7 @@ private:
 class NX_WEBRTC_API TracksForSend: public Tracks
 {
     using base_type = Tracks;
+
 public:
     TracksForSend(Session* session);
     virtual ~TracksForSend() override = default;
@@ -79,6 +80,7 @@ public:
 class NX_WEBRTC_API TracksForRecv: public Tracks
 {
     using base_type = Tracks;
+
 public:
     TracksForRecv(Session* session);
     virtual ~TracksForRecv() override = default;

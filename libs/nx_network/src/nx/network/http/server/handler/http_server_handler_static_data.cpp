@@ -18,9 +18,8 @@ void StaticData::processRequest(
     RequestContext /*requestContext*/,
     nx::network::http::RequestProcessedHandler completionHandler)
 {
-    completionHandler(RequestResult(
-        StatusCode::ok,
-        std::make_unique<BufferSource>(m_mimeType, m_response)));
+    completionHandler(
+        RequestResult(StatusCode::ok, std::make_unique<BufferSource>(m_mimeType, m_response)));
 }
 
 } // namespace nx::network::http::server::handler

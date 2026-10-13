@@ -55,8 +55,7 @@ public:
  * Output that converts byte stream and passes it to another output.
  * Can be used to organize chains of converters.
  */
-class NX_UTILS_API AbstractOutputConverter:
-    public AbstractOutput
+class NX_UTILS_API AbstractOutputConverter: public AbstractOutput
 {
 public:
     virtual void setOutput(AbstractOutput*);
@@ -65,11 +64,10 @@ protected:
     AbstractOutput* m_outputStream = nullptr;
 };
 
-// TODO: #akolesnikov It makes sense to remove AbstractInputConverter and make Converter implement only
-// AbstractOutput.
+// TODO: #akolesnikov It makes sense to remove AbstractInputConverter and make Converter implement
+// only AbstractOutput.
 
-class NX_UTILS_API AbstractInputConverter:
-    public AbstractInput
+class NX_UTILS_API AbstractInputConverter: public AbstractInput
 {
 public:
     virtual void setInput(AbstractInput*);
@@ -88,8 +86,7 @@ class NX_UTILS_API AbstractTwoWayConverter:
 };
 
 // TODO: #akolesnikov Get rid of this class.
-class NX_UTILS_API Converter:
-    public AbstractTwoWayConverter
+class NX_UTILS_API Converter: public AbstractTwoWayConverter
 {
 public:
     virtual bool eof() const = 0;
@@ -101,8 +98,7 @@ public:
  * Conversion can be enabled by setting converters with
  * CompositeConverter::setInputConverter and CompositeConverter::setOutputConverter.
  */
-class NX_UTILS_API CompositeConverter:
-    public Converter
+class NX_UTILS_API CompositeConverter: public Converter
 {
     using base_type = Converter;
 
@@ -151,8 +147,7 @@ private:
 /**
  * Just forwards every call to another object.
  */
-class NX_UTILS_API ProxyConverter:
-    public Converter
+class NX_UTILS_API ProxyConverter: public Converter
 {
     using base_type = Converter;
 
@@ -181,8 +176,7 @@ private:
  * Data that is written to object of this class with AbstractOutput::write,
  * becomes available through AbstractInput::read.
  */
-class NX_UTILS_API Pipe:
-    public AbstractInput, public AbstractOutput
+class NX_UTILS_API Pipe: public AbstractInput, public AbstractOutput
 {
 public:
     Pipe(nx::Buffer initialData = nx::Buffer());
@@ -222,12 +216,11 @@ private:
 //-------------------------------------------------------------------------------------------------
 // RandomDataSource
 
-class NX_UTILS_API RandomDataSource:
-    public AbstractInput
+class NX_UTILS_API RandomDataSource: public AbstractInput
 {
 public:
-    static constexpr std::size_t kDefaultMinReadSize = 4*1024;
-    static constexpr std::size_t kDefaultMaxReadSize = 64*1024;
+    static constexpr std::size_t kDefaultMinReadSize = 4 * 1024;
+    static constexpr std::size_t kDefaultMaxReadSize = 64 * 1024;
 
     RandomDataSource();
 
@@ -240,8 +233,7 @@ private:
 //-------------------------------------------------------------------------------------------------
 
 template<typename WriteFunc>
-class CustomOutput:
-    public AbstractOutput
+class CustomOutput: public AbstractOutput
 {
 public:
     template<typename WriteFuncRef>
@@ -250,10 +242,7 @@ public:
     {
     }
 
-    virtual int write(const void* data, size_t count) override
-    {
-        return m_func(data, count);
-    }
+    virtual int write(const void* data, size_t count) override { return m_func(data, count); }
 
 private:
     WriteFunc m_func;
@@ -268,8 +257,7 @@ std::unique_ptr<CustomOutput<WriteFunc>> makeCustomOutput(WriteFunc func)
 //-------------------------------------------------------------------------------------------------
 
 template<typename WriteFunc>
-class CustomInput:
-    public AbstractInput
+class CustomInput: public AbstractInput
 {
 public:
     template<typename WriteFuncRef>
@@ -278,10 +266,7 @@ public:
     {
     }
 
-    virtual int read(void* data, size_t count) override
-    {
-        return m_func(data, count);
-    }
+    virtual int read(void* data, size_t count) override { return m_func(data, count); }
 
 private:
     WriteFunc m_func;

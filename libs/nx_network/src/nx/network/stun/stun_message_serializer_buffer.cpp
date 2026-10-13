@@ -17,11 +17,11 @@ MessageSerializerBuffer::MessageSerializerBuffer(nx::Buffer* buffer):
 
 void* MessageSerializerBuffer::Poke(std::size_t size)
 {
-    if (size > static_cast< size_t >(m_buffer->capacity() - m_buffer->size()))
+    if (size > static_cast<size_t>(m_buffer->capacity() - m_buffer->size()))
         return NULL;
 
     const auto oldSize = m_buffer->size();
-    m_buffer->resize(m_buffer->size() + static_cast< int >(size));
+    m_buffer->resize(m_buffer->size() + static_cast<int>(size));
     return m_buffer->data() + oldSize;
 }
 
@@ -43,10 +43,13 @@ void* MessageSerializerBuffer::WriteUint16(std::uint16_t value)
 void* MessageSerializerBuffer::WriteIPV6Address(const std::uint16_t* value)
 {
     void* buffer = Poke(16);
-    if (buffer == NULL) return NULL;
+    if (buffer == NULL)
+        return NULL;
     for (std::size_t i = 0; i < 8; ++i)
     {
-        qToBigEndian(value[i], reinterpret_cast<uchar*>(reinterpret_cast<std::uint16_t*>(buffer) + i));
+        qToBigEndian(
+            value[i],
+            reinterpret_cast<uchar*>(reinterpret_cast<std::uint16_t*>(buffer) + i));
     }
     return buffer;
 }
@@ -100,7 +103,8 @@ std::uint16_t* MessageSerializerBuffer::WriteMessageLength()
 {
     NX_ASSERT(m_headerLength == NULL);
     void* ret = Poke(2);
-    if (ret == NULL) return NULL;
+    if (ret == NULL)
+        return NULL;
     m_headerLength = reinterpret_cast<std::uint16_t*>(ret);
     return m_headerLength;
 }

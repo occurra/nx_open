@@ -22,21 +22,19 @@ bool LineSplitter::parseByLines(
 
     // Searching line end in data.
     static const char CRLF[] = "\r\n";
-    const char* lineEnd = std::find_first_of(
-        data.data(),
-        data.data() + data.size(),
-        CRLF,
-        CRLF + sizeof(CRLF) - 1);
+    const char* lineEnd =
+        std::find_first_of(data.data(), data.data() + data.size(), CRLF, CRLF + sizeof(CRLF) - 1);
     if (lineEnd == data.data() + data.size())
     {
         // Not found, caching input data.
-        m_currentLine.append(data.data(), (int)data.size());
+        m_currentLine.append(data.data(), (int) data.size());
         if (bytesRead)
             *bytesRead += data.size();
         return false;
     }
 
-    if ((m_prevLineEnding == '\r') && (*lineEnd == '\n') && (lineEnd == data.data()))    //< Found LF just after CR.
+    if ((m_prevLineEnding == '\r') && (*lineEnd == '\n')
+        && (lineEnd == data.data())) //< Found LF just after CR.
     {
         // Reading trailing line ending.
         m_prevLineEnding = *lineEnd;
@@ -71,16 +69,14 @@ bool LineSplitter::parseByLines(
     return true;
 }
 
-void LineSplitter::finishCurrentLineEnding(
-    const ConstBufferRefType& data,
-    size_t* const bytesRead)
+void LineSplitter::finishCurrentLineEnding(const ConstBufferRefType& data, size_t* const bytesRead)
 {
     if (bytesRead)
         *bytesRead = 0;
     if (data.empty())
         return;
 
-    if ((m_prevLineEnding == '\r') && (data[0] == '\n'))    //< Found LF just after CR.
+    if ((m_prevLineEnding == '\r') && (data[0] == '\n')) //< Found LF just after CR.
     {
         // Reading trailing line ending.
         m_prevLineEnding = data[0];

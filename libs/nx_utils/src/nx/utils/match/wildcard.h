@@ -18,32 +18,31 @@ enum class MatchMode
 
 namespace nx::utils::detail {
 
-template <typename CharType>
-struct CharTraits {};
+template<typename CharType>
+struct CharTraits
+{
+};
 
-template <>
+template<>
 struct CharTraits<char>
 {
     using CharType = char;
 
     static bool equal(CharType one, CharType two, MatchMode mode)
     {
-        return mode == MatchMode::caseSensitive
-            ? one == two
-            : std::tolower(one) == std::tolower(two);
+        return mode == MatchMode::caseSensitive ? one == two
+                                                : std::tolower(one) == std::tolower(two);
     }
 };
 
-template <>
+template<>
 struct CharTraits<QChar>
 {
     using CharType = QChar;
 
     static bool equal(CharType one, CharType two, MatchMode mode)
     {
-        return mode == MatchMode::caseSensitive
-            ? one == two
-            : one.toLower() == two.toLower();
+        return mode == MatchMode::caseSensitive ? one == two : one.toLower() == two.toLower();
     }
 };
 
@@ -60,10 +59,7 @@ struct CharTraits<QChar>
  */
 template<typename Iter>
 // requires ForwardIter<Iter>
-bool wildcardMatch(
-    Iter mask, Iter maskEnd,
-    Iter str, Iter strEnd,
-    MatchMode mode)
+bool wildcardMatch(Iter mask, Iter maskEnd, Iter str, Iter strEnd, MatchMode mode)
 {
     using CharType = std::decay_t<decltype(*mask)>;
 
@@ -111,16 +107,13 @@ bool wildcardMatch(
 /**
  * Matches null-terminated strings.
  */
-template <typename CharType>
+template<typename CharType>
 bool wildcardMatch(
     const CharType* mask,
     const CharType* str,
     MatchMode mode = MatchMode::caseSensitive)
 {
-    return wildcardMatch(
-        mask, mask + std::strlen(mask),
-        str, str + std::strlen(str),
-        mode);
+    return wildcardMatch(mask, mask + std::strlen(mask), str, str + std::strlen(str), mode);
 }
 
 inline bool wildcardMatch(
@@ -129,8 +122,10 @@ inline bool wildcardMatch(
     MatchMode mode = MatchMode::caseSensitive)
 {
     return wildcardMatch(
-        mask.data(), mask.data() + mask.size(),
-        str.data(), str.data() + str.size(),
+        mask.data(),
+        mask.data() + mask.size(),
+        str.data(),
+        str.data() + str.size(),
         mode);
 }
 
@@ -139,8 +134,5 @@ inline bool wildcardMatch(
     const QString& str,
     MatchMode mode = MatchMode::caseSensitive)
 {
-    return wildcardMatch(
-        mask.begin(), mask.end(),
-        str.begin(), str.end(),
-        mode);
+    return wildcardMatch(mask.begin(), mask.end(), str.begin(), str.end(), mode);
 }

@@ -9,7 +9,9 @@
 namespace cf {
 
 template<typename Sender, typename Buffer>
-cf::future<std::pair<SystemError::ErrorCode, size_t>> sendAsync(Sender* sender, const Buffer* buffer)
+cf::future<std::pair<SystemError::ErrorCode, size_t>> sendAsync(
+    Sender* sender,
+    const Buffer* buffer)
 {
     auto p = std::make_shared<cf::promise<std::pair<SystemError::ErrorCode, size_t>>>();
     auto result = p->get_future();
@@ -23,7 +25,9 @@ cf::future<std::pair<SystemError::ErrorCode, size_t>> sendAsync(Sender* sender, 
 }
 
 template<typename Reader, typename Buffer>
-cf::future<std::pair<SystemError::ErrorCode, size_t>> readAsync(Reader* reader, Buffer* const buffer)
+cf::future<std::pair<SystemError::ErrorCode, size_t>> readAsync(
+    Reader* reader,
+    Buffer* const buffer)
 {
     auto p = std::make_shared<cf::promise<std::pair<SystemError::ErrorCode, size_t>>>();
     auto result = p->get_future();
@@ -35,7 +39,6 @@ cf::future<std::pair<SystemError::ErrorCode, size_t>> readAsync(Reader* reader, 
         });
     return result;
 }
-
 
 /**
  * Recursive async action repeaters. F should return cf::future<bool>.
@@ -64,4 +67,4 @@ cf::future<cf::unit> doWhile(Executor& executor, F f)
         });
 }
 
-}
+} // namespace cf

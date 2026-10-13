@@ -2,8 +2,8 @@
 
 #include <gtest/gtest.h>
 
-#include <nx/network/url/url_builder.h>
 #include <nx/network/http/http_types.h>
+#include <nx/network/url/url_builder.h>
 
 namespace nx::network::url::test {
 
@@ -19,22 +19,17 @@ static bool urlIsValid(const nx::Url& url)
 
 } // namespace
 
-class UrlBuilderTest:
-    public ::testing::Test
+class UrlBuilderTest: public ::testing::Test
 {
 };
 
-class BuildUrlWithPath:
-    public UrlBuilderTest,
-    public ::testing::WithParamInterface<std::string>
+class BuildUrlWithPath: public UrlBuilderTest, public ::testing::WithParamInterface<std::string>
 {
 protected:
-	std::string path() const { return GetParam(); }
+    std::string path() const { return GetParam(); }
 };
 
-class BuildUrlFromHost:
-    public UrlBuilderTest,
-    public ::testing::WithParamInterface<std::string>
+class BuildUrlFromHost: public UrlBuilderTest, public ::testing::WithParamInterface<std::string>
 {
 protected:
     std::string hostname() const { return GetParam(); }
@@ -43,10 +38,8 @@ protected:
 TEST_P(BuildUrlFromHost, urlIsValid)
 {
     const SocketAddress address(hostname(), 7001);
-    const auto url = Builder()
-        .setScheme(nx::network::http::kSecureUrlSchemeName)
-        .setEndpoint(address)
-        .toUrl();
+    const auto url =
+        Builder().setScheme(nx::network::http::kSecureUrlSchemeName).setEndpoint(address).toUrl();
     ASSERT_TRUE(urlIsValid(url));
     ASSERT_FALSE(url.host().isEmpty());
 }
@@ -66,12 +59,12 @@ static std::vector<std::string> kIPv6HostNames{
     "2001:0000:11a3:09d7:1f34:8a2e:07a0:765d",
     // Single zero in the notation.
     "[2001:0:11a3:09d7:1f34:8a2e:07a0:765d]",
-    "2001:0:11a3:09d7:1f34:8a2e:07a0:765d"
-};
+    "2001:0:11a3:09d7:1f34:8a2e:07a0:765d"};
 
-INSTANTIATE_TEST_SUITE_P(UrlBuilderParseIPv6Host,
-	BuildUrlFromHost,
-	::testing::ValuesIn(kIPv6HostNames));
+INSTANTIATE_TEST_SUITE_P(
+    UrlBuilderParseIPv6Host,
+    BuildUrlFromHost,
+    ::testing::ValuesIn(kIPv6HostNames));
 
 class BuildUrlWithHostAndPath: public BuildUrlWithPath
 {
@@ -86,19 +79,13 @@ TEST_P(BuildUrlWithHostAndPath, urlIsValid)
 
 TEST_P(BuildUrlWithHostAndPath, urlIsValidWhenHostIsSetLater)
 {
-    const auto url = Builder()
-        .setPath(path())
-        .setHost(kSampleHost)
-        .toUrl();
+    const auto url = Builder().setPath(path()).setHost(kSampleHost).toUrl();
     ASSERT_TRUE(urlIsValid(url));
 }
 
 TEST_P(BuildUrlWithHostAndPath, urlIsValidWhenWhenEndpointIsSetLater)
 {
-    const auto url = Builder()
-        .setPath(path())
-        .setEndpoint(SocketAddress(kSampleHost))
-        .toUrl();
+    const auto url = Builder().setPath(path()).setEndpoint(SocketAddress(kSampleHost)).toUrl();
     ASSERT_TRUE(urlIsValid(url));
 }
 
@@ -111,20 +98,14 @@ TEST_P(BuildUrlWithHostAndPath, pathStartsFromSingleSlash)
 
 TEST_P(BuildUrlWithHostAndPath, pathStartsFromSingleSlashWhenHostIsSetLater)
 {
-    const auto url = Builder()
-        .setPath(path())
-        .setHost(kSampleHost)
-        .toUrl();
+    const auto url = Builder().setPath(path()).setHost(kSampleHost).toUrl();
     ASSERT_EQ(url.path().isEmpty(), path().empty());
     ASSERT_TRUE(url.path().isEmpty() || url.path().startsWith("/"));
 }
 
 TEST_P(BuildUrlWithHostAndPath, pathStartsFromSingleSlashWhenEndpointIsSetLater)
 {
-    const auto url = Builder()
-        .setPath(path())
-        .setEndpoint(SocketAddress(kSampleHost))
-        .toUrl();
+    const auto url = Builder().setPath(path()).setEndpoint(SocketAddress(kSampleHost)).toUrl();
     ASSERT_EQ(url.path().isEmpty(), path().empty());
     ASSERT_TRUE(url.path().isEmpty() || url.path().startsWith("/"));
 }
@@ -159,7 +140,7 @@ TEST_P(BuildUrlWithPathOnly, noDoubleSlashInPath)
     ASSERT_FALSE(url().path().contains("//"));
 }
 
-static std::vector<std::string> kPaths {
+static std::vector<std::string> kPaths{
     std::string(),
     "path",
     "/path",
@@ -179,13 +160,12 @@ static std::vector<std::string> kPaths {
     "///path///long///",
 };
 
-INSTANTIATE_TEST_SUITE_P(UrlBuilderParsePath,
-	BuildUrlWithHostAndPath,
-	::testing::ValuesIn(kPaths));
+INSTANTIATE_TEST_SUITE_P(
+    UrlBuilderParsePath,
+    BuildUrlWithHostAndPath,
+    ::testing::ValuesIn(kPaths));
 
-INSTANTIATE_TEST_SUITE_P(UrlBuilderParsePath,
-	BuildUrlWithPathOnly,
-	::testing::ValuesIn(kPaths));
+INSTANTIATE_TEST_SUITE_P(UrlBuilderParsePath, BuildUrlWithPathOnly, ::testing::ValuesIn(kPaths));
 
 struct UrlPathParts
 {
@@ -195,35 +175,31 @@ struct UrlPathParts
 
     UrlPathParts(
         const std::string& path,
-		const std::vector<std::string>& parts,
-		const std::string& expectedPath)
-        :
+        const std::vector<std::string>& parts,
+        const std::string& expectedPath):
         path(path),
         parts(parts),
         expectedPath(expectedPath)
-    {}
+    {
+    }
 };
 
 void PrintTo(UrlPathParts value, ::std::ostream* os)
 {
-    *os
-        << "( " << value.path << ", [";
+    *os << "( " << value.path << ", [";
     for (const auto& part: value.parts)
         *os << part << ", ";
-    *os <<"], " << value.expectedPath << ")";
+    *os << "], " << value.expectedPath << ")";
 }
 
-class AppendPathToUrl:
-    public UrlBuilderTest,
-    public ::testing::WithParamInterface<UrlPathParts>
+class AppendPathToUrl: public UrlBuilderTest, public ::testing::WithParamInterface<UrlPathParts>
 {
 };
 
 TEST_P(AppendPathToUrl, appended)
 {
     const UrlPathParts parts = GetParam();
-    Builder builder = Builder(kSampleUrl)
-        .setPath(parts.path);
+    Builder builder = Builder(kSampleUrl).setPath(parts.path);
 
     for (const auto& part: parts.parts)
         builder.appendPath(part);
@@ -236,15 +212,21 @@ TEST_P(AppendPathToUrl, appended)
 TEST_P(AppendPathToUrl, appendedParts)
 {
     const UrlPathParts parts = GetParam();
-    Builder builder = Builder(kSampleUrl)
-        .setPath(parts.path);
+    Builder builder = Builder(kSampleUrl).setPath(parts.path);
 
     switch (parts.parts.size())
     {
-        case 0: break;
-        case 1: builder.appendPathParts(parts.parts[0]); break;
-        case 2: builder.appendPathParts(parts.parts[0], parts.parts[1]); break;
-        default: FAIL() << "Unsupported number of arguments"; break;
+        case 0:
+            break;
+        case 1:
+            builder.appendPathParts(parts.parts[0]);
+            break;
+        case 2:
+            builder.appendPathParts(parts.parts[0], parts.parts[1]);
+            break;
+        default:
+            FAIL() << "Unsupported number of arguments";
+            break;
     };
 
     const auto url = builder.toUrl();
@@ -259,10 +241,18 @@ TEST_P(AppendPathToUrl, setParts)
 
     switch (parts.parts.size())
     {
-        case 0: builder.setPath(parts.path); break;
-        case 1: builder.setPathParts(parts.path, parts.parts[0]); break;
-        case 2: builder.setPathParts(parts.path, parts.parts[0], parts.parts[1]); break;
-        default: FAIL() << "Unsupported number of arguments"; break;
+        case 0:
+            builder.setPath(parts.path);
+            break;
+        case 1:
+            builder.setPathParts(parts.path, parts.parts[0]);
+            break;
+        case 2:
+            builder.setPathParts(parts.path, parts.parts[0], parts.parts[1]);
+            break;
+        default:
+            FAIL() << "Unsupported number of arguments";
+            break;
     };
 
     const auto url = builder.toUrl();
@@ -270,9 +260,8 @@ TEST_P(AppendPathToUrl, setParts)
     EXPECT_EQ(url.path().toStdString(), parts.expectedPath);
 }
 
-static std::vector<UrlPathParts> kPathParts
-{
-	{"", {}, ""},
+static std::vector<UrlPathParts> kPathParts{
+    {"", {}, ""},
     {"", {""}, ""},
     {"path", {}, "/path"},
     {"path", {""}, "/path"},
@@ -289,12 +278,9 @@ static std::vector<UrlPathParts> kPathParts
     {"path", {"part1/", "/part2"}, "/path/part1/part2"},
     {"path", {"part1//", "part2"}, "/path/part1/part2"},
     {"path", {"part1//", "//part2"}, "/path/part1/part2"},
-    {"path///", {"///part1///", "///part2///"}, "/path/part1/part2/"}
-};
+    {"path///", {"///part1///", "///part2///"}, "/path/part1/part2/"}};
 
-INSTANTIATE_TEST_SUITE_P(UrlBuilderAppendPath,
-	AppendPathToUrl,
-	::testing::ValuesIn(kPathParts));
+INSTANTIATE_TEST_SUITE_P(UrlBuilderAppendPath, AppendPathToUrl, ::testing::ValuesIn(kPathParts));
 
 class UrlBuilderQuery: public UrlBuilderTest
 {
@@ -325,7 +311,9 @@ TEST_F(UrlBuilderQuery, addItem)
     expectQuery(builder, "string=stringValue&number=42&status=404");
 
     builder.addQueryItem("special symbol", "value's+test");
-    expectQuery(builder, "string=stringValue&number=42&status=404&special%20symbol=value%27s%2Btest");
+    expectQuery(
+        builder,
+        "string=stringValue&number=42&status=404&special%20symbol=value%27s%2Btest");
 }
 
 TEST_F(UrlBuilderQuery, escapedQuery)
@@ -351,13 +339,17 @@ TEST_F(UrlBuilderQuery, escapedQuery)
 
 //-------------------------------------------------------------------------------------------------
 
-class BuildUrlIpv6: public UrlBuilderTest {};
+class BuildUrlIpv6: public UrlBuilderTest
+{
+};
 
 TEST_F(BuildUrlIpv6, host_with_scope)
 {
-    const auto url = Builder().setScheme("http")
-        .setEndpoint(SocketAddress("fe80::f80b:5eab:64a8:7b63%14", 7001))
-        .setPath("/foo").toUrl();
+    const auto url = Builder()
+                         .setScheme("http")
+                         .setEndpoint(SocketAddress("fe80::f80b:5eab:64a8:7b63%14", 7001))
+                         .setPath("/foo")
+                         .toUrl();
 
     ASSERT_TRUE(url.isValid());
     ASSERT_EQ("http", url.scheme());

@@ -19,9 +19,7 @@ using TimerEventHandler = nx::MoveOnlyFunc<void()>;
 /**
  * Single-shot timer that runs in aio thread.
  */
-class NX_NETWORK_API Timer:
-    public BasicPollable,
-    private AIOEventHandler
+class NX_NETWORK_API Timer: public BasicPollable, private AIOEventHandler
 {
 public:
     Timer(aio::AbstractAioThread* aioThread = nullptr);
@@ -33,9 +31,7 @@ public:
     /**
      * NOTE: If timer is already started, this method overwrites timer, not adds a new one!
      */
-    void start(
-        std::chrono::milliseconds timeout,
-        TimerEventHandler timerFunc);
+    void start(std::chrono::milliseconds timeout, TimerEventHandler timerFunc);
 
     /**
      * Future-based wrapper for start.
@@ -57,8 +53,8 @@ public:
     /**
      * Cancels timer waiting for timerFunc to complete.
      * Can be safely called within timer's aio thread.
-     * Can be safely called within non aio thread, only if called not under the same mutex, that is used
-     * in callback function.
+     * Can be safely called within non aio thread, only if called not under the same mutex, that is
+     * used in callback function.
      */
     void cancelSync();
 

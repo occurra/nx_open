@@ -4,7 +4,6 @@
 
 #include <memory>
 
-
 #include "../../buffer_source.h"
 
 namespace nx::network::http::server::handler {

@@ -15,16 +15,19 @@ int decode(AVCodecContext* avctx, AVFrame* frame, int* got_frame, const AVPacket
     result = avcodec_send_packet(avctx, pkt);
     if (result == AVERROR_EOF)
         result = 0;
-    else if (result == AVERROR(EAGAIN)) {
+    else if (result == AVERROR(EAGAIN))
+    {
         /* we fully drain all the output in each decode call, so this should not
-            * ever happen */
+         * ever happen */
         result = AVERROR_BUG;
         goto finish;
-    } else if (result < 0)
+    }
+    else if (result < 0)
         goto finish;
 
     result = avcodec_receive_frame(avctx, frame);
-    if (result < 0) {
+    if (result < 0)
+    {
         if (result == AVERROR(EAGAIN) || result == AVERROR_EOF)
             result = 0;
         goto finish;
@@ -51,7 +54,8 @@ int encode(AVCodecContext* avctx, AVPacket* avpkt, const AVFrame* frame, int* go
         // we fully drain all the output in each encode call, so this should not
         // ever happen
         return AVERROR_BUG;
-    } else if (ret < 0)
+    }
+    else if (ret < 0)
     {
         return ret;
     }
@@ -68,4 +72,4 @@ int encode(AVCodecContext* avctx, AVPacket* avpkt, const AVFrame* frame, int* go
     return ret;
 }
 
-} // nx::media::ffmpeg::old_api
+} // namespace nx::media::ffmpeg::old_api

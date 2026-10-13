@@ -52,7 +52,8 @@ NX_UTILS_API QString pointerTypeName(const void* value);
 NX_UTILS_API QString demangleTypeName(const char* type);
 
 NX_UTILS_API std::string scopeOfFunction(
-    const std::type_info& scopeTagTypeInfo, const char* functionMacro);
+    const std::type_info& scopeTagTypeInfo,
+    const char* functionMacro);
 
 template<typename T>
 QString pointerTypeName(const T* value);
@@ -77,13 +78,17 @@ NX_UTILS_API std::string unwrapNestedErrors(const std::exception& e, std::string
 namespace detail {
 
 template<typename, typename = std::void_t<>, typename = std::void_t<>>
-struct IsIteratable: std::false_type {};
+struct IsIteratable: std::false_type
+{
+};
 
 template<typename T>
-struct IsIteratable<T,
+struct IsIteratable<
+    T,
     std::void_t<decltype(std::declval<T>().begin())>,
-    std::void_t<decltype(std::declval<T>().end())>
->: std::true_type {};
+    std::void_t<decltype(std::declval<T>().end())>>: std::true_type
+{
+};
 
 template<typename... Args>
 inline constexpr bool IsIteratableV = IsIteratable<Args...>::value;
@@ -91,12 +96,14 @@ inline constexpr bool IsIteratableV = IsIteratable<Args...>::value;
 //-------------------------------------------------------------------------------------------------
 
 template<typename, typename = std::void_t<>>
-struct HasToString: std::false_type {};
+struct HasToString: std::false_type
+{
+};
 
 template<typename T>
-struct HasToString<T,
-    std::void_t<decltype(std::declval<T>().toString())>
->: std::true_type {};
+struct HasToString<T, std::void_t<decltype(std::declval<T>().toString())>>: std::true_type
+{
+};
 
 template<typename... Args>
 inline constexpr bool HasToStringV = HasToString<Args...>::value;
@@ -104,9 +111,7 @@ inline constexpr bool HasToStringV = HasToString<Args...>::value;
 //-------------------------------------------------------------------------------------------------
 
 template<typename T>
-QString toStringSfinae(
-    const T& value,
-    std::enable_if_t<HasToStringV<T>>* = nullptr)
+QString toStringSfinae(const T& value, std::enable_if_t<HasToStringV<T>>* = nullptr)
 {
     if constexpr (std::is_same<decltype(value.toString()), std::string>::value)
         return QString::fromStdString(value.toString());
@@ -142,7 +147,8 @@ QString toStringSfinae(
 template<typename T>
 QString toStringSfinae(
     const T& value,
-    std::enable_if_t<IsIteratableV<T> && !HasToStringV<T> && !std::is_convertible_v<T, QString>>* = nullptr)
+    std::enable_if_t<IsIteratableV<T> && !HasToStringV<T> && !std::is_convertible_v<T, QString>>* =
+        nullptr)
 {
     return containerString(value.begin(), value.end());
 }
@@ -194,7 +200,8 @@ QString toString(const T* value)
 {
     const auto toString = idForToStringFromPtrSfinae(value, 0);
     return QStringLiteral("%1(0x%2%3)")
-        .arg(pointerTypeName(value)).arg(reinterpret_cast<qulonglong>(value), 0, 16)
+        .arg(pointerTypeName(value))
+        .arg(reinterpret_cast<qulonglong>(value), 0, 16)
         .arg(toString.isEmpty() ? QString() : (QStringLiteral(", ") + toString));
 }
 
@@ -264,7 +271,12 @@ QString toString(const std::bitset<N>& value)
 template<typename... Ts>
 QString toString(const std::variant<Ts...>& value)
 {
-    return std::visit([](const auto& v) { return nx::toString(v); }, value);
+    return std::visit(
+        [](const auto& v)
+        {
+            return nx::toString(v);
+        },
+        value);
 }
 
 /**
@@ -290,7 +302,8 @@ auto toStringAdl(const T& t)
  * - String toString(const T&) located in the same namespace as T
  * - String T::toString() const
  * - Overloads for some types (QByteArray, QUrl, std::chrono::*) are provided here.
- * String is something that can be converted to QString using same nx::toString(const String&) call.
+ * String is something that can be converted to QString using same nx::toString(const String&)
+ * call.
  */
 template<typename T>
 QString toString(T&& value)

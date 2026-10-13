@@ -4,8 +4,8 @@
 
 #include <QtCore/QString>
 
-#include "named_pipe_socket_win.h"
 #include "../string.h"
+#include "named_pipe_socket_win.h"
 
 namespace nx::utils {
 
@@ -34,40 +34,34 @@ SystemError::ErrorCode NamedPipeSocket::connectToServerSync(
     // TODO: #akolesnikov timeoutMillis support
 
     // TODO: #akolesnikov Remove QString.
-    const auto win32PipeName = QString::fromStdString(nx::utils::buildString("\\\\.\\pipe\\", pipeName));
+    const auto win32PipeName =
+        QString::fromStdString(nx::utils::buildString("\\\\.\\pipe\\", pipeName));
 
     // TODO: use WaitNamedPipe
     m_impl->hPipe = CreateFile(
-        reinterpret_cast<const wchar_t*>(win32PipeName.utf16()),             // pipe name
-        GENERIC_READ | GENERIC_WRITE,       // read/write access
+        reinterpret_cast<const wchar_t*>(win32PipeName.utf16()), // pipe name
+        GENERIC_READ | GENERIC_WRITE, // read/write access
         0,
         NULL,
         OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL,
         NULL);
 
-    return m_impl->hPipe != INVALID_HANDLE_VALUE
-        ? SystemError::noError
-        : SystemError::getLastOSErrorCode();
+    return m_impl->hPipe != INVALID_HANDLE_VALUE ? SystemError::noError
+                                                 : SystemError::getLastOSErrorCode();
 }
 
-//!Writes in synchronous mode
+//! Writes in synchronous mode
 SystemError::ErrorCode NamedPipeSocket::write(
     const void* buf,
     unsigned int bytesToWrite,
     unsigned int* const bytesWritten)
 {
     DWORD numberOfBytesWritten = 0;
-    BOOL res = WriteFile(
-        m_impl->hPipe,
-        buf,
-        bytesToWrite,
-        &numberOfBytesWritten,
-        NULL);
+    BOOL res = WriteFile(m_impl->hPipe, buf, bytesToWrite, &numberOfBytesWritten, NULL);
     *bytesWritten = numberOfBytesWritten;
-    return !res || (numberOfBytesWritten != bytesToWrite)
-        ? SystemError::getLastOSErrorCode()
-        : SystemError::noError;
+    return !res || (numberOfBytesWritten != bytesToWrite) ? SystemError::getLastOSErrorCode()
+                                                          : SystemError::noError;
 }
 
 SystemError::ErrorCode NamedPipeSocket::read(
@@ -77,17 +71,11 @@ SystemError::ErrorCode NamedPipeSocket::read(
     int /*timeoutMs*/)
 {
     DWORD numberOfBytesRead = 0;
-    BOOL res = ReadFile(
-        m_impl->hPipe,
-        buf,
-        bytesToRead,
-        &numberOfBytesRead,
-        NULL);
+    BOOL res = ReadFile(m_impl->hPipe, buf, bytesToRead, &numberOfBytesRead, NULL);
     *bytesRead = numberOfBytesRead;
 
-    return !res || (numberOfBytesRead == 0)
-        ? SystemError::getLastOSErrorCode()
-        : SystemError::noError;
+    return !res || (numberOfBytesRead == 0) ? SystemError::getLastOSErrorCode()
+                                            : SystemError::noError;
 }
 
 SystemError::ErrorCode NamedPipeSocket::flush()

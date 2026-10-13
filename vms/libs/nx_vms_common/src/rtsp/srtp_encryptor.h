@@ -30,8 +30,10 @@ public:
     bool encryptPacket(nx::utils::ByteArray* data, int offset);
 
     bool decryptPacket(uint8_t* data, int* inOutSize);
+
 private:
     bool encryptPacket(uint8_t* data, int* inOutSize);
+
 private:
     EncryptionData m_masterKeys;
     srtp_t m_srtpIn = nullptr;

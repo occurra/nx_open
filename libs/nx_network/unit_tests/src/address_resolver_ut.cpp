@@ -23,8 +23,7 @@ namespace nx::network::test {
 
 namespace {
 
-class AddressResolverDeprecatedTests:
-    public testing::Test
+class AddressResolverDeprecatedTests: public testing::Test
 {
 protected:
     std::mutex m_mutex;
@@ -43,7 +42,7 @@ protected:
         m_serverEndpoint.port = m_testServer.serverAddress().port;
         SocketGlobals::addressResolver().dnsResolver().addEtcHost(
             m_serverEndpoint.address.toString(),
-            {{ m_testServer.serverAddress().address}});
+            {{m_testServer.serverAddress().address}});
     }
 
     void startAnotherSocketNonSafe()
@@ -56,21 +55,24 @@ protected:
         m_connections.push_back(std::move(connection));
         connectionPtr->connectAsync(
             m_serverEndpoint,
-            std::bind(&AddressResolverDeprecatedTests::onConnectionComplete, this,
-                connectionPtr, _1));
+            std::bind(
+                &AddressResolverDeprecatedTests::onConnectionComplete,
+                this,
+                connectionPtr,
+                _1));
     }
 
     void onConnectionComplete(
         AbstractStreamSocket* connectionPtr,
         SystemError::ErrorCode errorCode)
     {
-        ASSERT_EQ(SystemError::noError, errorCode)
-            << SystemError::toString(errorCode);
+        ASSERT_EQ(SystemError::noError, errorCode) << SystemError::toString(errorCode);
 
         std::unique_lock<std::mutex> lk(m_mutex);
 
         auto iterToRemove = std::remove_if(
-            m_connections.begin(), m_connections.end(),
+            m_connections.begin(),
+            m_connections.end(),
             [connectionPtr](const std::unique_ptr<AbstractStreamSocket>& elem)
             {
                 return elem.get() == connectionPtr;
@@ -149,21 +151,23 @@ TEST_F(AddressResolverDeprecatedTests, cancellation)
 {
     const auto doNone = [&](SystemError::ErrorCode, std::deque<AddressEntry>) {};
 
-    const std::vector<nx::network::HostAddress> kTestAddresses =
-    {
+    const std::vector<nx::network::HostAddress> kTestAddresses = {
         nx::network::HostAddress("example.com"),
         nx::network::HostAddress("7C6BA51F-317E-461E-B47D-17A14CB751B0.com"),
-        nx::network::HostAddress(nx::format("%1.%2").args(
-            nx::Uuid::createUuid().toSimpleString(),
-            nx::Uuid::createUuid().toSimpleString()).toStdString()),
+        nx::network::HostAddress(
+            nx::format("%1.%2")
+                .args(
+                    nx::Uuid::createUuid().toSimpleString(),
+                    nx::Uuid::createUuid().toSimpleString())
+                .toStdString()),
     };
 
     for (size_t timeout = 0; timeout <= 500; timeout *= 2)
     {
         for (const auto& address: kTestAddresses)
         {
-            SocketGlobals::addressResolver().resolveAsync(
-                address, doNone, NatTraversalSupport::enabled, AF_INET, this);
+            SocketGlobals::addressResolver()
+                .resolveAsync(address, doNone, NatTraversalSupport::enabled, AF_INET, this);
             if (timeout)
                 std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
             SocketGlobals::addressResolver().cancel(this);
@@ -175,8 +179,7 @@ TEST_F(AddressResolverDeprecatedTests, cancellation)
 
 //-------------------------------------------------------------------------------------------------
 
-class AddressResolver:
-    public ::testing::Test
+class AddressResolver: public ::testing::Test
 {
 public:
     AddressResolver()
@@ -186,23 +189,17 @@ public:
         m_resolver.setDnsCacheTimeout(std::chrono::milliseconds(10));
 
         m_resolver.dnsResolver().registerResolver(
-            makeCustomResolver(std::bind(
-                &AddressResolver::saveHostNameWithoutResolving, this, _1, _2, _3)),
+            makeCustomResolver(
+                std::bind(&AddressResolver::saveHostNameWithoutResolving, this, _1, _2, _3)),
             m_resolver.dnsResolver().maxRegisteredResolverPriority() + 1);
 
         m_hostNameToResolve = nx::utils::generateRandomName(7);
     }
 
 protected:
-    void setIpVersionToUse(int ipVersion)
-    {
-        m_ipVersionToUse = ipVersion;
-    }
+    void setIpVersionToUse(int ipVersion) { m_ipVersionToUse = ipVersion; }
 
-    void givenStringRepresentationOfIpv4AddressAsHostname()
-    {
-        m_hostNameToResolve = "1.2.3.4";
-    }
+    void givenStringRepresentationOfIpv4AddressAsHostname() { m_hostNameToResolve = "1.2.3.4"; }
 
     void emulateHostnameResolvableByDnsResolver()
     {
@@ -215,10 +212,8 @@ protected:
     void whenResolve()
     {
         ResolveResultFull resolveResult;
-        std::get<1>(resolveResult) = m_resolver.resolveSync(
-            m_hostNameToResolve,
-            m_natTraversalSupport,
-            m_ipVersionToUse);
+        std::get<1>(resolveResult) =
+            m_resolver.resolveSync(m_hostNameToResolve, m_natTraversalSupport, m_ipVersionToUse);
         std::get<0>(resolveResult) = SystemError::getLastOSErrorCode();
         m_resolveResults.push(std::move(resolveResult));
     }
@@ -255,7 +250,8 @@ protected:
     {
         const auto& entries = std::get<1>(m_prevResolveResult);
         auto entryIter = std::find_if(
-            entries.begin(), entries.end(),
+            entries.begin(),
+            entries.end(),
             [hostAddress](const AddressEntry& entry)
             {
                 return entry.type == AddressType::direct && entry.host == hostAddress;
@@ -267,9 +263,7 @@ protected:
     {
         const auto& entries = std::get<1>(m_prevResolveResult);
 
-        ASSERT_NE(
-            entries.end(),
-            std::find(entries.begin(), entries.end(), expected));
+        ASSERT_NE(entries.end(), std::find(entries.begin(), entries.end(), expected));
     }
 
     void assertDnsResolverHasNotBeenInvoked()
@@ -294,10 +288,7 @@ protected:
         andResolvedTo(*m_dnsEntry);
     }
 
-    void whenDnsRecordIsUpdated()
-    {
-        emulateHostnameResolvableByDnsResolver();
-    }
+    void whenDnsRecordIsUpdated() { emulateHostnameResolvableByDnsResolver(); }
 
     void waitUntilHostnameIsResolvedCorrectly()
     {
@@ -313,10 +304,7 @@ protected:
         }
     }
 
-    network::AddressResolver& resolver()
-    {
-        return m_resolver;
-    }
+    network::AddressResolver& resolver() { return m_resolver; }
 
     void givenResolvePausedInHandler()
     {
@@ -341,19 +329,12 @@ protected:
         aboutToPause.get_future().wait();
     }
 
-    void whenCancelResolve()
-    {
-        m_resolver.cancel(this);
-    }
+    void whenCancelResolve() { m_resolver.cancel(this); }
 
-    void thenCancelBlockedUntilHandlerCompletion()
-    {
-        ASSERT_TRUE(m_handlerCompleted);
-    }
+    void thenCancelBlockedUntilHandlerCompletion() { ASSERT_TRUE(m_handlerCompleted); }
 
 private:
-    using ResolveResultFull =
-        std::tuple<SystemError::ErrorCode, std::deque<AddressEntry>>;
+    using ResolveResultFull = std::tuple<SystemError::ErrorCode, std::deque<AddressEntry>>;
 
     network::AddressResolver m_resolver;
     int m_ipVersionToUse = AF_INET;
@@ -383,18 +364,14 @@ private:
     }
 };
 
-TEST_F(
-    AddressResolver,
-    ipv4_resolve_does_not_invoke_dns_for_text_representation_of_ip_address)
+TEST_F(AddressResolver, ipv4_resolve_does_not_invoke_dns_for_text_representation_of_ip_address)
 {
     givenStringRepresentationOfIpv4AddressAsHostname();
     whenResolve();
     assertDnsResolverHasNotBeenInvoked();
 }
 
-TEST_F(
-    AddressResolver,
-    ipv6_resolve_invokes_dns_for_text_representation_of_ip_address)
+TEST_F(AddressResolver, ipv6_resolve_invokes_dns_for_text_representation_of_ip_address)
 {
     setIpVersionToUse(AF_INET6);
 
@@ -490,8 +467,7 @@ TEST_F(AddressResolver, isCloudHostname)
 
 //-------------------------------------------------------------------------------------------------
 
-class AddressResolverNameMapping:
-    public AddressResolver
+class AddressResolverNameMapping: public AddressResolver
 {
 public:
     AddressResolverNameMapping()
@@ -505,8 +481,8 @@ public:
         m_stubAddress = HostAddress(stubAddress);
 
         resolver().dnsResolver().registerResolver(
-            makeCustomResolver(std::bind(
-                &AddressResolverNameMapping::dnsResolveStub, this, _1, _2, _3)),
+            makeCustomResolver(
+                std::bind(&AddressResolverNameMapping::dnsResolveStub, this, _1, _2, _3)),
             resolver().dnsResolver().maxRegisteredResolverPriority() + 1);
     }
 
@@ -514,9 +490,8 @@ protected:
     void registerFixedHighLevelDomainName()
     {
         m_hostNameToResolve = "a.b";
-        m_hostEndpoint = SocketAddress(
-            HostAddress::localhost,
-            nx::utils::random::number<std::uint16_t>(1));
+        m_hostEndpoint =
+            SocketAddress(HostAddress::localhost, nx::utils::random::number<std::uint16_t>(1));
         resolver().addFixedAddress(m_hostNameToResolve, m_hostEndpoint);
     }
 
@@ -544,10 +519,9 @@ protected:
     {
         const auto endpointIndexToRemove =
             nx::utils::random::number<std::vector<SocketAddress>::size_type>(
-                0, m_fixedEntries.size() - 1);
-        resolver().removeFixedAddress(
-            m_hostNameToResolve,
-            m_fixedEntries[endpointIndexToRemove]);
+                0,
+                m_fixedEntries.size() - 1);
+        resolver().removeFixedAddress(m_hostNameToResolve, m_fixedEntries[endpointIndexToRemove]);
         m_fixedEntries.erase(m_fixedEntries.begin() + endpointIndexToRemove);
     }
 
@@ -582,8 +556,8 @@ protected:
 
     void assertFixedEndpointsCanStillBeResolved()
     {
-        const auto entries = resolver().resolveSync(
-            m_hostNameToResolve, NatTraversalSupport::disabled, AF_INET);
+        const auto entries =
+            resolver().resolveSync(m_hostNameToResolve, NatTraversalSupport::disabled, AF_INET);
         ASSERT_EQ(entries.size(), m_fixedEntries.size());
         for (decltype(entries)::size_type i = 0; i < entries.size(); ++i)
         {
@@ -608,8 +582,7 @@ protected:
     }
 
 private:
-    using ResolveResultFull =
-        std::tuple<SystemError::ErrorCode, std::deque<AddressEntry>>;
+    using ResolveResultFull = std::tuple<SystemError::ErrorCode, std::deque<AddressEntry>>;
 
     std::string m_hostNameToResolve;
     SocketAddress m_hostEndpoint;
@@ -626,9 +599,7 @@ private:
         return SystemError::noError;
     }
 
-    void saveResolveResult(
-        SystemError::ErrorCode errorCode,
-        std::deque<AddressEntry> entries)
+    void saveResolveResult(SystemError::ErrorCode errorCode, std::deque<AddressEntry> entries)
     {
         if (errorCode == SystemError::noError && entries.front().host == m_stubAddress)
         {
@@ -639,9 +610,7 @@ private:
     }
 };
 
-TEST_F(
-    AddressResolverNameMapping,
-    low_level_domain_is_resolved_to_address_of_a_high_level_domain)
+TEST_F(AddressResolverNameMapping, low_level_domain_is_resolved_to_address_of_a_high_level_domain)
 {
     registerFixedHighLevelDomainName();
     assertLowLevelDomainNameCanBeResolved();
@@ -657,9 +626,7 @@ TEST_F(
     assertLowLevelDomainNameCannotBeResolved();
 }
 
-TEST_F(
-    AddressResolverNameMapping,
-    mapping_multiple_addresses_under_a_single_hostname)
+TEST_F(AddressResolverNameMapping, mapping_multiple_addresses_under_a_single_hostname)
 {
     registerMultipleEndpointsUnderSingleName();
     removeRandomFixedEndpoint();
@@ -668,8 +635,7 @@ TEST_F(
 
 //-------------------------------------------------------------------------------------------------
 
-class AddressResolverNat64:
-    public ::testing::Test
+class AddressResolverNat64: public ::testing::Test
 {
 public:
     AddressResolverNat64()
@@ -692,8 +658,8 @@ const HostAddress AddressResolverNat64::kV6("2001:db8:0:2::1");
 
 TEST_F(AddressResolverNat64, IPv4) // NAT64 not in use, IP v4 is just converted for better speed.
 {
-    const auto entries = SocketGlobals::addressResolver().resolveSync(
-        kV4, NatTraversalSupport::disabled, AF_INET);
+    const auto entries =
+        SocketGlobals::addressResolver().resolveSync(kV4, NatTraversalSupport::disabled, AF_INET);
     ASSERT_EQ(1U, entries.size());
 
     ASSERT_EQ(AddressType::direct, entries.front().type);
@@ -703,20 +669,22 @@ TEST_F(AddressResolverNat64, IPv4) // NAT64 not in use, IP v4 is just converted 
 
 TEST_F(AddressResolverNat64, IPv6) // NAT64 returns 2 addresses: mapped IP v6 and converted IP v4.
 {
-    const auto entries = SocketGlobals::addressResolver().resolveSync(
-        kV4, NatTraversalSupport::disabled, AF_INET6);
+    const auto entries =
+        SocketGlobals::addressResolver().resolveSync(kV4, NatTraversalSupport::disabled, AF_INET6);
     ASSERT_EQ(2U, entries.size());
 
     ASSERT_EQ(AddressType::direct, entries.front().type);
     ASSERT_TRUE(entries.front().host.isIpAddress());
 
     ASSERT_EQ(kV6.ipV6().first, entries.front().host.ipV6().first);
-    // ASSERT_EQ(0, memcmp(&*kV6.ipV6().first, &*entries.front().host.ipV6().first, sizeof(in6_addr)));
+    // ASSERT_EQ(0, memcmp(&*kV6.ipV6().first, &*entries.front().host.ipV6().first,
+    // sizeof(in6_addr)));
 
     ASSERT_EQ(AddressType::direct, entries.back().type);
     ASSERT_TRUE(entries.back().host.isIpAddress());
     ASSERT_EQ(kV4.ipV6().first, entries.back().host.ipV6().first);
-    // ASSERT_EQ(0, memcmp(&*kV4.ipV6().first, &*entries.back().host.ipV6().first, sizeof(in6_addr)));
+    // ASSERT_EQ(0, memcmp(&*kV4.ipV6().first, &*entries.back().host.ipV6().first,
+    // sizeof(in6_addr)));
 }
 
 } // namespace nx::network::test

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "webrtc_ice.h"
 #include "webrtc_consumer.h"
+#include "webrtc_ice.h"
 
 namespace nx::webrtc {
 
@@ -23,9 +23,7 @@ public:
     // Interface for Consumer.
     Ice* ice();
     void sendTimestamp(int64_t timestampUs, uint32_t rtpTimestamp);
-    void handleStreamStatus(
-        nx::Uuid deviceId,
-        Consumer::StreamStatus result);
+    void handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus result);
 
 protected:
     void updateMetrics(int value);

@@ -11,8 +11,7 @@
 #include <nx/utils/value_cache.h>
 #include <utils/camera/camera_diagnostics.h>
 
-class NX_VMS_COMMON_API QnAbstractMediaStreamDataProvider:
-    public QnAbstractStreamDataProvider
+class NX_VMS_COMMON_API QnAbstractMediaStreamDataProvider: public QnAbstractStreamDataProvider
 {
 public:
     static void setMediaStatisticsWindowSize(std::chrono::microseconds value);

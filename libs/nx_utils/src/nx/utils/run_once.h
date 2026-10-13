@@ -66,7 +66,8 @@ private:
 
     Future startTaskInternal(std::function<void()> task, const T& key)
     {
-        return std::async(std::launch::async,
+        return std::async(
+            std::launch::async,
             [this, task = std::move(task), key]()
             {
                 while (true)
@@ -89,7 +90,6 @@ template<>
 class RunOnce<void>: public RunOnceBase
 {
 public:
-
     RunOnce() = default;
 
     /*
@@ -107,8 +107,7 @@ public:
      * Multiple calls schedule only one task but it is guarantee that
      * new task is scheduled after `restartOnceAsync` call.
      */
-    std::optional<Future> restartOnceAsync(
-        std::function<void()> task)
+    std::optional<Future> restartOnceAsync(std::function<void()> task)
     {
         if (switchState(State::inProgress, State::reinit))
             return std::nullopt;
@@ -118,14 +117,12 @@ public:
 private:
     std::atomic<State> m_state{State::idle};
 
-    bool switchState(State from, State to)
-    {
-        return m_state.compare_exchange_strong(from, to);
-    }
+    bool switchState(State from, State to) { return m_state.compare_exchange_strong(from, to); }
 
     Future startTaskInternal(std::function<void()> task)
     {
-        return std::async(std::launch::async,
+        return std::async(
+            std::launch::async,
             [this, task = std::move(task)]()
             {
                 while (true)

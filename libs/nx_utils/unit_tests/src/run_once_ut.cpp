@@ -6,7 +6,6 @@
 
 namespace nx::utils::test {
 
-
 TEST(RunOnce, withoutKey)
 {
     RunOnce<void> runOnce;
@@ -14,12 +13,11 @@ TEST(RunOnce, withoutKey)
     nx::Mutex mutex;
     std::atomic<int> counter = 0;
 
-    auto worker =
-        [&]()
-        {
-            NX_MUTEX_LOCKER lock(&mutex);
-            ++counter;
-        };
+    auto worker = [&]()
+    {
+        NX_MUTEX_LOCKER lock(&mutex);
+        ++counter;
+    };
 
     auto task = *runOnce.startOnceAsync(worker);
     task.wait();

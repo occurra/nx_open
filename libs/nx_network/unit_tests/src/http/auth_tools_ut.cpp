@@ -1,8 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <optional>
+
+#include <gtest/gtest.h>
 
 #include <nx/network/http/auth_tools.h>
 #include <nx/utils/log/log.h>
@@ -33,10 +33,8 @@ TEST(HttpAuthDigest, partialResponse_test)
 
     const auto ha1 = nx::network::http::calcHa1(username, realm, password);
     const auto ha2 = nx::network::http::calcHa2(method, uri);
-    const auto response = nx::network::http::calcResponse(
-        ha1,
-        std::string(nonce) + std::string(nonceTrailer),
-        ha2);
+    const auto response =
+        nx::network::http::calcResponse(ha1, std::string(nonce) + std::string(nonceTrailer), ha2);
 
     const auto partialResponse = nx::network::http::calcIntermediateResponse(ha1, nonce);
     const auto responseFromPartial = nx::network::http::calcResponseFromIntermediate(
@@ -65,11 +63,16 @@ void testCalcDigestResponse(
 
     header::DigestAuthorization digestHeader;
     ASSERT_TRUE(calcDigestResponse(
-        method, userName, userPassword, predefinedHA1, "/some/uri",
-        authHeader, &digestHeader));
+        method,
+        userName,
+        userPassword,
+        predefinedHA1,
+        "/some/uri",
+        authHeader,
+        &digestHeader));
 
-    ASSERT_TRUE(validateAuthorization(
-        method, userName, userPassword, predefinedHA1, digestHeader));
+    ASSERT_TRUE(
+        validateAuthorization(method, userName, userPassword, predefinedHA1, digestHeader));
 }
 
 TEST(HttpAuthDigest, calcDigestResponse)
@@ -85,7 +88,8 @@ TEST(HttpAuthDigest, calcDigestResponse)
                 {
                     for (const std::string qop: {"", "auth", "auth,auth-int", "auth-int,auth"})
                     {
-                        NX_DEBUG(this,
+                        NX_DEBUG(
+                            this,
                             "Test method='%1', user='%2', password='%3', algorithm='%4', qop='%5'",
                             method,
                             user,
@@ -93,7 +97,13 @@ TEST(HttpAuthDigest, calcDigestResponse)
                             algorithm,
                             qop);
 
-                        testCalcDigestResponse(method, user, password, std::nullopt, algorithm, qop);
+                        testCalcDigestResponse(
+                            method,
+                            user,
+                            password,
+                            std::nullopt,
+                            algorithm,
+                            qop);
                     }
                 }
             }
@@ -105,22 +115,23 @@ TEST(HttpAuthDigest, calcDigestResponseWithDifferentQopOptions)
 {
     auto calculateDigest =
         [](const std::optional<std::string>& qop, header::DigestAuthorization* digestHeader)
-        {
-            header::WWWAuthenticate authHeader(header::AuthScheme::digest);
-            authHeader.params.emplace("realm", "test@example.com");
-            if (qop.has_value())
-                authHeader.params.emplace("qop", *qop);
-            authHeader.params.emplace("nonce", "dcd98b7102dd2f0e8b11d0f600bfb0c093");
-            authHeader.params.emplace("algorithm", "MD5");
+    {
+        header::WWWAuthenticate authHeader(header::AuthScheme::digest);
+        authHeader.params.emplace("realm", "test@example.com");
+        if (qop.has_value())
+            authHeader.params.emplace("qop", *qop);
+        authHeader.params.emplace("nonce", "dcd98b7102dd2f0e8b11d0f600bfb0c093");
+        authHeader.params.emplace("algorithm", "MD5");
 
-            return calcDigestResponse(Method::get,
-                "user",
-                "password",
-                std::nullopt,
-                "/some/uri",
-                authHeader,
-                digestHeader);
-        };
+        return calcDigestResponse(
+            Method::get,
+            "user",
+            "password",
+            std::nullopt,
+            "/some/uri",
+            authHeader,
+            digestHeader);
+    };
 
     // No qop options
     {
@@ -132,7 +143,8 @@ TEST(HttpAuthDigest, calcDigestResponseWithDifferentQopOptions)
     // qop="auth-int"
     {
         header::DigestAuthorization digestHeader;
-        ASSERT_FALSE(calculateDigest("auth-int", &digestHeader)); //< qop=auth-int is not supported.
+        ASSERT_FALSE(
+            calculateDigest("auth-int", &digestHeader)); //< qop=auth-int is not supported.
     }
     // qop="auth,auth-int"
     {
@@ -156,7 +168,8 @@ TEST(HttpAuthDigest, cnonce_is_supported_properly)
 {
     static constexpr char kUsername[] = "username";
     static constexpr char kPassword[] = "password";
-    static constexpr char kDigestHeaderValue[] = "Digest "
+    static constexpr char kDigestHeaderValue[] =
+        "Digest "
         "username=\"username\",realm=\"VMS\",nonce=\"uHL2gGl\",uri=\"/relay/statistics/metrics/\","
         "qop=\"auth\",algorithm=\"MD5\",response=\"e4c1402a074b4e3d0f041bd8879f2c2e\","
         "nc=\"00000001\",cnonce=\"ddf59e5bc50f176863eeccedf7f478c92fe5186063f4c994\"";

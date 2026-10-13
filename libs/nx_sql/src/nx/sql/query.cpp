@@ -26,8 +26,7 @@ SqlQuery::SqlQuery(AbstractDbConnection* connection):
 {
 }
 
-SqlQuery::SqlQuery(QSqlDatabase connection, StatisticsCollector* statisticsCollector)
-    :
+SqlQuery::SqlQuery(QSqlDatabase connection, StatisticsCollector* statisticsCollector):
     m_sqlQuery(connection),
     m_statisticsCollector(statisticsCollector),
     m_driverType(rdbmsDriverTypeFromString(connection.driverName().toStdString()))
@@ -76,9 +75,7 @@ void SqlQuery::bindValue(int pos, const QVariant& value) noexcept
     m_sqlQuery.bindValue(pos, value);
 }
 
-void SqlQuery::bindValue(
-    std::string_view placeholder,
-    std::string_view value) noexcept
+void SqlQuery::bindValue(std::string_view placeholder, std::string_view value) noexcept
 {
     bindValue(
         QString::fromUtf8(placeholder.data(), placeholder.size()),
@@ -132,7 +129,10 @@ void SqlQuery::exec(const std::optional<std::string_view>& query)
     }
     else
     {
-        NX_TRACE(this, "Query %1 failed. %2", m_sqlQuery.lastQuery(),
+        NX_TRACE(
+            this,
+            "Query %1 failed. %2",
+            m_sqlQuery.lastQuery(),
             m_sqlQuery.lastError().text());
 
         throw Exception(getLastError());
@@ -246,27 +246,26 @@ DBResult SqlQuery::getLastError()
     return res;
 }
 
-
 /**
-* Returns more detailed result code if appropriate. Otherwise returns initial one.
-*/
-//DBResult detailResultCode(AbstractDbConnection* const connection, DBResult result) const;
+ * Returns more detailed result code if appropriate. Otherwise returns initial one.
+ */
+// DBResult detailResultCode(AbstractDbConnection* const connection, DBResult result) const;
 
-//DBResult BaseExecutor::detailResultCode(
-//    AbstractDbConnection* const connection,
-//    DBResult result) const
+// DBResult BaseExecutor::detailResultCode(
+//     AbstractDbConnection* const connection,
+//     DBResult result) const
 //{
-//    if (result != DBResultCode::ioError)
-//        return result;
-//    switch (connection->lastError().type())
-//    {
-//        case QSqlError::StatementError:
-//            return DBResultCode::statementError;
-//        case QSqlError::ConnectionError:
-//            return DBResult::connectionError;
-//        default:
-//            return result;
-//    }
-//}
+//     if (result != DBResultCode::ioError)
+//         return result;
+//     switch (connection->lastError().type())
+//     {
+//         case QSqlError::StatementError:
+//             return DBResultCode::statementError;
+//         case QSqlError::ConnectionError:
+//             return DBResult::connectionError;
+//         default:
+//             return result;
+//     }
+// }
 
 } // namespace nx::sql

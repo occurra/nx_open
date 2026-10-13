@@ -23,35 +23,19 @@ static constexpr char hardToResolveHost[] = "takes_more_than_timeout_to_resolve"
 static constexpr char delayedResolveHost[] = "done_with_some_delay";
 static constexpr char easyToResolveHost[] = "resolved_immediately";
 
-class DnsResolver:
-    public ::testing::Test
+class DnsResolver: public ::testing::Test
 {
 public:
-    DnsResolver()
-    {
-        initializeResolver(1);
-    }
+    DnsResolver() { initializeResolver(1); }
 
-    ~DnsResolver()
-    {
-        m_dnsResolver->stop();
-    }
+    ~DnsResolver() { m_dnsResolver->stop(); }
 
 protected:
-    void addTaskThatTakesMoreThanResolveTimeout()
-    {
-        startResolveAsync(hardToResolveHost);
-    }
+    void addTaskThatTakesMoreThanResolveTimeout() { startResolveAsync(hardToResolveHost); }
 
-    std::size_t addRegularTask()
-    {
-        return startResolveAsync(easyToResolveHost);
-    }
+    std::size_t addRegularTask() { return startResolveAsync(easyToResolveHost); }
 
-    void givenMultithreadedResolver(int threadCount)
-    {
-        initializeResolver(threadCount);
-    }
+    void givenMultithreadedResolver(int threadCount) { initializeResolver(threadCount); }
 
     void postDelayedResolveTasks(int count)
     {
@@ -116,9 +100,11 @@ private:
         m_dnsResolver = std::make_unique<network::DnsResolver>(threadCount);
 
         m_dnsResolver->registerResolver(
-            makeCustomResolver([this](auto&&... args) {
-                return testResolve(std::forward<decltype(args)>(args)...);
-            }),
+            makeCustomResolver(
+                [this](auto&&... args)
+                {
+                    return testResolve(std::forward<decltype(args)>(args)...);
+                }),
             m_dnsResolver->maxRegisteredResolverPriority() + 1);
     }
 
@@ -159,10 +145,10 @@ private:
         SystemError::ErrorCode errorCode,
         std::deque<HostAddress> /*resolvedAddresses*/)
     {
-        m_resolveResults.push({
-            .resultCode = errorCode,
-            .requestId = requestId,
-            .threadId = std::this_thread::get_id()});
+        m_resolveResults.push(
+            {.resultCode = errorCode,
+             .requestId = requestId,
+             .threadId = std::this_thread::get_id()});
     }
 
     std::size_t startResolveAsync(const std::string& hostName)
@@ -243,15 +229,17 @@ TEST_F(DnsResolver, old_and_unclear_test_to_be_refactored)
         ASSERT_EQ(SystemError::noError, resultCode);
         ASSERT_GE(resolved.entries.size(), 1U);
         ASSERT_TRUE(resolved.entries.front().host.isIpAddress());
-        ASSERT_TRUE((bool)resolved.entries.front().host.ipV4());
-        ASSERT_TRUE((bool)resolved.entries.front().host.ipV6().first);
+        ASSERT_TRUE((bool) resolved.entries.front().host.ipV4());
+        ASSERT_TRUE((bool) resolved.entries.front().host.ipV6().first);
         ASSERT_NE(0U, resolved.entries.front().host.ipV4()->s_addr);
     }
 
     {
         ResolveResult resolved;
         const auto resultCode = dnsResolver.resolveSync(
-            "unknown-894ae3a4-5a95-42c3-a674-dd0e1c16e415.ru.", AF_INET, &resolved);
+            "unknown-894ae3a4-5a95-42c3-a674-dd0e1c16e415.ru.",
+            AF_INET,
+            &resolved);
         ASSERT_EQ(SystemError::hostNotFound, resultCode);
         ASSERT_EQ(0U, resolved.entries.size());
     }
@@ -265,7 +253,8 @@ TEST_F(DnsResolver, old_and_unclear_test_to_be_refactored)
         dnsResolver.addEtcHost(kTestHost, kTestAddresses);
 
         ResolveResult resolvedV4;
-        SystemError::ErrorCode resultCode = dnsResolver.resolveSync(kTestHost, AF_INET, &resolvedV4);
+        SystemError::ErrorCode resultCode =
+            dnsResolver.resolveSync(kTestHost, AF_INET, &resolvedV4);
         ASSERT_EQ(SystemError::noError, resultCode);
 
         ResolveResult resolvedV6;

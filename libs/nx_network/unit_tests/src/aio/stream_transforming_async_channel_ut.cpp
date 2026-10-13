@@ -13,8 +13,7 @@ namespace network {
 namespace aio {
 namespace test {
 
-class Converter:
-    public nx::utils::bstream::Converter
+class Converter: public nx::utils::bstream::Converter
 {
 public:
     int write(const void* data, size_t count)
@@ -25,23 +24,13 @@ public:
         return result;
     }
 
-    int read(void* data, size_t count)
-    {
-        return m_inputStream->read(data, count);
-    }
+    int read(void* data, size_t count) { return m_inputStream->read(data, count); }
 
-    bool eof() const
-    {
-        return false;
-    }
+    bool eof() const { return false; }
 
-    bool failed() const
-    {
-        return false;
-    }
+    bool failed() const { return false; }
 
-    void setWriteResultToReportUnconditionally(
-        std::optional<int> resultCode)
+    void setWriteResultToReportUnconditionally(std::optional<int> resultCode)
     {
         m_writeResultToReportUnconditionally = resultCode;
     }
@@ -84,10 +73,7 @@ public:
     {
     }
 
-    void start()
-    {
-        scheduleNextRead();
-    }
+    void start() { scheduleNextRead(); }
 
     void waitForSomeData()
     {
@@ -95,15 +81,9 @@ public:
             std::this_thread::yield();
     }
 
-    void waitEof()
-    {
-        m_readError.get_future().wait();
-    }
+    void waitEof() { m_readError.get_future().wait(); }
 
-    nx::Buffer dataRead() const
-    {
-        return m_dataRead;
-    }
+    nx::Buffer dataRead() const { return m_dataRead; }
 
 private:
     aio::AbstractAsyncChannel* m_channel;
@@ -116,7 +96,7 @@ private:
     {
         using namespace std::placeholders;
 
-        constexpr static int kReadBufSize = 16*1024;
+        constexpr static int kReadBufSize = 16 * 1024;
 
         m_readBuffer.clear();
         m_readBuffer.reserve(kReadBufSize);
@@ -142,8 +122,7 @@ private:
 //-------------------------------------------------------------------------------------------------
 // Test fixture.
 
-class StreamTransformingAsyncChannel:
-    public ::testing::Test
+class StreamTransformingAsyncChannel: public ::testing::Test
 {
 public:
     StreamTransformingAsyncChannel():
@@ -152,16 +131,10 @@ public:
     {
     }
 
-    ~StreamTransformingAsyncChannel()
-    {
-        m_channel->pleaseStopSync();
-    }
+    ~StreamTransformingAsyncChannel() { m_channel->pleaseStopSync(); }
 
 protected:
-    void givenReflectingRawChannel()
-    {
-        createTransformingChannel();
-    }
+    void givenReflectingRawChannel() { createTransformingChannel(); }
 
     void givenScheduledRead()
     {
@@ -172,8 +145,12 @@ protected:
 
         m_channel->readSomeAsync(
             &m_readBuffer,
-            std::bind(&StreamTransformingAsyncChannel::onSomeBytesRead, this,
-                m_readCallSequence, _1, _2));
+            std::bind(
+                &StreamTransformingAsyncChannel::onSomeBytesRead,
+                this,
+                m_readCallSequence,
+                _1,
+                _2));
     }
 
     void givenScheduledWrite()
@@ -205,15 +182,9 @@ protected:
             std::bind(&StreamTransformingAsyncChannel::onBytesWritten, this, _1, _2));
     }
 
-    void whenCancelledRead()
-    {
-        m_channel->cancelIOSync(aio::EventType::etRead);
-    }
+    void whenCancelledRead() { m_channel->cancelIOSync(aio::EventType::etRead); }
 
-    void whenCancelledWrite()
-    {
-        m_channel->cancelIOSync(aio::EventType::etWrite);
-    }
+    void whenCancelledWrite() { m_channel->cancelIOSync(aio::EventType::etWrite); }
 
     void whenTransferredFiniteData()
     {
@@ -231,20 +202,11 @@ protected:
         sendTestData();
     }
 
-    void thenSendHasSucceeded()
-    {
-        ASSERT_EQ(SystemError::noError, m_sendResultQueue.pop());
-    }
+    void thenSendHasSucceeded() { ASSERT_EQ(SystemError::noError, m_sendResultQueue.pop()); }
 
-    void thenSendHasFailed()
-    {
-        ASSERT_NE(SystemError::noError, m_sendResultQueue.pop());
-    }
+    void thenSendHasFailed() { ASSERT_NE(SystemError::noError, m_sendResultQueue.pop()); }
 
-    void assertRawChannelHasCompletedSend()
-    {
-        ASSERT_FALSE(m_rawDataChannel->isWriteScheduled());
-    }
+    void assertRawChannelHasCompletedSend() { ASSERT_FALSE(m_rawDataChannel->isWriteScheduled()); }
 
     void assertDataReadMatchesDataWritten()
     {
@@ -282,10 +244,7 @@ protected:
         assertDataReadMatchesDataWritten();
     }
 
-    AsyncChannel* rawDataChannel()
-    {
-        return m_rawDataChannel;
-    }
+    AsyncChannel* rawDataChannel() { return m_rawDataChannel; }
 
     aio::StreamTransformingAsyncChannel& channel()
     {
@@ -344,9 +303,7 @@ private:
         ASSERT_EQ(m_readCallSequence, expectedReadCallSequence);
     }
 
-    void onBytesWritten(
-        SystemError::ErrorCode sysErrorCode,
-        std::size_t /*bytesWritten*/)
+    void onBytesWritten(SystemError::ErrorCode sysErrorCode, std::size_t /*bytesWritten*/)
     {
         m_sendResultQueue.push(sysErrorCode);
     }
@@ -381,7 +338,7 @@ TEST_F(StreamTransformingAsyncChannel, read_write)
     assertDataReadMatchesDataWritten();
 }
 
-//TEST_F(StreamTransformingAsyncChannel, read_originates_read_and_write_on_raw_channel)
+// TEST_F(StreamTransformingAsyncChannel, read_originates_read_and_write_on_raw_channel)
 
 TEST_F(StreamTransformingAsyncChannel, cancel_read_scheduled_from_non_aio_thread)
 {
@@ -433,14 +390,10 @@ TEST_F(
 
 //-------------------------------------------------------------------------------------------------
 
-class StreamTransformingAsyncChannelIoErrors:
-    public StreamTransformingAsyncChannel
+class StreamTransformingAsyncChannelIoErrors: public StreamTransformingAsyncChannel
 {
 public:
-    StreamTransformingAsyncChannelIoErrors()
-    {
-        givenReflectingRawChannel();
-    }
+    StreamTransformingAsyncChannelIoErrors() { givenReflectingRawChannel(); }
 
 protected:
     void emulateReadTimeoutOnUnderlyingChannel()
@@ -462,13 +415,12 @@ protected:
     void thenReadTimedoutHasBeenRaised()
     {
         nx::Buffer readBuffer;
-        readBuffer.reserve(4*1024);
+        readBuffer.reserve(4 * 1024);
 
         std::promise<SystemError::ErrorCode> ioCompleted;
         channel().readSomeAsync(
             &readBuffer,
-            [&ioCompleted](
-                SystemError::ErrorCode sysErrorCode, std::size_t /*bytesRead*/)
+            [&ioCompleted](SystemError::ErrorCode sysErrorCode, std::size_t /*bytesRead*/)
             {
                 ioCompleted.set_value(sysErrorCode);
             });
@@ -481,14 +433,14 @@ protected:
     }
 };
 
-//TEST_F(StreamTransformingAsyncChannel, cancel_read_does_not_cancel_operations_required_by_write)
+// TEST_F(StreamTransformingAsyncChannel, cancel_read_does_not_cancel_operations_required_by_write)
 
-//TEST_F(StreamTransformingAsyncChannel, read_error)
-//TEST_F(StreamTransformingAsyncChannel, read_eof)
-//TEST_F(StreamTransformingAsyncChannel, write_error)
-//TEST_F(StreamTransformingAsyncChannel, read_thirst)
-//TEST_F(StreamTransformingAsyncChannel, write_thirst)
-//TEST_F(StreamTransformingAsyncChannel, all_data_is_read_in_case_of_write_error)
+// TEST_F(StreamTransformingAsyncChannel, read_error)
+// TEST_F(StreamTransformingAsyncChannel, read_eof)
+// TEST_F(StreamTransformingAsyncChannel, write_error)
+// TEST_F(StreamTransformingAsyncChannel, read_thirst)
+// TEST_F(StreamTransformingAsyncChannel, write_thirst)
+// TEST_F(StreamTransformingAsyncChannel, all_data_is_read_in_case_of_write_error)
 
 TEST_F(StreamTransformingAsyncChannelIoErrors, read_timeout)
 {
@@ -508,10 +460,11 @@ TEST_F(StreamTransformingAsyncChannelIoErrors, send_timeout_on_underlying_channe
     thenSendHasFailed();
 }
 
-//TEST_F(StreamTransformingAsyncChannelIoErrors, send_timeout_on_converted_data_send_queue_overflow)
+// TEST_F(StreamTransformingAsyncChannelIoErrors,
+// send_timeout_on_converted_data_send_queue_overflow)
 
-//TEST_F(StreamTransformingAsyncChannel, removing_in_completion_handler)
-//TEST_F(StreamTransformingAsyncChannel, raw_channel_io_method_calls_handler_within_method_call)
+// TEST_F(StreamTransformingAsyncChannel, removing_in_completion_handler)
+// TEST_F(StreamTransformingAsyncChannel, raw_channel_io_method_calls_handler_within_method_call)
 
 } // namespace test
 } // namespace aio

@@ -9,8 +9,7 @@
 
 namespace nx::network::test {
 
-class ConnectionCache:
-    public ::testing::Test
+class ConnectionCache: public ::testing::Test
 {
 protected:
     virtual void SetUp() override

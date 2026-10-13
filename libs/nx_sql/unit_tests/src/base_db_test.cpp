@@ -15,7 +15,10 @@ BasicFixture::BasicFixture()
 {
     m_tmpDir = testDataDir().toStdString() + "/db_test";
     QDir(QString::fromStdString(m_tmpDir)).removeRecursively();
-    [this]() { ASSERT_TRUE(QDir().mkpath(m_tmpDir.c_str())); }();
+    [this]()
+    {
+        ASSERT_TRUE(QDir().mkpath(m_tmpDir.c_str()));
+    }();
 
     m_dbFilePath = m_tmpDir;
     m_dbFilePath += "/db.sqlite";
@@ -71,10 +74,11 @@ bool BaseDbTest::initializeQueryExecutor(const ConnectionOptions& connectionOpti
     if (m_connectionFactory)
     {
         static_cast<AsyncSqlQueryExecutor&>(asyncSqlQueryExecutor())
-            .setCustomConnectionFactory([this](auto&&... args)
-            {
-                return (*m_connectionFactory)(std::forward<decltype(args)>(args)...);
-            });
+            .setCustomConnectionFactory(
+                [this](auto&&... args)
+                {
+                    return (*m_connectionFactory)(std::forward<decltype(args)>(args)...);
+                });
     }
 
     return m_dbInstanceController->initialize();

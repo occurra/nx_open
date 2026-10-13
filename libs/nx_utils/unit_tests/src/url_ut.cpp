@@ -1,8 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <optional>
+
+#include <gtest/gtest.h>
 
 #include <nx/utils/log/log.h>
 #include <nx/utils/url.h>
@@ -12,7 +12,8 @@ namespace utils {
 namespace test {
 
 using namespace nx::utils;
-static const QString kTestUrl = "http://user:passwd@[fe80::5be3:f02d:21e7:2450%253]:20431/some/path";
+static const QString kTestUrl =
+    "http://user:passwd@[fe80::5be3:f02d:21e7:2450%253]:20431/some/path";
 static const QString kTestIp = "fe80::5be3:f02d:21e7:2450%3";
 
 static void checkUrl(const QString& urlString, const QString& hostString)
@@ -53,7 +54,6 @@ TEST(Url, setHost)
     ASSERT_EQ(url.host(), QString());
     url.setHost(QString());
     ASSERT_EQ(url.host(), QString());
-
 }
 
 TEST(Url, url_encoded)
@@ -77,17 +77,21 @@ TEST(Url, parseUrlFields)
 {
     ASSERT_EQ(url::parseUrlFields("hostname").toStdString(), "//hostname");
     ASSERT_EQ(url::parseUrlFields("hostname:1248").toStdString(), "//hostname:1248");
-    ASSERT_EQ(url::parseUrlFields("user:pass@hostname:1248").toStdString(),
+    ASSERT_EQ(
+        url::parseUrlFields("user:pass@hostname:1248").toStdString(),
         "//user:pass@hostname:1248");
     ASSERT_EQ(url::parseUrlFields("http://hostname").toStdString(), "http://hostname");
     ASSERT_EQ(url::parseUrlFields("http://hostname:1248").toStdString(), "http://hostname:1248");
-    ASSERT_EQ(url::parseUrlFields("http://user:pass@hostname:1248/path?query").toStdString(),
+    ASSERT_EQ(
+        url::parseUrlFields("http://user:pass@hostname:1248/path?query").toStdString(),
         "http://user:pass@hostname:1248/path?query");
 
     ASSERT_EQ(url::parseUrlFields("hostname", "zorz").toStdString(), "zorz://hostname");
-    ASSERT_EQ(url::parseUrlFields("user:pass@hostname:1248", "zorz").toStdString(),
+    ASSERT_EQ(
+        url::parseUrlFields("user:pass@hostname:1248", "zorz").toStdString(),
         "zorz://user:pass@hostname:1248");
-    ASSERT_EQ(url::parseUrlFields("http://hostname:1248", "zorz").toStdString(),
+    ASSERT_EQ(
+        url::parseUrlFields("http://hostname:1248", "zorz").toStdString(),
         "http://hostname:1248");
 
     ASSERT_EQ(url::parseUrlFields("invalid+hostname").path(), "invalid+hostname");
@@ -105,13 +109,16 @@ TEST(Url, parseUrlFields)
 
 TEST(Url, toWebClientStandardViolatingUrl)
 {
-    ASSERT_EQ(Url("http://hostname/path?query#fragment").toWebClientStandardViolatingUrl(),
+    ASSERT_EQ(
+        Url("http://hostname/path?query#fragment").toWebClientStandardViolatingUrl(),
         "http://hostname/path#fragment?query");
 
-    ASSERT_EQ(Url("http://hostname/path#fragment").toWebClientStandardViolatingUrl(),
+    ASSERT_EQ(
+        Url("http://hostname/path#fragment").toWebClientStandardViolatingUrl(),
         "http://hostname/path#fragment");
 
-    ASSERT_EQ(Url("http://hostname/path?query").toWebClientStandardViolatingUrl(),
+    ASSERT_EQ(
+        Url("http://hostname/path?query").toWebClientStandardViolatingUrl(),
         "http://hostname/path?query");
 }
 
@@ -137,17 +144,18 @@ TEST(Url, logging)
         ASSERT_EQ(nx::format("%1", url).toStdString(), "http://johndoe@example.com");
 
         url.setPassword("sample_password");
-        ASSERT_EQ(nx::format("%1", url).toStdString(), "http://johndoe:sample_password@example.com");
+        ASSERT_EQ(
+            nx::format("%1", url).toStdString(),
+            "http://johndoe:sample_password@example.com");
     }
 }
 
 TEST(Url, fromUserInput)
 {
-    const auto expectEq =
-        [](const QString& input, const QString& expectedUrl)
-        {
-            EXPECT_EQ(expectedUrl, Url::fromUserInput(input).toString());
-        };
+    const auto expectEq = [](const QString& input, const QString& expectedUrl)
+    {
+        EXPECT_EQ(expectedUrl, Url::fromUserInput(input).toString());
+    };
 
     expectEq("192.168.0.1", "http://192.168.0.1");
     expectEq("192.168.0.2:7001", "http://192.168.0.2:7001");
@@ -177,7 +185,8 @@ TEST(Url, hidePassword)
         "/api/storageStatus?path=smb://TestUser@192.168.1.40/sh1");
 
     EXPECT_EQ(
-        url::hidePassword("/api/storageStatus?path=smb%3A%2F%2FTestUser%3ATestPassword%40192.168.1.40%2Fsh1"),
+        url::hidePassword(
+            "/api/storageStatus?path=smb%3A%2F%2FTestUser%3ATestPassword%40192.168.1.40%2Fsh1"),
         "/api/storageStatus?path=smb://TestUser@192.168.1.40/sh1");
 }
 
@@ -195,7 +204,8 @@ TEST(Url, hidePassword_debug)
         "/api/storageStatus?path=smb://TestUser:TestPassword@192.168.1.40/sh1");
 
     EXPECT_EQ(
-        url::hidePassword("/api/storageStatus?path=smb%3A%2F%2FTestUser%3ATestPassword%40192.168.1.40%2Fsh1"),
+        url::hidePassword(
+            "/api/storageStatus?path=smb%3A%2F%2FTestUser%3ATestPassword%40192.168.1.40%2Fsh1"),
         "/api/storageStatus?path=smb%3A%2F%2FTestUser%3ATestPassword%40192.168.1.40%2Fsh1");
 }
 

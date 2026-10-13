@@ -7,8 +7,7 @@
 
 QMap<AVCodecID, QByteArray> codecToStringMap()
 {
-    QMap<AVCodecID, QByteArray> codecToStringData =
-    {
+    QMap<AVCodecID, QByteArray> codecToStringData = {
         {AV_CODEC_ID_MPEG1VIDEO, "MPEG1VIDEO"},
         {AV_CODEC_ID_MPEG2VIDEO, "MPEG2VIDEO"}, //< Preferred id for MPEG-1/2 video decoding.
         {AV_CODEC_ID_H261, "H261"},
@@ -324,8 +323,7 @@ QMap<AVCodecID, QByteArray> codecToStringMap()
 
         {AV_CODEC_ID_NONE, ""},
 
-        { AV_CODEC_ID_MPEG1VIDEO, "MPEG1VIDEO" }
-    };
+        {AV_CODEC_ID_MPEG1VIDEO, "MPEG1VIDEO"}};
     return codecToStringData;
 }
 

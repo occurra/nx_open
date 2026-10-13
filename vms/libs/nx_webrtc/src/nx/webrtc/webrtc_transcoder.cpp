@@ -14,28 +14,16 @@
 namespace {
 
 static const std::set<AVCodecID> kSrtpVideoCodecs =
-{
-    AV_CODEC_ID_VP8,
-    AV_CODEC_ID_VP9,
-    AV_CODEC_ID_H264,
-    AV_CODEC_ID_H265
-};
+    {AV_CODEC_ID_VP8, AV_CODEC_ID_VP9, AV_CODEC_ID_H264, AV_CODEC_ID_H265};
 
-static const std::set<AVCodecID> kSrtpAudioCodecs =
-{
+static const std::set<AVCodecID> kSrtpAudioCodecs = {
     AV_CODEC_ID_PCM_MULAW,
     AV_CODEC_ID_PCM_ALAW,
-    AV_CODEC_ID_ADPCM_G722
-};
+    AV_CODEC_ID_ADPCM_G722};
 
-static const std::set<AVCodecID> kMseVideoCodecs =
-{
-    AV_CODEC_ID_H264,
-    AV_CODEC_ID_H265
-};
+static const std::set<AVCodecID> kMseVideoCodecs = {AV_CODEC_ID_H264, AV_CODEC_ID_H265};
 
-static const std::set<AVCodecID> kMseAudioCodecs =
-{
+static const std::set<AVCodecID> kMseAudioCodecs = {
     // PCM* codecs are also supported by browser side, but there is no ffmpeg mp4 muxing for them.
     AV_CODEC_ID_AAC,
     AV_CODEC_ID_MP2,
@@ -51,7 +39,7 @@ static const std::set<AVCodecID> kMseAudioCodecs =
  * */
 static const int kWebrtcMtu = 1300;
 
-}
+} // namespace
 
 namespace nx::webrtc {
 
@@ -59,7 +47,9 @@ Transcoder::Transcoder(
     Session* session,
     nx::vms::api::WebRtcMethod method,
     nx::vms::api::WebRtcTrackerSettings::MseFormat mseFormat):
-    m_session(session), m_method(method), m_mseFormat(mseFormat)
+    m_session(session),
+    m_method(method),
+    m_mseFormat(mseFormat)
 {
 }
 
@@ -84,7 +74,8 @@ bool Transcoder::createRtpEncoders(
     {
         if (const auto track = m_session->tracks()->videoTrack(deviceId))
         {
-            if (auto encoder = createRtpEncoder(videoParameters, track->ssrc, track->cname, track->mid))
+            if (auto encoder =
+                    createRtpEncoder(videoParameters, track->ssrc, track->cname, track->mid))
             {
                 success = true;
                 if (m_encryptionData.has_value())
@@ -94,8 +85,12 @@ bool Transcoder::createRtpEncoders(
             }
             else
             {
-                NX_DEBUG(this, "Can't create Video encoder for track %1, codec: %2, device: %3",
-                    track->ssrc, videoParameters->codec_id, track->deviceId);
+                NX_DEBUG(
+                    this,
+                    "Can't create Video encoder for track %1, codec: %2, device: %3",
+                    track->ssrc,
+                    videoParameters->codec_id,
+                    track->deviceId);
             }
         }
     }
@@ -104,7 +99,8 @@ bool Transcoder::createRtpEncoders(
     {
         if (const auto track = m_session->tracks()->audioTrack(deviceId))
         {
-            if (auto encoder = createRtpEncoder(audioParameters, track->ssrc, track->cname, track->mid))
+            if (auto encoder =
+                    createRtpEncoder(audioParameters, track->ssrc, track->cname, track->mid))
             {
                 success = true;
                 if (m_encryptionData.has_value())
@@ -114,8 +110,12 @@ bool Transcoder::createRtpEncoders(
             }
             else
             {
-                NX_DEBUG(this, "Can't create Audio encoder for track %1, codec: %2, device: %3",
-                    track->ssrc, audioParameters->codec_id, track->deviceId);
+                NX_DEBUG(
+                    this,
+                    "Can't create Audio encoder for track %1, codec: %2, device: %3",
+                    track->ssrc,
+                    audioParameters->codec_id,
+                    track->deviceId);
             }
         }
     }
@@ -152,7 +152,8 @@ bool Transcoder::isAudioCodecSupported(AVCodecID codecId)
 }
 
 bool Transcoder::createMseEncoder(
-    AVCodecParameters* videoParameters, AVCodecParameters* audioParameters)
+    AVCodecParameters* videoParameters,
+    AVCodecParameters* audioParameters)
 {
     if (!videoParameters && !audioParameters)
     {
@@ -165,7 +166,8 @@ bool Transcoder::createMseEncoder(
     if (m_mseFormat == nx::vms::api::WebRtcTrackerSettings::MseFormat::mp4)
     {
         m_mseMuxer->setFormatOption(
-          "movflags", "empty_moov+omit_tfhd_offset+frag_keyframe+default_base_moof+isml");
+            "movflags",
+            "empty_moov+omit_tfhd_offset+frag_keyframe+default_base_moof+isml");
     }
 
     if (videoParameters && !m_mseMuxer->addVideo(videoParameters))
@@ -209,8 +211,11 @@ QnUniversalRtpEncoderPtr Transcoder::createRtpEncoder(
 
     if (!universalEncoder->open(codecParameters))
     {
-        NX_DEBUG(this, "%1: No RTSP encoder for codec %2 skip track",
-            m_session->id(), codecParameters->codec_id);
+        NX_DEBUG(
+            this,
+            "%1: No RTSP encoder for codec %2 skip track",
+            m_session->id(),
+            codecParameters->codec_id);
         return nullptr;
     }
 
@@ -227,7 +232,7 @@ void Transcoder::setSrtpEncryptionData(const rtsp::EncryptionData& data)
     m_encryptionData = data;
     for (auto& [_, encoder]: m_videoEncoders)
         encoder->setSrtpEncryptionData(data);
-    for (auto& [_, encoder]:  m_audioEncoders)
+    for (auto& [_, encoder]: m_audioEncoders)
         encoder->setSrtpEncryptionData(data);
 }
 
@@ -254,11 +259,12 @@ QnUniversalRtpEncoder* Transcoder::audioEncoder(nx::Uuid deviceId) const
 
 bool Transcoder::constructMimeType()
 {
-
     m_mimeType = nx::media::getFormatMimeType(m_mseMuxer->container().toStdString());
     if (m_mimeType.empty())
     {
-        NX_DEBUG(this, "Failed to build mime type, container not supported: %1",
+        NX_DEBUG(
+            this,
+            "Failed to build mime type, container not supported: %1",
             m_mseMuxer->container());
         return false;
     }
@@ -327,20 +333,25 @@ bool Transcoder::checkForMseEof(QnConstAbstractMediaDataPtr media)
         return true; //< New appeared track.
     }
 
-    if (media->dataType == QnAbstractMediaData::VIDEO
-        && videoParameters
+    if (media->dataType == QnAbstractMediaData::VIDEO && videoParameters
         && media->compressionType != videoParameters->codec_id)
     {
-        NX_DEBUG(this, "MSE transcoder got EOF for video: has %1, got %2",
-            media->compressionType, videoParameters ? videoParameters->codec_id : AV_CODEC_ID_NONE);
+        NX_DEBUG(
+            this,
+            "MSE transcoder got EOF for video: has %1, got %2",
+            media->compressionType,
+            videoParameters ? videoParameters->codec_id : AV_CODEC_ID_NONE);
         return true;
     }
-    else if (media->dataType == QnAbstractMediaData::AUDIO
-        && audioParameters
+    else if (
+        media->dataType == QnAbstractMediaData::AUDIO && audioParameters
         && media->compressionType != audioParameters->codec_id)
     {
-        NX_DEBUG(this, "MSE transcoder got EOF for audio: has %1, got %2",
-            media->compressionType, audioParameters ? audioParameters->codec_id : AV_CODEC_ID_NONE);
+        NX_DEBUG(
+            this,
+            "MSE transcoder got EOF for audio: has %1, got %2",
+            media->compressionType,
+            audioParameters ? audioParameters->codec_id : AV_CODEC_ID_NONE);
         return true;
     }
 
@@ -354,7 +365,9 @@ bool Transcoder::checkForMseEof(QnConstAbstractMediaDataPtr media)
             {
                 if (m_audioPacketsCount == 0 && m_videoPacketsCount > kMinVideoInGop)
                 {
-                    NX_DEBUG(this, "MSE transcoder got EOF: not enough audio for gop: %1",
+                    NX_DEBUG(
+                        this,
+                        "MSE transcoder got EOF: not enough audio for gop: %1",
                         m_videoPacketsCount);
                     return true;
                 }
@@ -371,7 +384,9 @@ bool Transcoder::checkForMseEof(QnConstAbstractMediaDataPtr media)
     return false;
 }
 
-QnUniversalRtpEncoder* Transcoder::setDataPacket(nx::Uuid deviceId, QnConstAbstractMediaDataPtr media)
+QnUniversalRtpEncoder* Transcoder::setDataPacket(
+    nx::Uuid deviceId,
+    QnConstAbstractMediaDataPtr media)
 {
     m_lastTimestampMs = media->timestamp / 1000;
     if (m_method == nx::vms::api::WebRtcMethod::srtp)
@@ -413,9 +428,7 @@ QnUniversalRtpEncoder* Transcoder::setDataPacket(nx::Uuid deviceId, QnConstAbstr
     }
 }
 
-bool Transcoder::getNextPacket(
-    QnUniversalRtpEncoder* rtpEncoder,
-    nx::utils::ByteArray& buffer)
+bool Transcoder::getNextPacket(QnUniversalRtpEncoder* rtpEncoder, nx::utils::ByteArray& buffer)
 {
     if (m_method == nx::vms::api::WebRtcMethod::srtp)
     {
@@ -433,9 +446,7 @@ bool Transcoder::getNextPacket(
     }
 }
 
-bool Transcoder::isEof(
-    nx::Uuid deviceId,
-    QnUniversalRtpEncoder* rtpEncoder) const
+bool Transcoder::isEof(nx::Uuid deviceId, QnUniversalRtpEncoder* rtpEncoder) const
 {
     if (m_eof.contains(deviceId))
         return true;
@@ -452,7 +463,8 @@ bool Transcoder::isEof(
 
 FfmpegMuxer::PacketTimestamp Transcoder::getLastTimestamps() const
 {
-    // TODO: this function doesn't support multi camera streaming properly. It is needed to refactor it.
+    // TODO: this function doesn't support multi camera streaming properly. It is needed to
+    // refactor it.
     if (m_method == nx::vms::api::WebRtcMethod::srtp)
     {
         QnUniversalRtpEncoder* rtpEncoder = nullptr;

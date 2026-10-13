@@ -17,15 +17,12 @@ namespace nx::network::aio {
 /**
  * Interface for any entity that support asynchronous read/write operations.
  */
-class NX_NETWORK_API AbstractAsyncChannel:
-    public BasicPollable
+class NX_NETWORK_API AbstractAsyncChannel: public BasicPollable
 {
 public:
     virtual ~AbstractAsyncChannel() override = default;
 
-    virtual void readSomeAsync(
-        nx::Buffer* const buffer,
-        IoCompletionHandler handler) = 0;
+    virtual void readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler) = 0;
 
     /**
      * Future-based wrapper for readSomeAsync.
@@ -38,9 +35,7 @@ public:
      */
     virtual cf::future<std::size_t> readSome(nx::Buffer* buffer);
 
-    virtual void sendAsync(
-        const nx::Buffer* buffer,
-        IoCompletionHandler handler) = 0;
+    virtual void sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler) = 0;
 
     /**
      * Future-based wrapper for sendAsync.

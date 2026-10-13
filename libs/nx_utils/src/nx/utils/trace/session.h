@@ -4,9 +4,9 @@
 
 #ifndef __EMSCRIPTEN__
 
-#include <QtCore/QFile>
+    #include <QtCore/QFile>
 
-#include "trace_categories.h"
+    #include "trace_categories.h"
 
 namespace nx::utils::trace {
 
@@ -24,6 +24,6 @@ private:
     std::unique_ptr<perfetto::TracingSession> tracingSession;
 };
 
-} // nx::utils::trace
+} // namespace nx::utils::trace
 
 #endif

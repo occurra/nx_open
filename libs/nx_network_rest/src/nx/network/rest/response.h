@@ -51,12 +51,17 @@ Response Response::reply(const DataType& data, Qn::SerializationFormat format)
 {
     switch (format)
     {
-        case Qn::SerializationFormat::json: return reply<JsonResult>(data);
-        case Qn::SerializationFormat::ubjson: return reply<UbjsonResult>(data);
-        default: break;
+        case Qn::SerializationFormat::json:
+            return reply<JsonResult>(data);
+        case Qn::SerializationFormat::ubjson:
+            return reply<UbjsonResult>(data);
+        default:
+            break;
     }
 
-    NX_ASSERT(false, nx::format("Unsupported serialization format %1").arg(QnLexical::serialized(format)));
+    NX_ASSERT(
+        false,
+        nx::format("Unsupported serialization format %1").arg(QnLexical::serialized(format)));
     return {nx::network::http::StatusCode::internalServerError};
 }
 

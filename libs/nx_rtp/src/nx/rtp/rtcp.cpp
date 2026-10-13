@@ -35,26 +35,23 @@ uint32_t getRtcpSsrc(const uint8_t* data, int size)
     return ntohl(ssrc);
 }
 
-int buildReceiverReport(
-    uint8_t* dstBuffer,
-    int bufferLen,
-    uint32_t ssrc)
+int buildReceiverReport(uint8_t* dstBuffer, int bufferLen, uint32_t ssrc)
 {
     if (bufferLen < kRtcpReceiverReportLength)
         return 0;
     uint8_t* curBuffer = dstBuffer;
     *curBuffer++ = (RtpHeader::kVersion << 6);
-    *curBuffer++ = kRtcpReceiverReport;  // packet type
+    *curBuffer++ = kRtcpReceiverReport; // packet type
     curBuffer += 2; // skip len field;
 
-    quint32* curBuf32 = (quint32*)curBuffer;
+    quint32* curBuf32 = (quint32*) curBuffer;
     *curBuf32++ = htonl(ssrc);
 
     // correct len field (count of 32 bit words -1)
-    quint16 len = (quint16)(curBuf32 - (quint32*)dstBuffer);
-    *((quint16*)(dstBuffer + 2)) = htons(len - 1);
+    quint16 len = (quint16) (curBuf32 - (quint32*) dstBuffer);
+    *((quint16*) (dstBuffer + 2)) = htons(len - 1);
 
-    return (uint8_t*)curBuf32 - dstBuffer;
+    return (uint8_t*) curBuf32 - dstBuffer;
 }
 
 void buildSourceDescriptionReportInternal(
@@ -76,7 +73,7 @@ void buildSourceDescriptionReportInternal(
     // SDES items
     bitstream.putBits(8, 1); //< ES_TYPE CNAME
     bitstream.putBits(8, esDescr.size());
-    bitstream.putBytes((const uint8_t*)esDescr.data(), esDescr.size());
+    bitstream.putBytes((const uint8_t*) esDescr.data(), esDescr.size());
     while (bitstream.getBitsCount() % 32 != 0)
         bitstream.putBits(8, 0);
     bitstream.flushBits();
@@ -111,7 +108,7 @@ int buildClientRtcpReport(
 {
     const std::string esDescr = cname.value_or("nx");
 
-    NX_ASSERT((size_t)bufferLen >= 20 + esDescr.size());
+    NX_ASSERT((size_t) bufferLen >= 20 + esDescr.size());
 
     constexpr uint32_t kSsrcConst = 0x2a55a9e8;
     constexpr uint32_t kCsrcConst = 0xe8a9552a;
@@ -125,7 +122,8 @@ int RtcpSenderReport::write(uint8_t* data, int size) const
 {
     try
     {
-        auto fraction = makeFraction(ntpTimestamp + kNtpEpochTimeDiff.count() * 1'000'000, 1'000'000);
+        auto fraction =
+            makeFraction(ntpTimestamp + kNtpEpochTimeDiff.count() * 1'000'000, 1'000'000);
 
         nx::utils::BitStreamWriter bitstream(data, data + size);
         bitstream.putBits(2, kRtpVersion);
@@ -145,7 +143,7 @@ int RtcpSenderReport::write(uint8_t* data, int size) const
         bitstream.flushBits();
         return bitstream.getBytesCount();
     }
-    catch(const nx::utils::BitStreamException&)
+    catch (const nx::utils::BitStreamException&)
     {
         NX_ASSERT(0, "Not enough buffer to write RTCP report");
         return 0;
@@ -154,7 +152,8 @@ int RtcpSenderReport::write(uint8_t* data, int size) const
 
 bool RtcpSenderReport::read(const uint8_t* data, int size)
 {
-    try {
+    try
+    {
         uint8_t packetType;
         uint32_t seconds;
         uint32_t fractions;
@@ -174,7 +173,7 @@ bool RtcpSenderReport::read(const uint8_t* data, int size)
         uint64_t usec = fractions * 1'000'000ULL / std::numeric_limits<uint32_t>::max();
         ntpTimestamp = (seconds - kNtpEpochTimeDiff.count()) * 1'000'000ULL + usec;
     }
-    catch(const nx::utils::BitStreamException&)
+    catch (const nx::utils::BitStreamException&)
     {
         return false;
     }
@@ -192,9 +191,8 @@ bool RtcpSenderReporter::needReport(uint64_t ntpTimestampUSec, uint32_t rtpTimes
     m_report.ntpTimestamp = ntpTimestampUSec;
     m_report.rtpTimestamp = rtpTimestamp;
     std::chrono::microseconds ntpTimestamp(ntpTimestampUSec);
-    bool needReport =
-        ntpTimestamp - m_lastTimestamp > kRtcpDiscontinuityThreshold ||
-        ntpTimestamp - m_lastReportTimestamp > kRtcpInterval;
+    bool needReport = ntpTimestamp - m_lastTimestamp > kRtcpDiscontinuityThreshold
+        || ntpTimestamp - m_lastReportTimestamp > kRtcpInterval;
     m_lastTimestamp = ntpTimestamp;
     return needReport;
 }

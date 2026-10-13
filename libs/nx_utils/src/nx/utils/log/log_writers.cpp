@@ -112,7 +112,9 @@ QString File::makeFileName(QString fileName, size_t backupNumber, File::Extensio
     else
     {
         return NX_FMT("%1_%2%3")
-            .arg(removedExtension).arg(backupNumber, 3, 10, QLatin1Char('0')).arg(ext);
+            .arg(removedExtension)
+            .arg(backupNumber, 3, 10, QLatin1Char('0'))
+            .arg(ext);
     }
 }
 
@@ -163,11 +165,11 @@ bool File::openFile()
     std::cerr << nx::toString(this).toStdString() + ": " + getFileName().toStdString() + '\n';
 
     const auto fileNameQString = getFileName();
-    #if defined(Q_OS_WIN)
-        const auto fileName = fileNameQString.toStdWString();
-    #else
-        const auto fileName = fileNameQString.toStdString();
-    #endif
+#if defined(Q_OS_WIN)
+    const auto fileName = fileNameQString.toStdWString();
+#else
+    const auto fileName = fileNameQString.toStdString();
+#endif
 
     m_file.open(fileName, std::ios::in | std::ios::out | std::ios::binary);
     if (!m_file.fail())
@@ -205,7 +207,7 @@ void File::archive(QString fileName, QString archiveName)
     if (!textLog.open(QIODevice::ReadOnly))
     {
         std::cerr << nx::toString(this).toStdString() << ": Could not open "
-            << fileName.toStdString() << '\n';
+                  << fileName.toStdString() << '\n';
         return;
     }
 
@@ -213,7 +215,7 @@ void File::archive(QString fileName, QString archiveName)
     if (!archiveFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
     {
         std::cerr << nx::toString(this).toStdString() << ": Could not open "
-            << tmpArchiveName.toStdString() << '\n';
+                  << tmpArchiveName.toStdString() << '\n';
         return;
     }
 
@@ -222,26 +224,27 @@ void File::archive(QString fileName, QString archiveName)
     if (!archive.open(QuaZip::Mode::mdCreate))
     {
         std::cerr << nx::toString(this).toStdString() << ": Could not open "
-            << tmpArchiveName.toStdString() << '\n';
+                  << tmpArchiveName.toStdString() << '\n';
         return;
     }
 
     const auto timestamp = QDateTime::currentMSecsSinceEpoch();
 
     QuaZipFile zippedLog(&archive);
-    if (!zippedLog.open(QIODevice::WriteOnly,
-        QuaZipNewInfo(
-            makeBaseFileName(fileName).chopped(toQString(Extension::log).size())
-                + "_" + QString::number(timestamp) + toQString(Extension::log),
-            fileName)))
+    if (!zippedLog.open(
+            QIODevice::WriteOnly,
+            QuaZipNewInfo(
+                makeBaseFileName(fileName).chopped(toQString(Extension::log).size()) + "_"
+                    + QString::number(timestamp) + toQString(Extension::log),
+                fileName)))
     {
         std::cerr << nx::toString(this).toStdString() << ": Could not zip file "
-            << fileName.toStdString() << '\n';
+                  << fileName.toStdString() << '\n';
         return;
     }
 
     while (!textLog.atEnd() && textLog.error() == QFileDevice::NoError
-        && zippedLog.getZipError() == 0)
+           && zippedLog.getZipError() == 0)
     {
         const auto buf = textLog.read(kBufferSize);
         zippedLog.write(buf);
@@ -250,7 +253,7 @@ void File::archive(QString fileName, QString archiveName)
     if (textLog.error() != QFileDevice::NoError || zippedLog.getZipError() != 0)
     {
         std::cerr << nx::toString(this).toStdString() << ": Could not zip file "
-            << fileName.toStdString() << '\n';
+                  << fileName.toStdString() << '\n';
         return;
     }
 
@@ -265,13 +268,18 @@ void File::archive(QString fileName, QString archiveName)
 void File::rotateAndStartArchivingIfNeeded()
 {
     m_volumeLock.lock();
-    auto guard = nx::utils::makeScopeGuard([&]() { m_volumeLock.unlock(); });
+    auto guard = nx::utils::makeScopeGuard(
+        [&]()
+        {
+            m_volumeLock.unlock();
+        });
 
     auto dir = m_fileInfo.dir();
     const auto stem = makeBaseFileName(m_settings.name).chopped(toQString(Extension::log).size());
-    const auto list = dir.entryList({
-        stem + "_*" + toQString(Extension::log),
-        stem + "_*" + toQString(Extension::zip)}, QDir::Files, QDir::Name);
+    const auto list = dir.entryList(
+        {stem + "_*" + toQString(Extension::log), stem + "_*" + toQString(Extension::zip)},
+        QDir::Files,
+        QDir::Name);
 
     int removedCount = 0;
     for (removedCount = 0; removedCount <= list.size() - kMaxLogRotation; removedCount++)
@@ -279,7 +287,7 @@ void File::rotateAndStartArchivingIfNeeded()
 
     const qint64 maxVolumeSizeB = calculateMaxVolumeSize();
 
-    for ( ; totalVolumeSize() >= maxVolumeSizeB && removedCount < list.size(); removedCount++)
+    for (; totalVolumeSize() >= maxVolumeSizeB && removedCount < list.size(); removedCount++)
         dir.remove(list[removedCount]);
 
     if (totalVolumeSize() >= maxVolumeSizeB)
@@ -289,23 +297,24 @@ void File::rotateAndStartArchivingIfNeeded()
     }
 
     int firstFreeNumber = 1;
-    const auto remaining = dir.entryList({
-        stem + "_*" + toQString(Extension::log),
-        stem + "_*" + toQString(Extension::zip)}, QDir::Files, QDir::Name);
+    const auto remaining = dir.entryList(
+        {stem + "_*" + toQString(Extension::log), stem + "_*" + toQString(Extension::zip)},
+        QDir::Files,
+        QDir::Name);
     for (auto fileName: remaining)
     {
         if (firstFreeNumber > kMaxLogRotation)
         {
             std::cerr << nx::toString(this).toStdString() << ": Too many log files, removing "
-                << fileName.toStdString() << '\n';
+                      << fileName.toStdString() << '\n';
             dir.remove(fileName);
             continue;
         }
 
-        const auto correctName = makeFileName(stem, firstFreeNumber++,
-            fileName.endsWith(toQString(Extension::log))
-                ? Extension::log
-                : Extension::zip);
+        const auto correctName = makeFileName(
+            stem,
+            firstFreeNumber++,
+            fileName.endsWith(toQString(Extension::log)) ? Extension::log : Extension::zip);
         if (fileName != correctName)
             dir.rename(fileName, correctName);
     }
@@ -316,7 +325,7 @@ void File::rotateAndStartArchivingIfNeeded()
         if (!NX_ASSERT(!QFile::exists(rotateName)))
         {
             std::cerr << nx::toString(this).toStdString() << ": Replacing existing log file "
-                << rotateName.toStdString() << '\n';
+                      << rotateName.toStdString() << '\n';
         }
         QFile::rename(getFileName(), rotateName);
         return;
@@ -327,7 +336,7 @@ void File::rotateAndStartArchivingIfNeeded()
     if (!NX_ASSERT(!QFile::exists(archiveName)))
     {
         std::cerr << nx::toString(this).toStdString() << ": Replacing existing archived log file "
-            << archiveName.toStdString() << '\n';
+                  << archiveName.toStdString() << '\n';
     }
     QFile::rename(getFileName(), tmpName);
     try
@@ -336,8 +345,12 @@ void File::rotateAndStartArchivingIfNeeded()
     }
     catch (const std::exception& e)
     {
-        NX_CRITICAL(false, "Unable to start zipping thread '%1' into '%2': %3",
-            tmpName, archiveName, e.what());
+        NX_CRITICAL(
+            false,
+            "Unable to start zipping thread '%1' into '%2': %3",
+            tmpName,
+            archiveName,
+            e.what());
     }
 }
 
@@ -365,83 +378,93 @@ void File::rotateLeftovers()
     if (!dir.exists())
         return;
 
-    const auto brokenZipList = dir.entryList({
-        stem + "_*" + toQString(Extension::zipTmp)}, QDir::Files, QDir::Name);
+    const auto brokenZipList =
+        dir.entryList({stem + "_*" + toQString(Extension::zipTmp)}, QDir::Files, QDir::Name);
     for (auto fileName: brokenZipList)
     {
-        std::cerr << nx::toString(this).toStdString() << ": Found log file in unknown state, removing "
-            << fileName.toStdString() << '\n';
+        std::cerr << nx::toString(this).toStdString()
+                  << ": Found log file in unknown state, removing " << fileName.toStdString()
+                  << '\n';
         dir.remove(fileName);
     }
 
     int rotation = 1;
-    const auto tmpList = dir.entryList({stem + "_*" + toQString(Extension::tmp)}, QDir::Files, QDir::Name);
+    const auto tmpList =
+        dir.entryList({stem + "_*" + toQString(Extension::tmp)}, QDir::Files, QDir::Name);
     for (auto fileName: tmpList)
     {
         if (rotation > kMaxLogRotation)
         {
             std::cerr << nx::toString(this).toStdString() << ": Too many log files, removing "
-                << fileName.toStdString() << '\n';
+                      << fileName.toStdString() << '\n';
             dir.remove(fileName);
         }
         else
         {
-            const auto correctName = QFileInfo(makeFileName(m_settings.name, rotation++, Extension::tmp))
-                .fileName();
+            const auto correctName =
+                QFileInfo(makeFileName(m_settings.name, rotation++, Extension::tmp)).fileName();
             if (fileName != correctName)
                 dir.rename(fileName, correctName);
         }
     }
 
-    const auto logList = dir.entryList({
-        stem + "_*" + toQString(Extension::log),
-        stem + "_*" + toQString(Extension::zip)}, QDir::Files, QDir::Name);
+    const auto logList = dir.entryList(
+        {stem + "_*" + toQString(Extension::log), stem + "_*" + toQString(Extension::zip)},
+        QDir::Files,
+        QDir::Name);
     for (auto fileName: logList)
     {
         if (rotation > kMaxLogRotation)
         {
             std::cerr << nx::toString(this).toStdString() << ": Too many log files, removing "
-                << fileName.toStdString() << '\n';
+                      << fileName.toStdString() << '\n';
             dir.remove(fileName);
         }
         // Is indexed log, non unarchived with timestamp or current one
-        else if (fileName.endsWith(toQString(Extension::log)) && !fileName.right(8).startsWith("_"))
+        else if (
+            fileName.endsWith(toQString(Extension::log)) && !fileName.right(8).startsWith("_"))
         {
             // do nothing with such files
             continue;
         }
         else
         {
-            const auto correctName = QFileInfo(makeFileName(
-                m_settings.name,
-                rotation++,
-                fileName.endsWith(toQString(Extension::log)) ? Extension::tmp : Extension::zipTmp))
-                .fileName();
+            const auto correctName =
+                QFileInfo(makeFileName(
+                              m_settings.name,
+                              rotation++,
+                              fileName.endsWith(toQString(Extension::log)) ? Extension::tmp
+                                                                           : Extension::zipTmp))
+                    .fileName();
             if (fileName != correctName)
                 dir.rename(fileName, correctName);
         }
     }
 
-    const auto rotatedList = dir.entryList({
-        stem + "_*" + toQString(Extension::tmp),
-        stem + "_*" + toQString(Extension::zipTmp)}, QDir::Files, QDir::Name);
+    const auto rotatedList = dir.entryList(
+        {stem + "_*" + toQString(Extension::tmp), stem + "_*" + toQString(Extension::zipTmp)},
+        QDir::Files,
+        QDir::Name);
     for (auto fileName: rotatedList)
     {
         if (!m_settings.archivingEnabled || fileName.endsWith(toQString(Extension::zipTmp)))
         {
             const auto correctName = fileName.endsWith(toQString(Extension::tmp))
                 ? fileName.chopped(toQString(Extension::tmp).size()) + toQString(Extension::log)
-                : fileName.chopped(toQString(Extension::zipTmp).size()) + toQString(Extension::zip);
+                : fileName.chopped(toQString(Extension::zipTmp).size())
+                    + toQString(Extension::zip);
             dir.rename(fileName, correctName);
             continue;
         }
 
         const auto fullPath = dir.filePath(fileName);
-        const auto archivePath = fullPath.chopped(toQString(Extension::tmp).size()) + toQString(Extension::zip);
+        const auto archivePath =
+            fullPath.chopped(toQString(Extension::tmp).size()) + toQString(Extension::zip);
         if (QFile::exists(archivePath))
         {
-            std::cerr << nx::toString(this).toStdString() << ": Replacing existing archived log file "
-                << archivePath.toStdString() << '\n';
+            std::cerr << nx::toString(this).toStdString()
+                      << ": Replacing existing archived log file " << archivePath.toStdString()
+                      << '\n';
         }
         archive(fullPath, archivePath);
     }
@@ -507,12 +530,10 @@ qint64 File::totalVolumeSize()
     auto dir = m_fileInfo.dir();
 
     for (auto fileInfo: dir.entryInfoList(
-        {
-            QString("*") + toQString(Extension::log),
-            QString("*") + toQString(Extension::tmp),
-            QString("*") + toQString(Extension::zip)
-        },
-        QDir::Files))
+             {QString("*") + toQString(Extension::log),
+              QString("*") + toQString(Extension::tmp),
+              QString("*") + toQString(Extension::zip)},
+             QDir::Files))
     {
         size += fileInfo.size();
     }
@@ -537,8 +558,8 @@ qint64 File::bytesToRemoveByFreeSpaceLimit() const
     qint64 requiredPercentSize = totalB * requiredPercent / 100;
 
     qint64 reserveB = requiredPercentSize > 0 && requiredSize > 0
-            ? std::min(requiredSize, requiredPercentSize)
-            : std::max(requiredSize, requiredPercentSize);
+        ? std::min(requiredSize, requiredPercentSize)
+        : std::max(requiredSize, requiredPercentSize);
     return freeB > reserveB ? 0 : reserveB - freeB;
 }
 
@@ -549,7 +570,7 @@ qint64 File::calculateMaxVolumeSize()
         if (auto logsTotalSize = totalVolumeSize(); logsTotalSize >= bytesToRemove)
             return std::min(m_settings.maxVolumeSizeB, logsTotalSize - bytesToRemove);
         else
-            return 0; //There is not enough space even after we remove all logs.
+            return 0; // There is not enough space even after we remove all logs.
     }
     return m_settings.maxVolumeSizeB;
 }

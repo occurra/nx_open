@@ -32,10 +32,10 @@ const char* serializationFormatToHttpContentType(SerializationFormat format)
     }
 }
 
-SerializationFormat serializationFormatFromHttpContentType(
-    std::string_view httpContentType)
+SerializationFormat serializationFormatFromHttpContentType(std::string_view httpContentType)
 {
-    if (nx::utils::contains(httpContentType, "application/json") || nx::utils::contains(httpContentType, "*/*"))
+    if (nx::utils::contains(httpContentType, "application/json")
+        || nx::utils::contains(httpContentType, "*/*"))
         return SerializationFormat::json;
     if (nx::utils::contains(httpContentType, "application/ubjson"))
         return SerializationFormat::ubjson;
@@ -53,8 +53,7 @@ SerializationFormat serializationFormatFromHttpContentType(
     return SerializationFormat::unsupported;
 }
 
-SerializationFormat serializationFormatFromHttpContentType(
-    const QByteArray& httpContentType)
+SerializationFormat serializationFormatFromHttpContentType(const QByteArray& httpContentType)
 {
     return serializationFormatFromHttpContentType(
         std::string_view(httpContentType.data(), httpContentType.size()));
@@ -64,6 +63,5 @@ QDebug operator<<(QDebug d, const SerializationFormat& value)
 {
     return d << nx::reflect::toString(value);
 }
-
 
 } // namespace Qn

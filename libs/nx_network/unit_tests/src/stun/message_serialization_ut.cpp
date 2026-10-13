@@ -1,14 +1,15 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
+#include <nx/utils/system_network_headers.h>
+
 #include <gtest/gtest.h>
 
 #include <nx/network/cloud/data/bind_data.h>
-#include <nx/network/stun/message_serializer.h>
 #include <nx/network/stun/message_parser.h>
+#include <nx/network/stun/message_serializer.h>
 #include <nx/utils/auth/utils.h>
 #include <nx/utils/random.h>
 #include <nx/utils/string.h>
-#include <nx/utils/system_network_headers.h>
 
 namespace nx {
 namespace network {
@@ -25,7 +26,9 @@ static void partialParse(MessageParser& parser, const Buffer& message, size_t pa
     for (; parsedTotal < message.size() - partSize; parsedTotal += partSize)
     {
         const Buffer part(message.data() + parsedTotal, partSize);
-        ASSERT_EQ(parser.parse(part, &parsedNow), nx::network::server::ParserState::readingMessage);
+        ASSERT_EQ(
+            parser.parse(part, &parsedNow),
+            nx::network::server::ParserState::readingMessage);
         ASSERT_EQ(parsedNow, partSize);
     }
 
@@ -47,13 +50,17 @@ TEST(StunMessageSerialization, BindingRequest)
     MessageSerializer serializer;
     serializer.setAlwaysAddFingerprint(false);
     serializer.setMessage(&request);
-    ASSERT_EQ(serializer.serialize(&serializedMessage, &serializedSize),
+    ASSERT_EQ(
+        serializer.serialize(&serializedMessage, &serializedSize),
         nx::network::server::SerializerState::done);
 
     static const Buffer MESSAGE = Buffer(
-        "0001" "0000" "2112A442"    // request: binding, length, magic cookie
-    ) + DEFAULT_TID;                // transaction id (rev)
-    ASSERT_EQ((size_t)serializedMessage.size(), serializedSize);
+                                      "0001"
+                                      "0000"
+                                      "2112A442" // request: binding, length, magic cookie
+                                      )
+        + DEFAULT_TID; // transaction id (rev)
+    ASSERT_EQ((size_t) serializedMessage.size(), serializedSize);
     EXPECT_EQ(0, nx::utils::stricmp(MESSAGE, nx::utils::toHex(serializedMessage)));
 
     Message parsed;
@@ -64,14 +71,14 @@ TEST(StunMessageSerialization, BindingRequest)
     ASSERT_EQ(parsed.header.messageClass, MessageClass::request);
     ASSERT_EQ(parsed.header.method, MethodType::bindingMethod);
     ASSERT_EQ(0, nx::utils::stricmp(nx::utils::toHex(parsed.header.transactionId), DEFAULT_TID));
-    ASSERT_EQ((size_t)0, parsed.attributeCount());
+    ASSERT_EQ((size_t) 0, parsed.attributeCount());
 }
 
 TEST(StunMessageSerialization, BindingResponse)
 {
     Message response(Header(MessageClass::successResponse, MethodType::bindingMethod));
     response.header.transactionId = nx::utils::fromHex(DEFAULT_TID);
-    response.newAttribute< attrs::XorMappedAddress >(0x1234, 0x12345678);
+    response.newAttribute<attrs::XorMappedAddress>(0x1234, 0x12345678);
 
     size_t serializedSize;
     Buffer serializedMessage;
@@ -80,16 +87,23 @@ TEST(StunMessageSerialization, BindingResponse)
     MessageSerializer serializer;
     serializer.setAlwaysAddFingerprint(false);
     serializer.setMessage(&response);
-    ASSERT_EQ(serializer.serialize(&serializedMessage, &serializedSize),
+    ASSERT_EQ(
+        serializer.serialize(&serializedMessage, &serializedSize),
         nx::network::server::SerializerState::done);
 
     static const Buffer MESSAGE = Buffer(
-        "0101" "000C" "2112A442"    // response: binding, length=12, magic cookie
-    ) + DEFAULT_TID + Buffer(
-        "0020" "0008" "0001"        // xor-mapped-address, ipv4
-        "3326" "3326F23A"           // xor port, xor ip
-    );
-    ASSERT_EQ((size_t)serializedMessage.size(), serializedSize);
+                                      "0101"
+                                      "000C"
+                                      "2112A442" // response: binding, length=12, magic cookie
+                                      )
+        + DEFAULT_TID
+        + Buffer("0020"
+                 "0008"
+                 "0001" // xor-mapped-address, ipv4
+                 "3326"
+                 "3326F23A" // xor port, xor ip
+        );
+    ASSERT_EQ((size_t) serializedMessage.size(), serializedSize);
     EXPECT_EQ(0, nx::utils::stricmp(MESSAGE, nx::utils::toHex(serializedMessage)));
 
     Message parsed;
@@ -97,22 +111,22 @@ TEST(StunMessageSerialization, BindingResponse)
     parser.setMessage(&parsed);
     partialParse(parser, serializedMessage, 2); // parse by 2 byte chunks
 
-    ASSERT_EQ((size_t)serializedMessage.size(), serializedSize);
+    ASSERT_EQ((size_t) serializedMessage.size(), serializedSize);
     ASSERT_EQ(parsed.header.messageClass, MessageClass::successResponse);
     ASSERT_EQ(parsed.header.method, MethodType::bindingMethod);
     ASSERT_EQ(0, nx::utils::stricmp(nx::utils::toHex(parsed.header.transactionId), DEFAULT_TID));
-    ASSERT_EQ((size_t)1, parsed.attributeCount());
+    ASSERT_EQ((size_t) 1, parsed.attributeCount());
 
-    const auto address = parsed.getAttribute< attrs::XorMappedAddress >();
+    const auto address = parsed.getAttribute<attrs::XorMappedAddress>();
     ASSERT_NE(address, nullptr);
-    ASSERT_EQ(address->address.ipv4, (size_t)0x12345678);
+    ASSERT_EQ(address->address.ipv4, (size_t) 0x12345678);
 }
 
 TEST(StunMessageSerialization, BindingError)
 {
     Message response(Header(MessageClass::errorResponse, MethodType::bindingMethod));
     response.header.transactionId = nx::utils::fromHex(DEFAULT_TID);
-    response.newAttribute< attrs::ErrorCode >(401, "Unauthorized");
+    response.newAttribute<attrs::ErrorCode>(401, "Unauthorized");
 
     size_t serializedSize;
     Buffer serializedMessage;
@@ -121,16 +135,23 @@ TEST(StunMessageSerialization, BindingError)
     MessageSerializer serializer;
     serializer.setAlwaysAddFingerprint(false);
     serializer.setMessage(&response);
-    ASSERT_EQ(serializer.serialize(&serializedMessage, &serializedSize),
+    ASSERT_EQ(
+        serializer.serialize(&serializedMessage, &serializedSize),
         nx::network::server::SerializerState::done);
 
     static const auto MESSAGE = Buffer(
-        "0111" "0014" "2112A442"    // response: binding, length=20, magic cookie
-    ) + DEFAULT_TID + Buffer(
-        "0009" "0010" "00000401"    // error code 0x3 0x77
-    ) + nx::utils::toHex(Buffer("Unauthorized"));
+                                    "0111"
+                                    "0014"
+                                    "2112A442" // response: binding, length=20, magic cookie
+                                    )
+        + DEFAULT_TID
+        + Buffer("0009"
+                 "0010"
+                 "00000401" // error code 0x3 0x77
+                 )
+        + nx::utils::toHex(Buffer("Unauthorized"));
 
-    ASSERT_EQ((size_t)serializedMessage.size(), serializedSize);
+    ASSERT_EQ((size_t) serializedMessage.size(), serializedSize);
     EXPECT_EQ(0, nx::utils::stricmp(MESSAGE, nx::utils::toHex(serializedMessage)));
 
     Message parsed;
@@ -138,13 +159,13 @@ TEST(StunMessageSerialization, BindingError)
     parser.setMessage(&parsed);
     partialParse(parser, serializedMessage, 3); // parse by 3 byte chunks
 
-    ASSERT_EQ((size_t)serializedMessage.size(), serializedSize);
+    ASSERT_EQ((size_t) serializedMessage.size(), serializedSize);
     ASSERT_EQ(parsed.header.messageClass, MessageClass::errorResponse);
     ASSERT_EQ(parsed.header.method, MethodType::bindingMethod);
     ASSERT_EQ(0, nx::utils::stricmp(nx::utils::toHex(parsed.header.transactionId), DEFAULT_TID));
     ASSERT_EQ((size_t) 1, parsed.attributeCount());
 
-    const auto error = parsed.getAttribute< attrs::ErrorCode >();
+    const auto error = parsed.getAttribute<attrs::ErrorCode>();
     ASSERT_NE(error, nullptr);
     ASSERT_EQ(error->getClass(), 4);
     ASSERT_EQ(error->getNumber(), 1);
@@ -155,8 +176,8 @@ TEST(StunMessageSerialization, CustomIndication)
 {
     Message response(Header(MessageClass::indication, MethodType::userMethod + 1));
     response.header.transactionId = nx::utils::fromHex(DEFAULT_TID);
-    response.newAttribute< attrs::Unknown >(0x9001, "ua1val");
-    response.newAttribute< attrs::Unknown >(0x9002, "ua2val");
+    response.newAttribute<attrs::Unknown>(0x9001, "ua1val");
+    response.newAttribute<attrs::Unknown>(0x9002, "ua2val");
 
     size_t serializedSize;
     Buffer serializedMessage;
@@ -165,16 +186,24 @@ TEST(StunMessageSerialization, CustomIndication)
     MessageSerializer serializer;
     serializer.setAlwaysAddFingerprint(false);
     serializer.setMessage(&response);
-    ASSERT_EQ(serializer.serialize(&serializedMessage, &serializedSize),
+    ASSERT_EQ(
+        serializer.serialize(&serializedMessage, &serializedSize),
         nx::network::server::SerializerState::done);
 
     static const auto MESSAGE = Buffer(
-        "00B1" "0018" "2112A442"        // indication 3, length=12, magic cookie
-    ) + DEFAULT_TID
-        + Buffer("9001" "0006") + nx::utils::toHex(Buffer("ua1val")) + Buffer("0000")
-        + Buffer("9002" "0006") + nx::utils::toHex(Buffer("ua2val")) + Buffer("0000");
+                                    "00B1"
+                                    "0018"
+                                    "2112A442" // indication 3, length=12, magic cookie
+                                    )
+        + DEFAULT_TID
+        + Buffer("9001"
+                 "0006")
+        + nx::utils::toHex(Buffer("ua1val")) + Buffer("0000")
+        + Buffer("9002"
+                 "0006")
+        + nx::utils::toHex(Buffer("ua2val")) + Buffer("0000");
 
-    ASSERT_EQ((size_t)serializedMessage.size(), serializedSize);
+    ASSERT_EQ((size_t) serializedMessage.size(), serializedSize);
     EXPECT_EQ(0, nx::utils::stricmp(MESSAGE, nx::utils::toHex(serializedMessage)));
 
     Message parsed;
@@ -182,17 +211,17 @@ TEST(StunMessageSerialization, CustomIndication)
     parser.setMessage(&parsed);
     partialParse(parser, serializedMessage, 4); // parse by 4 byte chunks
 
-    ASSERT_EQ((size_t)serializedMessage.size(), serializedSize);
+    ASSERT_EQ((size_t) serializedMessage.size(), serializedSize);
     ASSERT_EQ(parsed.header.messageClass, MessageClass::indication);
     ASSERT_EQ(parsed.header.method, MethodType::userMethod + 1);
     ASSERT_EQ(0, nx::utils::stricmp(nx::utils::toHex(parsed.header.transactionId), DEFAULT_TID));
     ASSERT_EQ(2U, parsed.attributeCount());
 
-    const auto attr1 = parsed.getAttribute< attrs::Unknown >(0x9001);
+    const auto attr1 = parsed.getAttribute<attrs::Unknown>(0x9001);
     ASSERT_NE(attr1, nullptr);
     ASSERT_EQ(attr1->getString(), Buffer("ua1val"));
 
-    const auto attr2 = parsed.getAttribute< attrs::Unknown >(0x9002);
+    const auto attr2 = parsed.getAttribute<attrs::Unknown>(0x9002);
     ASSERT_NE(attr2, nullptr);
     ASSERT_EQ(attr2->getString(), Buffer("ua2val"));
 }
@@ -204,22 +233,24 @@ TEST(StunMessageSerialization, serialization2)
     const std::string userName("sdfno234sdf");
     const std::string nonce("kdfgjn234df");
 
-    //message.newAttribute<stun::extension::attrs::SystemId>(userName);
+    // message.newAttribute<stun::extension::attrs::SystemId>(userName);
     const std::string testData("sdfr234dfg");
     message.newAttribute<stun::extension::attrs::ServerId>(testData);
 
     size_t bytesRead = 0;
 
-    //serializing message
+    // serializing message
     Buffer buffer;
     {
         buffer.reserve(100);
         MessageSerializer serializer;
         serializer.setMessage(&message);
-        ASSERT_EQ(nx::network::server::SerializerState::done, serializer.serialize(&buffer, &bytesRead));
+        ASSERT_EQ(
+            nx::network::server::SerializerState::done,
+            serializer.serialize(&buffer, &bytesRead));
     }
 
-    //deserializing message and checking that it equals to the one before serialization
+    // deserializing message and checking that it equals to the one before serialization
     MessageParser parser;
     Message checkMessage;
     parser.setMessage(&checkMessage);
@@ -231,20 +262,24 @@ TEST(StunMessageSerialization, serialization2)
     buffer1.reserve(100);
     MessageSerializer serializer1;
     serializer1.setMessage(&checkMessage);
-    ASSERT_EQ(nx::network::server::SerializerState::done, serializer1.serialize(&buffer1, &bytesRead));
+    ASSERT_EQ(
+        nx::network::server::SerializerState::done,
+        serializer1.serialize(&buffer1, &bytesRead));
     ASSERT_EQ(buffer1, buffer);
 }
 
 TEST(StunMessageSerialization, serialization3)
 {
-    stun::Message response(stun::Header(
-        stun::MessageClass::errorResponse,
-        stun::MethodType::bindingMethod,
-        "abra-cadabra"));
+    stun::Message response(
+        stun::Header(
+            stun::MessageClass::errorResponse,
+            stun::MethodType::bindingMethod,
+            "abra-cadabra"));
 
     // TODO: verify with RFC
-    response.newAttribute< stun::attrs::ErrorCode >(
-        404, "Method is not supported");    //TODO #akolesnikov replace 404 with constant
+    response.newAttribute<stun::attrs::ErrorCode>(
+        404,
+        "Method is not supported"); // TODO #akolesnikov replace 404 with constant
 
     Buffer serializedMessage;
     serializedMessage.reserve(100);
@@ -259,11 +294,9 @@ TEST(StunMessageSerialization, serialization3)
     Message checkMessage;
     parser.setMessage(&checkMessage);
     size_t bytesRead = 0;
-    ASSERT_EQ(
-        nx::network::server::ParserState::done,
-        parser.parse(serializedMessage, &bytesRead));
-    /*const auto attr =*/ checkMessage.getAttribute<stun::attrs::ErrorCode>();
-    //ASSERT_EQ(testData, attr->getBuffer());
+    ASSERT_EQ(nx::network::server::ParserState::done, parser.parse(serializedMessage, &bytesRead));
+    /*const auto attr =*/checkMessage.getAttribute<stun::attrs::ErrorCode>();
+    // ASSERT_EQ(testData, attr->getBuffer());
 }
 
 TEST(StunMessageSerialization, Authentification)
@@ -271,8 +304,8 @@ TEST(StunMessageSerialization, Authentification)
     std::string user("user"), key("key");
 
     Message request(Header(MessageClass::request, MethodType::bindingMethod));
-    //const nx::Buffer testData("sdfr234dfg");
-    //request.newAttribute<stun::extension::attrs::ServerId>(testData);
+    // const nx::Buffer testData("sdfr234dfg");
+    // request.newAttribute<stun::extension::attrs::ServerId>(testData);
     request.header.transactionId = nx::utils::fromHex(DEFAULT_TID);
     request.insertIntegrity(user, key);
 
@@ -287,8 +320,8 @@ TEST(StunMessageSerialization, Authentification)
         serializer.serialize(&serializedMessage, &serializedSize),
         nx::network::server::SerializerState::done);
 
-    const auto miAttr = request.getAttribute< attrs::MessageIntegrity >();
-    const auto nonceAttr = request.getAttribute< attrs::Nonce >();
+    const auto miAttr = request.getAttribute<attrs::MessageIntegrity>();
+    const auto nonceAttr = request.getAttribute<attrs::Nonce>();
     ASSERT_TRUE(miAttr);
     ASSERT_TRUE(nonceAttr);
 
@@ -306,8 +339,7 @@ TEST(StunMessageSerialization, Authentification)
 
 //-------------------------------------------------------------------------------------------------
 
-class StunMessageSerializer:
-    public ::testing::Test
+class StunMessageSerializer: public ::testing::Test
 {
 public:
     StunMessageSerializer()
@@ -323,10 +355,7 @@ public:
     }
 
 protected:
-    void givenEmptyOutputBuffer()
-    {
-        m_outputBuffer = nx::Buffer();
-    }
+    void givenEmptyOutputBuffer() { m_outputBuffer = nx::Buffer(); }
 
     std::uint32_t /*fingerprint*/ givenMessageWithFingerprint()
     {
@@ -336,10 +365,20 @@ protected:
         m_message.newAttribute<attrs::Unknown>(0x9002, "ua2val");
 
         const Buffer kMessageForFingerprint = nx::utils::fromHex(
-            Buffer("00B1" "0020" "2112A442"        // indication 3, length=24 (attrs) + 8 (fingerprint), magic cookie
-            ) + DEFAULT_TID
-            + Buffer("9001" "0006") + nx::utils::toUpper(nx::utils::toHex(Buffer("ua1val"))) + Buffer("0000")
-            + Buffer("9002" "0006") + nx::utils::toUpper(nx::utils::toHex(Buffer("ua2val"))) + Buffer("0000"));
+            Buffer(
+                "00B1"
+                "0020"
+                "2112A442" // indication 3, length=24 (attrs) + 8 (fingerprint), magic cookie
+                )
+            + DEFAULT_TID
+            + Buffer(
+                "9001"
+                "0006")
+            + nx::utils::toUpper(nx::utils::toHex(Buffer("ua1val"))) + Buffer("0000")
+            + Buffer(
+                "9002"
+                "0006")
+            + nx::utils::toUpper(nx::utils::toHex(Buffer("ua2val"))) + Buffer("0000"));
 
         boost::crc_32_type crc32;
         crc32.process_bytes(kMessageForFingerprint.data(), kMessageForFingerprint.size());
@@ -379,9 +418,7 @@ protected:
 
     void thenMessageSerializedSuccessfully()
     {
-        ASSERT_EQ(
-            nx::network::server::SerializerState::done,
-            m_prevSerializationResult);
+        ASSERT_EQ(nx::network::server::SerializerState::done, m_prevSerializationResult);
     }
 
     void andSerializedMessageEndsWith(const nx::Buffer& expected)
@@ -399,15 +436,13 @@ protected:
     {
         // Last 4 bytes MUST be fingerprint value.
         const auto expectedFingerprintBigEndian = htonl(expected);
-        andSerializedMessageEndsWith(nx::Buffer(
-            reinterpret_cast<const char*>(&expectedFingerprintBigEndian),
-            sizeof(expectedFingerprintBigEndian)));
+        andSerializedMessageEndsWith(
+            nx::Buffer(
+                reinterpret_cast<const char*>(&expectedFingerprintBigEndian),
+                sizeof(expectedFingerprintBigEndian)));
     }
 
-    void setAlwaysAddFingerprint(bool val)
-    {
-        m_alwaysAddFingerprint = val;
-    }
+    void setAlwaysAddFingerprint(bool val) { m_alwaysAddFingerprint = val; }
 
 private:
     Message m_message;

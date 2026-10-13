@@ -12,8 +12,7 @@
 
 namespace nx::network::server {
 
-class NX_NETWORK_API SimpleMessageServerConnection:
-    public network::aio::BasicPollable
+class NX_NETWORK_API SimpleMessageServerConnection: public network::aio::BasicPollable
 {
 public:
     detail::ConnectionStatistics connectionStatistics;
@@ -23,8 +22,7 @@ public:
         nx::Buffer request,
         nx::Buffer response);
 
-    void startReadingConnection(
-        std::optional<std::chrono::milliseconds> /*inactivityTimeout*/);
+    void startReadingConnection(std::optional<std::chrono::milliseconds> /*inactivityTimeout*/);
 
     void registerCloseHandler(
         nx::MoveOnlyFunc<void(SystemError::ErrorCode, bool /*connectionDestroyed*/)> handler);
@@ -45,17 +43,13 @@ private:
     std::vector<nx::MoveOnlyFunc<void(SystemError::ErrorCode, bool)>> m_connectionClosedHandlers;
     nx::utils::InterruptionFlag m_connectionFreedFlag;
 
-    void onDataRead(
-        SystemError::ErrorCode errorCode,
-        size_t bytesRead);
+    void onDataRead(SystemError::ErrorCode errorCode, size_t bytesRead);
 
     void scheduleMessageSend();
 
     void sendNextMessage();
 
-    void onDataSent(
-        SystemError::ErrorCode errorCode,
-        size_t bytesSent);
+    void onDataSent(SystemError::ErrorCode errorCode, size_t bytesSent);
 
     void triggerConnectionClosedEvent(SystemError::ErrorCode reason);
 };
@@ -79,20 +73,11 @@ public:
     {
     }
 
-    void setRequest(nx::Buffer message)
-    {
-        m_request.swap(message);
-    }
+    void setRequest(nx::Buffer message) { m_request.swap(message); }
 
-    void setResponse(nx::Buffer message)
-    {
-        m_response.swap(message);
-    }
+    void setResponse(nx::Buffer message) { m_response.swap(message); }
 
-    void setKeepConnection(bool val)
-    {
-        m_keepConnection = val;
-    }
+    void setKeepConnection(bool val) { m_keepConnection = val; }
 
 protected:
     virtual std::shared_ptr<SimpleMessageServerConnection> createConnection(

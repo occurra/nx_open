@@ -23,7 +23,9 @@ void migrateValue(QSettings* oldSettings, Property<T>& property, const QString& 
 
 template<typename T>
 void migrateSerializedValue(
-    QSettings* oldSettings, Property<T>& property, const QString& customName = {})
+    QSettings* oldSettings,
+    Property<T>& property,
+    const QString& customName = {})
 {
     if (property.exists())
         return;
@@ -33,8 +35,7 @@ void migrateSerializedValue(
         return;
 
     const auto serializedValue = oldSettings->value(name).toString();
-    const auto [value, result] = nx::reflect::json::deserialize<T>(
-        serializedValue.toStdString());
+    const auto [value, result] = nx::reflect::json::deserialize<T>(serializedValue.toStdString());
 
     if (result)
     {
@@ -42,15 +43,20 @@ void migrateSerializedValue(
     }
     else
     {
-        NX_WARNING(NX_SCOPE_TAG,
+        NX_WARNING(
+            NX_SCOPE_TAG,
             "Cannot deserialize JSON value from old settings: %1: %2. Error: %3",
-            name, serializedValue, result.errorDescription);
+            name,
+            serializedValue,
+            result.errorDescription);
     }
 }
 
 template<typename T>
 void migrateEnumValue(
-    QSettings* oldSettings, Property<T>& property, const QString& customName = {})
+    QSettings* oldSettings,
+    Property<T>& property,
+    const QString& customName = {})
 {
     if (property.exists())
         return;
@@ -69,8 +75,11 @@ void migrateEnumValue(
     }
     else
     {
-        NX_WARNING(NX_SCOPE_TAG, "Cannot deserialize enum value from old settings: %1: %2",
-            name, serializedValue);
+        NX_WARNING(
+            NX_SCOPE_TAG,
+            "Cannot deserialize enum value from old settings: %1: %2",
+            name,
+            serializedValue);
     }
 };
 

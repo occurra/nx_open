@@ -4,15 +4,15 @@
 
 #include <atomic>
 
-#include "logger_collection.h"
-
 #include <nx/utils/nx_utils_ini.h>
+
+#include "logger_collection.h"
 
 namespace nx::log {
 
-namespace detail {
+namespace detail { /*static*/
 
-/*static*/ bool LevelReducer::s_isEnabled = true;
+bool LevelReducer::s_isEnabled = true;
 
 } // namespace detail
 
@@ -41,9 +41,7 @@ bool setMainLogger(std::unique_ptr<AbstractLogger> logger)
     return true;
 }
 
-bool addLogger(
-    std::unique_ptr<AbstractLogger> logger,
-    bool writeLogHeader)
+bool addLogger(std::unique_ptr<AbstractLogger> logger, bool writeLogHeader)
 {
     if (s_isConfigurationLocked)
         return false;

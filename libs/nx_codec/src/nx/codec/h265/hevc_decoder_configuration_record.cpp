@@ -11,12 +11,14 @@ int sizeOfNaluVector(const std::vector<std::vector<uint8_t>>& nalUnits)
 {
     int result = nalUnits.size() * 3; // type filed + nal unit count field
     for (auto& unit: nalUnits)
-        result += unit.size() + 2/*nal unit size field*/;
+        result += unit.size() + 2 /*nal unit size field*/;
     return result;
 }
 
 void writeNaluVector(
-    nx::utils::BitStreamWriter& writer, const std::vector<std::vector<uint8_t>>& nalUnits, int type)
+    nx::utils::BitStreamWriter& writer,
+    const std::vector<std::vector<uint8_t>>& nalUnits,
+    int type)
 {
     writer.putBits(2, 0);
     writer.putBits(6, type);
@@ -28,7 +30,7 @@ void writeNaluVector(
     }
 }
 
-}
+} // namespace
 
 namespace nx::media::h265 {
 
@@ -46,7 +48,7 @@ bool HEVCDecoderConfigurationRecord::read(const uint8_t* data, int size)
         general_profile_idc = reader.getBits(5);
         general_profile_compatibility_flags = reader.getBits(32);
 
-        //TODO support 64 bit fields general_constraint_indicator_flags = reader.getBits(48);
+        // TODO support 64 bit fields general_constraint_indicator_flags = reader.getBits(48);
         general_constraint_indicator_flags = reader.getBits(32);
         general_constraint_indicator_flags |= (int64_t(reader.getBits(16)) << 32);
 
@@ -70,9 +72,9 @@ bool HEVCDecoderConfigurationRecord::read(const uint8_t* data, int size)
         for (int i = 0; i < numOfArrays; ++i)
         {
             reader.skipBits(2);
-            NalUnitType NAL_unit_type = (NalUnitType)reader.getBits(6);
+            NalUnitType NAL_unit_type = (NalUnitType) reader.getBits(6);
             int numNalus = reader.getBits(16);
-            for (int j = 0; j< numNalus; ++j)
+            for (int j = 0; j < numNalus; ++j)
             {
                 int nalUnitLength = reader.getBits(16);
                 std::vector<uint8_t> nalData(nalUnitLength);
@@ -125,9 +127,9 @@ bool HEVCDecoderConfigurationRecord::write(uint8_t* data, int size) const
         writer.putBits(1, temporalIdNested);
         writer.putBits(2, lengthSizeMinusOne);
         writer.putBits(8, sps.size() + pps.size() + vps.size());
-        writeNaluVector(writer, vps, (int)NalUnitType::vpsNut);
-        writeNaluVector(writer, sps, (int)NalUnitType::spsNut);
-        writeNaluVector(writer, pps, (int)NalUnitType::ppsNut);
+        writeNaluVector(writer, vps, (int) NalUnitType::vpsNut);
+        writeNaluVector(writer, sps, (int) NalUnitType::spsNut);
+        writeNaluVector(writer, pps, (int) NalUnitType::ppsNut);
         writer.flushBits();
     }
     catch (const nx::utils::BitStreamException&)
@@ -139,8 +141,7 @@ bool HEVCDecoderConfigurationRecord::write(uint8_t* data, int size) const
 
 int HEVCDecoderConfigurationRecord::size() const
 {
-    int result =
-        sizeof(configurationVersion) + // 1
+    int result = sizeof(configurationVersion) + // 1
         1 + /* general_profile_space(2) + general_tier_flag(1) + general_profile_idc(5) */
         sizeof(general_profile_compatibility_flags) + // 4
         6 + /* general_constraint_indicator_flags(48) */
@@ -151,7 +152,8 @@ int HEVCDecoderConfigurationRecord::size() const
         sizeof(bitDepthLumaMinus8) + // 1
         sizeof(bitDepthChromaMinus8) + // 1
         sizeof(avgFrameRate) + // 2
-        1 + /* constantFrameRate(2) + numTemporalLayers(3) + temporalIdNested(1) + lengthSizeMinusOne(2) */
+        1 + /* constantFrameRate(2) + numTemporalLayers(3) + temporalIdNested(1) +
+               lengthSizeMinusOne(2) */
         1; /* nalu arrays count field */
     result += sizeOfNaluVector(sps);
     result += sizeOfNaluVector(pps);

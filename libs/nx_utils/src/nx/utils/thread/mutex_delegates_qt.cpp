@@ -44,32 +44,40 @@ bool MutexQtDelegate::isRecursive() const
 //-------------------------------------------------------------------------------------------------
 
 ReadWriteLockQtDelegate::ReadWriteLockQtDelegate(ReadWriteLock::RecursionMode mode):
-    m_delegate((mode == ReadWriteLock::Recursive)
-        ? QReadWriteLock::Recursive
-        : QReadWriteLock::NonRecursive)
+    m_delegate(
+        (mode == ReadWriteLock::Recursive) ? QReadWriteLock::Recursive
+                                           : QReadWriteLock::NonRecursive)
 {
 }
 
 void ReadWriteLockQtDelegate::lockForRead(
-    const char* /*sourceFile*/, int /*sourceLine*/, int /*lockId*/)
+    const char* /*sourceFile*/,
+    int /*sourceLine*/,
+    int /*lockId*/)
 {
     m_delegate.lockForRead();
 }
 
 void ReadWriteLockQtDelegate::lockForWrite(
-    const char* /*sourceFile*/, int /*sourceLine*/, int /*lockId*/)
+    const char* /*sourceFile*/,
+    int /*sourceLine*/,
+    int /*lockId*/)
 {
     m_delegate.lockForWrite();
 }
 
 bool ReadWriteLockQtDelegate::tryLockForRead(
-    const char* /*sourceFile*/, int /*sourceLine*/, int /*lockId*/)
+    const char* /*sourceFile*/,
+    int /*sourceLine*/,
+    int /*lockId*/)
 {
     return m_delegate.tryLockForRead();
 }
 
 bool ReadWriteLockQtDelegate::tryLockForWrite(
-        const char* /*sourceFile*/, int /*sourceLine*/, int /*lockId*/)
+    const char* /*sourceFile*/,
+    int /*sourceLine*/,
+    int /*lockId*/)
 {
     return m_delegate.tryLockForWrite();
 }

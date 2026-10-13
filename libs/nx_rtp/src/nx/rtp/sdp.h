@@ -27,8 +27,7 @@ struct NX_RTP_API Sdp
         int channels = 0;
         bool operator==(const RtpMap& rhs)
         {
-            return codecName == rhs.codecName
-                && clockRate == rhs.clockRate
+            return codecName == rhs.codecName && clockRate == rhs.clockRate
                 && channels == rhs.channels;
         }
         QString toString() const;

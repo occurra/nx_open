@@ -14,7 +14,9 @@
 
 namespace nx {
 
-Url::Url() {}
+Url::Url()
+{
+}
 
 Url::Url(const QString& url):
     m_url(url)
@@ -67,7 +69,8 @@ Url& Url::operator=(const QByteArray& url)
     return (*this = QString::fromUtf8(url));
 }
 
-Url::Url(const QUrl& other): m_url(other)
+Url::Url(const QUrl& other):
+    m_url(other)
 {
 }
 
@@ -139,8 +142,8 @@ Url Url::fromUserInput(const QString& userInput)
 }
 
 Url Url::fromUserInput(
-    const QString &userInput,
-    const QString &workingDirectory,
+    const QString& userInput,
+    const QString& workingDirectory,
     QUrl::UserInputResolutionOptions options)
 {
     return Url(QUrl::fromUserInput(userInput, workingDirectory, options));
@@ -186,7 +189,7 @@ QString Url::scheme() const
     return m_url.scheme();
 }
 
-void Url::setAuthority(const QString &authority, QUrl::ParsingMode mode)
+void Url::setAuthority(const QString& authority, QUrl::ParsingMode mode)
 {
     m_url.setAuthority(authority, mode);
 }
@@ -196,7 +199,7 @@ QString Url::authority(QUrl::ComponentFormattingOptions options) const
     return m_url.authority(options);
 }
 
-void Url::setUserInfo(const QString &userInfo, QUrl::ParsingMode mode)
+void Url::setUserInfo(const QString& userInfo, QUrl::ParsingMode mode)
 {
     // NOTE: Make sure the QString is null, if it is empty.
     m_url.setUserInfo(userInfo.isEmpty() ? QString() : userInfo, mode);
@@ -228,7 +231,7 @@ QString Url::userName(QUrl::ComponentFormattingOptions options) const
     return m_url.userName(options);
 }
 
-void Url::setPassword(const QString &password, QUrl::ParsingMode mode)
+void Url::setPassword(const QString& password, QUrl::ParsingMode mode)
 {
     // NOTE: Make sure the QString is null, if it is empty.
     m_url.setPassword(password.isEmpty() ? QString() : password, mode);
@@ -321,12 +324,12 @@ bool Url::hasQuery() const
     return m_url.hasQuery();
 }
 
-void Url::setQuery(const QString &query, QUrl::ParsingMode mode)
+void Url::setQuery(const QString& query, QUrl::ParsingMode mode)
 {
     m_url.setQuery(query, mode);
 }
 
-void Url::setQuery(const QUrlQuery &query)
+void Url::setQuery(const QUrlQuery& query)
 {
     m_url.setQuery(query);
 }
@@ -393,7 +396,7 @@ QString Url::fragment(QUrl::ComponentFormattingOptions options) const
     return m_url.fragment(options);
 }
 
-void Url::setFragment(const QString &fragment, QUrl::ParsingMode mode)
+void Url::setFragment(const QString& fragment, QUrl::ParsingMode mode)
 {
     m_url.setFragment(fragment, mode);
 }
@@ -403,7 +406,7 @@ bool Url::isRelative() const
     return m_url.isRelative();
 }
 
-bool Url::isParentOf(const QUrl &url) const
+bool Url::isParentOf(const QUrl& url) const
 {
     return m_url.isParentOf(url);
 }
@@ -413,7 +416,7 @@ bool Url::isLocalFile() const
     return m_url.isLocalFile();
 }
 
-Url Url::fromLocalFile(const QString &localfile)
+Url Url::fromLocalFile(const QString& localfile)
 {
     return Url(QUrl::fromLocalFile(localfile));
 }
@@ -432,12 +435,12 @@ Url Url::cleanUrl() const
     return url;
 }
 
-bool Url::operator<(const Url &url) const
+bool Url::operator<(const Url& url) const
 {
     return m_url < url.m_url;
 }
 
-bool Url::operator==(const Url &url) const
+bool Url::operator==(const Url& url) const
 {
     return m_url == url.m_url;
 }
@@ -475,12 +478,14 @@ std::string Url::toPercentEncoding(
     std::string_view exclude,
     std::string_view include)
 {
-    // TODO: #akolesnikov This function can be optimized to contain 1 allocation instead of at least 4.
+    // TODO: #akolesnikov This function can be optimized to contain 1 allocation instead of at
+    // least 4.
 
     return toPercentEncoding(
-        QString::fromUtf8(str.data(), str.size()),
-        QByteArray::fromRawData(exclude.data(), exclude.size()),
-        QByteArray::fromRawData(include.data(), include.size())).toStdString();
+               QString::fromUtf8(str.data(), str.size()),
+               QByteArray::fromRawData(exclude.data(), exclude.size()),
+               QByteArray::fromRawData(include.data(), include.size()))
+        .toStdString();
 }
 
 namespace utils::url {
@@ -500,7 +505,7 @@ bool equal(const nx::Url& lhs, const nx::Url& rhs, ComparisonFlags flags)
         && (!flags.testFlag(ComparisonFlag::Query) || lhs.query() == rhs.query());
 }
 
-nx::Url parseUrlFields(const QString &urlStr, QString scheme)
+nx::Url parseUrlFields(const QString& urlStr, QString scheme)
 {
     Url result;
 
@@ -545,7 +550,7 @@ QString hidePassword(nx::Url url)
     if (url.isValid())
     {
         QUrlQuery resultQuery;
-        for (const auto& p : QUrlQuery(url.query()).queryItems())
+        for (const auto& p: QUrlQuery(url.query()).queryItems())
         {
             const auto percentDecoded = Url::fromPercentEncoding(p.second.toUtf8());
             resultQuery.addQueryItem(p.first, hidePassword(percentDecoded));

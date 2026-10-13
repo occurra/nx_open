@@ -37,7 +37,11 @@ template<typename Matcher, typename T>
 class Visitor: public GenericVisitor<Visitor<Matcher, T>>
 {
 public:
-    Visitor(T* data, const Filter& filter): m_data{data}, m_filter{filter} {}
+    Visitor(T* data, const Filter& filter):
+        m_data{data},
+        m_filter{filter}
+    {
+    }
 
     template<typename WrappedField>
     void visitField(const WrappedField& field)
@@ -52,8 +56,13 @@ public:
         }
 
         auto name = field.name();
-        auto next = std::find_if(m_filter.fields.begin(), m_filter.fields.end(),
-            [name](auto f) { return f.name == name; });
+        auto next = std::find_if(
+            m_filter.fields.begin(),
+            m_filter.fields.end(),
+            [name](auto f)
+            {
+                return f.name == name;
+            });
 
         if (next == m_filter.fields.end())
             return;
@@ -75,10 +84,16 @@ public:
 
 private:
     template<typename F, typename = void>
-    struct HasRef { static constexpr bool value = false; };
+    struct HasRef
+    {
+        static constexpr bool value = false;
+    };
 
     template<typename F>
-    struct HasRef<F, detail::void_t<decltype(&F::ref)>> { static constexpr bool value = true; };
+    struct HasRef<F, detail::void_t<decltype(&F::ref)>>
+    {
+        static constexpr bool value = true;
+    };
 
 private:
     T* m_data;
@@ -117,7 +132,11 @@ bool filter(T* data, const Filter& filter_)
     {
         bool r = false;
         return std::visit(
-            [&r, &filter_](auto& v) { return r || filter<Matcher>(&v, filter_); }, *data);
+            [&r, &filter_](auto& v)
+            {
+                return r || filter<Matcher>(&v, filter_);
+            },
+            *data);
     }
     else if constexpr (IsInstrumentedV<T>)
     {
@@ -132,12 +151,21 @@ bool filter(T* data, const Filter& filter_)
         {
             return std::ranges::all_of(
                 *data,
-                [&filter_](auto& v) { return filter<Matcher>(&v, filter_); });
+                [&filter_](auto& v)
+                {
+                    return filter<Matcher>(&v, filter_);
+                });
         }
-        else if constexpr (IsSequenceContainerV<T> || IsSetContainerV<T> || IsUnorderedSetContainerV<T>)
+        else if constexpr (
+            IsSequenceContainerV<T> || IsSetContainerV<T> || IsUnorderedSetContainerV<T>)
         {
             using std::erase_if; //< To use both std and QT erase_if.
-            erase_if(*data, [&filter_](auto& v) { return filter<Matcher>(&v, filter_); });
+            erase_if(
+                *data,
+                [&filter_](auto& v)
+                {
+                    return filter<Matcher>(&v, filter_);
+                });
             return data->empty();
         }
         else if constexpr (IsAssociativeContainerV<T> || IsUnorderedAssociativeContainerV<T>)
@@ -147,7 +175,11 @@ bool filter(T* data, const Filter& filter_)
                 if (field.name == "*")
                 {
                     std::erase_if(
-                        *data, [&field](auto& it) { return filter<Matcher>(&it.second, field); });
+                        *data,
+                        [&field](auto& it)
+                        {
+                            return filter<Matcher>(&it.second, field);
+                        });
                     if (data->empty())
                         return true;
                 }

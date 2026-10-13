@@ -26,7 +26,8 @@ class NX_VMS_COMMON_API QnFfmpegVideoDecoder: public QnAbstractVideoDecoder
 {
 public:
     /*!
-        \param swDecoderCount Atomically incremented in constructor and atomically decremented in destructor
+        \param swDecoderCount Atomically incremented in constructor and atomically decremented in
+       destructor
     */
     QnFfmpegVideoDecoder(
         const DecoderConfig& config,
@@ -35,15 +36,14 @@ public:
     QnFfmpegVideoDecoder(const QnFfmpegVideoDecoder&) = delete;
     QnFfmpegVideoDecoder& operator=(const QnFfmpegVideoDecoder&) = delete;
     ~QnFfmpegVideoDecoder();
-    bool decode(
-        const QnConstCompressedVideoDataPtr& data,
-        CLVideoDecoderOutputPtr* const outFrame) override;
+    bool decode(const QnConstCompressedVideoDataPtr& data, CLVideoDecoderOutputPtr* const outFrame)
+        override;
 
     virtual void setLightCpuMode(DecodeMode val) override;
 
     AVCodecContext* getContext() const;
     bool hardwareDecoder() const override;
-    virtual int getWidth() const override { return m_context->width;  }
+    virtual int getWidth() const override { return m_context->width; }
     virtual int getHeight() const override { return m_context->height; }
     virtual AVCodecID codec() const override { return m_context->codec_id; }
     double getSampleAspectRatio() const override;
@@ -56,16 +56,19 @@ private:
     void determineOptimalThreadType(const QnConstCompressedVideoDataPtr& data);
     bool openDecoder(const QnConstCompressedVideoDataPtr& data);
     bool initFFmpegDecoder();
-    void processNewResolutionIfChanged(const QnConstCompressedVideoDataPtr& data, int width, int height);
+    void processNewResolutionIfChanged(
+        const QnConstCompressedVideoDataPtr& data,
+        int width,
+        int height);
     int decodeVideo(
-        AVCodecContext *avctx,
-        AVFrame *picture,
-        int *got_picture_ptr,
-        const AVPacket *avpkt);
+        AVCodecContext* avctx,
+        AVFrame* picture,
+        int* got_picture_ptr,
+        const AVPacket* avpkt);
     void setMultiThreadDecoding(bool value);
 
 private:
-    AVCodecContext *m_context;
+    AVCodecContext* m_context;
 
     AVCodecID m_codecId = AV_CODEC_ID_NONE;
     QnAbstractVideoDecoder::DecodeMode m_decodeMode;
@@ -89,7 +92,7 @@ private:
     nx::metric::Storage* m_metrics = nullptr;
     int m_lastDecodeResult = 0;
 
-    QnAbstractMediaData::MediaFlags m_lastFlags {};
+    QnAbstractMediaData::MediaFlags m_lastFlags{};
     int m_lastChannelNumber = 0;
     const DecoderConfig m_config;
     bool m_opened = false;

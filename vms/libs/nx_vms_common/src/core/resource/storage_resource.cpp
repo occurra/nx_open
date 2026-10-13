@@ -19,10 +19,10 @@ QnStorageResource::~QnStorageResource()
 {
 }
 
-QnMediaServerResourcePtr QnStorageResource::getParentServer() const {
+QnMediaServerResourcePtr QnStorageResource::getParentServer() const
+{
     return getParentResource().dynamicCast<QnMediaServerResource>();
 }
-
 
 void QnStorageResource::setSpaceLimit(qint64 value)
 {
@@ -70,7 +70,8 @@ int QnStorageResource::getMaxStoreTime() const
     return m_maxStoreTime;
 }
 
-void QnStorageResource::setUsedForWriting(bool isUsedForWriting) {
+void QnStorageResource::setUsedForWriting(bool isUsedForWriting)
+{
     {
         NX_MUTEX_LOCKER lock(&m_mutex);
         if (m_usedForWriting == isUsedForWriting)
@@ -90,7 +91,7 @@ qint64 QnStorageResource::bitrateBps() const
 {
     float rez = 0;
     NX_MUTEX_LOCKER lock(&m_bitrateMtx);
-    for(const QnAbstractMediaStreamDataProvider* provider: m_providers)
+    for (const QnAbstractMediaStreamDataProvider* provider: m_providers)
         rez += provider->bitrateBitsPerSecond();
     return rez;
 }
@@ -135,10 +136,14 @@ QString QnStorageResource::urlWithoutCredentials(const QString& url)
 void QnStorageResource::updateInternal(const QnResourcePtr& source, NotifierList& notifiers)
 {
     NX_ASSERT(
-        source->getParentId() == getParentId() && urlWithoutCredentials(source->getUrl()) == urlWithoutCredentials(),
+        source->getParentId() == getParentId()
+            && urlWithoutCredentials(source->getUrl()) == urlWithoutCredentials(),
         "Abnormal storage resource update. This parentId: %1, other parentId: %2"
         "This url: %3, other url: %4",
-        getParentId(), source->getParentId(), getUrl(), source->getUrl());
+        getParentId(),
+        source->getParentId(),
+        getUrl(),
+        source->getUrl());
 
     base_type::updateInternal(source, notifiers);
     QnStorageResource* localOther = dynamic_cast<QnStorageResource*>(source.data());
@@ -147,19 +152,28 @@ void QnStorageResource::updateInternal(const QnResourcePtr& source, NotifierList
         if (m_usedForWriting != localOther->m_usedForWriting)
         {
             m_usedForWriting = localOther->m_usedForWriting;
-            notifiers << [r = toSharedPointer(this)]{emit r->isUsedForWritingChanged(r);};
+            notifiers << [r = toSharedPointer(this)]
+            {
+                emit r->isUsedForWritingChanged(r);
+            };
         }
 
         if (m_isBackup != localOther->m_isBackup)
         {
             m_isBackup = localOther->m_isBackup;
-            notifiers << [r = toSharedPointer(this)]{ emit r->isBackupChanged(r); };
+            notifiers << [r = toSharedPointer(this)]
+            {
+                emit r->isBackupChanged(r);
+            };
         }
 
         if (m_spaceLimit != localOther->m_spaceLimit)
         {
             m_spaceLimit = localOther->m_spaceLimit;
-            notifiers << [r = toSharedPointer(this)](){ emit r->spaceLimitChanged(r); };
+            notifiers << [r = toSharedPointer(this)]()
+            {
+                emit r->spaceLimitChanged(r);
+            };
         }
 
         m_maxStoreTime = localOther->m_maxStoreTime;
@@ -187,19 +201,19 @@ bool QnStorageResource::isExternal() const
 {
     QString storageUrl = getUrl();
     return storageUrl.trimmed().startsWith("\\\\")
-        || QUrl(storageUrl).path().mid(1).startsWith("\\\\")
-        || storageUrl.indexOf("://") != -1;
+        || QUrl(storageUrl).path().mid(1).startsWith("\\\\") || storageUrl.indexOf("://") != -1;
 }
 
-QString QnStorageResource::toNativeDirPath(const QString &dirPath)
+QString QnStorageResource::toNativeDirPath(const QString& dirPath)
 {
     QString result = QDir::toNativeSeparators(dirPath);
-    if(!result.endsWith(QDir::separator()))
+    if (!result.endsWith(QDir::separator()))
         result.append(QDir::separator());
     return result;
 }
 
-void QnStorageResource::setBackup(bool value) {
+void QnStorageResource::setBackup(bool value)
+{
     {
         NX_MUTEX_LOCKER lk(&m_mutex);
         if (m_isBackup == value)
@@ -260,11 +274,11 @@ nx::vms::api::StoragePersistentFlags QnStorageResource::persistentStatusFlags() 
 
 void QnStorageResource::setStorageArchiveMode(nx::vms::api::StorageArchiveMode value)
 {
-    setProperty(ResourcePropertyKey::kStorageArchiveMode,
+    setProperty(
+        ResourcePropertyKey::kStorageArchiveMode,
         value == kStorageArchiveModeDefaultValue
             ? QString()
-            : QString::fromStdString(nx::reflect::toString(value))
-    );
+            : QString::fromStdString(nx::reflect::toString(value)));
 }
 
 nx::vms::api::StorageArchiveMode QnStorageResource::storageArchiveMode() const

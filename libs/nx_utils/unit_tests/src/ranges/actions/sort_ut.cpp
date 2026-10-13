@@ -78,8 +78,7 @@ TEST(ranges, sort_moveonly_projection)
         nx::make_vector<MoveOnly>(MoveOnly{3}, MoveOnly{1}, MoveOnly{2}, MoveOnly{2});
 
     const std::vector keys = nx::actions::sort(std::move(input), {}, &MoveOnly::key)
-        | std::views::transform(&MoveOnly::key)
-        | nx::ranges::to<std::vector>();
+        | std::views::transform(&MoveOnly::key) | nx::ranges::to<std::vector>();
 
     EXPECT_EQ(keys, (std::vector{1, 2, 2, 3}));
 }

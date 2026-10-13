@@ -11,8 +11,7 @@ namespace nx {
 namespace network {
 namespace test {
 
-class ProtocolDetector:
-    public ::testing::Test
+class ProtocolDetector: public ::testing::Test
 {
 public:
     ProtocolDetector()
@@ -34,14 +33,10 @@ protected:
         const auto& protocolData = nx::utils::random::choice(m_protocols);
         m_expectedProtocolId = std::get<1>(protocolData);
 
-        m_matchResult = m_protocolDetector.match(
-            std::get<0>(protocolData));
+        m_matchResult = m_protocolDetector.match(std::get<0>(protocolData));
     }
 
-    void whenMatchPrefixOfKnownProtocol()
-    {
-        m_matchResult = m_protocolDetector.match("a");
-    }
+    void whenMatchPrefixOfKnownProtocol() { m_matchResult = m_protocolDetector.match("a"); }
 
     void whenMatchLargeBufferOfUnknownProtocol()
     {

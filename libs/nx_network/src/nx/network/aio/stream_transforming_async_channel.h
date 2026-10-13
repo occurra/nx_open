@@ -38,8 +38,7 @@ using UserIoHandler = IoCompletionHandler;
  *   invoking underlying input/output. Otherwise, behavior is undefined.
  *   Effectively, that means conversion cannot change size of data.
  */
-class NX_NETWORK_API StreamTransformingAsyncChannel:
-    public AbstractAsyncChannel
+class NX_NETWORK_API StreamTransformingAsyncChannel: public AbstractAsyncChannel
 {
     using base_type = AbstractAsyncChannel;
 
@@ -139,15 +138,14 @@ private:
     virtual void stopWhileInAioThread() override;
 
     void tryToCompleteUserTasks();
-    void tryToCompleteUserTasks(
-        const std::deque<std::shared_ptr<UserTask>>& userTaskQueue);
+    void tryToCompleteUserTasks(const std::deque<std::shared_ptr<UserTask>>& userTaskQueue);
     void processTask(UserTask* task);
     void processReadTask(ReadTask* task);
     void processWriteTask(WriteTask* task);
 
     template<typename TransformerFunc>
-    std::tuple<SystemError::ErrorCode, int /*bytesTransferred*/>
-        invokeConverter(TransformerFunc func);
+    std::tuple<SystemError::ErrorCode, int /*bytesTransferred*/> invokeConverter(
+        TransformerFunc func);
 
     void issueIoOperationsScheduledByConverter();
 
@@ -157,10 +155,12 @@ private:
     int writeRawBytes(const void* data, size_t count);
 
     void onRawDataWritten(SystemError::ErrorCode, std::size_t);
-    template<typename Range> std::deque<RawSendContext> takeRawSendTasks(Range range);
+    template<typename Range>
+    std::deque<RawSendContext> takeRawSendTasks(Range range);
 
     /**
-     * @return False if was interrupted. All further processing should be stopped until the next event.
+     * @return False if was interrupted. All further processing should be stopped until the next
+     * event.
      */
     bool completeRawSendTasks(
         std::deque<RawSendContext> completedRawSendTasks,

@@ -19,7 +19,10 @@ namespace nx::vms::api {
 struct NX_VMS_API ResolutionData
 {
     template<typename... Args>
-    ResolutionData(Args&&... args): size(std::forward<Args>(args)...) {}
+    ResolutionData(Args&&... args):
+        size(std::forward<Args>(args)...)
+    {
+    }
 
     operator QSize() const { return size; }
     operator QSize&() { return size; }
@@ -35,9 +38,9 @@ struct NX_VMS_API ResolutionData
     {
         const auto lhsSquare = size.width() * size.height();
         const auto rhsSquare = rhs.size.width() * rhs.size.height();
-        return lhsSquare != rhsSquare
-            ? lhsSquare < rhsSquare
-            : std::max(size.width(), size.height()) < std::max(rhs.size.width(), rhs.size.height());
+        return lhsSquare != rhsSquare ? lhsSquare < rhsSquare
+                                      : std::max(size.width(), size.height())
+                < std::max(rhs.size.width(), rhs.size.height());
     }
 
     /**%apidoc[unused] */

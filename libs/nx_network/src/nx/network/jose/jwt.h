@@ -17,8 +17,7 @@ static constexpr char kJwtTokenType[] = "JWT";
 /**
  * JWT claims set. Field names follow the claim names used in the RFC 7519.
  */
-class NX_NETWORK_API ClaimSet:
-    public nx::reflect::json::Object
+class NX_NETWORK_API ClaimSet: public nx::reflect::json::Object
 {
 public:
     std::optional<std::string> iss() const;

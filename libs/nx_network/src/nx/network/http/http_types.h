@@ -60,8 +60,7 @@ using HttpHeaders = std::multimap<std::string, std::string, nx::utils::ci_less>;
 using HttpHeader = HttpHeaders::value_type;
 
 /** map<name, value>. */
-class RequestPathParams:
-    public nx::utils::stree::StringAttrDict
+class RequestPathParams: public nx::utils::stree::StringAttrDict
 {
     using base_type = nx::utils::stree::StringAttrDict;
 
@@ -78,9 +77,8 @@ public:
 /**
  * This is convenient method for simplify transition from QHttp.
  * @return Value of header headerName (if found), empty string otherwise.
-*/
-NX_NETWORK_API std::string getHeaderValue(
-    const HttpHeaders& headers, std::string_view headerName);
+ */
+NX_NETWORK_API std::string getHeaderValue(const HttpHeaders& headers, std::string_view headerName);
 
 /**
  * @return false if requested header was not found.
@@ -95,22 +93,20 @@ NX_NETWORK_API bool readHeader(
  * @return iterator of added element.
  */
 NX_NETWORK_API HttpHeaders::iterator insertOrReplaceHeader(
-    HttpHeaders* const headers, const HttpHeader& newHeader);
+    HttpHeaders* const headers,
+    const HttpHeader& newHeader);
 
 template<typename HeaderType>
-HttpHeaders::iterator insertOrReplaceHeader(
-    HttpHeaders* const headers, const HeaderType& header)
+HttpHeaders::iterator insertOrReplaceHeader(HttpHeaders* const headers, const HeaderType& header)
 {
-    return insertOrReplaceHeader(
-        headers,
-        HttpHeader(HeaderType::NAME, header.toString()));
+    return insertOrReplaceHeader(headers, HttpHeader(HeaderType::NAME, header.toString()));
 }
 
 NX_NETWORK_API HttpHeaders::iterator insertHeader(
-    HttpHeaders* const headers, HttpHeader newHeader);
+    HttpHeaders* const headers,
+    HttpHeader newHeader);
 
-NX_NETWORK_API void removeHeader(
-    HttpHeaders* const headers, const std::string& name);
+NX_NETWORK_API void removeHeader(HttpHeaders* const headers, const std::string& name);
 
 /**
  * Adds CORS to headers. supportedOrigins must be equal to '*' or a comma separated origins
@@ -147,11 +143,10 @@ bool parseRequestOrResponse(
 
     enum ParseState
     {
-        readingMessageLine, //request line or status line
+        readingMessageLine, // request line or status line
         readingHeaders,
         readingMessageBody
-    }
-    state = readingMessageLine;
+    } state = readingMessageLine;
 
     for (size_t curPos = 0; curPos < data.size(); /*no increment*/)
     {
@@ -161,7 +156,7 @@ bool parseRequestOrResponse(
             break;
         }
 
-        //breaking into lines
+        // breaking into lines
         const auto lineSepPos = data.find_first_of("\r\n", curPos);
         const ConstBufferRefType currentLine = data.substr(
             curPos,
@@ -201,11 +196,11 @@ bool parseRequestOrResponse(
         }
 
         if (lineSepPos == ConstBufferRefType::npos)
-            break;  //no more data to parse
+            break; // no more data to parse
         curPos = lineSepPos;
-        ++curPos;   //skipping separator
+        ++curPos; // skipping separator
         if (curPos < data.size() && (data[lineSepPos] == '\r' && data[curPos] == '\n'))
-            ++curPos;   //skipping complex separator (\r\n)
+            ++curPos; // skipping complex separator (\r\n)
     }
 
     return true;
@@ -247,34 +242,37 @@ public:
     bool operator==(const Method& right) const;
 
     inline bool operator==(const char* right) const
-    { return nx::utils::stricmp(m_value, right) == 0; }
+    {
+        return nx::utils::stricmp(m_value, right) == 0;
+    }
 
     inline bool operator==(const std::string& right) const
-    { return nx::utils::stricmp(m_value, right) == 0; }
+    {
+        return nx::utils::stricmp(m_value, right) == 0;
+    }
 
     inline bool operator==(std::string_view right) const
-    { return nx::utils::stricmp(m_value, right) == 0; }
+    {
+        return nx::utils::stricmp(m_value, right) == 0;
+    }
 
     const std::string& toString() const;
 
     static bool isKnown(std::string_view str);
 
     static bool isMessageBodyAllowed(const Method& method);
-    bool isMessageBodyAllowed() const
-    {
-        return isMessageBodyAllowed(*this);
-    }
+    bool isMessageBodyAllowed() const { return isMessageBodyAllowed(*this); }
 
-    static bool isMessageBodyAllowedInResponse(
-        const Method& method,
-        StatusCode::Value statusCode);
+    static bool isMessageBodyAllowedInResponse(const Method& method, StatusCode::Value statusCode);
 
 private:
     std::string m_value;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Method& method)
-{ return os << method.toString(); }
+{
+    return os << method.toString();
+}
 
 //-------------------------------------------------------------------------------------------------
 
@@ -294,14 +292,14 @@ public:
 
     bool operator==(const MimeProtoVersion& right) const = default;
 
-    friend bool operator < (const MimeProtoVersion& lhs, const MimeProtoVersion& rhs)
+    friend bool operator<(const MimeProtoVersion& lhs, const MimeProtoVersion& rhs)
     {
         return lhs.version < rhs.version;
     }
 };
 
-static const MimeProtoVersion http_1_0 = { "HTTP", "1.0" };
-static const MimeProtoVersion http_1_1 = { "HTTP", "1.1" };
+static const MimeProtoVersion http_1_0 = {"HTTP", "1.0"};
+static const MimeProtoVersion http_1_1 = {"HTTP", "1.1"};
 
 class NX_NETWORK_API RequestLine
 {
@@ -318,20 +316,21 @@ public:
     void serialize(nx::Buffer* dstBuffer) const;
     std::string toString() const;
 
-    enum class EncodeUrlParts { all, authority };
+    enum class EncodeUrlParts
+    {
+        all,
+        authority
+    };
 
     /**
      * Encodes the URL before putting it into the HTTP request.
      */
-    std::string encodeUrl(
-        const nx::Url& url, EncodeUrlParts parts = EncodeUrlParts::all) const;
+    std::string encodeUrl(const nx::Url& url, EncodeUrlParts parts = EncodeUrlParts::all) const;
 };
 
 inline bool operator==(const RequestLine& left, const RequestLine& right)
 {
-    return left.method == right.method
-        && left.url == right.url
-        && left.version == right.version;
+    return left.method == right.method && left.url == right.url && left.version == right.version;
 }
 
 class NX_NETWORK_API StatusLine
@@ -355,8 +354,7 @@ public:
 
 inline bool operator==(const StatusLine& left, const StatusLine& right)
 {
-    return left.version == right.version
-        && left.statusCode == right.statusCode
+    return left.version == right.version && left.statusCode == right.statusCode
         && left.reasonPhrase == right.reasonPhrase;
 }
 
@@ -399,8 +397,7 @@ public:
 
 inline bool operator==(const Request& left, const Request& right)
 {
-    return left.requestLine == right.requestLine
-        && left.headers == right.headers
+    return left.requestLine == right.requestLine && left.headers == right.headers
         && left.messageBody == right.messageBody;
 }
 
@@ -422,23 +419,24 @@ public:
     void serialize(nx::Buffer* dstBuffer) const;
 
     /** Appends serialized multipart data block to dstBuffer. */
-    void serializeMultipartResponse(
-        const ConstBufferRefType& boundary,
-        nx::Buffer* dstBuffer) const;
+    void serializeMultipartResponse(const ConstBufferRefType& boundary, nx::Buffer* dstBuffer)
+        const;
 
     std::string toString() const;
     std::string toMultipartString(const ConstBufferRefType& boundary) const;
 
     void setCookie(
-        const std::string& name, const std::string& value,
-        const std::string& path = "/", bool secure = true);
+        const std::string& name,
+        const std::string& value,
+        const std::string& path = "/",
+        bool secure = true);
 
     void setDeletedCookie(const std::string& name);
     std::map<std::string, std::string> getCookies() const;
 };
 
-NX_NETWORK_API HttpHeader deletedCookieHeader(
-    const std::string& name, const std::string& path = "/");
+NX_NETWORK_API HttpHeader
+    deletedCookieHeader(const std::string& name, const std::string& path = "/");
 
 NX_NETWORK_API HttpHeader cookieHeader(
     const std::string& name,
@@ -449,8 +447,7 @@ NX_NETWORK_API HttpHeader cookieHeader(
 
 inline bool operator==(const Response& left, const Response& right)
 {
-    return left.statusLine == right.statusLine
-        && left.headers == right.headers
+    return left.statusLine == right.statusLine && left.headers == right.headers
         && left.messageBody == right.messageBody;
 }
 
@@ -461,8 +458,7 @@ inline std::ostream& operator<<(std::ostream& os, const Response& response)
 
 NX_NETWORK_API bool isMessageBodyPresent(const Response& response);
 
-class NX_NETWORK_API RtspResponse:
-    public Response
+class NX_NETWORK_API RtspResponse: public Response
 {
 public:
     bool parse(const ConstBufferRefType& data);
@@ -515,9 +511,8 @@ public:
 
     const MimeProtoVersion& version() const
     {
-        return type == MessageType::request
-            ? request->requestLine.version
-            : response->statusLine.version;
+        return type == MessageType::request ? request->requestLine.version
+                                            : response->statusLine.version;
     }
 
     void setBody(nx::Buffer body);
@@ -559,8 +554,7 @@ static constexpr std::array<std::string_view, 8> kNonRepeatableHeaders = {
     kRequestId,
     kAmznTraceId};
 
-
-//!Http authentication scheme enumeration
+//! Http authentication scheme enumeration
 namespace AuthScheme {
 
 enum Value
@@ -589,8 +583,7 @@ public:
 };
 
 /** rfc2617, section 2. */
-class NX_NETWORK_API BasicCredentials:
-    public UserCredentials
+class NX_NETWORK_API BasicCredentials: public UserCredentials
 {
 public:
     bool parse(std::string_view str);
@@ -598,8 +591,7 @@ public:
 };
 
 /** rfc2617, section 3.2.2. */
-class NX_NETWORK_API DigestCredentials:
-    public UserCredentials
+class NX_NETWORK_API DigestCredentials: public UserCredentials
 {
 public:
     std::map<std::string, std::string> params;
@@ -609,8 +601,7 @@ public:
 };
 
 /** rfc6750, section 2.1. */
-class NX_NETWORK_API BearerCredentials:
-    public UserCredentials
+class NX_NETWORK_API BearerCredentials: public UserCredentials
 {
 public:
     std::string token;
@@ -660,15 +651,13 @@ static constexpr char kProxyAuthorization[] = "Proxy-Authorization";
 /**
  * Convenient class for generating Authorization header with Basic authentication method.
  */
-class NX_NETWORK_API BasicAuthorization:
-    public Authorization
+class NX_NETWORK_API BasicAuthorization: public Authorization
 {
 public:
     BasicAuthorization(const std::string& userName, const std::string& userPassword);
 };
 
-class NX_NETWORK_API DigestAuthorization:
-    public Authorization
+class NX_NETWORK_API DigestAuthorization: public Authorization
 {
 public:
     DigestAuthorization();
@@ -678,8 +667,7 @@ public:
     void addParam(const std::string& name, const std::string& value);
 };
 
-class NX_NETWORK_API BearerAuthorization:
-    public Authorization
+class NX_NETWORK_API BearerAuthorization: public Authorization
 {
 public:
     BearerAuthorization(const std::string& token);
@@ -724,9 +712,7 @@ public:
      * @return true if encodingName is present in header and
      *   returns corresponding q value in *q (if not null).
      */
-    bool encodingIsAllowed(
-        const std::string& encodingName,
-        double* q = nullptr) const;
+    bool encodingIsAllowed(const std::string& encodingName, double* q = nullptr) const;
 
     const std::map<std::string, double>& allEncodings() const;
 
@@ -785,7 +771,7 @@ public:
 class NX_NETWORK_API ContentRange
 {
 public:
-    //!By default, bytes
+    //! By default, bytes
     std::string unitName;
     std::optional<quint64> instanceLength;
     RangeSpec rangeSpec;
@@ -828,9 +814,7 @@ public:
     std::optional<int> max;
 
     KeepAlive() = default;
-    KeepAlive(
-        std::chrono::seconds _timeout,
-        std::optional<int> _max = std::nullopt);
+    KeepAlive(std::chrono::seconds _timeout, std::optional<int> _max = std::nullopt);
 
     bool parse(std::string_view str);
     std::string toString() const;
@@ -967,8 +951,7 @@ struct NX_NETWORK_API ContentType
      * E.g., QByteArray.
      */
     template<nx::ToStringViewConvertible String>
-    ContentType(const String& str)
-        :
+    ContentType(const String& str):
         ContentType(std::string_view(str.data(), (std::size_t) str.size()))
     {
     }

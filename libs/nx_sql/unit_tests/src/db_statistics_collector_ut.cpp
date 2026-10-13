@@ -2,16 +2,14 @@
 
 #include <gtest/gtest.h>
 
+#include <nx/sql/db_statistics_collector.h>
+#include <nx/sql/detail/query_queue.h>
 #include <nx/utils/random.h>
 #include <nx/utils/time.h>
 
-#include <nx/sql/db_statistics_collector.h>
-#include <nx/sql/detail/query_queue.h>
-
 namespace nx::sql::test {
 
-class DbStatisticsCollector:
-    public ::testing::Test
+class DbStatisticsCollector: public ::testing::Test
 {
 public:
     DbStatisticsCollector():
@@ -20,10 +18,7 @@ public:
     }
 
 protected:
-    std::chrono::milliseconds statisticsAggregationPeriod() const
-    {
-        return m_period;
-    }
+    std::chrono::milliseconds statisticsAggregationPeriod() const { return m_period; }
 
     void recordQueryExecutionTaskWithWaitForExecutionTime(std::chrono::milliseconds val)
     {
@@ -135,7 +130,7 @@ protected:
     {
         const auto actual = m_statisticsCollector.getStatistics().queries;
 
-        for (const auto& [query, expectedStatistics] : expected)
+        for (const auto& [query, expectedStatistics]: expected)
         {
             ASSERT_TRUE(actual.contains(query));
             auto actualStatistics = actual.find(query)->second;
@@ -152,8 +147,7 @@ private:
     std::atomic<std::size_t> m_threadPoolSize{0};
     std::chrono::milliseconds m_period = std::chrono::milliseconds(100);
     StatisticsCollector m_statisticsCollector;
-    nx::utils::test::ScopedTimeShift m_timeShift{
-        nx::utils::test::ClockType::steady};
+    nx::utils::test::ScopedTimeShift m_timeShift{nx::utils::test::ClockType::steady};
     std::deque<QueryExecutionTaskRecord> m_records;
 
     void assertTimeMinMaxAverageEqualTo(
@@ -250,19 +244,15 @@ TEST_F(DbStatisticsCollector, queries_statistics)
     recordQueryWithExecutionTime(queryTwo, one);
     recordQueryWithExecutionTime(queryTwo, two);
 
-    QueryStatistics expectedQueryStatistics {
+    QueryStatistics expectedQueryStatistics{
         .count = 2,
-        .requestExecutionTimes = {
-            .min = std::min(one, two),
-            .max = std::max(one, two),
-            .average = (one + two) / 2
-        },
+        .requestExecutionTimes =
+            {.min = std::min(one, two), .max = std::max(one, two), .average = (one + two) / 2},
     };
 
     std::map<std::string, QueryStatistics> expected = {
         {queryOne, expectedQueryStatistics},
-        {queryTwo, expectedQueryStatistics}
-    };
+        {queryTwo, expectedQueryStatistics}};
 
     assertQueryStatisticsEqual(expected);
 }
@@ -306,11 +296,8 @@ TEST_F(DbStatisticsCollector, queries_partially_expired_values_one)
 
     QueryStatistics expectedQueryStatistics{
         .count = 2,
-        .requestExecutionTimes = {
-            .min = std::min(one, two),
-            .max = std::max(one, two),
-            .average = (one + two) / 2
-        },
+        .requestExecutionTimes =
+            {.min = std::min(one, two), .max = std::max(one, two), .average = (one + two) / 2},
     };
 
     assertQueryStatisticsEqual({{queryTwo, expectedQueryStatistics}});
@@ -336,17 +323,13 @@ TEST_F(DbStatisticsCollector, queries_partially_expired_values_two)
 
     QueryStatistics expectedQueryStatistics{
         .count = 1,
-        .requestExecutionTimes = {
-            .min = nine,
-            .max = nine,
-            .average = nine
-        },
+        .requestExecutionTimes = {.min = nine, .max = nine, .average = nine},
     };
 
     assertQueryStatisticsEqual({
         {queryOne, expectedQueryStatistics},
         {queryTwo, expectedQueryStatistics},
-        });
+    });
 }
 
 } // namespace nx::sql::test

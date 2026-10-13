@@ -5,13 +5,13 @@
 #include <nx/network/ssl/certificate.h>
 #include <nx/network/ssl/context.h>
 
-#include "webrtc_reader.h"
+#include "abstract_camera_data_provider.h"
+#include "webrtc_consumer.h"
 #include "webrtc_demuxer.h"
 #include "webrtc_ice.h"
-#include "webrtc_consumer.h"
+#include "webrtc_reader.h"
 #include "webrtc_tracks.h"
 #include "webrtc_transcoder.h"
-#include "abstract_camera_data_provider.h"
 
 namespace nx::webrtc {
 
@@ -84,7 +84,7 @@ public:
     std::vector<std::shared_ptr<AbstractCameraDataProvider>> allProviders() const;
     Consumer* consumer() { return m_consumer.get(); }
     AbstractIceDelegate* transceiver() { return m_transceiver.get(); }
-	void gotIceFromTracker(const IceCandidate& iceCandidate);
+    void gotIceFromTracker(const IceCandidate& iceCandidate);
     void stopAllProviders();
 
     AbstractCameraDataProviderPtr createProvider(
@@ -121,7 +121,8 @@ private:
     Purpose m_purpose = Purpose::send;
     std::unique_ptr<Tracks> m_tracks;
     std::unique_ptr<AbstractIceDelegate> m_transceiver;
-    std::map<nx::Uuid, std::shared_ptr<AbstractCameraDataProvider>> m_providers; //< Streaming side. Can be null.
+    std::map<nx::Uuid, std::shared_ptr<AbstractCameraDataProvider>>
+        m_providers; //< Streaming side. Can be null.
     std::unique_ptr<Transcoder> m_muxer; //< Streaming side. Can be null.
     std::unique_ptr<Consumer> m_consumer; //< Streaming side. Can be null.
     std::unique_ptr<Demuxer> m_demuxer; //< Receiving side. Can be null.
@@ -165,9 +166,8 @@ private:
     SessionPool* m_sessionPool;
     SessionConfig m_config;
 
-
     // Timer for carbage collector in SessionPool.
-    nx::utils::ElapsedTimer m_timer{ nx::utils::ElapsedTimerState::started};
+    nx::utils::ElapsedTimer m_timer{nx::utils::ElapsedTimerState::started};
     bool isLocked() const { return !m_timer.isValid(); }
 };
 

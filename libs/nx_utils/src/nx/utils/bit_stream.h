@@ -21,18 +21,28 @@ namespace nx::utils {
 class NX_UTILS_API BitStreamException: public std::exception
 {
 public:
-    //BitStreamException(const char* str): std::exception(str) {}
-    //BitStreamException(const std::string& str): std::exception(str.c_str()) {}
-    BitStreamException(): std::exception() {}
-    ~BitStreamException() throw() {}
-    BitStreamException(const std::string& str): message(QLatin1String(str.c_str())) {}
-    BitStreamException(const QString& str): message(str) {}
-    BitStreamException(const char* str): message(QLatin1String(str)) {}
-
-    virtual const char* what() const throw()
+    // BitStreamException(const char* str): std::exception(str) {}
+    // BitStreamException(const std::string& str): std::exception(str.c_str()) {}
+    BitStreamException():
+        std::exception()
     {
-        return message.toLatin1();
     }
+    ~BitStreamException() throw() {}
+    BitStreamException(const std::string& str):
+        message(QLatin1String(str.c_str()))
+    {
+    }
+    BitStreamException(const QString& str):
+        message(str)
+    {
+    }
+    BitStreamException(const char* str):
+        message(QLatin1String(str))
+    {
+    }
+
+    virtual const char* what() const throw() { return message.toLatin1(); }
+
 private:
     QString message;
 };
@@ -42,6 +52,7 @@ class NX_UTILS_API BitStream
 public:
     uint8_t* getBuffer() const { return (uint8_t*) m_initBuffer; }
     uint32_t getBitsLeft() const { return m_totalBits; }
+
 protected:
     void setBuffer(const uint8_t* buffer, const uint8_t* end);
     uint32_t m_totalBits;

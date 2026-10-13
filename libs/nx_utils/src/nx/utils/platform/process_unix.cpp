@@ -3,19 +3,17 @@
 #include "process.h"
 #if !defined(QT_NO_PROCESS)
 
-#include <sys/types.h>
-#include <signal.h>
+    #include <signal.h>
+    #include <sys/types.h>
 
-#include <QtCore/QProcess>
-#include <QtCore/QFile>
+    #include <QtCore/QFile>
+    #include <QtCore/QProcess>
 
 namespace nx::utils {
 
 SystemError::ErrorCode killProcessByPid(qint64 pid)
 {
-    return kill(pid, SIGKILL) == 0
-        ? SystemError::noError
-        : SystemError::getLastOSErrorCode();
+    return kill(pid, SIGKILL) == 0 ? SystemError::noError : SystemError::getLastOSErrorCode();
 }
 
 bool startProcessDetached(

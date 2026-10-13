@@ -11,8 +11,7 @@ namespace nx::log {
 /**
  * Hides multiple loggers behind itself.
  */
-class NX_UTILS_API AggregateLogger:
-    public AbstractLogger
+class NX_UTILS_API AggregateLogger: public AbstractLogger
 {
 public:
     AggregateLogger(std::vector<std::unique_ptr<AbstractLogger>> loggers);

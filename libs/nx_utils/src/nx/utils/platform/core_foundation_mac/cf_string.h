@@ -8,7 +8,7 @@
 
 namespace cf {
 
-class NX_UTILS_API QnCFString : public QnCFRefHolder<CFStringRef>
+class NX_UTILS_API QnCFString: public QnCFRefHolder<CFStringRef>
 {
     typedef QnCFRefHolder<CFStringRef> base_type;
 
@@ -26,7 +26,6 @@ public:
     ~QnCFString();
 
     QString toString() const;
-
 };
 
-}
+} // namespace cf

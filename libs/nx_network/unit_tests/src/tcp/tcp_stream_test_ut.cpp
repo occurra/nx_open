@@ -22,8 +22,7 @@ INSTANTIATE_TYPED_TEST_SUITE_P(TcpSocketIpv4, StreamSocketAcceptance, TcpSocketI
 //-------------------------------------------------------------------------------------------------
 // Ipv6
 
-class TCPSocketV6:
-    public TCPSocket
+class TCPSocketV6: public TCPSocket
 {
 public:
     TCPSocketV6():
@@ -32,8 +31,7 @@ public:
     }
 };
 
-class TCPServerSocketV6:
-    public TCPServerSocket
+class TCPServerSocketV6: public TCPServerSocket
 {
 public:
     TCPServerSocketV6():

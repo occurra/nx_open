@@ -113,7 +113,9 @@ Credentials ClientOptions::proxyCredentials() const
 }
 
 void ClientOptions::setProxyVia(
-    const SocketAddress& proxyEndpoint, bool isSecure, ssl::AdapterFunc adapterFunc)
+    const SocketAddress& proxyEndpoint,
+    bool isSecure,
+    ssl::AdapterFunc adapterFunc)
 {
     NX_WRITE_LOCKER lock(&m_mutex);
     if (proxyEndpoint.isNull())
@@ -165,15 +167,13 @@ void ClientOptions::setSendTimeout(std::chrono::milliseconds sendTimeout)
     m_timeouts.sendTimeout = sendTimeout;
 }
 
-void ClientOptions::setResponseReadTimeout(
-    std::chrono::milliseconds _responseReadTimeout)
+void ClientOptions::setResponseReadTimeout(std::chrono::milliseconds _responseReadTimeout)
 {
     NX_WRITE_LOCKER lock(&m_mutex);
     m_timeouts.responseReadTimeout = _responseReadTimeout;
 }
 
-void ClientOptions::setMessageBodyReadTimeout(
-    std::chrono::milliseconds messageBodyReadTimeout)
+void ClientOptions::setMessageBodyReadTimeout(std::chrono::milliseconds messageBodyReadTimeout)
 {
     NX_WRITE_LOCKER lock(&m_mutex);
     m_timeouts.messageBodyReadTimeout = messageBodyReadTimeout;
@@ -187,7 +187,7 @@ void ClientOptions::setTimeouts(const Timeouts& timeouts)
 
 void ClientOptions::setAllTimeouts(std::chrono::milliseconds timeout)
 {
-    setTimeouts({ timeout, timeout, timeout });
+    setTimeouts({timeout, timeout, timeout});
 }
 
 ClientOptions::Timeouts ClientOptions::timeouts() const
@@ -200,9 +200,9 @@ void ClientOptions::addAdditionalHeader(const std::string& key, const std::strin
 {
     NX_WRITE_LOCKER lock(&m_mutex);
     if (std::find(
-        header::kNonRepeatableHeaders.cbegin(),
-        header::kNonRepeatableHeaders.cend(),
-        key)
+            header::kNonRepeatableHeaders.cbegin(),
+            header::kNonRepeatableHeaders.cend(),
+            key)
         != header::kNonRepeatableHeaders.cend())
     {
         m_additionalHeaders.erase(key);
@@ -299,7 +299,8 @@ void ClientOptions::assignOptions(const ClientOptions& other)
 
 //-------------------------------------------------------------------------------------------------
 
-AsyncClient::AsyncClient(ssl::AdapterFunc adapterFunc): m_adapterFunc(std::move(adapterFunc))
+AsyncClient::AsyncClient(ssl::AdapterFunc adapterFunc):
+    m_adapterFunc(std::move(adapterFunc))
 {
     NX_VERBOSE(this, "Creating an instance...");
     SocketGlobals::instance().allocationAnalyzer().recordObjectCreation(this);
@@ -309,7 +310,8 @@ AsyncClient::AsyncClient(ssl::AdapterFunc adapterFunc): m_adapterFunc(std::move(
 }
 
 AsyncClient::AsyncClient(
-    std::unique_ptr<AbstractStreamSocket> socket, ssl::AdapterFunc adapterFunc):
+    std::unique_ptr<AbstractStreamSocket> socket,
+    ssl::AdapterFunc adapterFunc):
     AsyncClient(std::move(adapterFunc))
 {
     NX_VERBOSE(this, "Creating an instance...");
@@ -330,9 +332,7 @@ AsyncClient::~AsyncClient()
 
 const std::unique_ptr<AbstractStreamSocket>& AsyncClient::socket()
 {
-    return m_messagePipeline
-        ? m_messagePipeline->socket()
-        : m_socket;
+    return m_messagePipeline ? m_messagePipeline->socket() : m_socket;
 }
 
 std::unique_ptr<AbstractStreamSocket> AsyncClient::takeSocket()
@@ -384,8 +384,11 @@ void AsyncClient::setKeepAlive(const KeepAliveOptions& keepAliveOptions)
     {
         if (!m_socket->setKeepAlive(keepAliveOptions))
         {
-            NX_DEBUG(this, "URL %1. Error enabling TCP keep-alive: %2",
-                m_contentLocationUrl, SystemError::getLastOSErrorText());
+            NX_DEBUG(
+                this,
+                "URL %1. Error enabling TCP keep-alive: %2",
+                m_contentLocationUrl,
+                SystemError::getLastOSErrorText());
         }
     }
 
@@ -434,9 +437,7 @@ void AsyncClient::doGet(const nx::Url& url)
     doRequest(nx::network::http::Method::get, url);
 }
 
-void AsyncClient::doGet(
-    const nx::Url& url,
-    nx::MoveOnlyFunc<void()> completionHandler)
+void AsyncClient::doGet(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler)
 {
     m_onDone = std::move(completionHandler);
     doGet(url);
@@ -447,9 +448,7 @@ void AsyncClient::doHead(const nx::Url& url)
     doRequest(nx::network::http::Method::head, url);
 }
 
-void AsyncClient::doHead(
-    const nx::Url& url,
-    nx::MoveOnlyFunc<void()> completionHandler)
+void AsyncClient::doHead(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler)
 {
     m_onDone = std::move(completionHandler);
     doHead(url);
@@ -460,9 +459,7 @@ void AsyncClient::doPost(const nx::Url& url)
     doRequest(nx::network::http::Method::post, url);
 }
 
-void AsyncClient::doPost(
-    const nx::Url& url,
-    std::unique_ptr<AbstractMsgBodySource> body)
+void AsyncClient::doPost(const nx::Url& url, std::unique_ptr<AbstractMsgBodySource> body)
 {
     setRequestBody(std::move(body));
     doPost(url);
@@ -477,9 +474,7 @@ void AsyncClient::doPost(
     doPost(url, std::move(body));
 }
 
-void AsyncClient::doPost(
-    const nx::Url& url,
-    nx::MoveOnlyFunc<void()> completionHandler)
+void AsyncClient::doPost(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler)
 {
     m_onDone = std::move(completionHandler);
     doPost(url);
@@ -490,9 +485,7 @@ void AsyncClient::doPut(const nx::Url& url)
     doRequest(nx::network::http::Method::put, url);
 }
 
-void AsyncClient::doPut(
-    const nx::Url& url,
-    std::unique_ptr<AbstractMsgBodySource> body)
+void AsyncClient::doPut(const nx::Url& url, std::unique_ptr<AbstractMsgBodySource> body)
 {
     setRequestBody(std::move(body));
     doPut(url);
@@ -507,9 +500,7 @@ void AsyncClient::doPut(
     doPut(url, std::move(body));
 }
 
-void AsyncClient::doPut(
-    const nx::Url& url,
-    nx::MoveOnlyFunc<void()> completionHandler)
+void AsyncClient::doPut(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler)
 {
     m_onDone = std::move(completionHandler);
     doPut(url);
@@ -520,9 +511,7 @@ void AsyncClient::doPatch(const nx::Url& url)
     doRequest(nx::network::http::Method::patch, url);
 }
 
-void AsyncClient::doPatch(
-    const nx::Url& url,
-    std::unique_ptr<AbstractMsgBodySource> body)
+void AsyncClient::doPatch(const nx::Url& url, std::unique_ptr<AbstractMsgBodySource> body)
 {
     setRequestBody(std::move(body));
     doPatch(url);
@@ -537,9 +526,7 @@ void AsyncClient::doPatch(
     doPatch(url, std::move(body));
 }
 
-void AsyncClient::doPatch(
-    const nx::Url& url,
-    nx::MoveOnlyFunc<void()> completionHandler)
+void AsyncClient::doPatch(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler)
 {
     m_onDone = std::move(completionHandler);
     doPatch(url);
@@ -550,17 +537,13 @@ void AsyncClient::doDelete(const nx::Url& url)
     doRequest(nx::network::http::Method::delete_, url);
 }
 
-void AsyncClient::doDelete(
-    const nx::Url& url,
-    nx::MoveOnlyFunc<void()> completionHandler)
+void AsyncClient::doDelete(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler)
 {
     m_onDone = std::move(completionHandler);
     doDelete(url);
 }
 
-void AsyncClient::doUpgrade(
-    const nx::Url& url,
-    const std::string& protocolToUpgradeTo)
+void AsyncClient::doUpgrade(const nx::Url& url, const std::string& protocolToUpgradeTo)
 {
     doUpgrade(url, Method::options, protocolToUpgradeTo);
 }
@@ -607,9 +590,7 @@ void AsyncClient::doUpgrade(
     doUpgrade(url, method, protocolToUpgradeTo);
 }
 
-void AsyncClient::doConnect(
-    const nx::Url& proxyUrl,
-    const std::string& targetHost)
+void AsyncClient::doConnect(const nx::Url& proxyUrl, const std::string& targetHost)
 {
     NX_ASSERT(proxyUrl.isValid());
 
@@ -634,9 +615,7 @@ void AsyncClient::doConnect(
     doConnect(proxyUrl, targetHost);
 }
 
-void AsyncClient::doRequest(
-    const Method& method,
-    const nx::Url& urlOriginal)
+void AsyncClient::doRequest(const Method& method, const nx::Url& urlOriginal)
 {
     NX_VERBOSE(this, "Issuing request %1 %2 to %3", method, urlOriginal.path(), urlOriginal);
 
@@ -670,17 +649,16 @@ void AsyncClient::doRequest(
     m_harEntry = Har::instance()->log();
     if (m_harEntry)
     {
-        m_harEntry->setRequest(
-            method,
-            url.toString(),
-            m_request.headers);
+        m_harEntry->setRequest(method, url.toString(), m_request.headers);
 
         if (method == Method::post || method == Method::put)
             m_harEntry->setRequestBody(m_request.messageBody);
     }
 
     m_telemetrySpan = telemetry::HttpSpan::clientSpan(
-        method.toString(), url.path().toStdString(), m_request.headers);
+        method.toString(),
+        url.path().toStdString(),
+        m_request.headers);
     auto spanScope = m_telemetrySpan.activate();
 
     initiateHttpMessageDelivery();
@@ -702,9 +680,7 @@ const nx::network::http::Request& AsyncClient::request() const
 
 const Response* AsyncClient::response() const
 {
-    return m_response.type == MessageType::response
-        ? m_response.response
-        : nullptr;
+    return m_response.type == MessageType::response ? m_response.response : nullptr;
 }
 
 Response AsyncClient::takeResponse()
@@ -756,8 +732,7 @@ void AsyncClient::moveMessageBodyToResponse()
 
 std::unique_ptr<AbstractMsgBodySource> AsyncClient::takeResponseBodySource()
 {
-    NX_VERBOSE(this, "Connection to %1 is taken as response body source",
-        m_contentLocationUrl);
+    NX_VERBOSE(this, "Connection to %1 is taken as response body source", m_contentLocationUrl);
 
     m_state = State::sDone;
     if (m_harEntry)
@@ -800,15 +775,20 @@ void AsyncClient::stopWhileInAioThread()
 
     if (m_state == State::sReceivingResponse)
     {
-        NX_VERBOSE(this, "Client is stopped while waiting for response from %1",
+        NX_VERBOSE(
+            this,
+            "Client is stopped while waiting for response from %1",
             m_contentLocationUrl);
     }
 }
 
 void AsyncClient::asyncConnectDone(SystemError::ErrorCode errorCode)
 {
-    NX_VERBOSE(this, "Connect to %1%2 completed with result %3",
-        m_contentLocationUrl, proxyEndpoint() ? " via proxy " + proxyEndpoint()->toString() : "",
+    NX_VERBOSE(
+        this,
+        "Connect to %1%2 completed with result %3",
+        m_contentLocationUrl,
+        proxyEndpoint() ? " via proxy " + proxyEndpoint()->toString() : "",
         errorCode);
 
     if (m_harEntry)
@@ -823,16 +803,23 @@ void AsyncClient::asyncConnectDone(SystemError::ErrorCode errorCode)
 
     if (errorCode == SystemError::noError)
     {
-        NX_VERBOSE(this, "Sending request \"%1\" with body of %2 bytes to %3",
-            m_request.requestLine, m_request.messageBody.size(), m_contentLocationUrl);
+        NX_VERBOSE(
+            this,
+            "Sending request \"%1\" with body of %2 bytes to %3",
+            m_request.requestLine,
+            m_request.messageBody.size(),
+            m_contentLocationUrl);
 
         m_remoteEndpointWithProtocol = endpointWithProtocol(m_contentLocationUrl);
         sendRequest();
         return;
     }
 
-    NX_DEBUG(this, "Failed to establish TCP connection to %1%2. %3",
-        m_contentLocationUrl, proxyEndpoint() ? " via proxy " + proxyEndpoint()->toString() : "",
+    NX_DEBUG(
+        this,
+        "Failed to establish TCP connection to %1%2. %3",
+        m_contentLocationUrl,
+        proxyEndpoint() ? " via proxy " + proxyEndpoint()->toString() : "",
         SystemError::toString(errorCode));
 
     reportConnectionFailure(errorCode);
@@ -846,7 +833,10 @@ void AsyncClient::sendRequest()
     *msg.request = m_request;
     m_messagePipeline->sendMessage(
         std::move(msg),
-        [this](auto resultCode) { onRequestSent(resultCode); });
+        [this](auto resultCode)
+        {
+            onRequestSent(resultCode);
+        });
 }
 
 void AsyncClient::reportConnectionFailure(SystemError::ErrorCode err)
@@ -877,8 +867,11 @@ void AsyncClient::onRequestSent(SystemError::ErrorCode errorCode)
 {
     if (errorCode != SystemError::noError)
     {
-        NX_DEBUG(this, "Error sending (1) HTTP request to %1. %2",
-            m_contentLocationUrl, SystemError::toString(errorCode));
+        NX_DEBUG(
+            this,
+            "Error sending (1) HTTP request to %1. %2",
+            m_contentLocationUrl,
+            SystemError::toString(errorCode));
         if (m_harEntry)
         {
             m_harEntry->setError(SystemError::toString(errorCode));
@@ -893,7 +886,8 @@ void AsyncClient::onRequestSent(SystemError::ErrorCode errorCode)
             m_state = State::sFailed;
             if (emitDone() != Result::proceed)
                 return;
-            // Remove close handler before destroying pipeline to prevent callback on destroyed object.
+            // Remove close handler before destroying pipeline to prevent callback on destroyed
+            // object.
             if (m_messagePipeline)
                 m_messagePipeline->removeCloseHandler(m_closeHandlerId);
             m_messagePipeline.reset();
@@ -904,8 +898,11 @@ void AsyncClient::onRequestSent(SystemError::ErrorCode errorCode)
     if (m_harEntry)
         m_harEntry->markRequestSent();
 
-    NX_VERBOSE(this, "Request has been successfully sent to %1 from %2. %3",
-        m_contentLocationUrl, m_messagePipeline->socket()->getLocalAddress(),
+    NX_VERBOSE(
+        this,
+        "Request has been successfully sent to %1 from %2. %3",
+        m_contentLocationUrl,
+        m_messagePipeline->socket()->getLocalAddress(),
         logTraffic() ? request().toString() : request().requestLine.toString());
 
     ++m_totalRequestsSentViaCurrentConnection;
@@ -916,8 +913,11 @@ void AsyncClient::onRequestSent(SystemError::ErrorCode errorCode)
 
     if (const auto& socket = m_messagePipeline->socket(); !socket->setRecvTimeout(kNoTimeout))
     {
-        NX_VERBOSE(this, "Error configuring connection to %1. %2",
-            m_contentLocationUrl, SystemError::getLastOSErrorText());
+        NX_VERBOSE(
+            this,
+            "Error configuring connection to %1. %2",
+            m_contentLocationUrl,
+            SystemError::getLastOSErrorText());
         if (!reconnectIfAppropriate())
         {
             m_state = State::sFailed;
@@ -932,17 +932,28 @@ void AsyncClient::onRequestSent(SystemError::ErrorCode errorCode)
 
 void AsyncClient::initializeMessagePipeline()
 {
-    m_messagePipeline = std::make_unique<AsyncMessagePipeline>(
-        std::exchange(m_socket, nullptr));
+    m_messagePipeline = std::make_unique<AsyncMessagePipeline>(std::exchange(m_socket, nullptr));
 
     m_closeHandlerId = m_messagePipeline->registerCloseHandler(
-        [this](auto reason, auto /*connectionDestroyed*/) { onConnectionClosed(reason); });
+        [this](auto reason, auto /*connectionDestroyed*/)
+        {
+            onConnectionClosed(reason);
+        });
     m_messagePipeline->setMessageHandler(
-        [this](auto&&... args) { onMessageReceived(std::forward<decltype(args)>(args)...); });
+        [this](auto&&... args)
+        {
+            onMessageReceived(std::forward<decltype(args)>(args)...);
+        });
     m_messagePipeline->setOnSomeMessageBodyAvailable(
-        [this](auto&&... args) { onSomeMessageBodyAvailable(std::forward<decltype(args)>(args)...); });
+        [this](auto&&... args)
+        {
+            onSomeMessageBodyAvailable(std::forward<decltype(args)>(args)...);
+        });
     m_messagePipeline->setOnMessageEnd(
-        [this](auto&&... args) { onMessageEnd(std::forward<decltype(args)>(args)...); });
+        [this](auto&&... args)
+        {
+            onMessageEnd(std::forward<decltype(args)>(args)...);
+        });
 
     m_isPersistentConnection = false;
 }
@@ -954,8 +965,12 @@ void AsyncClient::onMessageReceived(Message message)
 
     if (message.type != nx::network::http::MessageType::response)
     {
-        NX_DEBUG(this, "Received unexpected message of type %1 from %2 while expecting response! "
-            "Ignoring...", message.type, m_contentLocationUrl);
+        NX_DEBUG(
+            this,
+            "Received unexpected message of type %1 from %2 while expecting response! "
+            "Ignoring...",
+            message.type,
+            m_contentLocationUrl);
         m_state = State::sFailed;
         if (m_harEntry)
         {
@@ -970,9 +985,8 @@ void AsyncClient::onMessageReceived(Message message)
 
     m_response = std::move(message);
 
-    m_isPersistentConnection =
-        (m_response.version() == nx::network::http::http_1_1) &&
-        (nx::network::http::getHeaderValue(m_response.headers(), "Connection") != "close");
+    m_isPersistentConnection = (m_response.version() == nx::network::http::http_1_1)
+        && (nx::network::http::getHeaderValue(m_response.headers(), "Connection") != "close");
 
     if (isMalformed(*m_response.response))
     {
@@ -996,8 +1010,8 @@ void AsyncClient::onMessageReceived(Message message)
     else
     {
         responseText = m_response.response->statusLine.toString();
-        if (!isSuccessCode(m_response.response->statusLine.statusCode) &&
-            m_response.response->messageBody.size() > 0)
+        if (!isSuccessCode(m_response.response->statusLine.statusCode)
+            && m_response.response->messageBody.size() > 0)
         {
             responseText += ", body: " + m_response.response->messageBody.toString();
         }
@@ -1010,7 +1024,9 @@ void AsyncClient::onMessageReceived(Message message)
             m_response.response->headers);
     }
 
-    NX_VERBOSE(this, "Response headers from %1 has been successfully read: %2",
+    NX_VERBOSE(
+        this,
+        "Response headers from %1 has been successfully read: %2",
         m_contentLocationUrl,
         nx::utils::trim(responseText, "\r\n"));
 
@@ -1025,9 +1041,10 @@ void AsyncClient::onMessageReceived(Message message)
         m_request.requestLine.method,
         StatusCode::Value(m_response.response->statusLine.statusCode));
 
-    const bool messageHasMessageBody =
-        (m_messagePipeline->parser().streamReader().state() == HttpStreamReader::ReadState::readingMessageBody) ||
-        (m_messagePipeline->parser().streamReader().state() == HttpStreamReader::ReadState::pullingLineEndingBeforeMessageBody);
+    const bool messageHasMessageBody = (m_messagePipeline->parser().streamReader().state()
+                                        == HttpStreamReader::ReadState::readingMessageBody)
+        || (m_messagePipeline->parser().streamReader().state()
+            == HttpStreamReader::ReadState::pullingLineEndingBeforeMessageBody);
     NX_ASSERT(m_messagePipeline->parser().streamReader().messageBodyBufferSize() == 0);
 
     if (!messageBodyAllowed && messageHasMessageBody)
@@ -1046,8 +1063,11 @@ void AsyncClient::onMessageReceived(Message message)
 
 void AsyncClient::onSomeMessageBodyAvailable(nx::Buffer buffer)
 {
-    NX_VERBOSE(this, "%1 message body bytes have been received from %2",
-        buffer.size(), m_contentLocationUrl);
+    NX_VERBOSE(
+        this,
+        "%1 message body bytes have been received from %2",
+        buffer.size(),
+        m_contentLocationUrl);
 
     if (isIgnoringCurrentMessage())
         return;
@@ -1091,12 +1111,17 @@ void AsyncClient::onMessageEnd()
 void AsyncClient::onConnectionClosed(SystemError::ErrorCode errorCode)
 {
     // If pipeline is already null, we're being called during destruction/reconnect - ignore.
-    // This can happen when m_messagePipeline.reset() triggers close handlers during its destruction.
+    // This can happen when m_messagePipeline.reset() triggers close handlers during its
+    // destruction.
     if (!m_messagePipeline)
         return;
 
-    NX_VERBOSE(this, "Connection is closed in state %1. Url %2. %3",
-        toString(m_state), m_contentLocationUrl, SystemError::toString(errorCode));
+    NX_VERBOSE(
+        this,
+        "Connection is closed in state %1. Url %2. %3",
+        toString(m_state),
+        m_contentLocationUrl,
+        SystemError::toString(errorCode));
 
     if (m_state == State::sInit || m_state == State::sWaitingConnectToHost)
         return;
@@ -1125,7 +1150,7 @@ void AsyncClient::onConnectionClosed(SystemError::ErrorCode errorCode)
             return;
     }
 
-    m_messagePipeline.reset();   //< Closing failed socket so that it is not reused.
+    m_messagePipeline.reset(); //< Closing failed socket so that it is not reused.
 }
 
 void AsyncClient::resetDataBeforeNewRequest()
@@ -1175,8 +1200,11 @@ void AsyncClient::initiateHttpMessageDelivery()
             switch (connectionReusePolicy)
             {
                 case ConnectionReusePolicy::establishedPipeline:
-                    NX_VERBOSE(this, "Sending request %1 (url %2) via reused connection",
-                        m_request.requestLine, m_contentLocationUrl);
+                    NX_VERBOSE(
+                        this,
+                        "Sending request %1 (url %2) via reused connection",
+                        m_request.requestLine,
+                        m_contentLocationUrl);
 
                     m_remoteEndpointWithProtocol = endpointWithProtocol(m_contentLocationUrl);
                     sendRequest();
@@ -1198,8 +1226,7 @@ void AsyncClient::initiateHttpMessageDelivery()
 
 AsyncClient::ConnectionReusePolicy AsyncClient::getConnectionReusePolicy() const
 {
-    if (m_messagePipeline
-        && m_isPersistentConnection
+    if (m_messagePipeline && m_isPersistentConnection
         && m_remoteEndpointWithProtocol == endpointWithProtocol(m_contentLocationUrl)
         && m_lastSysErrorCode == SystemError::noError)
     {
@@ -1214,17 +1241,24 @@ AsyncClient::ConnectionReusePolicy AsyncClient::getConnectionReusePolicy() const
 
 void AsyncClient::sendRequestOverExternalConnection()
 {
-    NX_VERBOSE(this, "Sending request %1 (url %2) via external connection",
-        m_request.requestLine, m_contentLocationUrl);
+    NX_VERBOSE(
+        this,
+        "Sending request %1 (url %2) via external connection",
+        m_request.requestLine,
+        m_contentLocationUrl);
 
     if (!configureSocket(m_messagePipeline->socket().get()))
     {
-        return post([this, err = SystemError::getLastOSErrorCode()]()
-        {
-            NX_DEBUG(this, "Error configuring connection to %1. %2",
-                m_contentLocationUrl, SystemError::toString(err));
-            reportConnectionFailure(err);
-        });
+        return post(
+            [this, err = SystemError::getLastOSErrorCode()]()
+            {
+                NX_DEBUG(
+                    this,
+                    "Error configuring connection to %1. %2",
+                    m_contentLocationUrl,
+                    SystemError::toString(err));
+                reportConnectionFailure(err);
+            });
     }
 
     m_remoteEndpointWithProtocol = endpointWithProtocol(m_contentLocationUrl);
@@ -1233,12 +1267,15 @@ void AsyncClient::sendRequestOverExternalConnection()
 
 bool AsyncClient::configureSocket(AbstractStreamSocket* connection)
 {
-    if (!connection->setNonBlockingMode(true) ||
-        !connection->setSendTimeout(timeouts().sendTimeout) ||
-        !connection->setRecvTimeout(timeouts().responseReadTimeout))
+    if (!connection->setNonBlockingMode(true)
+        || !connection->setSendTimeout(timeouts().sendTimeout)
+        || !connection->setRecvTimeout(timeouts().responseReadTimeout))
     {
-        NX_VERBOSE(this, "Error configuring connection to %1. %2",
-            m_contentLocationUrl, SystemError::getLastOSErrorText());
+        NX_VERBOSE(
+            this,
+            "Error configuring connection to %1. %2",
+            m_contentLocationUrl,
+            SystemError::getLastOSErrorText());
         return false;
     }
 
@@ -1261,7 +1298,8 @@ void AsyncClient::initiateTcpConnection()
     else
     {
         remoteAddress = nx::network::url::getEndpoint(m_contentLocationUrl);
-        isSecureConnection = m_contentLocationUrl.scheme() == nx::network::http::kSecureUrlSchemeName;
+        isSecureConnection =
+            m_contentLocationUrl.scheme() == nx::network::http::kSecureUrlSchemeName;
     }
 
     if (remoteAddress.port == 0)
@@ -1272,24 +1310,37 @@ void AsyncClient::initiateTcpConnection()
         ? AF_INET6
         : SocketFactory::tcpClientIpVersion();
 
-    m_socket =
-        SocketFactory::createStreamSocket(proxyEndpoint() ? proxyAdapterFunc() : m_adapterFunc,
-            isSecureConnection, nx::network::NatTraversalSupport::enabled, ipVersion);
+    m_socket = SocketFactory::createStreamSocket(
+        proxyEndpoint() ? proxyAdapterFunc() : m_adapterFunc,
+        isSecureConnection,
+        nx::network::NatTraversalSupport::enabled,
+        ipVersion);
     m_socket->bindToAioThread(getAioThread());
     if (m_keepAliveOptions)
     {
         if (!m_socket->setKeepAlive(*m_keepAliveOptions))
         {
-            NX_DEBUG(this, "URL %1. Error enabling TCP keep-alive: %2",
-                m_contentLocationUrl, SystemError::getLastOSErrorText());
+            NX_DEBUG(
+                this,
+                "URL %1. Error enabling TCP keep-alive: %2",
+                m_contentLocationUrl,
+                SystemError::getLastOSErrorText());
         }
     }
 
-    NX_VERBOSE(this, "Opening connection to %1. url %2, socket %3",
-        remoteAddress, m_contentLocationUrl, m_socket->handle());
+    NX_VERBOSE(
+        this,
+        "Opening connection to %1. url %2, socket %3",
+        remoteAddress,
+        m_contentLocationUrl,
+        m_socket->handle());
 
     if (!configureSocket(m_socket.get()))
-        return post([this, err = SystemError::getLastOSErrorCode()]() { asyncConnectDone(err); });
+        return post(
+            [this, err = SystemError::getLastOSErrorCode()]()
+            {
+                asyncConnectDone(err);
+            });
 
     m_state = State::sWaitingConnectToHost;
     if (m_harEntry)
@@ -1297,7 +1348,10 @@ void AsyncClient::initiateTcpConnection()
 
     m_socket->connectAsync(
         remoteAddress,
-        [this](auto result) { asyncConnectDone(result); });
+        [this](auto result)
+        {
+            asyncConnectDone(result);
+        });
 }
 
 void AsyncClient::stopReading()
@@ -1335,9 +1389,12 @@ bool AsyncClient::isMalformed(const nx::network::http::Response& response) const
     {
         if (nx::network::http::getHeaderValue(response.headers, "Upgrade").empty())
         {
-            NX_DEBUG(this, "Received malformed response from %1. "
+            NX_DEBUG(
+                this,
+                "Received malformed response from %1. "
                 "Status code is %2 and no Upgrade header present",
-                m_contentLocationUrl, response.statusLine.statusCode);
+                m_contentLocationUrl,
+                response.statusLine.statusCode);
             return true;
         }
     }
@@ -1351,16 +1408,17 @@ bool AsyncClient::repeatRequestIfNeeded(const Response& response)
     {
         case StatusCode::unauthorized:
         {
-            if (!m_ha1RecalcTried &&
-                response.headers.find(Qn::REALM_HEADER_NAME) != response.headers.cend())
+            if (!m_ha1RecalcTried
+                && response.headers.find(Qn::REALM_HEADER_NAME) != response.headers.cend())
             {
                 m_authorizationTried = false;
                 m_ha1RecalcTried = true;
             }
 
-            if (!m_authorizationTried && (!credentials().username.empty() || !credentials().authToken.empty()))
+            if (!m_authorizationTried
+                && (!credentials().username.empty() || !credentials().authToken.empty()))
             {
-                //trying authorization
+                // trying authorization
                 if (resendRequestWithAuthorization(response))
                     return true;
             }
@@ -1370,8 +1428,8 @@ bool AsyncClient::repeatRequestIfNeeded(const Response& response)
 
         case StatusCode::proxyAuthenticationRequired:
         {
-            if (!m_proxyAuthorizationTried &&
-                (!proxyCredentials().username.empty() || !proxyCredentials().authToken.empty()))
+            if (!m_proxyAuthorizationTried
+                && (!proxyCredentials().username.empty() || !proxyCredentials().authToken.empty()))
             {
                 if (resendRequestWithAuthorization(response, true))
                     return true;
@@ -1404,8 +1462,10 @@ bool AsyncClient::sendRequestToNewLocation(const Response& response)
     if (locationIter == response.headers.end())
         return false;
 
-    NX_VERBOSE(this, nx::format("Redirect to location [ %1 ] from [ %2 ]").args(
-        locationIter->second, m_contentLocationUrl));
+    NX_VERBOSE(
+        this,
+        nx::format("Redirect to location [ %1 ] from [ %2 ]")
+            .args(locationIter->second, m_contentLocationUrl));
 
     m_authorizationTried = false;
     m_ha1RecalcTried = false;
@@ -1427,7 +1487,8 @@ bool AsyncClient::sendRequestToNewLocation(const Response& response)
 
 void AsyncClient::composeRequest(const Method& httpMethod)
 {
-    const bool useHttp11 = true;   //TODO #akolesnikov check if we need it (e.g. we using keep-alive or requesting live capture)
+    const bool useHttp11 = true; // TODO #akolesnikov check if we need it (e.g. we using keep-alive
+                                 // or requesting live capture)
 
     prepareRequestLine(useHttp11, httpMethod);
 
@@ -1457,9 +1518,7 @@ void AsyncClient::composeRequest(const Method& httpMethod)
     prepareRequestHeaders(useHttp11, httpMethod);
 }
 
-void AsyncClient::prepareRequestLine(
-    bool useHttp11,
-    const Method& httpMethod)
+void AsyncClient::prepareRequestLine(bool useHttp11, const Method& httpMethod)
 {
     m_request.requestLine.method = httpMethod;
 
@@ -1469,24 +1528,25 @@ void AsyncClient::prepareRequestLine(
     }
     else //< If no proxy specified then erasing http://host:port from request url.
     {
-        if (httpMethod == nx::network::http::Method::options && m_contentLocationUrl.path().isEmpty())
+        if (httpMethod == nx::network::http::Method::options
+            && m_contentLocationUrl.path().isEmpty())
             m_request.requestLine.url = "*";
         else
             m_request.requestLine.url = m_contentLocationUrl.path();
         m_request.requestLine.url.setQuery(m_contentLocationUrl.query());
         m_request.requestLine.url.setFragment(m_contentLocationUrl.fragment());
     }
-    m_request.requestLine.version = useHttp11 ? nx::network::http::http_1_1 : nx::network::http::http_1_0;
+    m_request.requestLine.version =
+        useHttp11 ? nx::network::http::http_1_1 : nx::network::http::http_1_0;
 }
 
-void AsyncClient::prepareRequestHeaders(
-    bool useHttp11,
-    const Method& httpMethod)
+void AsyncClient::prepareRequestHeaders(bool useHttp11, const Method& httpMethod)
 {
     nx::network::http::insertOrReplaceHeader(
         &m_request.headers,
         HttpHeader(
-            "Date", nx::utils::formatDateTimeLockFree(nx::utils::utcTime().time_since_epoch())));
+            "Date",
+            nx::utils::formatDateTimeLockFree(nx::utils::utcTime().time_since_epoch())));
 
     nx::network::http::insertOrReplaceHeader(
         &m_request.headers,
@@ -1496,7 +1556,8 @@ void AsyncClient::prepareRequestHeaders(
     auto headers = additionalHeaders();
     if (useHttp11)
     {
-        if (httpMethod == nx::network::http::Method::get || httpMethod == nx::network::http::Method::head)
+        if (httpMethod == nx::network::http::Method::get
+            || httpMethod == nx::network::http::Method::head)
         {
             if (useCompression() && headers.count("Accept-Encoding") == 0)
             {
@@ -1514,7 +1575,9 @@ void AsyncClient::prepareRequestHeaders(
         }
 
         if (headers.count("Host") == 0)
-            insertOrReplaceHeader(&m_request.headers, header::Host(url::getEndpoint(m_contentLocationUrl)));
+            insertOrReplaceHeader(
+                &m_request.headers,
+                header::Host(url::getEndpoint(m_contentLocationUrl)));
     }
 
     // It is not correct just to replace headers because there
@@ -1531,8 +1594,8 @@ void AsyncClient::addAppropriateAuthenticationInformation()
     // Adding X-Nx-User-Name to help server to port data from 2.1 to 2.3 and to 3.0
     // (generate user's digest after changing realm).
     // TODO: #akolesnikov Remove it after version prior to 3.0 support is over.
-    if (!credentials().username.empty() &&
-        m_request.headers.find(Qn::CUSTOM_USERNAME_HEADER_NAME) == m_request.headers.end())
+    if (!credentials().username.empty()
+        && m_request.headers.find(Qn::CUSTOM_USERNAME_HEADER_NAME) == m_request.headers.end())
     {
         nx::network::http::insertOrReplaceHeader(
             &m_request.headers,
@@ -1545,7 +1608,8 @@ void AsyncClient::addAppropriateAuthenticationInformation()
         nx::network::http::insertOrReplaceHeader(
             &m_request.headers,
             nx::network::http::HttpHeader(
-                header::kProxyAuthorization, bearerAuthorization.serialized()));
+                header::kProxyAuthorization,
+                bearerAuthorization.serialized()));
     }
 
     if (credentials().authToken.isBearerToken())
@@ -1577,8 +1641,7 @@ void AsyncClient::addAppropriateAuthenticationInformation()
             server::Role::resourceServer,
             credentials().username);
 
-        if (cachedServerResponse &&
-            cachedServerResponse->authScheme == header::AuthScheme::digest)
+        if (cachedServerResponse && cachedServerResponse->authScheme == header::AuthScheme::digest)
         {
             addDigestAuthorizationToRequest(
                 url::getEndpoint(m_contentLocationUrl),
@@ -1635,8 +1698,8 @@ bool AsyncClient::reconnectIfAppropriate()
     // the inactivity interval (the period between two requests).
     // Checking that at least one response was successfully received through the connection.
 
-    if ((m_state == State::sSendingRequest || m_state == State::sReceivingResponse) &&
-        m_messageReceivedThroughTheCurrentConnectionCount > 0)
+    if ((m_state == State::sSendingRequest || m_state == State::sReceivingResponse)
+        && m_messageReceivedThroughTheCurrentConnectionCount > 0)
     {
         if (m_messagePipeline)
             m_messagePipeline->removeCloseHandler(m_closeHandlerId);
@@ -1650,12 +1713,18 @@ bool AsyncClient::reconnectIfAppropriate()
 
 std::string AsyncClient::endpointWithProtocol(const nx::Url& url)
 {
-    return nx::format("%1://%2:%3").args(url.scheme(), url.host(),
-        url.port(nx::network::http::defaultPortForScheme(url.scheme().toStdString()))).toStdString();
+    return nx::format("%1://%2:%3")
+        .args(
+            url.scheme(),
+            url.host(),
+            url.port(nx::network::http::defaultPortForScheme(url.scheme().toStdString())))
+        .toStdString();
 }
 
 static std::optional<header::WWWAuthenticate> extractAuthenticateHeader(
-    const HttpHeaders& headers, bool isProxy, AuthType authType)
+    const HttpHeaders& headers,
+    bool isProxy,
+    AuthType authType)
 {
     const std::string authenticateHeaderName = isProxy ? "Proxy-Authenticate" : "WWW-Authenticate";
 
@@ -1666,8 +1735,11 @@ static std::optional<header::WWWAuthenticate> extractAuthenticateHeader(
         result = header::WWWAuthenticate();
         if (!result->parse(it->second))
         {
-            NX_INFO(typeid(AsyncClient), "Error while parsing %1 header: '%2'. Skipping it.",
-                authenticateHeaderName, it->second);
+            NX_INFO(
+                typeid(AsyncClient),
+                "Error while parsing %1 header: '%2'. Skipping it.",
+                authenticateHeaderName,
+                it->second);
             continue;
         }
 
@@ -1694,8 +1766,9 @@ bool AsyncClient::resendRequestWithAuthorization(
 {
     // If response contains WWW-Authenticate with Digest authentication, generating
     // "Authorization: Digest" header and adding it to custom headers.
-    NX_ASSERT(response.statusLine.statusCode == StatusCode::unauthorized ||
-        response.statusLine.statusCode == StatusCode::proxyAuthenticationRequired);
+    NX_ASSERT(
+        response.statusLine.statusCode == StatusCode::unauthorized
+        || response.statusLine.statusCode == StatusCode::proxyAuthenticationRequired);
 
     const std::string authorizationHeaderName =
         isProxy ? std::string("Proxy-Authorization") : header::Authorization::NAME;
@@ -1707,9 +1780,8 @@ bool AsyncClient::resendRequestWithAuthorization(
 
     if (wwwAuthenticateHeader->authScheme == header::AuthScheme::digest)
     {
-        const auto& serverEndpoint = isProxy && proxyEndpoint()
-            ? *proxyEndpoint()
-            : url::getEndpoint(m_contentLocationUrl);
+        const auto& serverEndpoint =
+            isProxy && proxyEndpoint() ? *proxyEndpoint() : url::getEndpoint(m_contentLocationUrl);
         const auto serverRole = isProxy ? server::Role::proxy : server::Role::resourceServer;
 
         AuthInfoCache::instance().cacheServerResponse(
@@ -1728,8 +1800,9 @@ bool AsyncClient::resendRequestWithAuthorization(
             return false;
         }
     }
-    else if (wwwAuthenticateHeader->authScheme == header::AuthScheme::basic &&
-        (credentialsToUse.authToken.isPassword() || credentialsToUse.authToken.empty()))
+    else if (
+        wwwAuthenticateHeader->authScheme == header::AuthScheme::basic
+        && (credentialsToUse.authToken.isPassword() || credentialsToUse.authToken.empty()))
     {
         addBasicAuthorizationToRequest();
     }
@@ -1755,27 +1828,25 @@ bool AsyncClient::addDigestAuthorizationToRequest(
     if (const auto nonceIter = authenticateHeader.params.find("nonce");
         nonceIter != authenticateHeader.params.end())
     {
-        nonceCount = NonceCache::instance().getNonceCount(
-            serverEndpoint, serverRole, nonceIter->second);
+        nonceCount =
+            NonceCache::instance().getNonceCount(serverEndpoint, serverRole, nonceIter->second);
     }
 
-    const auto authorization = generateDigestAuthorization(
-        m_request,
-        credentials,
-        authenticateHeader,
-        nonceCount);
+    const auto authorization =
+        generateDigestAuthorization(m_request, credentials, authenticateHeader, nonceCount);
     if (!authorization)
     {
-        NX_VERBOSE(this, "Failed to generate Authorization header for URL %1, username %2",
-            m_contentLocationUrl, credentials.username);
+        NX_VERBOSE(
+            this,
+            "Failed to generate Authorization header for URL %1, username %2",
+            m_contentLocationUrl,
+            credentials.username);
         return false;
     }
 
     nx::network::http::insertOrReplaceHeader(
         &m_request.headers,
-        nx::network::http::HttpHeader(
-            authorizationHeaderName,
-            authorization->serialized()));
+        nx::network::http::HttpHeader(authorizationHeaderName, authorization->serialized()));
 
     return true;
 }
@@ -1806,10 +1877,8 @@ void AsyncClient::doSomeCustomLogic(
         return;
 
     // Calculating user's digest with new realm.
-    const auto newRealmDigest = calcHa1(
-        credentials().username,
-        realmIter->second,
-        credentials().authToken.value);
+    const auto newRealmDigest =
+        calcHa1(credentials().username, realmIter->second, credentials().authToken.value);
     const auto cryptSha512Hash = nx::crypt::linuxCryptSha512(
         QByteArray::fromStdString(credentials().authToken.value),
         nx::crypt::generateSalt(nx::crypt::kLinuxCryptSaltLength));
@@ -1829,24 +1898,24 @@ const char* AsyncClient::toString(State state)
 {
     switch (state)
     {
-    case State::sInit:
-        return "init";
-    case State::sWaitingConnectToHost:
-        return "waitingConnectToHost";
-    case State::sSendingRequest:
-        return "sendingRequest";
-    case State::sReceivingResponse:
-        return "receivingResponse";
-    case State::sResponseReceived:
-        return "responseReceived";
-    case State::sReadingMessageBody:
-        return "readingMessageBody";
-    case State::sFailed:
-        return "failed";
-    case State::sDone:
-        return "done";
-    default:
-        return "unknown";
+        case State::sInit:
+            return "init";
+        case State::sWaitingConnectToHost:
+            return "waitingConnectToHost";
+        case State::sSendingRequest:
+            return "sendingRequest";
+        case State::sReceivingResponse:
+            return "receivingResponse";
+        case State::sResponseReceived:
+            return "responseReceived";
+        case State::sReadingMessageBody:
+            return "readingMessageBody";
+        case State::sFailed:
+            return "failed";
+        case State::sDone:
+            return "done";
+        default:
+            return "unknown";
     }
 }
 
@@ -1878,7 +1947,7 @@ AsyncClient::Result AsyncClient::emitSomeMessageBodyAvailable()
     return invokeHandler(m_onSomeMessageBodyAvailable);
 }
 
-template<typename ... Args>
+template<typename... Args>
 AsyncClient::Result AsyncClient::invokeHandler(
     nx::MoveOnlyFunc<void(Args...)>& handler,
     Args... args)

@@ -15,29 +15,18 @@
  * Table K.1 from JPEG spec.
  */
 static const int jpeg_luma_quantizer[64] = {
-    16, 11, 10, 16, 24, 40, 51, 61,
-    12, 12, 14, 19, 26, 58, 60, 55,
-    14, 13, 16, 24, 40, 57, 69, 56,
-    14, 17, 22, 29, 51, 87, 80, 62,
-    18, 22, 37, 56, 68, 109, 103, 77,
-    24, 35, 55, 64, 81, 104, 113, 92,
-    49, 64, 78, 87, 103, 121, 120, 101,
-    72, 92, 95, 98, 112, 100, 103, 99
-};
+    16, 11, 10, 16, 24,  40,  51,  61,  12, 12, 14, 19, 26,  58,  60,  55,
+    14, 13, 16, 24, 40,  57,  69,  56,  14, 17, 22, 29, 51,  87,  80,  62,
+    18, 22, 37, 56, 68,  109, 103, 77,  24, 35, 55, 64, 81,  104, 113, 92,
+    49, 64, 78, 87, 103, 121, 120, 101, 72, 92, 95, 98, 112, 100, 103, 99};
 
 /**
  * Table K.2 from JPEG spec.
  */
 static const int jpeg_chroma_quantizer[64] = {
-    17, 18, 24, 47, 99, 99, 99, 99,
-    18, 21, 26, 66, 99, 99, 99, 99,
-    24, 26, 56, 99, 99, 99, 99, 99,
-    47, 66, 99, 99, 99, 99, 99, 99,
-    99, 99, 99, 99, 99, 99, 99, 99,
-    99, 99, 99, 99, 99, 99, 99, 99,
-    99, 99, 99, 99, 99, 99, 99, 99,
-    99, 99, 99, 99, 99, 99, 99, 99
-};
+    17, 18, 24, 47, 99, 99, 99, 99, 18, 21, 26, 66, 99, 99, 99, 99, 24, 26, 56, 99, 99, 99,
+    99, 99, 47, 66, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+    99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99};
 
 #else
 
@@ -46,26 +35,15 @@ static const int jpeg_chroma_quantizer[64] = {
 namespace nx::rtp {
 
 static const int jpeg_luma_quantizer[64] = {
-    16,  11,  12,  14,  12,  10,  16,  14,
-    13,  14,  18,  17,  16,  19,  24,  40,
-    26,  24,  22,  22,  24,  49,  35,  37,
-    29,  40,  58,  51,  61,  60,  57,  51,
-    56,  55,  64,  72,  92,  78,  64,  68,
-    87,  69,  55,  56,  80,  109, 81,  87,
-    95,  98,  103, 104, 103, 62,  77,  113,
-    121, 112, 100, 120, 92,  101, 103, 99
-};
+    16, 11, 12,  14,  12,  10, 16, 14,  13,  14,  18,  17,  16, 19,  24,  40,
+    26, 24, 22,  22,  24,  49, 35, 37,  29,  40,  58,  51,  61, 60,  57,  51,
+    56, 55, 64,  72,  92,  78, 64, 68,  87,  69,  55,  56,  80, 109, 81,  87,
+    95, 98, 103, 104, 103, 62, 77, 113, 121, 112, 100, 120, 92, 101, 103, 99};
 
 static const int jpeg_chroma_quantizer[64] = {
-    17,  18,  18,  24,  21,  24,  47,  26,
-    26,  47,  99,  66,  56,  66,  99,  99,
-    99,  99,  99,  99,  99,  99,  99,  99,
-    99,  99,  99,  99,  99,  99,  99,  99,
-    99,  99,  99,  99,  99,  99,  99,  99,
-    99,  99,  99,  99,  99,  99,  99,  99,
-    99,  99,  99,  99,  99,  99,  99,  99,
-    99,  99,  99,  99,  99,  99,  99,  99
-};
+    17, 18, 18, 24, 21, 24, 47, 26, 26, 47, 99, 66, 56, 66, 99, 99, 99, 99, 99, 99, 99, 99,
+    99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+    99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99};
 
 #endif // 0
 
@@ -77,8 +55,10 @@ void MakeTables(int q, quint8* lqt, quint8* cqt)
     int i;
     int factor = q;
 
-    if (q < 1) factor = 1;
-    if (q > 99) factor = 99;
+    if (q < 1)
+        factor = 1;
+    if (q > 99)
+        factor = 99;
     if (q < 50)
         q = 5000 / factor;
     else
@@ -104,75 +84,137 @@ void MakeTables(int q, quint8* lqt, quint8* cqt)
 }
 
 quint8 lum_dc_codelens[] = {
-    0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0,
+    1,
+    5,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
 };
 
 quint8 lum_dc_symbols[] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
 };
 
 quint8 lum_ac_codelens[] = {
-    0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d,
+    0,
+    2,
+    1,
+    3,
+    3,
+    2,
+    4,
+    3,
+    5,
+    5,
+    4,
+    4,
+    0,
+    0,
+    1,
+    0x7d,
 };
 
 quint8 lum_ac_symbols[] = {
-    0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
-    0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
-    0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xa1, 0x08,
-    0x23, 0x42, 0xb1, 0xc1, 0x15, 0x52, 0xd1, 0xf0,
-    0x24, 0x33, 0x62, 0x72, 0x82, 0x09, 0x0a, 0x16,
-    0x17, 0x18, 0x19, 0x1a, 0x25, 0x26, 0x27, 0x28,
-    0x29, 0x2a, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
-    0x3a, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49,
-    0x4a, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59,
-    0x5a, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69,
-    0x6a, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79,
-    0x7a, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89,
-    0x8a, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98,
-    0x99, 0x9a, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
-    0xa8, 0xa9, 0xaa, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6,
-    0xb7, 0xb8, 0xb9, 0xba, 0xc2, 0xc3, 0xc4, 0xc5,
-    0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xd2, 0xd3, 0xd4,
-    0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xe1, 0xe2,
-    0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xea,
-    0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8,
-    0xf9, 0xfa,
+    0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12, 0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61,
+    0x07, 0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xa1, 0x08, 0x23, 0x42, 0xb1, 0xc1, 0x15, 0x52,
+    0xd1, 0xf0, 0x24, 0x33, 0x62, 0x72, 0x82, 0x09, 0x0a, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x25,
+    0x26, 0x27, 0x28, 0x29, 0x2a, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x43, 0x44, 0x45,
+    0x46, 0x47, 0x48, 0x49, 0x4a, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x63, 0x64,
+    0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x83,
+    0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99,
+    0x9a, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6,
+    0xb7, 0xb8, 0xb9, 0xba, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xd2, 0xd3,
+    0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8,
+    0xe9, 0xea, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa,
 };
 
 quint8 chm_dc_codelens[] = {
-    0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+    0,
+    3,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
 };
 
 quint8 chm_dc_symbols[] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
 };
 
 quint8 chm_ac_codelens[] = {
-        0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 0x77,
+    0,
+    2,
+    1,
+    2,
+    4,
+    4,
+    3,
+    4,
+    7,
+    5,
+    4,
+    4,
+    0,
+    1,
+    2,
+    0x77,
 };
 
 quint8 chm_ac_symbols[] = {
-        0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21,
-        0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71,
-        0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91,
-        0xa1, 0xb1, 0xc1, 0x09, 0x23, 0x33, 0x52, 0xf0,
-        0x15, 0x62, 0x72, 0xd1, 0x0a, 0x16, 0x24, 0x34,
-        0xe1, 0x25, 0xf1, 0x17, 0x18, 0x19, 0x1a, 0x26,
-        0x27, 0x28, 0x29, 0x2a, 0x35, 0x36, 0x37, 0x38,
-        0x39, 0x3a, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
-        0x49, 0x4a, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58,
-        0x59, 0x5a, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68,
-        0x69, 0x6a, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
-        0x79, 0x7a, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
-        0x88, 0x89, 0x8a, 0x92, 0x93, 0x94, 0x95, 0x96,
-        0x97, 0x98, 0x99, 0x9a, 0xa2, 0xa3, 0xa4, 0xa5,
-        0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xb2, 0xb3, 0xb4,
-        0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xc2, 0xc3,
-        0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xd2,
-        0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda,
-        0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9,
-        0xea, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8,
-        0xf9, 0xfa,
+    0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21, 0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61,
+    0x71, 0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91, 0xa1, 0xb1, 0xc1, 0x09, 0x23, 0x33,
+    0x52, 0xf0, 0x15, 0x62, 0x72, 0xd1, 0x0a, 0x16, 0x24, 0x34, 0xe1, 0x25, 0xf1, 0x17, 0x18,
+    0x19, 0x1a, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x43, 0x44,
+    0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x63,
+    0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a,
+    0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
+    0x98, 0x99, 0x9a, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xb2, 0xb3, 0xb4,
+    0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca,
+    0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7,
+    0xe8, 0xe9, 0xea, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa,
 };
 
 void appendDQT(std::vector<uint8_t>& buffer, const uint8_t* qt, int tableNo)
@@ -185,8 +227,14 @@ void appendDQT(std::vector<uint8_t>& buffer, const uint8_t* qt, int tableNo)
     buffer.insert(buffer.end(), qt, qt + 64);
 }
 
-void appendDHT(std::vector<uint8_t>& buffer, uint8_t* codelens, int ncodes,
-    uint8_t* symbols, int nsymbols, int tableNo, int tableClass)
+void appendDHT(
+    std::vector<uint8_t>& buffer,
+    uint8_t* codelens,
+    int ncodes,
+    uint8_t* symbols,
+    int nsymbols,
+    int tableNo,
+    int tableClass)
 {
     buffer.push_back(0xff);
     buffer.push_back(0xc4); //< DHT
@@ -270,7 +318,12 @@ void appendSOS(std::vector<uint8_t>& buffer)
  * @return Length of the generated headers.
  */
 void MjpegParser::makeHeaders(
-    int type, int width, int height, const quint8* lqt, const quint8* cqt, unsigned short dri)
+    int type,
+    int width,
+    int height,
+    const quint8* lqt,
+    const quint8* cqt,
+    unsigned short dri)
 {
     m_hdrBuffer.clear();
     m_hdrBuffer.reserve(1024);
@@ -296,22 +349,38 @@ void MjpegParser::makeHeaders(
     }
     appendSOF(m_hdrBuffer, type, width, height);
 
-    appendDHT(m_hdrBuffer, lum_dc_codelens,
+    appendDHT(
+        m_hdrBuffer,
+        lum_dc_codelens,
         sizeof(lum_dc_codelens),
         lum_dc_symbols,
-        sizeof(lum_dc_symbols), 0, 0);
-    appendDHT(m_hdrBuffer, lum_ac_codelens,
+        sizeof(lum_dc_symbols),
+        0,
+        0);
+    appendDHT(
+        m_hdrBuffer,
+        lum_ac_codelens,
         sizeof(lum_ac_codelens),
         lum_ac_symbols,
-        sizeof(lum_ac_symbols), 0, 1);
-    appendDHT(m_hdrBuffer, chm_dc_codelens,
+        sizeof(lum_ac_symbols),
+        0,
+        1);
+    appendDHT(
+        m_hdrBuffer,
+        chm_dc_codelens,
         sizeof(chm_dc_codelens),
         chm_dc_symbols,
-        sizeof(chm_dc_symbols), 1, 0);
-    appendDHT(m_hdrBuffer, chm_ac_codelens,
+        sizeof(chm_dc_symbols),
+        1,
+        0);
+    appendDHT(
+        m_hdrBuffer,
+        chm_ac_codelens,
         sizeof(chm_ac_codelens),
         chm_ac_symbols,
-        sizeof(chm_ac_symbols), 1, 1);
+        sizeof(chm_ac_symbols),
+        1,
+        1);
 
     appendSOS(m_hdrBuffer);
 }
@@ -377,7 +446,9 @@ void MjpegParser::setSdpInfo(const Sdp::Media& sdp)
 }
 
 Result MjpegParser::processRtpExtension(
-    const RtpHeaderExtensionHeader& extensionHeader, quint8* data, int size)
+    const RtpHeaderExtensionHeader& extensionHeader,
+    quint8* data,
+    int size)
 {
     constexpr uint16_t kOnvifJpegExtensionCode = 0xffd8;
     if (extensionHeader.id() == kOnvifJpegExtensionCode)
@@ -399,7 +470,7 @@ Result MjpegParser::processRtpExtension(
             m_sofFound = true;
         }
     }
-    return { true };
+    return {true};
 }
 
 void MjpegParser::fixResolution(int* width, int* height)
@@ -422,14 +493,16 @@ void MjpegParser::fixResolution(int* width, int* height)
         *height = m_frameHeight / 8;
 
     // Workaround: certain 4K cameras do not provide "a=framesize", and drop MSB from resolution.
-    if (m_frameWidth <= 0 && m_frameHeight <= 0
-        && *width == (3840 - 2048) / 8 && *height == (2160 - 2048) / 8)
+    if (m_frameWidth <= 0 && m_frameHeight <= 0 && *width == (3840 - 2048) / 8
+        && *height == (2160 - 2048) / 8)
     {
         if (!resolutionWorkaroundLogged)
         {
             resolutionWorkaroundLogged = true;
-            NX_DEBUG(this,
-                "%1: Camera reports resolution 1792 x 112, assuming 3840 x 2160 (~4K)", logId());
+            NX_DEBUG(
+                this,
+                "%1: Camera reports resolution 1792 x 112, assuming 3840 x 2160 (~4K)",
+                logId());
         }
         *width = 3840 / 8;
         *height = 2160 / 8;
@@ -437,11 +510,11 @@ void MjpegParser::fixResolution(int* width, int* height)
 }
 
 Result MjpegParser::processData(
-        const RtpHeader& rtpHeader,
-        quint8* rtpBufferBase,
-        int bufferOffset,
-        int bytesRead,
-        bool& gotData)
+    const RtpHeader& rtpHeader,
+    quint8* rtpBufferBase,
+    int bufferOffset,
+    int bytesRead,
+    bool& gotData)
 {
     gotData = false;
     const quint8* curPtr = rtpBufferBase + bufferOffset;
@@ -498,8 +571,13 @@ Result MjpegParser::processData(
 
             if (bytesLeft < length)
             {
-                return {false, NX_FMT("Not enough bytes left in buffer. "
-                    "%1 bytes, expected at least %2 bytes", bytesLeft, length)};
+                return {
+                    false,
+                    NX_FMT(
+                        "Not enough bytes left in buffer. "
+                        "%1 bytes, expected at least %2 bytes",
+                        bytesLeft,
+                        length)};
             }
 
             int lumaSize = (Precision & 1) ? 2 : 1;
@@ -510,8 +588,10 @@ Result MjpegParser::processData(
                 if (!mjpeg16BitWarningLogged)
                 {
                     mjpeg16BitWarningLogged = true;
-                    NX_DEBUG(this, lit("%1: 16-bit MJPEG is not supported")
-                        .arg(QString::fromStdString(logId())));
+                    NX_DEBUG(
+                        this,
+                        lit("%1: 16-bit MJPEG is not supported")
+                            .arg(QString::fromStdString(logId())));
                 }
                 return {false, "Only 8-bit MJPEG is supported"};
             }
@@ -521,12 +601,17 @@ Result MjpegParser::processData(
                 static const int kTableSize = 64;
                 if (length < kTableSize)
                 {
-                    return {false, NX_FMT("Invalid color table length %1. "
-                        "Expected at least %2", length, kTableSize)};
+                    return {
+                        false,
+                        NX_FMT(
+                            "Invalid color table length %1. "
+                            "Expected at least %2",
+                            length,
+                            kTableSize)};
                 }
                 // RFC2435. Same table for each frame, make deep copy of tables.
                 lumaTable = curPtr;
-                chromaTable = curPtr + (length >= kTableSize*2 ? kTableSize : 0);
+                chromaTable = curPtr + (length >= kTableSize * 2 ? kTableSize : 0);
                 if (jpegQ != 255)
                 {
                     // Make deep copy because the same table will be reused.
@@ -544,19 +629,31 @@ Result MjpegParser::processData(
             m_lastJpegQ = jpegQ;
         }
 
-        if (m_hdrQ != jpegQ || dri != m_hdrDri || m_hdrWidth != width || m_hdrHeight != height ||
-           !m_onvifJpegHeader.empty())
+        if (m_hdrQ != jpegQ || dri != m_hdrDri || m_hdrWidth != width || m_hdrHeight != height
+            || !m_onvifJpegHeader.empty())
         {
             if (jpegQ != 255)
             {
-                makeHeaders(jpegType, width, height, m_lumaTable, m_chromaTable, dri); //< use deep copy
+                makeHeaders(
+                    jpegType,
+                    width,
+                    height,
+                    m_lumaTable,
+                    m_chromaTable,
+                    dri); //< use deep copy
             }
             else
             {
                 if (!lumaTable || !chromaTable)
                     return {false, NX_FMT("Missing luma or chroma table")};
 
-                makeHeaders(jpegType, width, height, lumaTable, chromaTable, dri); //< use tables direct pointer
+                makeHeaders(
+                    jpegType,
+                    width,
+                    height,
+                    lumaTable,
+                    chromaTable,
+                    dri); //< use tables direct pointer
             }
             m_hdrQ = jpegQ;
             m_hdrDri = dri;
@@ -566,10 +663,10 @@ Result MjpegParser::processData(
         else if (lumaTable && chromaTable)
         {
             // Update header tables.
-            if ((int)m_hdrBuffer.size() > m_lumaTablePos + 64)
+            if ((int) m_hdrBuffer.size() > m_lumaTablePos + 64)
                 memcpy(m_hdrBuffer.data() + m_lumaTablePos, lumaTable, 64);
 
-            if ((int)m_hdrBuffer.size() > m_chromaTablePos + 64)
+            if ((int) m_hdrBuffer.size() > m_chromaTablePos + 64)
                 memcpy(m_hdrBuffer.data() + m_chromaTablePos, chromaTable, 64);
         }
 
@@ -591,23 +688,24 @@ Result MjpegParser::processData(
     if (lastPacketReceived)
     {
         const quint8* EOI_marker = curPtr + bytesLeft - 2;
-        //if (m_frameSize < 2 || EOI_marker[0] != jpeg_end[0] || EOI_marker[1] != jpeg_end[1])
-        //    m_frameData.write((const char*) jpeg_end, sizeof(jpeg_end));
+        // if (m_frameSize < 2 || EOI_marker[0] != jpeg_end[0] || EOI_marker[1] != jpeg_end[1])
+        //     m_frameData.write((const char*) jpeg_end, sizeof(jpeg_end));
         bool needAddMarker =
             m_frameSize < 2 || EOI_marker[0] != jpeg_end[0] || EOI_marker[1] != jpeg_end[1];
 
         QnWritableCompressedVideoDataPtr videoData(new QnWritableCompressedVideoData(
             m_hdrBuffer.size() + m_frameSize + (needAddMarker ? 2 : 0)));
         m_mediaData = videoData;
-        videoData->m_data.uncheckedWrite((const char*)m_hdrBuffer.data(), m_hdrBuffer.size());
-        //m_videoData->data.write(m_frameData);
+        videoData->m_data.uncheckedWrite((const char*) m_hdrBuffer.data(), m_hdrBuffer.size());
+        // m_videoData->data.write(m_frameData);
         for (uint i = 0; i < m_chunks.size(); ++i)
         {
             videoData->m_data.uncheckedWrite(
-                (const char*)(rtpBufferBase + m_chunks[i].offset), m_chunks[i].size);
+                (const char*) (rtpBufferBase + m_chunks[i].offset),
+                m_chunks[i].size);
         }
         if (needAddMarker)
-            videoData->m_data.uncheckedWrite((const char*)jpeg_end, sizeof(jpeg_end));
+            videoData->m_data.uncheckedWrite((const char*) jpeg_end, sizeof(jpeg_end));
 
         m_chunks.clear();
         m_frameSize = 0;
@@ -621,7 +719,8 @@ Result MjpegParser::processData(
         videoData->timestamp = rtpHeader.getTimestamp();
 
         auto codecParameters = QnFfmpegHelper::createVideoCodecParametersAnnexB(videoData.get());
-        if (codecParameters && (!m_codecParameters || !m_codecParameters->isEqual(*codecParameters)))
+        if (codecParameters
+            && (!m_codecParameters || !m_codecParameters->isEqual(*codecParameters)))
             m_codecParameters = codecParameters;
         videoData->context = m_codecParameters;
 

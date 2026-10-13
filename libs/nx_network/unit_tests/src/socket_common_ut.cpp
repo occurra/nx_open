@@ -5,15 +5,15 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #ifdef _WIN32
-#include <Winsock2.h>
-#include <Ws2tcpip.h>
+    #include <Winsock2.h>
+    #include <Ws2tcpip.h>
 typedef ULONG in_addr_t;
 #endif
 
 #include <gtest/gtest.h>
 
-#include <nx/network/socket_common.h>
 #include <nx/fusion/serialization/json.h>
+#include <nx/network/socket_common.h>
 #include <nx/utils/string.h>
 #include <nx/utils/url.h>
 
@@ -33,24 +33,24 @@ static void testHostAddress(
 
     if (ipv4)
     {
-        const auto ip =  host.ipV4();
-        ASSERT_TRUE((bool)ip);
+        const auto ip = host.ipV4();
+        ASSERT_TRUE((bool) ip);
         ASSERT_EQ(ip->s_addr, *ipv4);
     }
     else
     {
-        ASSERT_FALSE((bool)host.ipV4());
+        ASSERT_FALSE((bool) host.ipV4());
     }
 
     if (ipv6)
     {
-        const auto ip =  host.ipV6().first;
-        ASSERT_TRUE((bool)ip);
+        const auto ip = host.ipV6().first;
+        ASSERT_TRUE((bool) ip);
         ASSERT_EQ(ip, ipv6);
     }
     else
     {
-        ASSERT_FALSE((bool)host.ipV6().first);
+        ASSERT_FALSE((bool) host.ipV6().first);
     }
 }
 
@@ -88,9 +88,9 @@ TEST(HostAddress, Base)
     const auto kIpV6a = HostAddress::ipV6from(std::string("::ffff:c22:384e")).first;
     const auto kIpV6b = HostAddress::ipV6from(std::string("2001:db8:0:2::1")).first;
 
-    ASSERT_TRUE((bool)kIpV4a);
-    ASSERT_TRUE((bool)kIpV6a);
-    ASSERT_TRUE((bool)kIpV6b);
+    ASSERT_TRUE((bool) kIpV4a);
+    ASSERT_TRUE((bool) kIpV6a);
+    ASSERT_TRUE((bool) kIpV6b);
 
     testHostAddress("12.34.56.78", "::ffff:12.34.56.78", kIpV4a->s_addr, kIpV6a);
     testHostAddress({}, "2001:db8:0:2::1", std::nullopt, kIpV6b);
@@ -247,8 +247,7 @@ TEST(HostAddress, string_that_is_valid_ipv4_is_not_converted_to_ip_implicitly)
 
 //-------------------------------------------------------------------------------------------------
 
-class SocketAddress:
-    public ::testing::Test
+class SocketAddress: public ::testing::Test
 {
 protected:
     void assertEndpointIsParsedAsExpected(
@@ -271,7 +270,9 @@ protected:
     }
 
     void assertEndpointIsParsedAsExpected(
-        const std::string& endpointString, const char* host, int port)
+        const std::string& endpointString,
+        const char* host,
+        int port)
     {
         assertEndpointIsParsedAsExpected(
             network::SocketAddress(endpointString),
@@ -357,9 +358,7 @@ TEST(KeepAliveOptions, toString)
 {
     using namespace std::chrono;
 
-    ASSERT_EQ(
-        "{11,131,12}",
-        KeepAliveOptions(seconds(11), seconds(131), 12).toString());
+    ASSERT_EQ("{11,131,12}", KeepAliveOptions(seconds(11), seconds(131), 12).toString());
 
     ASSERT_EQ(
         "{11ms,131ms,12}",

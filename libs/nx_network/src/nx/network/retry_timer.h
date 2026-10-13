@@ -14,8 +14,7 @@
 
 namespace nx::network {
 
-class NX_NETWORK_API RetryPolicy:
-    public nx::utils::ProgressiveDelayPolicy
+class NX_NETWORK_API RetryPolicy: public nx::utils::ProgressiveDelayPolicy
 {
     using base_type = nx::utils::ProgressiveDelayPolicy;
 
@@ -42,16 +41,15 @@ public:
 };
 
 /**
- * Timer that can be used to retry some operation with increasing delay and a limited number of retries.
- * Implements requested retry policy, supports policy specified in STUN rfc.
- * There are maximum N retries, delay between retries is increased by some multiplier with each
- * unsuccessful try.
+ * Timer that can be used to retry some operation with increasing delay and a limited number of
+ * retries. Implements requested retry policy, supports policy specified in STUN rfc. There are
+ * maximum N retries, delay between retries is increased by some multiplier with each unsuccessful
+ * try.
  *
  * NOTE: RetryTimer instance can be safely freed within doAnotherTryFunc.
  * NOTE: Class methods are not thread-safe.
  */
-class NX_NETWORK_API RetryTimer:
-    public aio::BasicPollable
+class NX_NETWORK_API RetryTimer: public aio::BasicPollable
 {
 public:
     RetryTimer(const RetryPolicy& policy, aio::AbstractAioThread* aioThread = nullptr);

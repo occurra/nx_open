@@ -16,15 +16,9 @@ class TimerManager: public ::testing::Test
 public:
     static constexpr milliseconds delay = 250ms;
 
-    TimerManager()
-    {
-        m_timerManager.start();
-    }
+    TimerManager() { m_timerManager.start(); }
 
-    ~TimerManager()
-    {
-        m_timerManager.stop();
-    }
+    ~TimerManager() { m_timerManager.stop(); }
 
 protected:
     void startSingleShotTimer()
@@ -44,10 +38,7 @@ protected:
             delay);
     }
 
-    void waitForTimerEvent()
-    {
-        waitForEventCountToExceed(0);
-    }
+    void waitForTimerEvent() { waitForEventCountToExceed(0); }
 
     void waitForEventCountToExceed(int count)
     {
@@ -63,10 +54,10 @@ protected:
 
     void assertTimerErrorFactorIsNotLargerThan(float coeff)
     {
-        const auto minTime = std::chrono::duration_cast<
-            std::remove_const<decltype(delay)>::type>(delay * (1 - coeff));
-        const auto maxTime = std::chrono::duration_cast<
-            std::remove_const<decltype(delay)>::type>(delay * (1 + coeff));
+        const auto minTime = std::chrono::duration_cast<std::remove_const<decltype(delay)>::type>(
+            delay * (1 - coeff));
+        const auto maxTime = std::chrono::duration_cast<std::remove_const<decltype(delay)>::type>(
+            delay * (1 + coeff));
 
         const auto totalTime = m_lastTimerEventClock - m_timerStartClock;
         const auto averageEventTime = totalTime / m_eventCount.load();

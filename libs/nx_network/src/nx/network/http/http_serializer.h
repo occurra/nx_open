@@ -25,6 +25,6 @@ private:
     const Message* m_message = nullptr;
 };
 
-} // namespace nx
-} // namespace network
 } // namespace http
+} // namespace network
+} // namespace nx

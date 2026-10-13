@@ -11,37 +11,39 @@
 
 namespace nx::network::ssl {
 
-const std::function<
-    bool(CertificateChainView /*chain*/, StreamSocket* /*socket*/)> kDefaultCertificateCheckCallback =
-        [](CertificateChainView chain, StreamSocket* socket)
-        {
-            if (!ini().useDefaultSslCertificateVerificationByOs)
-                return true;
+const std::function<bool(CertificateChainView /*chain*/, StreamSocket* /*socket*/)>
+    kDefaultCertificateCheckCallback = [](CertificateChainView chain, StreamSocket* socket)
+{
+    if (!ini().useDefaultSslCertificateVerificationByOs)
+        return true;
 
-            std::string message;
-            const auto serverName = socket->serverName();
-            if (verifyBySystemCertificates(chain, serverName, &message))
-            {
-                NX_VERBOSE(socket,
-                    "Default certificate verification for server `%1` succeeded", serverName);
-                return true;
-            }
+    std::string message;
+    const auto serverName = socket->serverName();
+    if (verifyBySystemCertificates(chain, serverName, &message))
+    {
+        NX_VERBOSE(
+            socket,
+            "Default certificate verification for server `%1` succeeded",
+            serverName);
+        return true;
+    }
 
-            NX_WARNING(socket,
-                "Default certificate verification for server `%1` is failed: %2",
-                serverName, message);
-            return false;
-        };
+    NX_WARNING(
+        socket,
+        "Default certificate verification for server `%1` is failed: %2",
+        serverName,
+        message);
+    return false;
+};
 
-const std::function<
-    bool(CertificateChainView /*chain*/, StreamSocket* /*socket*/)> kAcceptAnyCertificateCallback;
+const std::function<bool(CertificateChainView /*chain*/, StreamSocket* /*socket*/)>
+    kAcceptAnyCertificateCallback;
 
 namespace detail {
 
 StreamSocketToTwoWayPipelineAdapter::StreamSocketToTwoWayPipelineAdapter(
     AbstractStreamSocket* streamSocket,
-    aio::StreamTransformingAsyncChannel* asyncSslChannel)
-    :
+    aio::StreamTransformingAsyncChannel* asyncSslChannel):
     m_streamSocket(streamSocket),
     m_asyncSslChannel(asyncSslChannel)
 {
@@ -57,8 +59,8 @@ int StreamSocketToTwoWayPipelineAdapter::read(void* data, size_t count)
     if (bytesReadFromCache > 0)
         return bytesReadFromCache;
 
-    const int bytesRead = m_streamSocket->recv(
-        data, static_cast<int>(count), getFlagsForCurrentThread());
+    const int bytesRead =
+        m_streamSocket->recv(data, static_cast<int>(count), getFlagsForCurrentThread());
     return bytesTransferredToPipelineReturnCode(bytesRead);
 }
 
@@ -86,8 +88,7 @@ void StreamSocketToTwoWayPipelineAdapter::setFlagsForCallsInThread(
         m_threadIdToFlags[threadId] = flags;
 }
 
-int StreamSocketToTwoWayPipelineAdapter::bytesTransferredToPipelineReturnCode(
-    int bytesTransferred)
+int StreamSocketToTwoWayPipelineAdapter::bytesTransferredToPipelineReturnCode(int bytesTransferred)
 {
     if (bytesTransferred >= 0)
         return bytesTransferred;
@@ -111,8 +112,7 @@ StreamSocket::StreamSocket(
     Context* context,
     std::unique_ptr<AbstractStreamSocket> delegate,
     bool isServerSide,
-    VerifyCertificateChainCallbackSync verifyChainCallback)
-    :
+    VerifyCertificateChainCallbackSync verifyChainCallback):
     base_type(delegate.get()),
     m_delegate(std::move(delegate)),
     m_proxyConverter(nullptr)
@@ -136,14 +136,18 @@ StreamSocket::StreamSocket(
         aio::makeAsyncChannelAdapter(m_delegate.get()),
         &m_proxyConverter);
 
-    NX_VERBOSE(this, "%1-side. Local %2, remote %3, socket %4, transforming channel %5",
+    NX_VERBOSE(
+        this,
+        "%1-side. Local %2, remote %3, socket %4, transforming channel %5",
         isServerSide ? "Server" : "Client",
-        m_delegate->getLocalAddress(), m_delegate->getForeignAddress(),
-        m_delegate.get(), m_asyncTransformingChannel.get());
+        m_delegate->getLocalAddress(),
+        m_delegate->getForeignAddress(),
+        m_delegate.get(),
+        m_asyncTransformingChannel.get());
 
-    m_socketToPipelineAdapter =
-        std::make_unique<detail::StreamSocketToTwoWayPipelineAdapter>(
-            m_delegate.get(), m_asyncTransformingChannel.get());
+    m_socketToPipelineAdapter = std::make_unique<detail::StreamSocketToTwoWayPipelineAdapter>(
+        m_delegate.get(),
+        m_asyncTransformingChannel.get());
 
     bindToAioThread(m_delegate->getAioThread());
 }
@@ -193,9 +197,7 @@ void StreamSocket::bindToAioThread(aio::AbstractAioThread* aioThread)
     m_handshakeTimer.bindToAioThread(aioThread);
 }
 
-bool StreamSocket::connect(
-    const SocketAddress& endpoint,
-    std::chrono::milliseconds timeout)
+bool StreamSocket::connect(const SocketAddress& endpoint, std::chrono::milliseconds timeout)
 {
     if (!base_type::connect(endpoint, timeout))
         return false;
@@ -292,23 +294,20 @@ int StreamSocket::send(const void* buffer, std::size_t bufferLen)
     return -1;
 }
 
-void StreamSocket::readSomeAsync(
-    nx::Buffer* const buffer,
-    IoCompletionHandler handler)
+void StreamSocket::readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler)
 {
     switchToAsyncModeIfNeeded();
     m_asyncTransformingChannel->readSomeAsync(buffer, std::move(handler));
 }
 
-void StreamSocket::sendAsync(
-    const nx::Buffer* buffer,
-    IoCompletionHandler handler)
+void StreamSocket::sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler)
 {
     switchToAsyncModeIfNeeded();
     m_asyncTransformingChannel->sendAsync(
         buffer,
-        [this, handler = std::move(handler)](
-            SystemError::ErrorCode resultCode, std::size_t bytesTransferred)
+        [this,
+         handler =
+             std::move(handler)](SystemError::ErrorCode resultCode, std::size_t bytesTransferred)
         {
             if (resultCode != SystemError::noError)
                 m_sslPipeline->setFailed(true);
@@ -327,8 +326,7 @@ bool StreamSocket::isEncryptionEnabled() const
     return true;
 }
 
-void StreamSocket::handshakeAsync(
-    nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
+void StreamSocket::handshakeAsync(nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
 {
     switchToAsyncModeIfNeeded();
 
@@ -375,12 +373,10 @@ void StreamSocket::setVerifyCertificateChainCallback(
     }
 }
 
-bool StreamSocket::syncVerifyCertificateChainCallbackHandler(
-    CertificateChainView chain)
+bool StreamSocket::syncVerifyCertificateChainCallbackHandler(CertificateChainView chain)
 {
-    return std::get<VerifyCertificateChainCallbackSync>(m_verifyCertificateChainCallback)(
-        std::move(chain),
-        this);
+    return std::get<VerifyCertificateChainCallbackSync>(
+        m_verifyCertificateChainCallback)(std::move(chain), this);
 }
 
 void StreamSocket::setSyncVerifyCertificateChainCallback(VerifyCertificateChainCallbackSync func)
@@ -390,17 +386,18 @@ void StreamSocket::setSyncVerifyCertificateChainCallback(VerifyCertificateChainC
         &StreamSocket::syncVerifyCertificateChainCallbackHandler);
 }
 
-bool StreamSocket::asyncVerifyCertificateChainCallbackHandler(
-    CertificateChainView chain)
+bool StreamSocket::asyncVerifyCertificateChainCallbackHandler(CertificateChainView chain)
 {
     m_sslPipeline->pauseDataProcessingAfterHandshake(
-        [this]() { m_asyncTransformingChannel->pause(); });
+        [this]()
+        {
+            m_asyncTransformingChannel->pause();
+        });
     const auto sharedGuard = m_asyncOperationGuard.sharedGuard();
     std::get<VerifyCertificateChainCallbackAsync>(m_verifyCertificateChainCallback)(
         std::move(chain),
         this,
-        [this, sharedGuard](
-            bool isOk)
+        [this, sharedGuard](bool isOk)
         {
             if (auto lock = sharedGuard->lock())
                 m_asyncTransformingChannel->dispatch(
@@ -421,8 +418,7 @@ bool StreamSocket::asyncVerifyCertificateChainCallbackHandler(
     return true;
 }
 
-void StreamSocket::setAsyncVerifyCertificateChainCallback(
-    VerifyCertificateChainCallbackAsync func)
+void StreamSocket::setAsyncVerifyCertificateChainCallback(VerifyCertificateChainCallbackAsync func)
 {
     setVerifyCertificateChainCallback(
         func,
@@ -470,9 +466,7 @@ void StreamSocket::doHandshake()
 {
     m_asyncTransformingChannel->sendAsync(
         &m_emptyBuffer,
-        [this](
-            SystemError::ErrorCode systemErrorCode,
-            std::size_t /*bytesSent*/)
+        [this](SystemError::ErrorCode systemErrorCode, std::size_t /*bytesSent*/)
         {
             m_handshakeTimer.pleaseStopSync();
             nx::swapAndCall(m_handshakeHandler, systemErrorCode);
@@ -499,8 +493,10 @@ void StreamSocket::switchToAsyncModeIfNeeded()
 
 void StreamSocket::handleSslError(int sslPipelineResultCode)
 {
-    if (sslPipelineResultCode == nx::utils::bstream::StreamIoError::wouldBlock &&
-        SystemError::getLastOSErrorCode() != SystemError::timedOut) //< TODO: #akolesnikov Come up with a better way to pass os error.
+    if (sslPipelineResultCode == nx::utils::bstream::StreamIoError::wouldBlock
+        && SystemError::getLastOSErrorCode()
+            != SystemError::timedOut) //< TODO: #akolesnikov Come up with a better way to pass os
+                                      // error.
     {
         SystemError::setLastErrorCode(SystemError::wouldBlock);
     }
@@ -515,17 +511,14 @@ void StreamSocket::handleSslError(int sslPipelineResultCode)
 ClientStreamSocket::ClientStreamSocket(
     Context* context,
     std::unique_ptr<AbstractStreamSocket> delegate,
-    VerifyCertificateChainCallbackSync verifyChainCallback)
-    :
-    base_type(
-        context, std::move(delegate), /*isServerSide*/ false, std::move(verifyChainCallback))
+    VerifyCertificateChainCallbackSync verifyChainCallback):
+    base_type(context, std::move(delegate), /*isServerSide*/ false, std::move(verifyChainCallback))
 {
 }
 
 ServerSideStreamSocket::ServerSideStreamSocket(
     Context* context,
-    std::unique_ptr<AbstractStreamSocket> delegate)
-    :
+    std::unique_ptr<AbstractStreamSocket> delegate):
     base_type(context, std::move(delegate), /*isServerSide*/ true, kAcceptAnyCertificateCallback)
 {
 }

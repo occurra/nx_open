@@ -11,8 +11,7 @@ namespace utils {
 namespace math {
 namespace test {
 
-class SumPerPeriod:
-    public ::testing::Test
+class SumPerPeriod: public ::testing::Test
 {
 public:
     SumPerPeriod():
@@ -52,12 +51,8 @@ protected:
 
     void assertSumEqualTo(int value)
     {
-        ASSERT_LE(
-            m_sumPerPeriod.getSumPerLastPeriod(),
-            value * (1 + m_sumPerPeriod.maxError()));
-        ASSERT_GE(
-            m_sumPerPeriod.getSumPerLastPeriod(),
-            value * (1 - m_sumPerPeriod.maxError()));
+        ASSERT_LE(m_sumPerPeriod.getSumPerLastPeriod(), value * (1 + m_sumPerPeriod.maxError()));
+        ASSERT_GE(m_sumPerPeriod.getSumPerLastPeriod(), value * (1 - m_sumPerPeriod.maxError()));
     }
 };
 
@@ -110,11 +105,11 @@ TEST_F(SumPerPeriod, m_front_and_m_back_work_correctly)
 {
     const auto value = 1000;
 
-    m_sumPerPeriod.add(value, 2 * m_period);  // 500
+    m_sumPerPeriod.add(value, 2 * m_period); // 500
 
     m_timeShift.applyRelativeShift(m_period); // -500
 
-    m_sumPerPeriod.add(value, 2 * m_period);  // 500
+    m_sumPerPeriod.add(value, 2 * m_period); // 500
 
     assertSumEqualTo(500);
 }
@@ -193,4 +188,4 @@ TEST_F(SumPerPeriod, reset)
 } // namespace test
 } // namespace math
 } // namespace utils
-} // namespace
+} // namespace nx

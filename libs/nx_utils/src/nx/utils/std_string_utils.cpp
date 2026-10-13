@@ -11,7 +11,8 @@ int stricmp(std::string_view left, std::string_view right)
     if (left.size() == right.size())
         return qstrnicmp(left.data(), right.data(), (int) left.size());
 
-    const auto result = qstrnicmp(left.data(), right.data(), (int) std::min(left.size(), right.size()));
+    const auto result =
+        qstrnicmp(left.data(), right.data(), (int) std::min(left.size(), right.size()));
     if (result != 0)
         return result;
 

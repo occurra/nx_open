@@ -28,10 +28,10 @@ void TranslationOverlayItem::removeThreadContext(const Qt::HANDLE& context)
 }
 
 QString TranslationOverlayItem::translate(
-        const char* context,
-        const char* sourceText,
-        const char* disambiguation,
-        int n) const
+    const char* context,
+    const char* sourceText,
+    const char* disambiguation,
+    int n) const
 {
     NX_READ_LOCKER l(&m_lock);
 

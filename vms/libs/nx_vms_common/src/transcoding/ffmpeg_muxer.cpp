@@ -19,10 +19,14 @@ static AVPixelFormat jpegPixelFormatToRtp(AVPixelFormat value)
 {
     switch (value)
     {
-        case AV_PIX_FMT_YUV420P: return AV_PIX_FMT_YUVJ420P;
-        case AV_PIX_FMT_YUV422P: return AV_PIX_FMT_YUVJ422P;
-        case AV_PIX_FMT_YUV444P: return AV_PIX_FMT_YUVJ444P;
-        default: return value;
+        case AV_PIX_FMT_YUV420P:
+            return AV_PIX_FMT_YUVJ420P;
+        case AV_PIX_FMT_YUV422P:
+            return AV_PIX_FMT_YUVJ422P;
+        case AV_PIX_FMT_YUV444P:
+            return AV_PIX_FMT_YUVJ444P;
+        default:
+            return value;
     }
 }
 
@@ -34,12 +38,14 @@ static AVPixelFormat getPixelFormatJpeg(const std::string_view container, AVPixe
         return format;
 }
 
-}
+} // namespace
 
 FfmpegMuxer::FfmpegMuxer(const Config& config):
     m_config(config),
-    m_internalBuffer(CL_MEDIA_ALIGNMENT, 1024*1024, AV_INPUT_BUFFER_PADDING_SIZE),
-    m_timestampCorrector(std::chrono::milliseconds(MAX_FRAME_DURATION_MS), std::chrono::milliseconds(1))
+    m_internalBuffer(CL_MEDIA_ALIGNMENT, 1024 * 1024, AV_INPUT_BUFFER_PADDING_SIZE),
+    m_timestampCorrector(
+        std::chrono::milliseconds(MAX_FRAME_DURATION_MS),
+        std::chrono::milliseconds(1))
 {
 }
 
@@ -59,11 +65,12 @@ bool FfmpegMuxer::isCodecSupported(AVCodecID id) const
 bool FfmpegMuxer::process(const QnConstAbstractMediaDataPtr& media)
 {
     m_outputPacketSize.clear();
-    if (media->dataType != QnAbstractMediaData::VIDEO && media->dataType != QnAbstractMediaData::AUDIO)
+    if (media->dataType != QnAbstractMediaData::VIDEO
+        && media->dataType != QnAbstractMediaData::AUDIO)
         return true; // mux only audio and video, skip packet
 
-    if ((media->dataType == QnAbstractMediaData::AUDIO && !m_initializedAudio) ||
-        (media->dataType == QnAbstractMediaData::VIDEO && !m_initializedVideo))
+    if ((media->dataType == QnAbstractMediaData::AUDIO && !m_initializedAudio)
+        || (media->dataType == QnAbstractMediaData::VIDEO && !m_initializedVideo))
     {
         return true;
     }
@@ -143,7 +150,8 @@ bool FfmpegMuxer::addVideo(const AVCodecParameters* codecParameters)
     if (m_videoCodecParameters->codec_id == AV_CODEC_ID_MJPEG)
     {
         m_videoCodecParameters->format = getPixelFormatJpeg(
-            m_container.toStdString(), (AVPixelFormat)m_videoCodecParameters->format);
+            m_container.toStdString(),
+            (AVPixelFormat) m_videoCodecParameters->format);
     }
 
     m_videoCodecParameters->sample_aspect_ratio.num = 1;
@@ -189,14 +197,16 @@ bool FfmpegMuxer::open(std::optional<QnAviArchiveMetadata> metadata)
         return false;
 
     m_ioContext = std::make_unique<nx::media::ffmpeg::IoContext>(
-        /*bufferSize*/ 1024 * 16, /*writable*/ true, /*seekable*/ false);
+        /*bufferSize*/ 1024 * 16,
+        /*writable*/ true,
+        /*seekable*/ false);
     m_ioContext->writeHandler = [this](const uint8_t* data, int size)
-        {
-            m_internalBuffer.write((const char*)data, size);
-            if (m_packetizedMode)
-                m_outputPacketSize << size;
-            return size;
-        };
+    {
+        m_internalBuffer.write((const char*) data, size);
+        if (m_packetizedMode)
+            m_outputPacketSize << size;
+        return size;
+    };
 
     m_formatCtx->pb = m_ioContext->getAvioContext();
     if (metadata)
@@ -226,9 +236,9 @@ bool FfmpegMuxer::muxPacket(QnConstAbstractMediaDataPtr media)
 {
     int streamIndex = 0;
     if (m_initializedVideo && media->dataType == QnAbstractMediaData::AUDIO)
-       streamIndex = 1;
+        streamIndex = 1;
 
-    if (streamIndex >= (int)m_formatCtx->nb_streams)
+    if (streamIndex >= (int) m_formatCtx->nb_streams)
     {
         NX_DEBUG(this, "Invalid packet media type: %1, skip it", media->dataType);
         return true;
@@ -237,17 +247,20 @@ bool FfmpegMuxer::muxPacket(QnConstAbstractMediaDataPtr media)
     if (!m_firstVideoTimestamp && media->dataType == QnAbstractMediaData::VIDEO)
         m_firstVideoTimestamp = media->timestamp;
 
-    if (m_initializedVideo
-        && media->dataType == QnAbstractMediaData::AUDIO
+    if (m_initializedVideo && media->dataType == QnAbstractMediaData::AUDIO
         && (!m_firstVideoTimestamp || m_firstVideoTimestamp > media->timestamp))
     {
-        NX_DEBUG(this, "Skip audio before video: %1, first video timestamp: %2", media,
+        NX_DEBUG(
+            this,
+            "Skip audio before video: %1, first video timestamp: %2",
+            media,
             m_firstVideoTimestamp ? *m_firstVideoTimestamp : 0);
         return true;
     }
 
     if (m_videoStreamFilter && media->dataType == QnAbstractMediaData::VIDEO)
-        media = std::dynamic_pointer_cast<const QnAbstractMediaData>(m_videoStreamFilter->processData(media));
+        media = std::dynamic_pointer_cast<const QnAbstractMediaData>(
+            m_videoStreamFilter->processData(media));
 
     AVStream* stream = m_formatCtx->streams[streamIndex];
     constexpr AVRational srcRate = {1, 1'000'000};
@@ -257,17 +270,20 @@ bool FfmpegMuxer::muxPacket(QnConstAbstractMediaDataPtr media)
     bool allowEqualTimestamps = media->dataType == QnAbstractMediaData::GENERIC_METADATA;
     auto timestamp = m_config.utcTimestamps
         ? media->timestamp
-        : m_timestampCorrector.process(
-            std::chrono::microseconds(media->timestamp),
-            streamIndex,
-            allowEqualTimestamps,
-            media->flags & QnAbstractMediaData::MediaFlags_Discontinuity).count();
+        : m_timestampCorrector
+              .process(
+                  std::chrono::microseconds(media->timestamp),
+                  streamIndex,
+                  allowEqualTimestamps,
+                  media->flags & QnAbstractMediaData::MediaFlags_Discontinuity)
+              .count();
 
     packet->pts = av_rescale_q(timestamp, srcRate, stream->time_base);
 
-    packet->data = (uint8_t*)media->data();
+    packet->data = (uint8_t*) media->data();
     packet->size = static_cast<int>(media->dataSize());
-    if (media->dataType == QnAbstractMediaData::AUDIO || media->flags & QnAbstractMediaData::MediaFlags_AVKey)
+    if (media->dataType == QnAbstractMediaData::AUDIO
+        || media->flags & QnAbstractMediaData::MediaFlags_AVKey)
         packet->flags |= AV_PKT_FLAG_KEY;
 
     packet->stream_index = streamIndex;
@@ -279,15 +295,18 @@ bool FfmpegMuxer::muxPacket(QnConstAbstractMediaDataPtr media)
     int status = av_write_frame(m_formatCtx, packet);
     if (status < 0)
     {
-        NX_WARNING(this, "Muxing packet error: can't write AV packet: %1, error: %2",
-            media, nx::media::ffmpeg::avErrorToString(status));
+        NX_WARNING(
+            this,
+            "Muxing packet error: can't write AV packet: %1, error: %2",
+            media,
+            nx::media::ffmpeg::avErrorToString(status));
         return false;
     }
 
     if (m_config.computeSignature)
     {
-        auto context = media->dataType == QnAbstractMediaData::VIDEO ?
-            m_videoCodecParameters : m_audioCodecParameters;
+        auto context = media->dataType == QnAbstractMediaData::VIDEO ? m_videoCodecParameters
+                                                                     : m_audioCodecParameters;
         m_mediaSigner.processMedia(context, packet->data, packet->size);
     }
     return true;

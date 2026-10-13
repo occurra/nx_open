@@ -24,8 +24,7 @@ class RestArgFetcher
 public:
     using type = std::string;
 
-    type operator()(
-        const network::http::RequestContext& requestContext) const
+    type operator()(const network::http::RequestContext& requestContext) const
     {
         return requestContext.requestPathParams.getByName(name);
     }
@@ -36,8 +35,7 @@ class ClientEndpointFetcher
 public:
     using type = network::SocketAddress;
 
-    type operator()(
-        const network::http::RequestContext& requestContext) const
+    type operator()(const network::http::RequestContext& requestContext) const
     {
         return requestContext.clientEndpoint;
     }
@@ -48,8 +46,7 @@ class AttrsFetcher
 public:
     using type = decltype(network::http::RequestContext::attrs);
 
-    const type& operator()(
-        const network::http::RequestContext& requestContext) const
+    const type& operator()(const network::http::RequestContext& requestContext) const
     {
         return requestContext.attrs;
     }
@@ -60,8 +57,7 @@ class UrlQueryFetcher
 public:
     using type = nx::UrlQuery;
 
-    type operator()(
-        const network::http::RequestContext& requestContext) const
+    type operator()(const network::http::RequestContext& requestContext) const
     {
         return nx::UrlQuery(requestContext.request.requestLine.url.query());
     }
@@ -124,8 +120,7 @@ class HttpsRequestDetector
 public:
     using type = bool;
 
-    type operator()(
-        const network::http::RequestContext& requestContext) const
+    type operator()(const network::http::RequestContext& requestContext) const
     {
         return (*this)(requestContext.connectionAttrs, requestContext.request);
     }
@@ -134,8 +129,8 @@ public:
         const nx::network::http::ConnectionAttrs& connectionAttrs,
         const nx::network::http::Request& request) const
     {
-        const auto xForwardedProtoValue = getHeaderValue(
-            request.headers, header::XForwardedProto::NAME);
+        const auto xForwardedProtoValue =
+            getHeaderValue(request.headers, header::XForwardedProto::NAME);
         const bool isSslConnection = connectionAttrs.isSsl
             || (connectionAttrs.sourceAddr.address.isLocalNetwork()
                 && xForwardedProtoValue == header::XForwardedProto::kHttps);
@@ -237,35 +232,28 @@ struct CompletionHandlerDeclarator<Result, void>
  *         [this]()
  *         {
  *             return std::make_unique<DeleteFooHandler>(
- *                 std::bind(&FooManager::deleteFooAndLogClientEndpoint, &m_fooManager, _1, _2, _3));
+ *                 std::bind(&FooManager::deleteFooAndLogClientEndpoint, &m_fooManager, _1, _2,
+ _3));
  *         },
  *         network::http::Method::delete_);
  * }
  */
-template<
-    typename Result,
-    typename Input,
-    typename Output,
-    typename... RestArgFetchers>
-class RequestHandler:
-    public network::http::AbstractApiRequestHandler<Input>
+template<typename Result, typename Input, typename Output, typename... RestArgFetchers>
+class RequestHandler: public network::http::AbstractApiRequestHandler<Input>
 {
 public:
     using CompletionHandler = typename CompletionHandlerDeclarator<Result, Output>::Func;
 
-    using BusinessFunc = std::function<void(
-        typename RestArgFetchers::type...,
-        Input input,
-        CompletionHandler)>;
+    using BusinessFunc =
+        std::function<void(typename RestArgFetchers::type..., Input input, CompletionHandler)>;
 
     RequestHandler(BusinessFunc businessFunc):
         m_businessFunc(std::move(businessFunc))
     {
     }
 
-    virtual void processRequest(
-        network::http::RequestContext requestContext,
-        Input request) override;
+    virtual void processRequest(network::http::RequestContext requestContext, Input request)
+        override;
 
 private:
     BusinessFunc m_businessFunc;
@@ -274,11 +262,7 @@ private:
     void processResponseInternal(const Result& result, OutputArgs&&... output);
 };
 
-template<
-    typename Result,
-    typename Input,
-    typename Output,
-    typename... RestArgFetchers>
+template<typename Result, typename Input, typename Output, typename... RestArgFetchers>
 void RequestHandler<Result, Input, Output, RestArgFetchers...>::processRequest(
     network::http::RequestContext requestContext,
     Input input)
@@ -292,14 +276,11 @@ void RequestHandler<Result, Input, Output, RestArgFetchers...>::processRequest(
         });
 }
 
-template<
-    typename Result,
-    typename Input,
-    typename Output,
-    typename... RestArgFetchers>
+template<typename Result, typename Input, typename Output, typename... RestArgFetchers>
 template<typename... OutputArgs>
 void RequestHandler<Result, Input, Output, RestArgFetchers...>::processResponseInternal(
-    const Result& result, OutputArgs&&... output)
+    const Result& result,
+    OutputArgs&&... output)
 {
     network::http::ApiRequestResult httpResult;
     convert(result, &httpResult);
@@ -316,17 +297,14 @@ class RequestHandler<Result, void, Output, RestArgFetchers...>:
 public:
     using CompletionHandler = typename CompletionHandlerDeclarator<Result, Output>::Func;
 
-    using BusinessFunc = std::function<void(
-        typename RestArgFetchers::type...,
-        CompletionHandler)>;
+    using BusinessFunc = std::function<void(typename RestArgFetchers::type..., CompletionHandler)>;
 
     RequestHandler(BusinessFunc businessFunc):
         m_businessFunc(std::move(businessFunc))
     {
     }
 
-    virtual void processRequest(
-        network::http::RequestContext requestContext) override;
+    virtual void processRequest(network::http::RequestContext requestContext) override;
 
 private:
     BusinessFunc m_businessFunc;
@@ -350,7 +328,8 @@ void RequestHandler<Result, void, Output, RestArgFetchers...>::processRequest(
 template<typename Result, typename Output, typename... RestArgFetchers>
 template<typename... OutputArgs>
 void RequestHandler<Result, void, Output, RestArgFetchers...>::processResponseInternal(
-    const Result& result, OutputArgs&&... output)
+    const Result& result,
+    OutputArgs&&... output)
 {
     network::http::ApiRequestResult httpResult;
     convert(result, &httpResult);

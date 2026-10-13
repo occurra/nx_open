@@ -6,10 +6,8 @@
 
 namespace nx::network::jwk::test {
 
-class JoseJwk:
-    public ::testing::Test
+class JoseJwk: public ::testing::Test
 {
-
 };
 
 TEST_F(JoseJwk, generate_keypair)

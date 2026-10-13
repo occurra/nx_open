@@ -35,8 +35,7 @@ NX_REFLECTION_ENUM_CLASS(Use,
  * JSON web key as defined by https://datatracker.ietf.org/doc/html/rfc7517.
  * See https://datatracker.ietf.org/doc/html/rfc7517#section-4 for fields descriptions.
  */
-class NX_NETWORK_API Key:
-    public nx::reflect::json::Object
+class NX_NETWORK_API Key: public nx::reflect::json::Object
 {
 public:
     std::string kty() const;
@@ -82,8 +81,8 @@ NX_REFLECTION_ENUM_CLASS(Algorithm,
 /**
  * @return A [public, private] key pair.
  */
-NX_NETWORK_API std::expected<KeyPair, std::string /*error*/>
-    generateKeyPairForSigning(const Algorithm& algorithm);
+NX_NETWORK_API std::expected<KeyPair, std::string /*error*/> generateKeyPairForSigning(
+    const Algorithm& algorithm);
 
 struct SignResult
 {
@@ -98,14 +97,13 @@ struct SignResult
  * @return algorithm that corresponds to the given key (if supported). This algorithm will be used
  * for signing with that key.
  */
-NX_NETWORK_API std::expected<std::string /*alg*/, std::string /*err*/>
-    getAlgorithmForSigning(const Key& key);
+NX_NETWORK_API std::expected<std::string /*alg*/, std::string /*err*/> getAlgorithmForSigning(
+    const Key& key);
 
 /**
- * Sign the message using the provided key and algorithm specified by the 'alg' property of the key.
- * Signing can fail due to unsupported key/algorithm type, or internal openssl error
- * (e.g., memory allocation failure).
- * The resulting signature in base64URL-encoded and returned.
+ * Sign the message using the provided key and algorithm specified by the 'alg' property of the
+ * key. Signing can fail due to unsupported key/algorithm type, or internal openssl error (e.g.,
+ * memory allocation failure). The resulting signature in base64URL-encoded and returned.
  */
 NX_NETWORK_API std::expected<SignResult, std::string /*error*/> sign(
     const std::string_view message,

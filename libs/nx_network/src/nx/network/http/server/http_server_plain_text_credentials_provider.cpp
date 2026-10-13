@@ -16,14 +16,12 @@ void PlainTextCredentialsProvider::getPasswordByUserName(
         const auto it = m_credentials.find(userName);
         if (it == m_credentials.end())
         {
-            result = PlainTextPasswordLookupResultBuilder::build(
-                PasswordLookupResult::Code::notFound);
+            result =
+                PlainTextPasswordLookupResultBuilder::build(PasswordLookupResult::Code::notFound);
         }
         else
         {
-            result = PasswordLookupResult{
-                PasswordLookupResult::Code::ok,
-                it->second.authToken};
+            result = PasswordLookupResult{PasswordLookupResult::Code::ok, it->second.authToken};
         }
     }
 

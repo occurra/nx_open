@@ -16,8 +16,7 @@ class FrequencyRestrictedCallBase
 public:
     FrequencyRestrictedCallBase(
         std::function<Result(Args...)> func,
-        std::chrono::milliseconds minCallInterval)
-        :
+        std::chrono::milliseconds minCallInterval):
         m_func(std::move(func)),
         m_minCallInterval(std::move(minCallInterval))
     {

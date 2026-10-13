@@ -19,17 +19,27 @@ MulticastAddressRegistry::RegisteredAddressHolderPtr MulticastAddressRegistry::r
     if (it != m_registry.cend())
     {
         const auto& usageInfo = it->second;
-        NX_WARNING(this,
+        NX_WARNING(
+            this,
             "Multicast address %1 is already registered by resource %2, on stream: %3",
-            address, usageInfo.device.toStrongRef(), usageInfo.stream);
+            address,
+            usageInfo.device.toStrongRef(),
+            usageInfo.stream);
         return nullptr;
     }
 
-    NX_DEBUG(this, "Successfully registered a multicast address %1 for resource %2 on stream %3",
-        address, resource, streamIndex);
-    m_registry[address] = { resource.toWeakRef(), streamIndex };
+    NX_DEBUG(
+        this,
+        "Successfully registered a multicast address %1 for resource %2 on stream %3",
+        address,
+        resource,
+        streamIndex);
+    m_registry[address] = {resource.toWeakRef(), streamIndex};
     return std::make_unique<RegisteredAddressHolder>(
-        [this, address = std::move(address)]() { unregisterAddress(std::move(address)); });
+        [this, address = std::move(address)]()
+        {
+            unregisterAddress(std::move(address));
+        });
 }
 
 bool MulticastAddressRegistry::unregisterAddress(const nx::network::SocketAddress& address)

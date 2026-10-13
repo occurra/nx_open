@@ -10,8 +10,7 @@ namespace test {
 AsyncChannel::AsyncChannel(
     nx::utils::bstream::AbstractInput* input,
     nx::utils::bstream::AbstractOutput* output,
-    InputDepletionPolicy inputDepletionPolicy)
-    :
+    InputDepletionPolicy inputDepletionPolicy):
     m_input(input),
     m_output(output),
     m_inputDepletionPolicy(inputDepletionPolicy),
@@ -42,9 +41,7 @@ void AsyncChannel::bindToAioThread(AbstractAioThread* aioThread)
     m_writer.bindToAioThread(aioThread);
 }
 
-void AsyncChannel::readSomeAsync(
-    nx::Buffer* const buffer,
-    IoCompletionHandler handler)
+void AsyncChannel::readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler)
 {
     NX_ASSERT(buffer->capacity() > buffer->size());
 
@@ -57,9 +54,7 @@ void AsyncChannel::readSomeAsync(
     performAsyncRead(lock);
 }
 
-void AsyncChannel::sendAsync(
-    const nx::Buffer* buffer,
-    IoCompletionHandler handler)
+void AsyncChannel::sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
 
@@ -73,8 +68,7 @@ void AsyncChannel::sendAsync(
 
 void AsyncChannel::cancelIoInAioThread(EventType eventType)
 {
-    if (eventType == EventType::etRead ||
-        eventType == EventType::etNone)
+    if (eventType == EventType::etRead || eventType == EventType::etNone)
     {
         m_reader.cancelPostedCallsSync();
         m_readScheduled = false;
@@ -82,8 +76,7 @@ void AsyncChannel::cancelIoInAioThread(EventType eventType)
         m_readBuffer = nullptr;
     }
 
-    if (eventType == EventType::etWrite ||
-        eventType == EventType::etNone)
+    if (eventType == EventType::etWrite || eventType == EventType::etNone)
     {
         m_writer.cancelPostedCallsSync();
         m_sendHandler = nullptr;
@@ -208,7 +201,7 @@ void AsyncChannel::handleInputDepletion()
     {
         case InputDepletionPolicy::sendConnectionReset:
             m_readBuffer = nullptr;
-            reportIoCompletion(&m_readHandler, SystemError::connectionReset, (size_t)-1);
+            reportIoCompletion(&m_readHandler, SystemError::connectionReset, (size_t) -1);
             break;
 
         case InputDepletionPolicy::ignore:
@@ -277,7 +270,7 @@ void AsyncChannel::performAsyncRead(const nx::Locker<nx::Mutex>& /*lock*/)
 
             if (bytesRead == utils::bstream::StreamIoError::osError)
             {
-                reportIoCompletion(&m_readHandler, SystemError::connectionReset, (size_t)-1);
+                reportIoCompletion(&m_readHandler, SystemError::connectionReset, (size_t) -1);
                 return;
             }
 

@@ -36,13 +36,10 @@ public:
 //-------------------------------------------------------------------------------------------------
 // BaseExecutor
 
-class NX_SQL_API BaseExecutor:
-    public AbstractExecutor
+class NX_SQL_API BaseExecutor: public AbstractExecutor
 {
 public:
-    BaseExecutor(
-        QueryType queryType,
-        const std::string& queryAggregationKey);
+    BaseExecutor(QueryType queryType, const std::string& queryAggregationKey);
     virtual ~BaseExecutor() override;
 
     virtual DBResult execute(AbstractDbConnection* const connection) override;
@@ -98,8 +95,7 @@ protected:
 //-------------------------------------------------------------------------------------------------
 // UpdateExecutor
 
-class AbstractUpdateExecutor:
-    public BaseExecutor
+class AbstractUpdateExecutor: public BaseExecutor
 {
 public:
     AbstractUpdateExecutor(const std::string& queryAggregationKey):
@@ -108,20 +104,17 @@ public:
     }
 };
 
-template<typename ... CompletionHandlerArgs>
-class BaseUpdateExecutor:
-    public AbstractUpdateExecutor
+template<typename... CompletionHandlerArgs>
+class BaseUpdateExecutor: public AbstractUpdateExecutor
 {
     using base_type = AbstractUpdateExecutor;
 
 public:
-    using CompletionHandler =
-        nx::MoveOnlyFunc<void(DBResult, CompletionHandlerArgs...)>;
+    using CompletionHandler = nx::MoveOnlyFunc<void(DBResult, CompletionHandlerArgs...)>;
 
     BaseUpdateExecutor(
         CompletionHandler completionHandler,
-        const std::string& queryAggregationKey)
-        :
+        const std::string& queryAggregationKey):
         base_type(queryAggregationKey),
         m_completionHandler(std::move(completionHandler))
     {
@@ -163,9 +156,7 @@ protected:
 
     virtual void reportSuccess() = 0;
 
-    void invokeCompletionHandler(
-        DBResult resultCode,
-        CompletionHandlerArgs... args)
+    void invokeCompletionHandler(DBResult resultCode, CompletionHandlerArgs... args)
     {
         m_telemetryQueryScope.exit();
         auto spanScope = m_completionHandlerTelemetrySpan.activate();
@@ -175,9 +166,7 @@ protected:
 
         std::apply(
             completionHandler,
-            std::tuple_cat(
-                std::make_tuple(resultCode),
-                std::make_tuple(std::move(args)...)));
+            std::tuple_cat(std::make_tuple(resultCode), std::make_tuple(std::move(args)...)));
     }
 
 private:
@@ -234,14 +223,19 @@ private:
         if (result != DBResultCode::ok)
         {
             queryContext->transaction()->addOnTransactionCompletionHandler(
-                std::bind(&BaseUpdateExecutor::invokeCompletionHandlerWithDefaultValues, this,
+                std::bind(
+                    &BaseUpdateExecutor::invokeCompletionHandlerWithDefaultValues,
+                    this,
                     result));
             return result;
         }
 
         queryContext->transaction()->addOnTransactionCompletionHandler(
-            std::bind(&BaseUpdateExecutor::reportQueryResult, this,
-                queryContext->connection(), std::placeholders::_1));
+            std::bind(
+                &BaseUpdateExecutor::reportQueryResult,
+                this,
+                queryContext->connection(),
+                std::placeholders::_1));
 
         return DBResultCode::ok;
     }
@@ -281,8 +275,7 @@ private:
 //-------------------------------------------------------------------------------------------------
 // UpdateWithoutAnyDataExecutor
 
-class NX_SQL_API UpdateWithoutAnyDataExecutor:
-    public BaseUpdateExecutor<>
+class NX_SQL_API UpdateWithoutAnyDataExecutor: public BaseUpdateExecutor<>
 {
     using base_type = BaseUpdateExecutor<>;
 
@@ -304,8 +297,7 @@ private:
 //-------------------------------------------------------------------------------------------------
 // SelectExecutor
 
-class NX_SQL_API SelectExecutor:
-    public BaseExecutor
+class NX_SQL_API SelectExecutor: public BaseExecutor
 {
     using base_type = BaseExecutor;
 

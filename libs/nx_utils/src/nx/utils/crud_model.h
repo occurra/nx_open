@@ -12,23 +12,28 @@ namespace nx::utils::model {
 namespace detail {
 
 template<typename T, typename Arg, typename = void>
-struct CanSetIdWithArg: std::false_type {};
+struct CanSetIdWithArg: std::false_type
+{
+};
 
 template<typename T, typename Arg>
-struct CanSetIdWithArg<T,
+struct CanSetIdWithArg<
+    T,
     Arg,
     std::void_t<decltype(std::declval<T&>().setId(std::declval<Arg>()))>>: std::true_type
 {
 };
 
 template<typename T, typename Arg, typename = void>
-struct CanAssignIdField: std::false_type {};
+struct CanAssignIdField: std::false_type
+{
+};
 
 template<typename T, typename Arg>
-struct CanAssignIdField<T,
+struct CanAssignIdField<
+    T,
     Arg,
-    std::void_t<decltype(std::declval<T&>().id = std::move(std::declval<Arg>()))>>:
-    std::true_type
+    std::void_t<decltype(std::declval<T&>().id = std::move(std::declval<Arg>()))>>: std::true_type
 {
 };
 
@@ -53,11 +58,10 @@ struct CanAssignIdField<T,
  * ```
  */
 template<typename T>
-requires requires {&T::getId;}
-    || requires {&T::id;}
+    requires requires { &T::getId; } || requires { &T::id; }
 decltype(auto) getId(const T& t)
 {
-    if constexpr (requires {&T::getId;})
+    if constexpr (requires { &T::getId; })
         return t.getId();
     else
         return t.id;
@@ -81,11 +85,11 @@ decltype(auto) getId(const T& t)
  * }
  * ```
  */
-template<typename T,
+template<
+    typename T,
     typename Id,
     typename Expect = std::enable_if_t<
-        std::disjunction<detail::CanSetIdWithArg<T, Id>,
-            detail::CanAssignIdField<T, Id>>::value>>
+        std::disjunction<detail::CanSetIdWithArg<T, Id>, detail::CanAssignIdField<T, Id>>::value>>
 void setId(T& t, Id&& id)
 {
     if constexpr (detail::CanSetIdWithArg<T, Id>::value)
@@ -97,7 +101,9 @@ void setId(T& t, Id&& id)
 }
 
 template<typename, typename = std::void_t<>>
-struct HasGetId: std::false_type {};
+struct HasGetId: std::false_type
+{
+};
 template<typename T>
 struct HasGetId<T, std::void_t<decltype(getId(std::declval<T>()))>>: std::true_type
 {
@@ -105,10 +111,14 @@ struct HasGetId<T, std::void_t<decltype(getId(std::declval<T>()))>>: std::true_t
 };
 
 template<typename, typename, typename = std::void_t<>>
-struct CanSetIdWithArg: std::false_type {};
+struct CanSetIdWithArg: std::false_type
+{
+};
 template<typename T, typename Arg>
-struct CanSetIdWithArg<T, Arg, std::void_t<decltype(setId(std::declval<T&>(), std::declval<Arg>()))>>:
-    std::true_type
+struct CanSetIdWithArg<
+    T,
+    Arg,
+    std::void_t<decltype(setId(std::declval<T&>(), std::declval<Arg>()))>>: std::true_type
 {
 };
 
@@ -120,8 +130,8 @@ struct CanSetIdWithArg<T, Arg, std::void_t<decltype(setId(std::declval<T&>(), st
  * - falsely evaluate to `true` for some Models, resulting in compilation errors
  * - correctly evaluating to `true`, but `create` method is used for a procedure call and id
  * generation is not desired
- * User can provide an overload that returns `std::false` for a specific Model to disable id generation.
- * Example:
+ * User can provide an overload that returns `std::false` for a specific Model to disable id
+ * generation. Example:
  * ```
  * namespace nx::vms::api {
  *
@@ -138,7 +148,8 @@ struct CanSetIdWithArg<T, Arg, std::void_t<decltype(setId(std::declval<T&>(), st
  * ```
  */
 template<typename Model>
-constexpr auto enableIdGeneration(const Model&) -> std::conjunction<HasGetId<Model>, CanSetIdWithArg<Model, nx::Uuid>>{};
+constexpr auto enableIdGeneration(const Model&)
+    -> std::conjunction<HasGetId<Model>, CanSetIdWithArg<Model, nx::Uuid>> {};
 
 template<typename Model>
 constexpr bool isIdGenerationEnabled = decltype(enableIdGeneration(std::declval<Model>()))::value;
@@ -169,7 +180,7 @@ template<typename Model>
 constexpr auto adHocEnableIdCheckOnDelete(const Model&)
     -> std::bool_constant<requires { &Model::getId; }>;
 
-template <typename Model>
+template<typename Model>
 constexpr bool adHocIsIdCheckOnDeleteEnabled =
     decltype(adHocEnableIdCheckOnDelete(std::declval<Model>()))::value;
 

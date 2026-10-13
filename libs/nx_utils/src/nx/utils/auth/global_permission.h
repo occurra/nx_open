@@ -62,7 +62,8 @@ enum class GlobalPermission
     /**%apidoc[unused] */
     administratorWithFreshSession = administrator | requireFreshSession,
 };
-NX_REFLECTION_INSTRUMENT_ENUM(GlobalPermission,
+NX_REFLECTION_INSTRUMENT_ENUM(
+    GlobalPermission,
     none,
     administrator,
     powerUser,

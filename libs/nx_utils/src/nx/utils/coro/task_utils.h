@@ -22,12 +22,12 @@ class ListenHelper: public QObject
     using base_type = QObject;
 
 public:
-    explicit ListenHelper(QObject* parent = nullptr): base_type(parent) {}
-
-    void setCallback(nx::MoveOnlyFunc<void()> callback)
+    explicit ListenHelper(QObject* parent = nullptr):
+        base_type(parent)
     {
-        m_callback = std::move(callback);
     }
+
+    void setCallback(nx::MoveOnlyFunc<void()> callback) { m_callback = std::move(callback); }
 
 public slots:
     void execute() { m_callback(); }
@@ -45,7 +45,11 @@ NX_UTILS_API nx::coro::Task<QVariant> whenProperty(
 
 [[nodiscard]] static inline auto guard(QPointer<QObject> object)
 {
-    return cancelIf([object]() { return !object; });
+    return cancelIf(
+        [object]()
+        {
+            return !object;
+        });
 }
 
 template<typename Duration>
@@ -53,13 +57,21 @@ template<typename Duration>
 {
     struct Awaiter
     {
-        Awaiter(Duration duration): m_duration(duration) {}
+        Awaiter(Duration duration):
+            m_duration(duration)
+        {
+        }
 
         bool await_ready() const { return m_duration.count() <= 0; }
 
         void await_suspend(std::coroutine_handle<> h)
         {
-            auto g = nx::utils::ScopeGuard([this, h] { m_cancelled = true; h.resume(); });
+            auto g = nx::utils::ScopeGuard(
+                [this, h]
+                {
+                    m_cancelled = true;
+                    h.resume();
+                });
             QTimer::singleShot(
                 m_duration,
                 [this, h, g = std::move(g)]() mutable

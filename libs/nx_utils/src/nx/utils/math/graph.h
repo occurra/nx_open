@@ -19,10 +19,7 @@ template<typename Vertex>
 class Graph
 {
 public:
-    void addVertex(const Vertex& vertex)
-    {
-        m_outgoingEdges.emplace(vertex, Edges());
-    }
+    void addVertex(const Vertex& vertex) { m_outgoingEdges.emplace(vertex, Edges()); }
 
     /**
      * Adds corresponding vertices if they do not exist.
@@ -42,9 +39,8 @@ public:
         if (m_outgoingEdges.empty())
             return true;
 
-        std::unordered_set<Vertex> visitedVertices = breadthFirstSearch(
-            m_outgoingEdges.begin()->first,
-            [](auto&&...) {});
+        std::unordered_set<Vertex> visitedVertices =
+            breadthFirstSearch(m_outgoingEdges.begin()->first, [](auto&&...) {});
 
         return visitedVertices.size() == m_outgoingEdges.size();
     }

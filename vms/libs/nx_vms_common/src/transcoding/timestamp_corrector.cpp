@@ -6,11 +6,11 @@
 
 TimestampCorrector::TimestampCorrector(
     std::chrono::microseconds maxFrameDurationUs,
-    std::chrono::microseconds defaultFrameDurationUs)
-    :
+    std::chrono::microseconds defaultFrameDurationUs):
     kMaxFrameDurationUs(maxFrameDurationUs),
     kDefaultFrameDurationUs(defaultFrameDurationUs)
-{}
+{
+}
 
 void TimestampCorrector::setOffset(std::chrono::microseconds value)
 {
@@ -24,7 +24,10 @@ void TimestampCorrector::clear()
 }
 
 std::chrono::microseconds TimestampCorrector::process(
-    std::chrono::microseconds timestamp, int streamIndex, bool equalAllowed, bool forceDiscontinuity)
+    std::chrono::microseconds timestamp,
+    int streamIndex,
+    bool equalAllowed,
+    bool forceDiscontinuity)
 {
     if (!m_baseTime.has_value())
         m_baseTime = timestamp;
@@ -37,9 +40,14 @@ std::chrono::microseconds TimestampCorrector::process(
             : processDependent(newTimestamp, it->second, equalAllowed);
     }
     m_lastPacketTimestamps[streamIndex] = newTimestamp;
-    NX_VERBOSE(this,
+    NX_VERBOSE(
+        this,
         "Stream: %1 has source timestamp: %2, result pts: %3, base time: %4, offset: %5",
-        streamIndex, timestamp, newTimestamp + m_offset, *m_baseTime, m_offset);
+        streamIndex,
+        timestamp,
+        newTimestamp + m_offset,
+        *m_baseTime,
+        m_offset);
     return newTimestamp + m_offset;
 }
 
@@ -51,17 +59,19 @@ std::chrono::microseconds TimestampCorrector::processPrimary(
     bool forceDiscontinuity)
 {
     auto timeDiff = newTimestamp - lastTimestamp;
-    bool discontinuity = equalAllowed
-        ? (timeDiff < std::chrono::microseconds::zero())
-        : (timeDiff <= std::chrono::microseconds::zero());
+    bool discontinuity = equalAllowed ? (timeDiff < std::chrono::microseconds::zero())
+                                      : (timeDiff <= std::chrono::microseconds::zero());
 
     discontinuity |= timeDiff >= kMaxFrameDurationUs;
     if (discontinuity || forceDiscontinuity)
     {
         // Recalculate m_baseTime after seek by new frame timestamp. Timestamps should increase
         // monotonously.
-        NX_DEBUG(this, "Discontinuity on packet timestamp %1, forceDiscontinuity: %3",
-            timestamp, forceDiscontinuity);
+        NX_DEBUG(
+            this,
+            "Discontinuity on packet timestamp %1, forceDiscontinuity: %3",
+            timestamp,
+            forceDiscontinuity);
         m_baseTime = timestamp - lastTimestamp - kDefaultFrameDurationUs;
         newTimestamp = timestamp - *m_baseTime;
     }
@@ -75,15 +85,17 @@ std::chrono::microseconds TimestampCorrector::processDependent(
     bool equalAllowed)
 {
     auto timeDiff = newTimestamp - lastTimestamp;
-    bool discontinuity = equalAllowed
-        ? (timeDiff < std::chrono::microseconds::zero())
-        : (timeDiff <= std::chrono::microseconds::zero());
+    bool discontinuity = equalAllowed ? (timeDiff < std::chrono::microseconds::zero())
+                                      : (timeDiff <= std::chrono::microseconds::zero());
 
     if (discontinuity)
     {
         // Timestamps should increase monotonously.
-        NX_DEBUG(this, "Packet has inconsistent timestamp %1, last timestamp %2",
-            newTimestamp, lastTimestamp);
+        NX_DEBUG(
+            this,
+            "Packet has inconsistent timestamp %1, last timestamp %2",
+            newTimestamp,
+            lastTimestamp);
         return lastTimestamp + kDefaultFrameDurationUs;
     }
     return newTimestamp;

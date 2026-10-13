@@ -12,11 +12,10 @@ namespace network {
 /**
  * Reads data from file. Sent data is just ignored.
  */
-class FileSocket:
-    public DummySocket
+class FileSocket: public DummySocket
 {
 public:
-    FileSocket( const std::string& filePath );
+    FileSocket(const std::string& filePath);
 
     virtual bool close() override;
     virtual bool isClosed() const override;
@@ -24,8 +23,8 @@ public:
     virtual bool connect(
         const SocketAddress& remoteSocketAddress,
         std::chrono::milliseconds timeout) override;
-    virtual int recv( void* buffer, std::size_t bufferLen, int flags = 0 ) override;
-    virtual int send( const void* buffer, std::size_t bufferLen ) override;
+    virtual int recv(void* buffer, std::size_t bufferLen, int flags = 0) override;
+    virtual int send(const void* buffer, std::size_t bufferLen) override;
     virtual bool isConnected() const override;
 
 private:

@@ -22,51 +22,44 @@ namespace aio {
  */
 template<typename Base, typename AsyncChannelInterface>
 // requires AsyncChannel<Base> && AsyncChannel<AsyncChannelInterface>
-class BaseProtocolDetectingAsyncChannel:
-    public Base
+class BaseProtocolDetectingAsyncChannel: public Base
 {
     using base_type = Base;
 
 public:
-    using ProtocolProcessorFactoryFunc =
-        std::function<std::unique_ptr<AsyncChannelInterface>(
-            std::unique_ptr<AsyncChannelInterface> /*rawDataSource*/)>;
+    using ProtocolProcessorFactoryFunc = std::function<std::unique_ptr<AsyncChannelInterface>(
+        std::unique_ptr<AsyncChannelInterface> /*rawDataSource*/)>;
 
-    template<typename ... BaseInitializeArgs>
+    template<typename... BaseInitializeArgs>
     BaseProtocolDetectingAsyncChannel(
         std::unique_ptr<AsyncChannelInterface> dataSource,
-        BaseInitializeArgs&& ... baseInitializeArgs);
+        BaseInitializeArgs&&... baseInitializeArgs);
 
     BaseProtocolDetectingAsyncChannel(const BaseProtocolDetectingAsyncChannel&) = delete;
-    BaseProtocolDetectingAsyncChannel& operator=(const BaseProtocolDetectingAsyncChannel&) = delete;
+    BaseProtocolDetectingAsyncChannel& operator=(const BaseProtocolDetectingAsyncChannel&) =
+        delete;
     BaseProtocolDetectingAsyncChannel(BaseProtocolDetectingAsyncChannel&&) = delete;
     BaseProtocolDetectingAsyncChannel& operator=(BaseProtocolDetectingAsyncChannel&&) = delete;
 
     virtual void bindToAioThread(AbstractAioThread* aioThread) override;
 
-    virtual void readSomeAsync(
-        nx::Buffer* const buffer,
-        IoCompletionHandler handler) override;
+    virtual void readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler) override;
 
-    virtual void sendAsync(
-        const nx::Buffer* buffer,
-        IoCompletionHandler handler) override;
+    virtual void sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler) override;
 
     void registerDefaultProtocol(ProtocolProcessorFactoryFunc delegateFactoryFunc);
     void registerProtocol(
         std::unique_ptr<AbstractProtocolRule> detectionRule,
         ProtocolProcessorFactoryFunc delegateFactoryFunc);
 
-    void detectProtocol(
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode)> completionHandler);
+    void detectProtocol(nx::MoveOnlyFunc<void(SystemError::ErrorCode)> completionHandler);
 
 protected:
     /**
      * NOTE: setDataSource() call MUST follow this initializer.
      */
-    template<typename ... BaseInitializeArgs>
-    BaseProtocolDetectingAsyncChannel(
-        BaseInitializeArgs&& ... baseInitializeArgs);
+    template<typename... BaseInitializeArgs>
+    BaseProtocolDetectingAsyncChannel(BaseInitializeArgs&&... baseInitializeArgs);
 
     void setDataSource(std::unique_ptr<AsyncChannelInterface> dataSource);
 
@@ -95,8 +88,7 @@ private:
     std::tuple<nx::Buffer*, IoCompletionHandler> m_pendingAsyncRead;
     nx::Buffer m_readBuffer;
     nx::Buffer m_readDataCache;
-    nx::MoveOnlyFunc<void(SystemError::ErrorCode)>
-        m_protocolDetectionCompletionHandler;
+    nx::MoveOnlyFunc<void(SystemError::ErrorCode)> m_protocolDetectionCompletionHandler;
 
     void completePendingAsyncRead(SystemError::ErrorCode protocolDetectionResultCode);
 
@@ -105,37 +97,37 @@ private:
 
     void readProtocolHeaderAsync();
 
-    void analyzeReadResult(
-        SystemError::ErrorCode systemErrorCode,
-        std::size_t bytesRead);
+    void analyzeReadResult(SystemError::ErrorCode systemErrorCode, std::size_t bytesRead);
 };
 
 //-------------------------------------------------------------------------------------------------
 // BaseProtocolDetectingAsyncChannel implementation.
 
 template<typename Base, typename AsyncChannelInterface>
-template<typename ... BaseInitializeArgs>
+template<typename... BaseInitializeArgs>
 BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::BaseProtocolDetectingAsyncChannel(
     std::unique_ptr<AsyncChannelInterface> dataSource,
-    BaseInitializeArgs&& ... baseInitializeArgs)
-    :
+    BaseInitializeArgs&&... baseInitializeArgs):
     base_type(std::forward<BaseInitializeArgs>(baseInitializeArgs)...),
-    m_defaultProtocolProcessorFactory(std::bind(
-        &BaseProtocolDetectingAsyncChannel::useDataSourceDirectly, this,
-        std::placeholders::_1))
+    m_defaultProtocolProcessorFactory(
+        std::bind(
+            &BaseProtocolDetectingAsyncChannel::useDataSourceDirectly,
+            this,
+            std::placeholders::_1))
 {
     setDataSource(std::move(dataSource));
 }
 
 template<typename Base, typename AsyncChannelInterface>
-template<typename ... BaseInitializeArgs>
+template<typename... BaseInitializeArgs>
 BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::BaseProtocolDetectingAsyncChannel(
-    BaseInitializeArgs&& ... baseInitializeArgs)
-    :
+    BaseInitializeArgs&&... baseInitializeArgs):
     base_type(std::forward<BaseInitializeArgs>(baseInitializeArgs)...),
-    m_defaultProtocolProcessorFactory(std::bind(
-        &BaseProtocolDetectingAsyncChannel::useDataSourceDirectly, this,
-        std::placeholders::_1))
+    m_defaultProtocolProcessorFactory(
+        std::bind(
+            &BaseProtocolDetectingAsyncChannel::useDataSourceDirectly,
+            this,
+            std::placeholders::_1))
 {
 }
 
@@ -177,8 +169,7 @@ void BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::readSomeAsy
 
             m_pendingAsyncRead = std::make_tuple(buffer, std::move(handler));
             detectProtocol(
-                std::bind(&BaseProtocolDetectingAsyncChannel::completePendingAsyncRead,
-                    this, _1));
+                std::bind(&BaseProtocolDetectingAsyncChannel::completePendingAsyncRead, this, _1));
         });
 }
 
@@ -196,7 +187,7 @@ void BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::sendAsync(
             if (m_delegate)
                 return m_delegate->sendAsync(buffer, std::move(handler));
 
-            handler(SystemError::invalidData, (std::size_t)-1);
+            handler(SystemError::invalidData, (std::size_t) -1);
         });
 }
 
@@ -212,9 +203,7 @@ void BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::registerPro
     std::unique_ptr<AbstractProtocolRule> detectionRule,
     ProtocolProcessorFactoryFunc delegateFactoryFunc)
 {
-    m_protocolDetector.registerProtocol(
-        std::move(detectionRule),
-        std::move(delegateFactoryFunc));
+    m_protocolDetector.registerProtocol(std::move(detectionRule), std::move(delegateFactoryFunc));
 }
 
 template<typename Base, typename AsyncChannelInterface>
@@ -236,8 +225,7 @@ void BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::completePen
 {
     if (protocolDetectionResultCode != SystemError::noError)
     {
-        return nx::swapAndCall(
-            std::get<1>(m_pendingAsyncRead), protocolDetectionResultCode, -1);
+        return nx::swapAndCall(std::get<1>(m_pendingAsyncRead), protocolDetectionResultCode, -1);
     }
 
     NX_ASSERT(m_delegate);
@@ -271,9 +259,10 @@ void BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::cancelIoInA
 }
 
 template<typename Base, typename AsyncChannelInterface>
-std::unique_ptr<AsyncChannelInterface>
-    BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::useDataSourceDirectly(
-        std::unique_ptr<AsyncChannelInterface> dataSource)
+std::unique_ptr<AsyncChannelInterface> BaseProtocolDetectingAsyncChannel<
+    Base,
+    AsyncChannelInterface>::
+    useDataSourceDirectly(std::unique_ptr<AsyncChannelInterface> dataSource)
 {
     return dataSource;
 }
@@ -283,7 +272,7 @@ void BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::readProtoco
 {
     using namespace std::placeholders;
 
-    constexpr int readBufSize = 4*1024;
+    constexpr int readBufSize = 4 * 1024;
 
     m_readBuffer.reserve(readBufSize);
     m_dataSource->readSomeAsync(
@@ -296,8 +285,7 @@ void BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::analyzeRead
     SystemError::ErrorCode osErrorCode,
     std::size_t bytesRead)
 {
-    if (osErrorCode != SystemError::noError ||
-        bytesRead == 0) //< Connection is closed.
+    if (osErrorCode != SystemError::noError || bytesRead == 0) //< Connection is closed.
     {
         nx::swapAndCall(
             m_protocolDetectionCompletionHandler,
@@ -314,9 +302,7 @@ void BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::analyzeRead
         return;
     }
 
-    nx::swapAndCall(
-        m_protocolDetectionCompletionHandler,
-        SystemError::noError);
+    nx::swapAndCall(m_protocolDetectionCompletionHandler, SystemError::noError);
 }
 
 template<typename Base, typename AsyncChannelInterface>
@@ -325,7 +311,7 @@ bool BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::analyzeMore
 {
     m_readDataCache += std::move(data);
 
-    const auto[resultCode, descriptor] = m_protocolDetector.match(m_readDataCache);
+    const auto [resultCode, descriptor] = m_protocolDetector.match(m_readDataCache);
     switch (resultCode)
     {
         case ProtocolMatchResult::detected:
@@ -350,8 +336,8 @@ bool BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::analyzeMore
 }
 
 template<typename Base, typename AsyncChannelInterface>
-AsyncChannelInterface&
-    BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::actualDataChannel()
+AsyncChannelInterface& BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::
+    actualDataChannel()
 {
     if (m_delegate)
         return *m_delegate;
@@ -359,8 +345,8 @@ AsyncChannelInterface&
 }
 
 template<typename Base, typename AsyncChannelInterface>
-const AsyncChannelInterface&
-    BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::actualDataChannel() const
+const AsyncChannelInterface& BaseProtocolDetectingAsyncChannel<Base, AsyncChannelInterface>::
+    actualDataChannel() const
 {
     if (m_delegate)
         return *m_delegate;
@@ -376,8 +362,7 @@ class NX_NETWORK_API ProtocolDetectingAsyncChannel:
         BaseProtocolDetectingAsyncChannel<AbstractAsyncChannel, AbstractAsyncChannel>;
 
 public:
-    ProtocolDetectingAsyncChannel(
-        std::unique_ptr<AbstractAsyncChannel> dataSource);
+    ProtocolDetectingAsyncChannel(std::unique_ptr<AbstractAsyncChannel> dataSource);
 
 protected:
     virtual std::unique_ptr<AbstractAsyncChannel> installProtocolHandler(

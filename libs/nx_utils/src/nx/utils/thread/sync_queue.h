@@ -19,7 +19,7 @@ namespace utils {
 
 using QueueReaderId = std::size_t;
 
-static const QueueReaderId kInvalidQueueReaderId = (QueueReaderId)-1;
+static const QueueReaderId kInvalidQueueReaderId = (QueueReaderId) -1;
 
 template<typename Result>
 class SyncQueueBase
@@ -27,10 +27,8 @@ class SyncQueueBase
 public:
     using ResultType = Result;
 
-    using OptionalResultType = std::conditional_t<
-        std::is_same_v<Result, void>,
-        bool,
-        std::optional<Result>>;
+    using OptionalResultType =
+        std::conditional_t<std::is_same_v<Result, void>, bool, std::optional<Result>>;
 
     SyncQueueBase();
 
@@ -95,8 +93,7 @@ protected:
 //-------------------------------------------------------------------------------------------------
 
 template<typename Result>
-class SyncQueue:
-    public SyncQueueBase<Result>
+class SyncQueue: public SyncQueueBase<Result>
 {
     using base_type = SyncQueueBase<Result>;
 
@@ -117,8 +114,7 @@ public:
 //-------------------------------------------------------------------------------------------------
 
 template<>
-class SyncQueue<void>:
-    public SyncQueueBase<void>
+class SyncQueue<void>: public SyncQueueBase<void>
 {
     using base_type = SyncQueueBase<void>;
 
@@ -137,15 +133,17 @@ public:
 
     std::function<void()> pusher()
     {
-        return [this]() { push(); };
+        return [this]()
+        {
+            push();
+        };
     }
 };
 
 //-------------------------------------------------------------------------------------------------
 
 template<typename R1, typename R2>
-class SyncMultiQueue:
-    public SyncQueue<std::pair<R1, R2>>
+class SyncMultiQueue: public SyncQueue<std::pair<R1, R2>>
 {
 public:
     void push(R1 r1, R2 r2) /* overlap */;
@@ -167,7 +165,7 @@ QueueReaderId SyncQueueBase<Result>::generateReaderId()
     return ++m_prevReaderId;
 }
 
-template< typename Result>
+template<typename Result>
 Result SyncQueueBase<Result>::pop()
 {
     auto value = pop(std::nullopt);
@@ -182,18 +180,25 @@ Result SyncQueueBase<Result>::pop()
         return;
 }
 
-template< typename Result>
-typename SyncQueueBase<Result>::OptionalResultType SyncQueueBase<Result>::pop(QueueReaderId readerId)
+template<typename Result>
+typename SyncQueueBase<Result>::OptionalResultType SyncQueueBase<Result>::pop(
+    QueueReaderId readerId)
 {
     return pop(std::nullopt, readerId);
 }
 
-template< typename Result>
+template<typename Result>
 typename SyncQueueBase<Result>::OptionalResultType SyncQueueBase<Result>::pop(
     std::optional<std::chrono::milliseconds> timeout,
     QueueReaderId readerId)
 {
-    return popIf([](const StorageType&) { return true; }, timeout, readerId);
+    return popIf(
+        [](const StorageType&)
+        {
+            return true;
+        },
+        timeout,
+        readerId);
 }
 
 template<typename Result>
@@ -230,36 +235,36 @@ typename SyncQueueBase<Result>::OptionalResultType SyncQueueBase<Result>::popIf(
     }
 }
 
-template< typename Result>
+template<typename Result>
 bool SyncQueueBase<Result>::isEmpty()
 {
-    NX_MUTEX_LOCKER lock( &m_mutex );
+    NX_MUTEX_LOCKER lock(&m_mutex);
     return m_queue.empty();
 }
 
-template< typename Result>
+template<typename Result>
 bool SyncQueueBase<Result>::empty() const
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
     return m_queue.empty();
 }
 
-template< typename Result>
+template<typename Result>
 std::size_t SyncQueueBase<Result>::size() const
 {
-    NX_MUTEX_LOCKER lock( &m_mutex );
+    NX_MUTEX_LOCKER lock(&m_mutex);
     return m_queue.size();
 }
 
-template< typename Result>
+template<typename Result>
 void SyncQueueBase<Result>::clear()
 {
-    NX_MUTEX_LOCKER lock( &m_mutex );
-    decltype( m_queue ) queue;
-    std::swap( m_queue, queue );
+    NX_MUTEX_LOCKER lock(&m_mutex);
+    decltype(m_queue) queue;
+    std::swap(m_queue, queue);
 }
 
-template< typename Result>
+template<typename Result>
 void SyncQueueBase<Result>::retestPopIfCondition()
 {
     // Mutex is required here to be sure popIf does not miss notification.
@@ -305,7 +310,7 @@ bool SyncQueueBase<Result>::waitForNonEmptyQueue(
     return true;
 }
 
-template< typename Result>
+template<typename Result>
 bool SyncQueueBase<Result>::waitForEvent(
     nx::Locker<nx::Mutex>* lock,
     std::optional<std::chrono::steady_clock::time_point> deadline)
@@ -360,7 +365,10 @@ void SyncQueue<Result>::emplace(Args&&... args)
 template<typename Result>
 std::function<void(Result)> SyncQueue<Result>::pusher()
 {
-    return [this](Result result) { push(std::move(result)); };
+    return [this](Result result)
+    {
+        push(std::move(result));
+    };
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -368,7 +376,10 @@ std::function<void(Result)> SyncQueue<Result>::pusher()
 template<typename R1, typename R2>
 std::function<void(R1, R2)> SyncMultiQueue<R1, R2>::pusher()
 {
-    return [this](R1 r1, R2 r2) { push(std::move(r1), std::move(r2)); };
+    return [this](R1 r1, R2 r2)
+    {
+        push(std::move(r1), std::move(r2));
+    };
 }
 
 template<typename R1, typename R2>

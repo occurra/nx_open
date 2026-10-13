@@ -37,19 +37,19 @@ public:
  * - Authorization and Proxy-Authorization headers
  *
  * User credentials are taken from AbstractAuthenticationDataProvider instance.
- * For SSL connection detection nx::network::http::server::rest::HttpsRequestDetector class is used.
- * On authentication success the request is passed down the processing pipeline, to the next handler.
- * On authentication failure, 401 HTTP status is reported.
+ * For SSL connection detection nx::network::http::server::rest::HttpsRequestDetector class is
+ * used. On authentication success the request is passed down the processing pipeline, to the next
+ * handler. On authentication failure, 401 HTTP status is reported.
  */
-class NX_NETWORK_API AuthenticationManager:
-    public AbstractAuthenticationManager
+class NX_NETWORK_API AuthenticationManager: public AbstractAuthenticationManager
 {
     using base_type = AbstractAuthenticationManager;
 
 public:
     /**
      * @param nextHandler Receives the request after successful authentication.
-     * @param authenticationDataProvider Provides password based on the username found in the request.
+     * @param authenticationDataProvider Provides password based on the username found in the
+     * request.
      * @param role Server role (resource server/proxy)
      */
     AuthenticationManager(
@@ -73,7 +73,8 @@ private:
     const Role m_role;
 
     void reportAuthenticationFailure(
-        AuthenticationCompletionHandler completionHandler, bool isProxy);
+        AuthenticationCompletionHandler completionHandler,
+        bool isProxy);
 
     std::pair<std::string /*headerName*/, std::string /*headerValue*/>
         generateWwwAuthenticateHeader(bool isProxy);

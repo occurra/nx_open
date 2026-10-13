@@ -8,17 +8,18 @@
 #include <nx/utils/log/format.h>
 
 #if defined(Q_OS_MACOS) && defined(__amd64)
-#include <smmintrin.h>
+    #include <smmintrin.h>
 #endif
 
 //----------------------------------- QnAbstractMediaData ----------------------------------------
 
 bool isLowMediaQuality(MediaQuality q)
 {
-    return q == MEDIA_Quality_Low || q == MEDIA_Quality_LowIframesOnly || q == MEDIA_Quality_ForceLow;
+    return q == MEDIA_Quality_Low || q == MEDIA_Quality_LowIframesOnly
+        || q == MEDIA_Quality_ForceLow;
 }
 
-QnAbstractMediaData::QnAbstractMediaData( DataType _dataType ):
+QnAbstractMediaData::QnAbstractMediaData(DataType _dataType):
     dataProvider(nullptr),
     dataType(_dataType),
     compressionType(AV_CODEC_ID_NONE),
@@ -85,8 +86,14 @@ AVMediaType toAvMediaType(QnAbstractMediaData::DataType dataType)
 
 QString QnAbstractMediaData::idForToStringFromPtr() const
 {
-    return NX_FMT("%1, codec: %2, timestamp: %3ms, channel: %4, %5, deviceId: %6",
-        dataType, compressionType, timestamp / 1000, channelNumber, flags, deviceId);
+    return NX_FMT(
+        "%1, codec: %2, timestamp: %3ms, channel: %4, %5, deviceId: %6",
+        dataType,
+        compressionType,
+        timestamp / 1000,
+        channelNumber,
+        flags,
+        deviceId);
 }
 
 //------------------------------------- QnEmptyMediaData -----------------------------------------

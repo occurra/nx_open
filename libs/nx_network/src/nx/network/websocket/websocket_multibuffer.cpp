@@ -9,7 +9,7 @@ int MultiBuffer::size() const
     if (m_buffers.empty())
         return 0;
 
-    return m_buffers.back().locked ? (int)m_buffers.size() : (int)m_buffers.size() - 1;
+    return m_buffers.back().locked ? (int) m_buffers.size() : (int) m_buffers.size() - 1;
 }
 
 void MultiBuffer::append(nx::Buffer&& buf, FrameType type)

@@ -17,10 +17,8 @@ ListenerTcp::ListenerTcp(
     std::unique_ptr<nx::network::AbstractStreamSocket> socket,
     QnTcpListener* owner,
     SessionPool* sessionPool,
-    int64_t maxTcpRequestSize)
-    :
-    QnTCPConnectionProcessor(
-        std::move(socket), owner, maxTcpRequestSize),
+    int64_t maxTcpRequestSize):
+    QnTCPConnectionProcessor(std::move(socket), owner, maxTcpRequestSize),
     m_sessionPool(sessionPool)
 {
     setObjectName(nx::toString(this));
@@ -32,11 +30,8 @@ void ListenerTcp::run()
     initSystemThreadId();
     NX_VERBOSE(this, "Running ice: request size = %1", d->clientRequest.size());
 
-    auto ice = std::make_unique<IceTcp>(
-        takeSocket(),
-        m_sessionPool,
-        SessionConfig(),
-        d->clientRequest);
+    auto ice =
+        std::make_unique<IceTcp>(takeSocket(), m_sessionPool, SessionConfig(), d->clientRequest);
 
     m_sessionPool->gotIceTcp(std::move(ice));
 }
@@ -45,9 +40,7 @@ IceTcp::IceTcp(
     std::unique_ptr<nx::network::AbstractStreamSocket>&& socket,
     SessionPool* sessionPool,
     const SessionConfig& config,
-    const QByteArray& readBuffer
-    )
-    :
+    const QByteArray& readBuffer):
     Ice(sessionPool, config),
     m_socket(std::move(socket), readBuffer)
 {
@@ -115,8 +108,8 @@ nx::Buffer IceTcp::toSendBuffer(const char* data, int dataSize) const
     }
 
     nx::Buffer packet;
-    uint16_t size = htons((uint16_t)dataSize);
-    packet.append((const char*)&size, kRfc4571HeaderSize);
+    uint16_t size = htons((uint16_t) dataSize);
+    packet.append((const char*) &size, kRfc4571HeaderSize);
     packet.append(data, dataSize);
     return packet;
 }

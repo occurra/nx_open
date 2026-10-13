@@ -1,8 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <QtCore/QDir>
-
 #include <gtest/gtest.h>
+
+#include <QtCore/QDir>
 
 #include <nx/utils/deprecated_settings.h>
 #include <nx/utils/log/log_initializer.h>
@@ -11,8 +11,7 @@
 
 namespace nx::log::test {
 
-class LogSettings:
-    public ::testing::Test
+class LogSettings: public ::testing::Test
 {
 protected:
     void parse(std::vector<const char*> args)
@@ -31,7 +30,8 @@ protected:
         const auto fileName = dir.absolutePath() + "/logs.conf";
         {
             QFile file(fileName);
-            ASSERT_TRUE(file.open(QFile::WriteOnly)) << fileName.toStdString() << "\n" << file.errorString().toStdString();
+            ASSERT_TRUE(file.open(QFile::WriteOnly)) << fileName.toStdString() << "\n"
+                                                     << file.errorString().toStdString();
             file.write(configData);
         }
 
@@ -45,10 +45,14 @@ protected:
 TEST_F(LogSettings, correct_parsing)
 {
     parse({
-        "-log/logDir", "/var/log/",
-        "-log/logLevel", "DEBUG2",
-        "-log/maxLogVolumeSizeB", "200000",
-        "-log/maxLogFileSizeB", "184632",
+        "-log/logDir",
+        "/var/log/",
+        "-log/logLevel",
+        "DEBUG2",
+        "-log/maxLogVolumeSizeB",
+        "200000",
+        "-log/maxLogFileSizeB",
+        "184632",
     });
 
     ASSERT_EQ(1U, logSettings.loggers.size());
@@ -60,12 +64,12 @@ TEST_F(LogSettings, correct_parsing)
 
 TEST_F(LogSettings, multiple_loggers)
 {
-    parse({
-        "-log/logger", "file=-,level=WARNING",
-        "-log/logger",
-        "dir=/var/log/,maxLogVolumeSizeB=110M,maxLogFileSizeB=100M,"
-            "level=WARNING[nx::network,nx::utils],level=DEBUG[nx::network::http],level=none"
-    });
+    parse(
+        {"-log/logger",
+         "file=-,level=WARNING",
+         "-log/logger",
+         "dir=/var/log/,maxLogVolumeSizeB=110M,maxLogFileSizeB=100M,"
+         "level=WARNING[nx::network,nx::utils],level=DEBUG[nx::network::http],level=none"});
 
     ASSERT_EQ(2U, logSettings.loggers.size());
 
@@ -79,21 +83,15 @@ TEST_F(LogSettings, multiple_loggers)
     logger1Settings.maxVolumeSizeB = 110 * 1024 * 1024;
     logger1Settings.maxFileSizeB = 100 * 1024 * 1024;
     logger1Settings.level.primary = nx::log::Level::none;
-    logger1Settings.level.filters[Filter(QString("nx::network"))] =
-        nx::log::Level::warning;
-    logger1Settings.level.filters[Filter(QString("nx::utils"))] =
-        nx::log::Level::warning;
-    logger1Settings.level.filters[Filter(QString("nx::network::http"))] =
-        nx::log::Level::debug;
+    logger1Settings.level.filters[Filter(QString("nx::network"))] = nx::log::Level::warning;
+    logger1Settings.level.filters[Filter(QString("nx::utils"))] = nx::log::Level::warning;
+    logger1Settings.level.filters[Filter(QString("nx::network::http"))] = nx::log::Level::debug;
     ASSERT_EQ(logger1Settings, logSettings.loggers[1]);
 }
 
 TEST_F(LogSettings, compatibility_settings)
 {
-    parse({
-        "--log-level=verbose",
-        "--log-file=/var/log/utils_ut"
-    });
+    parse({"--log-level=verbose", "--log-file=/var/log/utils_ut"});
 
     ASSERT_EQ(1U, logSettings.loggers.size());
 
@@ -138,7 +136,9 @@ debug=re:^nx::vms::discovery
         EXPECT_EQ(logger.maxFileTimePeriodS.count(), kDefaultMaxLogFileTimePeriodS.count());
         EXPECT_EQ(logger.level.primary, log::Level::verbose);
         EXPECT_EQ(logger.level.filters.size(), 1);
-        EXPECT_EQ(logger.level.filters[Filter(QString("re:^nx::vms::discovery"))], log::Level::debug);
+        EXPECT_EQ(
+            logger.level.filters[Filter(QString("re:^nx::vms::discovery"))],
+            log::Level::debug);
     }
 }
 
@@ -179,7 +179,9 @@ debug=re:^nx::vms::discovery
         EXPECT_EQ(logger.maxFileTimePeriodS.count(), kDefaultMaxLogFileTimePeriodS.count());
         EXPECT_EQ(logger.level.primary, log::Level::verbose);
         EXPECT_EQ(logger.level.filters.size(), 1);
-        EXPECT_EQ(logger.level.filters[Filter(QString("re:^nx::vms::discovery"))], log::Level::debug);
+        EXPECT_EQ(
+            logger.level.filters[Filter(QString("re:^nx::vms::discovery"))],
+            log::Level::debug);
     }
 }
 

@@ -17,10 +17,7 @@ namespace nx::network::ssl {
 
 static constexpr int kSslExDataThisIndex = 0;
 
-Pipeline::Pipeline(
-    Context* context,
-    std::shared_ptr<SSL_CTX> sslContext)
-    :
+Pipeline::Pipeline(Context* context, std::shared_ptr<SSL_CTX> sslContext):
     m_context(context),
     m_bioMethods(nullptr, &BIO_meth_free),
     m_ssl(nullptr, &SSL_free)
@@ -164,7 +161,8 @@ SSL* Pipeline::ssl()
 
 void Pipeline::initSslBio(std::shared_ptr<SSL_CTX> context)
 {
-    m_bioMethods = nx::wrapUnique(BIO_meth_new(BIO_TYPE_SOCKET, typeid(*this).name()), &BIO_meth_free);
+    m_bioMethods =
+        nx::wrapUnique(BIO_meth_new(BIO_TYPE_SOCKET, typeid(*this).name()), &BIO_meth_free);
     BIO_meth_set_write(m_bioMethods.get(), &Pipeline::bioWrite);
     BIO_meth_set_read(m_bioMethods.get(), &Pipeline::bioRead);
     BIO_meth_set_puts(m_bioMethods.get(), &Pipeline::bioPuts);
@@ -190,10 +188,7 @@ void Pipeline::initSslBio(std::shared_ptr<SSL_CTX> context)
     SSL_set0_rbio(m_ssl.get(), rbio); //< SSL will free bio when freed.
     SSL_set0_wbio(m_ssl.get(), wbio); //< SSL will free bio when freed.
 
-    SSL_set_allow_early_data_cb(
-        m_ssl.get(),
-        &Pipeline::verifyEarlyData,
-        this);
+    SSL_set_allow_early_data_cb(m_ssl.get(), &Pipeline::verifyEarlyData, this);
 }
 
 template<typename Func, typename Data>
@@ -217,7 +212,9 @@ int Pipeline::performSslIoOperation(Func sslFunc, Data* data, size_t size)
     const auto ret = handleSslIoResult(resultCode);
     if (ret == utils::bstream::StreamIoError::nonRecoverableError)
     {
-        NX_VERBOSE(this, "SSL stream I/O failure. Last buffer: %1",
+        NX_VERBOSE(
+            this,
+            "SSL stream I/O failure. Last buffer: %1",
             nx::Buffer((const char*) data, size).toBase64());
     }
     return ret;
@@ -239,7 +236,8 @@ int Pipeline::performHandshakeInternal()
         }
     }
 
-    // Zero is a "controlled" TLS handshake shutdown. To make life simpler, handling it as an error.
+    // Zero is a "controlled" TLS handshake shutdown. To make life simpler, handling it as an
+    // error.
     return resultCode == 0 ? -1 : resultCode;
 }
 
@@ -253,7 +251,8 @@ int Pipeline::bioRead(void* buffer, unsigned int bufferLen)
 int Pipeline::bioWrite(const void* buffer, unsigned int bufferLen)
 {
     const auto resultCode = m_outputStream->write(buffer, bufferLen);
-    m_writeThirsty = (resultCode == utils::bstream::StreamIoError::wouldBlock) || (resultCode == 0);
+    m_writeThirsty =
+        (resultCode == utils::bstream::StreamIoError::wouldBlock) || (resultCode == 0);
     return resultCode;
 }
 
@@ -290,9 +289,8 @@ int Pipeline::handleSslIoResult(int resultCode)
                 m_eof = true;
                 m_failed = true;
                 SystemError::setLastErrorCode(
-                    m_state < State::handshakeDone
-                        ? SystemError::sslHandshakeError
-                        : SystemError::connectionReset);
+                    m_state < State::handshakeDone ? SystemError::sslHandshakeError
+                                                   : SystemError::connectionReset);
 
                 return utils::bstream::StreamIoError::nonRecoverableError;
             }
@@ -305,8 +303,12 @@ int Pipeline::handleSslIoResult(int resultCode)
 
         case SSL_ERROR_SYSCALL:
         {
-            NX_VERBOSE(this, "SSL_ERROR_SYSCALL. System error %1, read thirsty %2, write thirsty %3",
-                SystemError::getLastOSErrorText(), m_readThirsty, m_writeThirsty);
+            NX_VERBOSE(
+                this,
+                "SSL_ERROR_SYSCALL. System error %1, read thirsty %2, write thirsty %3",
+                SystemError::getLastOSErrorText(),
+                m_readThirsty,
+                m_writeThirsty);
 
             if (m_readThirsty || m_writeThirsty)
                 return utils::bstream::StreamIoError::wouldBlock;
@@ -434,7 +436,7 @@ long Pipeline::bioCtrl(BIO* bio, int cmd, long num, void* /*ptr*/)
             resultCode = 0;
             break;
     }
-    return(resultCode);
+    return (resultCode);
 }
 
 int Pipeline::bioNew(BIO* bio)
@@ -462,9 +464,8 @@ int Pipeline::bioFree(BIO* bio)
 
 int Pipeline::verifyServerChainCallback(X509_STORE_CTX* x509Ctx)
 {
-    auto ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(
-        x509Ctx,
-        SSL_get_ex_data_X509_STORE_CTX_idx()));
+    auto ssl = static_cast<SSL*>(
+        X509_STORE_CTX_get_ex_data(x509Ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
 
     auto pipeline = static_cast<Pipeline*>(SSL_get_ex_data(ssl, kSslExDataThisIndex));
 
@@ -493,8 +494,7 @@ int Pipeline::verifyEarlyData(SSL* /*s*/, void* /*arg*/)
 //-------------------------------------------------------------------------------------------------
 // ConnectingPipeline
 
-ConnectingPipeline::ConnectingPipeline(Context* context)
-    :
+ConnectingPipeline::ConnectingPipeline(Context* context):
     Pipeline(
         context ? context : Context::instance(),
         (context ? context : Context::instance())->clientContext())

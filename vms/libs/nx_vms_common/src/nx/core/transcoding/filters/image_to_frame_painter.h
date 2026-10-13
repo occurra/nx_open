@@ -26,10 +26,7 @@ public:
     ImageToFramePainter();
     ~ImageToFramePainter();
 
-    void setImage(
-        const QImage& image,
-        const QPoint& offset,
-        Qt::Alignment alignment);
+    void setImage(const QImage& image, const QPoint& offset, Qt::Alignment alignment);
 
     CLVideoDecoderOutputPtr drawTo(const CLVideoDecoderOutputPtr& frame);
 
@@ -40,6 +37,7 @@ private:
     void clearImages();
     CLVideoDecoderOutputPtr drawToFfmpeg(const CLVideoDecoderOutputPtr& frame);
     CLVideoDecoderOutputPtr drawToSse(const CLVideoDecoderOutputPtr& frame);
+
 private:
     using AlignedBufferPtr = std::shared_ptr<quint8>;
 

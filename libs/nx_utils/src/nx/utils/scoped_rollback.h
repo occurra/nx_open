@@ -30,7 +30,11 @@ namespace nx::utils {
 template<class T>
 auto makeScopedRollback(T& var)
 {
-    return makeScopeGuard([&var, oldValue = var]() { var = oldValue; });
+    return makeScopeGuard(
+        [&var, oldValue = var]()
+        {
+            var = oldValue;
+        });
 }
 
 template<class T>

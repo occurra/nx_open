@@ -27,8 +27,10 @@ public slots:
     void slot1(int id);
     void slot2(QUuid id);
     void slot3(QRect rect, QUuid id, int value);
+
 private:
     void emitDoneIfNeed();
+
 private:
     mutable nx::Mutex m_mutex;
     std::promise<void> m_promise;

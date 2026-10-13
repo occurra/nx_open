@@ -47,9 +47,7 @@ public:
      * @param bytesProcessed if not NULL, *bytesProcessed is set to number of bytes read from data.
      * @return true on success. false on parse error, call errorText() to receive error description
      */
-    bool parseBytes(
-        const ConstBufferRefType& data,
-        size_t* bytesProcessed = nullptr);
+    bool parseBytes(const ConstBufferRefType& data, size_t* bytesProcessed = nullptr);
 
     /**
      * @return Actual only after state changed from readingMessageHeaders
@@ -92,7 +90,8 @@ public:
 
     /**
      * By default true.
-     * @param val If false, chunked message is not decoded and returned as-is by AsyncHttpClient::fetchMessageBodyBuffer.
+     * @param val If false, chunked message is not decoded and returned as-is by
+     * AsyncHttpClient::fetchMessageBodyBuffer.
      */
     void setDecodeChunkedMessageBody(bool val);
 
@@ -103,7 +102,8 @@ public:
 
     std::optional<std::uint64_t> contentLength() const;
 
-    /** If true, then parseBytes always returns after reading http headers and trailing CRLF have been read. */
+    /** If true, then parseBytes always returns after reading http headers and trailing CRLF have
+     * been read. */
     void setBreakAfterReadingHeaders(bool val);
 
     /** If true, then parseBytes skips invalid HTTP headers instead of failing. */
@@ -148,19 +148,13 @@ private:
      * @return bytes read from data or -1 in case of error.
      */
     template<class Func>
-    size_t readMessageBody(
-        const ConstBufferRefType& data,
-        Func func);
+    size_t readMessageBody(const ConstBufferRefType& data, Func func);
 
     template<class Func>
-    size_t readChunkStream(
-        const ConstBufferRefType& data,
-        Func func);
+    size_t readChunkStream(const ConstBufferRefType& data, Func func);
 
     template<class Func>
-    size_t readIdentityStream(
-        const ConstBufferRefType& data,
-        Func func);
+    size_t readIdentityStream(const ConstBufferRefType& data, Func func);
 
     /**
      * @return nullptr if encodingName is unknown.

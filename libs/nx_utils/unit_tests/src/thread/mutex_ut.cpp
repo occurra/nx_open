@@ -56,7 +56,6 @@ TEST(MutexAnalyzer, DISABLED_Deadlock_2Threads)
             NX_DEBUG(this, nx::format("Thread 1"));
         });
 
-
     std::thread t2(
         [&]()
         {
@@ -83,7 +82,6 @@ TEST(MutexAnalyzer, DISABLED_Deadlock_3Threads)
             NX_MUTEX_LOCKER lock2(&m2);
             NX_DEBUG(this, nx::format("Thread 1"));
         });
-
 
     std::thread t2(
         [&]()

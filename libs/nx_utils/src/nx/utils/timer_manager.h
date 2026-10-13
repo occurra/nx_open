@@ -26,8 +26,7 @@ namespace utils {
  *   but it delivers timer events to internal thread,
  *   so additional synchronization in timer event handler may be required.
  */
-class NX_UTILS_API TimerManager:
-    public QThread
+class NX_UTILS_API TimerManager: public QThread
 {
 public:
     /**
@@ -84,15 +83,11 @@ public:
      * @param delay Timeout (millisecond) to call taskHandler->onTimer()
      * @return Id of created timer. Always non-zero.
      */
-    TimerId addTimer(
-        TimerEventHandler* const taskHandler,
-        std::chrono::milliseconds delay);
+    TimerId addTimer(TimerEventHandler* const taskHandler, std::chrono::milliseconds delay);
     /**
      * Adds timer that is executed once after delay expiration.
      */
-    TimerId addTimer(
-        MoveOnlyFunc<void(TimerId)> taskHandler,
-        std::chrono::milliseconds delay);
+    TimerId addTimer(MoveOnlyFunc<void(TimerId)> taskHandler, std::chrono::milliseconds delay);
     TimerGuard addTimerEx(
         MoveOnlyFunc<void(TimerId)> taskHandler,
         std::chrono::milliseconds delay);
@@ -121,9 +116,11 @@ public:
     /**
      * Delete timer and wait for handler execution (if its is being executed).
      * Guarantees that timer handler of timerId is not being executed after return of this method.
-     * It is recommended to use previous method, if appropriate, since this method is a bit more heavier.
+     * It is recommended to use previous method, if appropriate, since this method is a bit more
+     * heavier.
      * @param timerId Id of timer, created by addTimer call. If no such timer, nothing is done.
-     * NOTE: If this method is called from TimerEventHandler::onTimer to delete timer being executed, nothing is done
+     * NOTE: If this method is called from TimerEventHandler::onTimer to delete timer being
+     * executed, nothing is done
      */
     void joinAndDeleteTimer(const TimerId& timerId);
 
@@ -142,9 +139,7 @@ private:
         std::chrono::milliseconds repeatPeriod;
 
         TaskContext(MoveOnlyFunc<void(TimerId)> _func);
-        TaskContext(
-            MoveOnlyFunc<void(TimerId)> _func,
-            std::chrono::milliseconds _repeatPeriod);
+        TaskContext(MoveOnlyFunc<void(TimerId)> _func, std::chrono::milliseconds _repeatPeriod);
     };
 
     nx::WaitCondition m_cond;
@@ -164,9 +159,7 @@ private:
         const TimerId timerId,
         TaskContext taskContext,
         std::chrono::milliseconds delay);
-    void deleteTaskNonSafe(
-        const nx::Locker<nx::Mutex>& lk,
-        const TimerId timerId);
+    void deleteTaskNonSafe(const nx::Locker<nx::Mutex>& lk, const TimerId timerId);
 };
 
 /**
@@ -185,8 +178,7 @@ std::chrono::milliseconds NX_UTILS_API parseTimerDuration(
 template<typename Duration>
 Duration parseTimerDurationTyped(const QString& durationStr, Duration defaultValue)
 {
-    return std::chrono::duration_cast<Duration>(
-        parseTimerDuration(durationStr, defaultValue));
+    return std::chrono::duration_cast<Duration>(parseTimerDuration(durationStr, defaultValue));
 }
 
 std::optional<std::chrono::milliseconds> NX_UTILS_API parseOptionalTimerDuration(

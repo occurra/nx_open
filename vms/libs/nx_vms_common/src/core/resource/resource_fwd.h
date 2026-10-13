@@ -104,8 +104,7 @@ using AnalyticsPluginResourceList = QnSharedResourcePointerList<AnalyticsPluginR
 
 class AnalyticsEngineResource;
 using AnalyticsEngineResourcePtr = QnSharedResourcePointer<AnalyticsEngineResource>;
-using AnalyticsEngineResourceList =
-    QnSharedResourcePointerList<AnalyticsEngineResource>;
+using AnalyticsEngineResourceList = QnSharedResourcePointerList<AnalyticsEngineResource>;
 
 using ResourceFilter = std::function<bool(const QnResourcePtr& resource)>;
 

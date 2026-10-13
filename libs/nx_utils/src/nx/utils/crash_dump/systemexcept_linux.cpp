@@ -6,35 +6,36 @@
 
 #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
 
-#include <execinfo.h>
-#include <fcntl.h>
-#include <pwd.h>
-#include <signal.h>
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
+    #include <sstream>
 
-// It is basicly more safe to use POSIX threads instead of any kind of wrappers,
-// just to be sure that no memory alocations are taking place in the signal handlers
-#include <pthread.h>
+    #include <execinfo.h>
+    #include <fcntl.h>
+    #include <pwd.h>
+    #include <signal.h>
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <sys/stat.h>
+    #include <sys/types.h>
+    #include <time.h>
+    #include <unistd.h>
 
-#include <QDebug>
+    // It is basicly more safe to use POSIX threads instead of any kind of wrappers,
+    // just to be sure that no memory alocations are taking place in the signal handlers
+    #include <QDebug>
 
-#include <nx/utils/app_info.h>
+    #include <pthread.h>
+
+    #include <nx/utils/app_info.h>
 
 static const int BUFFER_SIZE = 2048;
 static const int STACK_SHIFT = 2; // signalHandler and printThreadData
 static const int BT_SIZE = 100;
 static const int THREAD_COUNT = 100;
-static const int SIGNALS[] = { SIGQUIT, SIGILL, SIGFPE, SIGSEGV, SIGBUS };
+static const int SIGNALS[] = {SIGQUIT, SIGILL, SIGFPE, SIGSEGV, SIGBUS};
 
-static const struct timespec WAIT_FOR_MUTEX     = { 1 /* sec */, 0 /* nsec */ };
-static const struct timespec WAIT_FOR_THREADS   = { 1 /* sec */, 0 /* nsec */ };
-static const struct timespec WAIT_FOR_MAIN      = { 1 /* sec */, 500000 /* nsec */ };
+static const struct timespec WAIT_FOR_MUTEX = {1 /* sec */, 0 /* nsec */};
+static const struct timespec WAIT_FOR_THREADS = {1 /* sec */, 0 /* nsec */};
+static const struct timespec WAIT_FOR_MAIN = {1 /* sec */, 500000 /* nsec */};
 
 static const std::string fullVersionId = nx::utils::AppInfo::vmsFullVersion().toStdString();
 
@@ -42,7 +43,10 @@ static const std::string fullVersionId = nx::utils::AppInfo::vmsFullVersion().to
 class ThreadKeeper
 {
 public:
-    ThreadKeeper() : m_threads{} {}
+    ThreadKeeper():
+        m_threads{}
+    {
+    }
 
     bool add(pthread_t thread)
     {
@@ -99,40 +103,51 @@ static std::string getCrashPrefix()
 }
 
 // printf for fd without heap usage for sure
-template<class ... Args>
-static int printFd(int fd, Args ... args)
+template<class... Args>
+static int printFd(int fd, Args... args)
 {
-     char buffer[BUFFER_SIZE];
-     if (const int len = sprintf(buffer, args ...))
-         return write(fd, buffer, len);
-     return 0;
+    char buffer[BUFFER_SIZE];
+    if (const int len = sprintf(buffer, args...))
+        return write(fd, buffer, len);
+    return 0;
 }
 
 static int openLogFile()
 {
     int log = open(crashFile.c_str(), O_CREAT | O_WRONLY, 0666);
-    if (log < 0) return log;
+    if (log < 0)
+        return log;
 
     int status = open("/proc/self/status", O_RDONLY);
-    if (status < 0) return log;
+    if (status < 0)
+        return log;
 
     char buffer[BUFFER_SIZE];
     while (auto len = read(status, buffer, BUFFER_SIZE))
-        if(!write(log, buffer, len))
+        if (!write(log, buffer, len))
             break;
 
     close(status);
     return log;
 }
 
-static void printThreadData(int fd, pthread_t thread, int signal,
-                            siginfo_t* /*info*/, ucontext_t* /*context*/)
+static void printThreadData(
+    int fd,
+    pthread_t thread,
+    int signal,
+    siginfo_t* /*info*/,
+    ucontext_t* /*context*/)
 {
-    void *bt[BT_SIZE];
+    void* bt[BT_SIZE];
     if (const auto size = backtrace(bt, BT_SIZE))
     {
-        printFd(fd, "\n%s (%d) in thread 0x%x, backtrace %d frames:\n\n",
-            strsignal(signal), signal, static_cast<int>(thread), size - STACK_SHIFT);
+        printFd(
+            fd,
+            "\n%s (%d) in thread 0x%x, backtrace %d frames:\n\n",
+            strsignal(signal),
+            signal,
+            static_cast<int>(thread),
+            size - STACK_SHIFT);
 
         // TODO: consider to save some extra information from info and context
         backtrace_symbols_fd(bt + STACK_SHIFT, size - STACK_SHIFT, fd);
@@ -180,7 +195,8 @@ static void signalHandler(int signal, siginfo_t* info, void* data)
 
     // send signal the next thread to write it's backtarece
     const auto nextThread = allThreads.first();
-    if (!nextThread) return;
+    if (!nextThread)
+        return;
     pthread_mutex_unlock(&mutex);
     pthread_kill(nextThread, SIGQUIT);
 
@@ -190,12 +206,10 @@ static void signalHandler(int signal, siginfo_t* info, void* data)
     // their backtraces into file
     if (thisThread == problemThread)
     {
-
         nanosleep(&WAIT_FOR_THREADS, 0);
         originalHandlers[signal].sa_sigaction(signal, info, data);
     }
-    else
-    if (thisThread == mainThread)
+    else if (thisThread == mainThread)
     {
         nanosleep(&WAIT_FOR_MAIN, 0);
         abort(); // shell not happend, but just to be sure!
@@ -207,18 +221,17 @@ void linux_exception::installCrashSignalHandler()
     mainThread = pthread_self();
     {
         std::ostringstream os;
-        os << getCrashDirectory() << "/"
-           << getCrashPrefix() << "_" << getpid() << ".crash";
+        os << getCrashDirectory() << "/" << getCrashPrefix() << "_" << getpid() << ".crash";
         crashFile = os.str();
     }
 
     struct sigaction action;
     action.sa_sigaction = signalHandler;
-    for (auto sig = &SIGNALS[0]; sig != &SIGNALS[sizeof(SIGNALS)/sizeof(int)]; ++sig)
+    for (auto sig = &SIGNALS[0]; sig != &SIGNALS[sizeof(SIGNALS) / sizeof(int)]; ++sig)
         if (sigaction(*sig, &action, &originalHandlers[*sig]))
         {
-            qDebug() << "linux_exception Could not setup handler for "
-                     << strsignal(*sig) << " (" << *sig << ")";
+            qDebug() << "linux_exception Could not setup handler for " << strsignal(*sig) << " ("
+                     << *sig << ")";
             return;
         }
 
@@ -247,13 +260,12 @@ void linux_exception::setSignalHandlingDisabled(bool isDisabled)
     pthread_mutex_unlock(&mutex);
 }
 
-static std::string g_crashDirectory =
-    []()
-    {
-        if (const auto pwd = getpwuid(getuid()))
-            return std::string(pwd->pw_dir);
-        return std::string(".");
-    }();
+static std::string g_crashDirectory = []()
+{
+    if (const auto pwd = getpwuid(getuid()))
+        return std::string(pwd->pw_dir);
+    return std::string(".");
+}();
 
 void linux_exception::setCrashDirectory(std::string directory)
 {

@@ -7,7 +7,7 @@
 #include <nx/utils/thread/mutex.h>
 #include <nx/utils/time.h>
 
-QString strPadLeft(const QString &str, int len, char ch)
+QString strPadLeft(const QString& str, int len, char ch)
 {
     int diff = len - str.length();
     if (diff > 0)
@@ -50,20 +50,20 @@ QString stripLastSeparator(QString path)
 
 QString getValueFromString(const QString& line)
 {
-
     int index = line.indexOf(QLatin1Char('='));
 
     if (index < 1)
         return QString();
 
-    return line.mid(index+1);
+    return line.mid(index + 1);
 }
 
-static uint hash(const QChar *p, int n)
+static uint hash(const QChar* p, int n)
 {
     uint h = 0;
 
-    while (n--) {
+    while (n--)
+    {
         h = (h << 4) + (*p++).unicode();
         h ^= (h & 0xf0000000) >> 23;
         h &= 0x0fffffff;
@@ -71,7 +71,7 @@ static uint hash(const QChar *p, int n)
     return h;
 }
 
-uint qt4Hash(const QString &key)
+uint qt4Hash(const QString& key)
 {
     return hash(key.unicode(), key.size());
 }
@@ -82,6 +82,6 @@ QString usecToDateTime(qint64 valueUsec)
         return QStringLiteral("NOW");
     if (valueUsec == DATETIME_INVALID)
         return QStringLiteral("No value");
-    return QDateTime::fromMSecsSinceEpoch(valueUsec / 1000).toString(
-        QStringLiteral("dd.MM.yyyy hh:mm:ss.zzz"));
+    return QDateTime::fromMSecsSinceEpoch(valueUsec / 1000)
+        .toString(QStringLiteral("dd.MM.yyyy hh:mm:ss.zzz"));
 }

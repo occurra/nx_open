@@ -61,9 +61,9 @@ struct NX_VMS_COMMON_API QnAviArchiveMetadata
     bool operator==(const QnAviArchiveMetadata& other) const = default;
 };
 
-#define QnAviArchiveMetadata_Fields (version)(signature)(timeZoneOffset)(timeZoneId)(startTimeMs) \
-    (videoLayoutChannels)(videoLayoutSize)(dewarpingParams)(overridenAr)(integrityHash)\
-    (metadataStreamVersion)(encryptionData)(rotation)
+#define QnAviArchiveMetadata_Fields \
+    (version)(signature)( \
+        timeZoneOffset) (timeZoneId) (startTimeMs) (videoLayoutChannels) (videoLayoutSize) (dewarpingParams) (overridenAr) (integrityHash) (metadataStreamVersion) (encryptionData) (rotation)
 
 QN_FUSION_DECLARE_FUNCTIONS(QnAviArchiveMetadata, (json), NX_VMS_COMMON_API)
 NX_REFLECTION_INSTRUMENT(QnAviArchiveMetadata, QnAviArchiveMetadata_Fields)

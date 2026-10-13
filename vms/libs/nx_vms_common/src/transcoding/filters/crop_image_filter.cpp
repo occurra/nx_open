@@ -13,18 +13,17 @@ extern "C" {
 #endif
 #include <libavutil/pixdesc.h>
 #ifdef WIN32
-#undef AVPixFmtDescriptor
+    #undef AVPixFmtDescriptor
 #endif
 };
 
-static QRectF cwiseMul(const QRectF &l, const QSizeF &r)
+static QRectF cwiseMul(const QRectF& l, const QSizeF& r)
 {
     return QRectF(
-        l.left()   * r.width(),
-        l.top()    * r.height(),
-        l.width()  * r.width(),
-        l.height() * r.height()
-        );
+        l.left() * r.width(),
+        l.top() * r.height(),
+        l.width() * r.width(),
+        l.height() * r.height());
 }
 
 QnCropImageFilter::QnCropImageFilter(const QRectF& rect, bool alignSize, bool deepCopy):
@@ -68,7 +67,9 @@ CLVideoDecoderOutputPtr QnCropImageFilter::updateImage(const CLVideoDecoderOutpu
         result->crop_bottom = frame->height - m_rect.bottom();
         if (const auto status = av_frame_apply_cropping(result.get(), 0); status < 0)
         {
-            NX_WARNING(this, "Failed to crop frame, Ffmpeg error %1",
+            NX_WARNING(
+                this,
+                "Failed to crop frame, Ffmpeg error %1",
                 nx::media::ffmpeg::avErrorToString(status));
         }
     }
@@ -82,7 +83,8 @@ CLVideoDecoderOutputPtr QnCropImageFilter::updateImage(const CLVideoDecoderOutpu
         {
             int w = m_rect.left();
             int h = m_rect.top();
-            if (i > 0) {
+            if (i > 0)
+            {
                 w >>= descr->log2_chroma_w;
                 h >>= descr->log2_chroma_h;
             }

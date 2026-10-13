@@ -2,16 +2,15 @@
 
 #include <gtest/gtest.h>
 
-#include <nx/network/system_socket.h>
 #include <nx/network/buffered_stream_socket.h>
+#include <nx/network/system_socket.h>
 #include <nx/network/test_support/simple_socket_test_helper.h>
 
 namespace nx {
 namespace network {
 namespace test {
 
-class BufferedStreamSocket:
-    public ::testing::Test
+class BufferedStreamSocket: public ::testing::Test
 {
 protected:
     std::unique_ptr<AbstractStreamServerSocket> server;
@@ -26,7 +25,8 @@ protected:
         server = std::make_unique<TCPServerSocket>(AF_INET);
         ASSERT_TRUE(server->setReuseAddrFlag(true));
         ASSERT_TRUE(server->bind(SocketAddress(HostAddress::localhost, 0)));
-        ASSERT_TRUE(server->listen(10));;
+        ASSERT_TRUE(server->listen(10));
+        ;
 
         const auto serverAddress = server->getLocalAddress();
         NX_DEBUG(this, nx::format("Server address: %1").arg(serverAddress.toString()));
@@ -38,9 +38,8 @@ protected:
         auto acceptedRaw = server->accept();
         ASSERT_NE(acceptedRaw, nullptr) << SystemError::getLastOSErrorText();
 
-        accepted = std::make_unique<network::BufferedStreamSocket>(
-            std::move(acceptedRaw),
-            nx::Buffer());
+        accepted =
+            std::make_unique<network::BufferedStreamSocket>(std::move(acceptedRaw), nx::Buffer());
         ASSERT_TRUE(accepted->setNonBlockingMode(true));
     }
 };
@@ -65,12 +64,13 @@ TEST_F(BufferedStreamSocket, catchRecvEvent)
 
     ASSERT_EQ(SystemError::noError, acceptedResults.pop());
     accepted->readAsyncAtLeast(
-        &buffer, kTestMessage.size() * clientCount,
+        &buffer,
+        kTestMessage.size() * clientCount,
         [&](SystemError::ErrorCode code, size_t size)
         {
             ASSERT_EQ(SystemError::noError, code);
             ASSERT_EQ(kTestMessage.size() * clientCount, size);
-            ASSERT_EQ(size, (size_t)buffer.size());
+            ASSERT_EQ(size, (size_t) buffer.size());
             ASSERT_TRUE(buffer.starts_with(kTestMessage));
             ASSERT_TRUE(buffer.ends_with(kTestMessage));
             acceptedResults.push(code);
@@ -96,8 +96,12 @@ TEST_F(BufferedStreamSocket, catchRecvEvent)
 }
 
 NX_NETWORK_CLIENT_SOCKET_TEST_CASE(
-    TEST_F, BufferedStreamSocket,
-    []() { return std::make_unique<TCPServerSocket>(AF_INET); },
+    TEST_F,
+    BufferedStreamSocket,
+    []()
+    {
+        return std::make_unique<TCPServerSocket>(AF_INET);
+    },
     []()
     {
         return std::make_unique<network::BufferedStreamSocket>(

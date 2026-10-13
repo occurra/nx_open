@@ -1,10 +1,11 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
 #include <fstream>
 
-#include <nx/webrtc/webrtc_datachannel.h>
+#include <gtest/gtest.h>
+
 #include <nx/utils/log/log.h>
+#include <nx/webrtc/webrtc_datachannel.h>
 
 using namespace nx::webrtc;
 
@@ -19,16 +20,13 @@ enum Type
 class TestDataChannelStreamer: public AbstractDataChannelDelegate
 {
 public:
-    TestDataChannelStreamer(TestDataChannel* testDataChannel, Type type)
-        :
+    TestDataChannelStreamer(TestDataChannel* testDataChannel, Type type):
         AbstractDataChannelDelegate(SessionConfig()),
         m_testDataChannel(testDataChannel),
         m_type(type)
-    {}
-    virtual ~TestDataChannelStreamer()
     {
-        m_dataChannel.reset();
     }
+    virtual ~TestDataChannelStreamer() { m_dataChannel.reset(); }
     virtual void writeDataChannelPacket(const uint8_t* data, int size);
     virtual void onDataChannelString(const std::string& data, int /*streamId*/)
     {
@@ -38,19 +36,14 @@ public:
     {
         onDataChannelString(data, streamId);
     }
-    bool openDataChannel()
-    {
-        return m_dataChannel.openDataChannel("test-channel", "");
-    }
-    bool writeString(const std::string& string)
-    {
-        return m_dataChannel.writeString(string);
-    }
+    bool openDataChannel() { return m_dataChannel.openDataChannel("test-channel", ""); }
+    bool writeString(const std::string& string) { return m_dataChannel.writeString(string); }
     bool handlePacket(const uint8_t* data, int size)
     {
         return m_dataChannel.handlePacket(data, size);
     }
     std::string lastString() const { return m_lastString; }
+
 private:
     TestDataChannel* m_testDataChannel = nullptr;
     Type m_type = Type::client;
@@ -60,14 +53,15 @@ private:
 class TestDataChannel
 {
 public:
-    TestDataChannel()
-        :
+    TestDataChannel():
         m_streamerClient(this, Type::client),
         m_streamerServer(this, Type::server)
-    {}
+    {
+    }
     bool writePacket(const uint8_t* data, int size, Type type);
     bool flushQueues();
     bool test();
+
 private:
     TestDataChannelStreamer m_streamerClient;
     TestDataChannelStreamer m_streamerServer;

@@ -9,7 +9,8 @@ namespace nx::media::mpeg4 {
 
 std::optional<VideoObjectLayer> findAndParseVolHeader(const uint8_t* data, int size)
 {
-    // This function cannot be used for all mpeg4 headers, but it is acceptable for VideoObjectLayer.
+    // This function cannot be used for all mpeg4 headers, but it is acceptable for
+    // VideoObjectLayer.
     auto nalUnits = nal::findNalUnitsAnnexB(data, size);
     for (const auto& nal: nalUnits)
     {

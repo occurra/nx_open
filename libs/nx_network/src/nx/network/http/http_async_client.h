@@ -46,8 +46,7 @@ public:
 
         constexpr bool operator==(const Timeouts& rhs) const
         {
-            return sendTimeout == rhs.sendTimeout
-                && responseReadTimeout == rhs.responseReadTimeout
+            return sendTimeout == rhs.sendTimeout && responseReadTimeout == rhs.responseReadTimeout
                 && messageBodyReadTimeout == rhs.messageBodyReadTimeout;
         }
 
@@ -60,7 +59,7 @@ public:
     static constexpr Timeouts kInfiniteTimeouts = {
         std::chrono::milliseconds::zero(),
         std::chrono::milliseconds::zero(),
-        std::chrono::milliseconds::zero() };
+        std::chrono::milliseconds::zero()};
 
     /** By default, entity compression is on. */
     void setUseCompression(bool toggleUseEntityEncoding);
@@ -78,12 +77,16 @@ public:
     void setProxyCredentials(const Credentials& credentials);
     Credentials proxyCredentials() const;
 
-    void setProxyVia(const SocketAddress& proxyEndpoint, bool isSecure, ssl::AdapterFunc adapterFunc);
+    void setProxyVia(
+        const SocketAddress& proxyEndpoint,
+        bool isSecure,
+        ssl::AdapterFunc adapterFunc);
     std::optional<SocketAddress> proxyEndpoint() const;
     bool isProxySecure() const;
     ssl::AdapterFunc proxyAdapterFunc() const;
 
-    /** If set to true client will not try to add Authorization header to the first request. false by default. */
+    /** If set to true client will not try to add Authorization header to the first request. false
+     * by default. */
     void setDisablePrecalculatedAuthorization(bool val);
     bool disablePrecalculatedAuthorization() const;
 
@@ -93,14 +96,16 @@ public:
     /**
      * @param responseReadTimeoutMs 0 means infinity.
      * By default, 3000 ms.
-     * If timeout has been met, connection is closed, state set to failed and AsyncClient::done emitted.
+     * If timeout has been met, connection is closed, state set to failed and AsyncClient::done
+     * emitted.
      */
     void setResponseReadTimeout(std::chrono::milliseconds responseReadTimeout);
 
     /**
      * @param messageBodyReadTimeoutMs 0 means infinity.
      * By default there is no timeout.
-     * If timeout has been met, connection is closed, state set to failed and AsyncClient::done emitted.
+     * If timeout has been met, connection is closed, state set to failed and AsyncClient::done
+     * emitted.
      */
     void setMessageBodyReadTimeout(std::chrono::milliseconds messageBodyReadTimeout);
 
@@ -156,9 +161,7 @@ private:
  *   read current message body buffer with AsyncClient::fetchMessageBodyBuffer() call every time
  *   to avoid internal message body buffer consuming too much memory.
  */
-class NX_NETWORK_API AsyncClient:
-    public nx::network::aio::BasicPollable,
-    public ClientOptions
+class NX_NETWORK_API AsyncClient: public nx::network::aio::BasicPollable, public ClientOptions
 {
     using base_type = nx::network::aio::BasicPollable;
 
@@ -189,7 +192,8 @@ public:
 
     /**
      * Invoked after request has been sent.
-     * @param isRetryAfterUnauthorized set to true if request has been sent as after receiving 401 unauthorized response.
+     * @param isRetryAfterUnauthorized set to true if request has been sent as after receiving 401
+     * unauthorized response.
      * TODO: #akolesnikov Check if really needed.
      */
     void setOnRequestHasBeenSent(
@@ -206,7 +210,7 @@ public:
      *   to grow beyond reasonable sizes lies on user of this class.
      * WARNING: It is strongly recommended to call AsyncClient::fetchMessageBodyBuffer()
      *   every time on receiving this signal
-    */
+     */
     void setOnSomeMessageBodyAvailable(nx::MoveOnlyFunc<void()> handler);
 
     /**
@@ -235,63 +239,43 @@ public:
      * httpClient->doGet(url);
      * @endcode
      */
-    void doGet(
-        const nx::Url& url,
-        nx::MoveOnlyFunc<void()> completionHandler);
+    void doGet(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler);
 
     void doHead(const nx::Url& url);
-    void doHead(
-        const nx::Url& url,
-        nx::MoveOnlyFunc<void()> completionHandler);
+    void doHead(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler);
 
     /**
      * Start POST request to url.
      * @return true, if socket is created and async connect is started. false otherwise
      */
     void doPost(const nx::Url& url);
-    void doPost(
-        const nx::Url& url,
-        std::unique_ptr<AbstractMsgBodySource> body);
+    void doPost(const nx::Url& url, std::unique_ptr<AbstractMsgBodySource> body);
     void doPost(
         const nx::Url& url,
         std::unique_ptr<AbstractMsgBodySource> body,
         nx::MoveOnlyFunc<void()> completionHandler);
-    void doPost(
-        const nx::Url& url,
-        nx::MoveOnlyFunc<void()> completionHandler);
+    void doPost(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler);
 
     void doPut(const nx::Url& url);
-    void doPut(
-        const nx::Url& url,
-        std::unique_ptr<AbstractMsgBodySource> body);
+    void doPut(const nx::Url& url, std::unique_ptr<AbstractMsgBodySource> body);
     void doPut(
         const nx::Url& url,
         std::unique_ptr<AbstractMsgBodySource> body,
         nx::MoveOnlyFunc<void()> completionHandler);
-    void doPut(
-        const nx::Url& url,
-        nx::MoveOnlyFunc<void()> completionHandler);
+    void doPut(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler);
 
     void doPatch(const nx::Url& url);
-    void doPatch(
-        const nx::Url& url,
-        std::unique_ptr<AbstractMsgBodySource> body);
+    void doPatch(const nx::Url& url, std::unique_ptr<AbstractMsgBodySource> body);
     void doPatch(
         const nx::Url& url,
         std::unique_ptr<AbstractMsgBodySource> body,
         nx::MoveOnlyFunc<void()> completionHandler);
-    void doPatch(
-        const nx::Url& url,
-        nx::MoveOnlyFunc<void()> completionHandler);
+    void doPatch(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler);
 
     void doDelete(const nx::Url& url);
-    void doDelete(
-        const nx::Url& url,
-        nx::MoveOnlyFunc<void()> completionHandler);
+    void doDelete(const nx::Url& url, nx::MoveOnlyFunc<void()> completionHandler);
 
-    void doUpgrade(
-        const nx::Url& url,
-        const std::string& protocolToUpgradeTo);
+    void doUpgrade(const nx::Url& url, const std::string& protocolToUpgradeTo);
     void doUpgrade(
         const nx::Url& url,
         const Method& method,
@@ -307,17 +291,13 @@ public:
         const std::string& protocolToUpgradeTo,
         nx::MoveOnlyFunc<void()> completionHandler);
 
-    void doConnect(
-        const nx::Url& proxyUrl,
-        const std::string& targetHost);
+    void doConnect(const nx::Url& proxyUrl, const std::string& targetHost);
     void doConnect(
         const nx::Url& proxyUrl,
         const std::string& targetHost,
         nx::MoveOnlyFunc<void()> completionHandler);
 
-    void doRequest(
-        const Method& method,
-        const nx::Url& url);
+    void doRequest(const Method& method, const nx::Url& url);
     void doRequest(
         const Method& method,
         const nx::Url& url,
@@ -519,19 +499,15 @@ private:
 
     void addBasicAuthorizationToRequest();
 
-    void doSomeCustomLogic(
-        const nx::network::http::Response& response,
-        Request* const request);
+    void doSomeCustomLogic(const nx::network::http::Response& response, Request* const request);
 
     Result emitDone();
     Result emitRequestHasBeenSent(bool authorizationTried);
     Result emitResponseReceived();
     Result emitSomeMessageBodyAvailable();
 
-    template<typename ... Args>
-    Result invokeHandler(
-        nx::MoveOnlyFunc<void(Args...)>& handler,
-        Args... args);
+    template<typename... Args>
+    Result invokeHandler(nx::MoveOnlyFunc<void(Args...)>& handler, Args... args);
 
     static const char* toString(State state);
 };

@@ -19,16 +19,15 @@ namespace network {
  * Can be used as a server-side connection only.
  * Protocol selection on client side MUST be done explicitly by using appropriate socket class.
  */
-template <typename SocketInterface>
+template<typename SocketInterface>
 class ProtocolDetectingStreamSocket:
     public aio::BaseProtocolDetectingAsyncChannel<
         CustomStreamSocketDelegate<SocketInterface, AbstractStreamSocket>,
         AbstractStreamSocket>
 {
-    using base_type =
-        aio::BaseProtocolDetectingAsyncChannel<
-            CustomStreamSocketDelegate<SocketInterface, AbstractStreamSocket>,
-            AbstractStreamSocket>;
+    using base_type = aio::BaseProtocolDetectingAsyncChannel<
+        CustomStreamSocketDelegate<SocketInterface, AbstractStreamSocket>,
+        AbstractStreamSocket>;
 
 public:
     ProtocolDetectingStreamSocket(std::unique_ptr<AbstractStreamSocket> source):
@@ -73,10 +72,7 @@ public:
         return this->actualDataChannel().recv(buffer, bufferLen, flags);
     }
 
-    virtual bool isConnected() const override
-    {
-        return this->actualDataChannel().isConnected();
-    }
+    virtual bool isConnected() const override { return this->actualDataChannel().isConnected(); }
 
     virtual int send(const void* buffer, std::size_t bufferLen) override
     {
@@ -95,9 +91,10 @@ protected:
         std::unique_ptr<AbstractStreamSocket> dataSource,
         nx::Buffer readDataCache) override
     {
-        return factoryFunc(std::make_unique<BufferedStreamSocket>(
-            std::move(dataSource),
-            std::move(readDataCache)));
+        return factoryFunc(
+            std::make_unique<BufferedStreamSocket>(
+                std::move(dataSource),
+                std::move(readDataCache)));
     }
 };
 

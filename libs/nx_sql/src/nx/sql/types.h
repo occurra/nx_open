@@ -55,7 +55,7 @@ struct NX_SQL_API DBResult
 
 //-------------------------------------------------------------------------------------------------
 
-//NX_SQL_API const char* toString(DBResult value);
+// NX_SQL_API const char* toString(DBResult value);
 
 NX_REFLECTION_ENUM_CLASS(RdbmsDriverType,
     unknown,
@@ -97,8 +97,8 @@ public:
     bool failOnDbTuneError = false;
 
     /**
-     * If specified, then no more than this amount of data modification queries will be run concurrently.
-     * Otherwise, there is no limit (if DB type supports it).
+     * If specified, then no more than this amount of data modification queries will be run
+     * concurrently. Otherwise, there is no limit (if DB type supports it).
      */
     std::optional<int> concurrentModificationQueryLimit;
 
@@ -132,8 +132,7 @@ NX_REFLECTION_ENUM_CLASS(QueryType,
 
 //-------------------------------------------------------------------------------------------------
 
-class NX_SQL_API Exception:
-    public std::runtime_error
+class NX_SQL_API Exception: public std::runtime_error
 {
     using base_type = std::runtime_error;
 

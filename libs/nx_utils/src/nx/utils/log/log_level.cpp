@@ -133,7 +133,8 @@ Filter::Filter(const QString& source):
         try
         {
             const QString pattern(m_impl->pattern.mid(kRegularExpressionPattern.length()));
-            std::regex re(pattern.toStdString(),
+            std::regex re(
+                pattern.toStdString(),
                 std::regex_constants::ECMAScript | std::regex_constants::icase);
             m_impl->regex = re;
             m_impl->valid = true;
@@ -226,7 +227,7 @@ QString LevelSettings::toString() const
         filersByLevel[tag.second] << tag.first.toString();
 
     QStringList levelList(log::toString(primary));
-    for (const auto& filterGroup : filersByLevel)
+    for (const auto& filterGroup: filersByLevel)
     {
         const auto level = log::toString(filterGroup.first);
         const auto filters = filterGroup.second.join(kSeparator);

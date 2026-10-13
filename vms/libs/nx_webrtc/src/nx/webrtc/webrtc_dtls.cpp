@@ -12,7 +12,7 @@ AbstractDtlsDelegate::~AbstractDtlsDelegate()
 {
 }
 
-/*static*/ int Dtls::bioMethodNew(BIO *bio)
+/*static*/ int Dtls::bioMethodNew(BIO* bio)
 {
     BIO_set_init(bio, 1);
     BIO_set_data(bio, NULL);
@@ -20,7 +20,7 @@ AbstractDtlsDelegate::~AbstractDtlsDelegate()
     return 1;
 }
 
-/*static*/ int Dtls::bioMethodFree(BIO *bio)
+/*static*/ int Dtls::bioMethodFree(BIO* bio)
 {
     if (!bio)
         return 0;
@@ -28,7 +28,7 @@ AbstractDtlsDelegate::~AbstractDtlsDelegate()
     return 1;
 }
 
-/*static*/ int Dtls::bioMethodWrite(BIO *bio, const char *in, int inl)
+/*static*/ int Dtls::bioMethodWrite(BIO* bio, const char* in, int inl)
 {
     if (inl <= 0)
         return inl;
@@ -40,19 +40,19 @@ AbstractDtlsDelegate::~AbstractDtlsDelegate()
     return inl;
 }
 
-/*static*/ long Dtls::bioMethodCtrl(BIO* /*bio*/, int cmd, long /*num*/, void * /*ptr*/)
+/*static*/ long Dtls::bioMethodCtrl(BIO* /*bio*/, int cmd, long /*num*/, void* /*ptr*/)
 {
     switch (cmd)
     {
-    case BIO_CTRL_FLUSH:
-        return 1;
-    case BIO_CTRL_DGRAM_QUERY_MTU:
-        return 0; //< SSL_OP_NO_QUERY_MTU must be set
-    case BIO_CTRL_WPENDING:
-    case BIO_CTRL_PENDING:
-        return 0;
-    default:
-        break;
+        case BIO_CTRL_FLUSH:
+            return 1;
+        case BIO_CTRL_DGRAM_QUERY_MTU:
+            return 0; //< SSL_OP_NO_QUERY_MTU must be set
+        case BIO_CTRL_WPENDING:
+        case BIO_CTRL_PENDING:
+            return 0;
+        default:
+            break;
     }
     return 0;
 }
@@ -67,18 +67,22 @@ AbstractDtlsDelegate::~AbstractDtlsDelegate()
     std::vector<uint8_t> remoteHash;
     switch (dtls->m_fingerprint.type)
     {
-    case Fingerprint::Type::sha256:
-        remoteHash = remote.sha256();
-        break;
-    case Fingerprint::Type::sha1:
-        remoteHash = remote.sha1();
-        break;
-    case Fingerprint::Type::none:
-        NX_ASSERT(false, "%1: Fingerprint can't be absent", dtls->m_id);
-        return 0;
-    default:
-        NX_WARNING(dtls, "%1: Fingerprint type %2 not supported", dtls->m_id, dtls->m_fingerprint.type);
-        return 0;
+        case Fingerprint::Type::sha256:
+            remoteHash = remote.sha256();
+            break;
+        case Fingerprint::Type::sha1:
+            remoteHash = remote.sha1();
+            break;
+        case Fingerprint::Type::none:
+            NX_ASSERT(false, "%1: Fingerprint can't be absent", dtls->m_id);
+            return 0;
+        default:
+            NX_WARNING(
+                dtls,
+                "%1: Fingerprint type %2 not supported",
+                dtls->m_id,
+                dtls->m_fingerprint.type);
+            return 0;
     }
     return remoteHash == dtls->m_fingerprint.hash ? 1 : 0;
 }
@@ -111,18 +115,23 @@ bool Dtls::initDtls()
      * RFC 8827: Implementations MUST NOT implement DTLS renegotiation
      * See https://www.rfc-editor.org/rfc/rfc8827.html#section-6.5
      */
-    SSL_CTX_set_options(m_sslContext.get(),
+    SSL_CTX_set_options(
+        m_sslContext.get(),
         SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION | SSL_OP_NO_QUERY_MTU | SSL_OP_NO_RENEGOTIATION);
     SSL_CTX_set_min_proto_version(m_sslContext.get(), DTLS1_VERSION);
     SSL_CTX_set_read_ahead(m_sslContext.get(), 1);
     SSL_CTX_set_quiet_shutdown(m_sslContext.get(), 1);
     SSL_CTX_set_info_callback(m_sslContext.get(), infoCallback);
 
-    SSL_CTX_set_verify(m_sslContext.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+    SSL_CTX_set_verify(
+        m_sslContext.get(),
+        SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
         certificateCallback);
     SSL_CTX_set_verify_depth(m_sslContext.get(), 1);
-    if (SslError::failed == sslErrorCheck(SSL_CTX_set_cipher_list(
-        m_sslContext.get(), "ALL:!LOW:!EXP:!RC4:!MD5:@STRENGTH"), "failed to set SSL priorities"))
+    if (SslError::failed
+        == sslErrorCheck(
+            SSL_CTX_set_cipher_list(m_sslContext.get(), "ALL:!LOW:!EXP:!RC4:!MD5:@STRENGTH"),
+            "failed to set SSL priorities"))
     {
         return false;
     }
@@ -130,8 +139,10 @@ bool Dtls::initDtls()
     // 3. Set certificate and key
     SSL_CTX_use_certificate(m_sslContext.get(), m_pem.certificate().x509());
     SSL_CTX_use_PrivateKey(m_sslContext.get(), m_pem.privateKey().get());
-    if (SslError::failed == sslErrorCheck(SSL_CTX_check_private_key(m_sslContext.get()),
-        "SSL local private key check failed"))
+    if (SslError::failed
+        == sslErrorCheck(
+            SSL_CTX_check_private_key(m_sslContext.get()),
+            "SSL local private key check failed"))
     {
         return false;
     }
@@ -165,7 +176,6 @@ bool Dtls::initDtls()
     if (SSL_set_tlsext_use_srtp(m_ssl.get(), "SRTP_AES128_CM_SHA1_80") != 0)
         return false;
     return true;
-
 }
 
 Dtls::SslError Dtls::sslErrorCheck(int success, const std::string& message)
@@ -200,12 +210,7 @@ Dtls::SslError Dtls::sslErrorCheck(int success, const std::string& message)
 
 Dtls::SslError Dtls::sslDumpError(const std::string& error, const std::string& message)
 {
-    NX_DEBUG(
-        this,
-        "SSL check failed: %1 / %2 for %3",
-        message,
-        error,
-        m_id);
+    NX_DEBUG(this, "SSL check failed: %1 / %2 for %3", message, error, m_id);
     return SslError::failed;
 }
 
@@ -224,7 +229,8 @@ Dtls::Status Dtls::writePacket(const uint8_t* data, int size, AbstractDtlsDelega
     if (!m_ssl.get() || m_status != Status::streaming)
         return Status::error;
 
-    return SslError::failed != sslErrorCheck(SSL_write(m_ssl.get(), data, size), "Write to SSL failed")
+    return SslError::failed
+            != sslErrorCheck(SSL_write(m_ssl.get(), data, size), "Write to SSL failed")
         ? Status::streaming
         : Status::error;
 }
@@ -269,7 +275,8 @@ Dtls::Status Dtls::handlePacket(const uint8_t* data, int size, AbstractDtlsDeleg
     if (SslError::continue_ == sslError)
     {
         NX_VERBOSE(this, "Handshake continuation for %1", m_id);
-        return m_status = Status::handshake; //< Handshake is not finished, need for more chunks of data
+        return m_status =
+                   Status::handshake; //< Handshake is not finished, need for more chunks of data
     }
 
     // 3. Master key & salt extraction
@@ -278,19 +285,34 @@ Dtls::Status Dtls::handlePacket(const uint8_t* data, int size, AbstractDtlsDeleg
     uint8_t material[kMaterialLength];
 
     // Returns 1 on success, 0 or -1 on failure
-    if (SSL_export_keying_material(m_ssl.get(), material, kMaterialLength,
-        extractorLabel.c_str(), extractorLabel.size(), nullptr, 0, 0) <= 0)
+    if (SSL_export_keying_material(
+            m_ssl.get(),
+            material,
+            kMaterialLength,
+            extractorLabel.c_str(),
+            extractorLabel.size(),
+            nullptr,
+            0,
+            0)
+        <= 0)
     {
         NX_DEBUG(this, "Can't export keying material for %1", m_id);
         return Status::error;
     }
     // Order is client key, server key, client salt, and server salt
     memcpy(m_encryptionData.clientKeyAndSalt, material, rtsp::kSrtpAes128KeyLen);
-    memcpy(m_encryptionData.serverKeyAndSalt, material + rtsp::kSrtpAes128KeyLen, rtsp::kSrtpAes128KeyLen);
-    memcpy(m_encryptionData.clientKeyAndSalt + rtsp::kSrtpAes128KeyLen,
-        material + rtsp::kSrtpAes128KeyLen * 2, rtsp::kSrtpSaltLen);
-    memcpy(m_encryptionData.serverKeyAndSalt + rtsp::kSrtpAes128KeyLen,
-        material + rtsp::kSrtpAes128KeyLen * 2 + rtsp::kSrtpSaltLen, rtsp::kSrtpSaltLen);
+    memcpy(
+        m_encryptionData.serverKeyAndSalt,
+        material + rtsp::kSrtpAes128KeyLen,
+        rtsp::kSrtpAes128KeyLen);
+    memcpy(
+        m_encryptionData.clientKeyAndSalt + rtsp::kSrtpAes128KeyLen,
+        material + rtsp::kSrtpAes128KeyLen * 2,
+        rtsp::kSrtpSaltLen);
+    memcpy(
+        m_encryptionData.serverKeyAndSalt + rtsp::kSrtpAes128KeyLen,
+        material + rtsp::kSrtpAes128KeyLen * 2 + rtsp::kSrtpSaltLen,
+        rtsp::kSrtpSaltLen);
 
     NX_DEBUG(this, "Handshake successful for session %1", m_id);
     return m_status = Status::streaming;

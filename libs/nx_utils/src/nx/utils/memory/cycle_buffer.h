@@ -15,7 +15,11 @@ public:
 
     struct Range
     {
-        Range(const value_type* data, size_type size): data(data), size(size) {}
+        Range(const value_type* data, size_type size):
+            data(data),
+            size(size)
+        {
+        }
 
         const value_type* data;
         size_type size;
@@ -39,8 +43,9 @@ public:
     /**
      * @param pos data offset.
      * @param size data size. -1 means all data.
-     * @return pointer to data buffer. It may cause memory copy operation to defragment internal buffer.
-     * This pointer is guarantee that requested buffer is accessible as a single serial data block at least for size bytes
+     * @return pointer to data buffer. It may cause memory copy operation to defragment internal
+     * buffer. This pointer is guarantee that requested buffer is accessible as a single serial
+     * data block at least for size bytes
      */
     const value_type* unfragmentedData(size_type pos = 0, size_type size = -1);
 
@@ -56,7 +61,8 @@ public:
     void clear() { m_size = m_offset = 0; }
 
     /**
-     * @return allocated buffer size. Cyclic buffer can't be extended, so size() MUST be <= maxSize().
+     * @return allocated buffer size. Cyclic buffer can't be extended, so size() MUST be <=
+     * maxSize().
      */
     size_type maxSize() const { return m_maxSize; }
 

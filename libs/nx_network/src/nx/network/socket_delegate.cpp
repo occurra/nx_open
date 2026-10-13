@@ -16,7 +16,6 @@ void recordSocketDelegateCreation(void* ptr)
 
 void recordSocketDelegateDestruction(void* ptr)
 {
-
     SocketGlobals::instance().allocationAnalyzer().recordObjectDestruction(ptr);
 }
 

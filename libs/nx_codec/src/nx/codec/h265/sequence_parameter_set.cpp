@@ -50,7 +50,9 @@ bool SequenceParameterSet::read(const uint8_t* data, int size)
         log2_max_pic_order_cnt_lsb_minus4 = reader.getGolomb();
         sps_sub_layer_ordering_info_present_flag = reader.getBits(1);
         sps_sub_layer_ordering_info_vector.clear();
-        for (int i = (sps_sub_layer_ordering_info_present_flag ? 0 : sps_max_sub_layers_minus1); i <= sps_max_sub_layers_minus1; ++ i)
+        for (int i = (sps_sub_layer_ordering_info_present_flag ? 0 : sps_max_sub_layers_minus1);
+             i <= sps_max_sub_layers_minus1;
+             ++i)
         {
             SubLayerOrderingInfo newInfo;
             newInfo.sps_max_dec_pic_buffering_minus1 = reader.getGolomb();
@@ -98,8 +100,9 @@ bool SequenceParameterSet::read(const uint8_t* data, int size)
         {
             ShortTermReferencePictureSet newSet;
             uint32_t max_dec_pic_buffering_minus1 = sps_sub_layer_ordering_info_present_flag
-                    ? sps_sub_layer_ordering_info_vector[sps_max_sub_layers_minus1].sps_max_dec_pic_buffering_minus1
-                    : sps_sub_layer_ordering_info_vector[0].sps_max_dec_pic_buffering_minus1;
+                ? sps_sub_layer_ordering_info_vector[sps_max_sub_layers_minus1]
+                      .sps_max_dec_pic_buffering_minus1
+                : sps_sub_layer_ordering_info_vector[0].sps_max_dec_pic_buffering_minus1;
 
             if (!newSet.read(
                     reader,
@@ -129,7 +132,8 @@ bool SequenceParameterSet::read(const uint8_t* data, int size)
                 if (log2_max_pic_order_cnt_lsb_minus4 + 4 > 64)
                     return false;
 
-                newInfo.lt_ref_pic_poc_lsb_sps = reader.getBits(log2_max_pic_order_cnt_lsb_minus4 + 4);
+                newInfo.lt_ref_pic_poc_lsb_sps =
+                    reader.getBits(log2_max_pic_order_cnt_lsb_minus4 + 4);
                 newInfo.used_by_curr_pic_lt_sps_flag = reader.getBits(1);
 
                 long_term_ref_pics_info_vector.push_back(newInfo);

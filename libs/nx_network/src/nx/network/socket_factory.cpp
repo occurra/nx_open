@@ -7,9 +7,9 @@
 #include <nx/network/cloud/cloud_connect_controller.h>
 #include <nx/network/cloud/cloud_stream_socket.h>
 #include <nx/network/nx_network_ini.h>
+#include <nx/network/socket_global.h>
 #include <nx/network/ssl/context.h>
 #include <nx/network/ssl/ssl_stream_socket.h>
-#include <nx/network/socket_global.h>
 #include <nx/network/system_socket.h>
 #include <nx/network/udt/udt_socket.h>
 #include <nx/utils/basic_factory.h>
@@ -18,45 +18,45 @@ namespace nx::network {
 
 namespace {
 
-static SocketFactory::CreateStreamSocketFuncType createStreamSocketFunc =
-    [](auto&&...args)
-    {
-        return SocketFactory::defaultStreamSocketFactoryFunc(
-            std::forward<decltype(args)>(args)...);
-    };
+static SocketFactory::CreateStreamSocketFuncType createStreamSocketFunc = [](auto&&... args)
+{
+    return SocketFactory::defaultStreamSocketFactoryFunc(std::forward<decltype(args)>(args)...);
+};
 
 static SocketFactory::CreateStreamServerSocketFuncType createStreamServerSocketFunc =
-    [](auto&&...args)
-    {
-        return SocketFactory::defaultStreamServerSocketFactoryFunc(
-            std::forward<decltype(args)>(args)...);
-    };
+    [](auto&&... args)
+{
+    return SocketFactory::defaultStreamServerSocketFactoryFunc(
+        std::forward<decltype(args)>(args)...);
+};
 
 } // namespace
 
 namespace ssl {
 
-const AdapterFunc kDefaultCertificateCheck =
-    [](auto socket)
-    {
-        return std::make_unique<ClientStreamSocket>(
-            Context::instance(), std::move(socket), kDefaultCertificateCheckCallback);
-    };
+const AdapterFunc kDefaultCertificateCheck = [](auto socket)
+{
+    return std::make_unique<ClientStreamSocket>(
+        Context::instance(),
+        std::move(socket),
+        kDefaultCertificateCheckCallback);
+};
 
-const AdapterFunc kAcceptAnyCertificate =
-    [](auto socket)
-    {
-        return std::make_unique<ClientStreamSocket>(
-            Context::instance(), std::move(socket), kAcceptAnyCertificateCallback);
-    };
+const AdapterFunc kAcceptAnyCertificate = [](auto socket)
+{
+    return std::make_unique<ClientStreamSocket>(
+        Context::instance(),
+        std::move(socket),
+        kAcceptAnyCertificateCallback);
+};
 
 } // namespace ssl
 
 class SocketFactoryImpl
 {
 public:
-    using DatagramSocketFactory = nx::utils::BasicAbstractObjectFactory<
-        AbstractDatagramSocket, UDPSocket, int /*e.g., AF_INET*/>;
+    using DatagramSocketFactory = nx::utils::
+        BasicAbstractObjectFactory<AbstractDatagramSocket, UDPSocket, int /*e.g., AF_INET*/>;
 
     DatagramSocketFactory datagramSocketFactory;
 };
@@ -84,10 +84,13 @@ std::unique_ptr<AbstractStreamSocket> SocketFactory::createStreamSocket(
     std::optional<int> ipVersion)
 {
     return createStreamSocketFunc(
-        std::move(adapterFunc), sslRequired, natTraversalSupport, ipVersion);
+        std::move(adapterFunc),
+        sslRequired,
+        natTraversalSupport,
+        ipVersion);
 }
 
-std::unique_ptr< AbstractStreamServerSocket > SocketFactory::createStreamServerSocket(
+std::unique_ptr<AbstractStreamServerSocket> SocketFactory::createStreamServerSocket(
     bool sslRequired,
     std::optional<int> ipVersion)
 {
@@ -149,15 +152,13 @@ bool SocketFactory::isStreamSocketTypeEnforced()
     return s_enforcedStreamSocketType != SocketType::cloud;
 }
 
-SocketFactory::CreateStreamSocketFuncType
-SocketFactory::setCreateStreamSocketFunc(
+SocketFactory::CreateStreamSocketFuncType SocketFactory::setCreateStreamSocketFunc(
     CreateStreamSocketFuncType newFactoryFunc)
 {
     return std::exchange(createStreamSocketFunc, std::move(newFactoryFunc));
 }
 
-SocketFactory::CreateStreamServerSocketFuncType
-SocketFactory::setCreateStreamServerSocketFunc(
+SocketFactory::CreateStreamServerSocketFuncType SocketFactory::setCreateStreamServerSocketFunc(
     CreateStreamServerSocketFuncType newFactoryFunc)
 {
     return std::exchange(createStreamServerSocketFunc, std::move(newFactoryFunc));
@@ -241,18 +242,17 @@ SocketFactory::SocketFactory():
 
 SocketFactory::~SocketFactory() = default;
 
-std::atomic< SocketFactory::SocketType >
-SocketFactory::s_enforcedStreamSocketType(
+std::atomic<SocketFactory::SocketType> SocketFactory::s_enforcedStreamSocketType(
     SocketFactory::SocketType::cloud);
 
 #if TARGET_OS_IPHONE
-    std::atomic<int> SocketFactory::s_tcpServerIpVersion(AF_INET6);
-    std::atomic<int> SocketFactory::s_tcpClientIpVersion(AF_INET6);
-    std::atomic<int> SocketFactory::s_udpIpVersion(AF_INET6);
+std::atomic<int> SocketFactory::s_tcpServerIpVersion(AF_INET6);
+std::atomic<int> SocketFactory::s_tcpClientIpVersion(AF_INET6);
+std::atomic<int> SocketFactory::s_udpIpVersion(AF_INET6);
 #else
-    std::atomic<int> SocketFactory::s_tcpServerIpVersion(AF_INET);
-    std::atomic<int> SocketFactory::s_tcpClientIpVersion(AF_INET);
-    std::atomic<int> SocketFactory::s_udpIpVersion(AF_INET);
+std::atomic<int> SocketFactory::s_tcpServerIpVersion(AF_INET);
+std::atomic<int> SocketFactory::s_tcpClientIpVersion(AF_INET);
+std::atomic<int> SocketFactory::s_udpIpVersion(AF_INET);
 #endif
 
 std::unique_ptr<AbstractStreamSocket> SocketFactory::defaultStreamSocketFactoryFunc(

@@ -11,9 +11,12 @@ std::string toString(const AddressType& type)
 {
     switch (type)
     {
-        case AddressType::unknown: return "unknown";
-        case AddressType::direct: return "direct";
-        case AddressType::cloud: return "cloud";
+        case AddressType::unknown:
+            return "unknown";
+        case AddressType::direct:
+            return "direct";
+        case AddressType::cloud:
+            return "cloud";
     };
 
     NX_ASSERT(false, "undefined AddressType");
@@ -46,7 +49,7 @@ bool AddressAttribute::operator==(const AddressAttribute& rhs) const
     return type == rhs.type && value == rhs.value;
 }
 
-bool AddressAttribute::operator <(const AddressAttribute& rhs) const
+bool AddressAttribute::operator<(const AddressAttribute& rhs) const
 {
     return type < rhs.type && value < rhs.value;
 }
@@ -79,8 +82,7 @@ AddressEntry::AddressEntry(const SocketAddress& address):
 {
     if (address.port != 0)
     {
-        attributes.push_back(AddressAttribute(
-            AddressAttributeType::port, address.port));
+        attributes.push_back(AddressAttribute(AddressAttributeType::port, address.port));
     }
 }
 
@@ -99,13 +101,18 @@ bool AddressEntry::operator<(const AddressEntry& rhs) const
     if (host != rhs.host)
         return host < rhs.host;
     return std::lexicographical_compare(
-        attributes.begin(), attributes.end(),
-        rhs.attributes.begin(), rhs.attributes.end());
+        attributes.begin(),
+        attributes.end(),
+        rhs.attributes.begin(),
+        rhs.attributes.end());
 }
 
 std::string AddressEntry::toString() const
 {
-    return nx::format("%1:%2(%3)").arg(network::toString(type)).arg(host).container(attributes)
+    return nx::format("%1:%2(%3)")
+        .arg(network::toString(type))
+        .arg(host)
+        .container(attributes)
         .toStdString();
 }
 
@@ -115,8 +122,12 @@ SocketAddress AddressEntry::toEndpoint() const
     endpoint.address = host;
 
     auto portAttributeIter = std::find_if(
-        attributes.begin(), attributes.end(),
-        [](const AddressAttribute& attr) { return attr.type == AddressAttributeType::port; });
+        attributes.begin(),
+        attributes.end(),
+        [](const AddressAttribute& attr)
+        {
+            return attr.type == AddressAttributeType::port;
+        });
     if (portAttributeIter != attributes.end())
         endpoint.port = portAttributeIter->value;
 

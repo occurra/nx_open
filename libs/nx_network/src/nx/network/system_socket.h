@@ -10,9 +10,10 @@
 #include <type_traits>
 
 #ifndef _WIN32
-    #include <netinet/in.h>
     #include <sys/socket.h>
     #include <sys/types.h>
+
+    #include <netinet/in.h>
 #endif
 
 #include <nx/utils/access_tracker.h>
@@ -30,9 +31,13 @@ namespace network {
 class CommonSocketImpl;
 
 namespace aio {
-template<class SocketType> class BaseAsyncSocketImplHelper;
-template<class SocketType> class AsyncSocketImplHelper;
+
+template<class SocketType>
+class BaseAsyncSocketImplHelper;
+template<class SocketType>
+class AsyncSocketImplHelper;
 class AIOService;
+
 } // namespace aio
 
 #ifdef _WIN32
@@ -43,9 +48,7 @@ typedef int socklen_t;
  * Implements AbstractSocket class on top of OS socket API.
  */
 template<typename SocketInterfaceToImplement>
-class NX_NETWORK_API Socket:
-    public SocketInterfaceToImplement,
-    public nx::network::Pollable
+class NX_NETWORK_API Socket: public SocketInterfaceToImplement, public nx::network::Pollable
 {
     static_assert(
         std::is_base_of<AbstractSocket, SocketInterfaceToImplement>::value,
@@ -118,8 +121,7 @@ private:
  * Socket that is able to connect, send, and receive.
  */
 template<class SocketInterfaceToImplement>
-class NX_NETWORK_API CommunicatingSocket:
-    public Socket<SocketInterfaceToImplement>
+class NX_NETWORK_API CommunicatingSocket: public Socket<SocketInterfaceToImplement>
 {
     static_assert(
         std::is_base_of<AbstractCommunicatingSocket, SocketInterfaceToImplement>::value,
@@ -129,11 +131,7 @@ class NX_NETWORK_API CommunicatingSocket:
     using self_type = CommunicatingSocket<SocketInterfaceToImplement>;
 
 public:
-    CommunicatingSocket(
-        aio::AbstractAioThread* aioThread,
-        int type,
-        int protocol,
-        int ipVersion);
+    CommunicatingSocket(aio::AbstractAioThread* aioThread, int type, int protocol, int ipVersion);
 
     CommunicatingSocket(
         aio::AbstractAioThread* aioThread,
@@ -142,10 +140,7 @@ public:
         int ipVersion,
         std::unique_ptr<CommonSocketImpl> sockImpl);
 
-    CommunicatingSocket(
-        aio::AbstractAioThread* aioThread,
-        int newConnSD,
-        int ipVersion);
+    CommunicatingSocket(aio::AbstractAioThread* aioThread, int newConnSD, int ipVersion);
 
     CommunicatingSocket(
         aio::AbstractAioThread* aioThread,
@@ -157,9 +152,8 @@ public:
 
     virtual void bindToAioThread(nx::network::aio::AbstractAioThread* aioThread) override;
 
-    virtual bool connect(
-        const SocketAddress& remoteAddress,
-        std::chrono::milliseconds timeout) override;
+    virtual bool connect(const SocketAddress& remoteAddress, std::chrono::milliseconds timeout)
+        override;
 
     virtual void connectAsync(
         const SocketAddress& addr,
@@ -171,13 +165,9 @@ public:
     virtual int send(const void* buffer, std::size_t bufferLen) override;
     virtual SocketAddress getForeignAddress() const override;
 
-    virtual void readSomeAsync(
-        nx::Buffer* const buf,
-        IoCompletionHandler handler) override;
+    virtual void readSomeAsync(nx::Buffer* const buf, IoCompletionHandler handler) override;
 
-    virtual void sendAsync(
-        const nx::Buffer* buf,
-        IoCompletionHandler handler) override;
+    virtual void sendAsync(const nx::Buffer* buf, IoCompletionHandler handler) override;
 
     virtual void registerTimer(
         std::chrono::milliseconds timeoutMs,
@@ -194,16 +184,13 @@ protected:
     std::atomic<bool> m_connected{false};
 
 private:
-    bool connectToIp(
-        const SocketAddress& remoteAddress,
-        std::chrono::milliseconds timeout);
+    bool connectToIp(const SocketAddress& remoteAddress, std::chrono::milliseconds timeout);
 };
 
 /**
  * Client tcp socket.
  */
-class NX_NETWORK_API TCPSocket:
-    public CommunicatingSocket<AbstractStreamSocket>
+class NX_NETWORK_API TCPSocket: public CommunicatingSocket<AbstractStreamSocket>
 {
     typedef CommunicatingSocket<AbstractStreamSocket> base_type;
 
@@ -221,27 +208,23 @@ public:
     virtual bool getNoDelay(bool* value) const override;
     virtual bool toggleStatisticsCollection(bool val) override;
     virtual bool getConnectionStatistics(StreamSocketInfo* info) override;
-    virtual bool setKeepAlive(std::optional< KeepAliveOptions > info) override;
-    virtual bool getKeepAlive(std::optional< KeepAliveOptions >* result) const override;
+    virtual bool setKeepAlive(std::optional<KeepAliveOptions> info) override;
+    virtual bool getKeepAlive(std::optional<KeepAliveOptions>* result) const override;
 
     bool reopen();
 
 private:
     friend class TCPServerSocketPrivate;
 
-    #if defined(_WIN32)
-        KeepAliveOptions m_keepAlive;
-    #endif
+#if defined(_WIN32)
+    KeepAliveOptions m_keepAlive;
+#endif
 
     /** Used by TCPServerSocket class. */
-    TCPSocket(
-        aio::AbstractAioThread* aioThread,
-        int newConnSD,
-        int ipVersion);
+    TCPSocket(aio::AbstractAioThread* aioThread, int newConnSD, int ipVersion);
 };
 
-class NX_NETWORK_API TCPServerSocket:
-    public Socket<AbstractStreamServerSocket>
+class NX_NETWORK_API TCPServerSocket: public Socket<AbstractStreamServerSocket>
 {
     typedef Socket<AbstractStreamServerSocket> base_type;
 
@@ -266,7 +249,7 @@ public:
 
     virtual bool listen(int queueLen = AbstractStreamServerSocket::kDefaultBacklogSize) override;
     virtual std::unique_ptr<AbstractStreamSocket> accept() override;
-    virtual void pleaseStop(nx::MoveOnlyFunc< void() > handler) override;
+    virtual void pleaseStop(nx::MoveOnlyFunc<void()> handler) override;
     virtual void pleaseStopSync() override;
 
     virtual void acceptAsync(AcceptCompletionHandler handler) override;
@@ -281,8 +264,7 @@ private:
     void stopWhileInAioThread();
 };
 
-class NX_NETWORK_API UDPSocket:
-    public CommunicatingSocket<AbstractDatagramSocket>
+class NX_NETWORK_API UDPSocket: public CommunicatingSocket<AbstractDatagramSocket>
 {
     typedef CommunicatingSocket<AbstractDatagramSocket> base_type;
 
@@ -312,44 +294,45 @@ public:
      * @param foreignPort port number to send to.
      * @return true if send is successful.
      */
-    bool sendTo(const void *buffer, int bufferLen);
+    bool sendTo(const void* buffer, int bufferLen);
 
     /**
      * Set the multicast TTL.
      * @param multicastTTL multicast TTL.
      */
-    bool setMulticastTTL(unsigned char multicastTTL) ;
+    bool setMulticastTTL(unsigned char multicastTTL);
 
     virtual bool joinGroup(const HostAddress& multicastGroup) override;
-    virtual bool joinGroup(const HostAddress& multicastGroup, const HostAddress& multicastIF) override;
+    virtual bool joinGroup(const HostAddress& multicastGroup, const HostAddress& multicastIF)
+        override;
 
     virtual bool leaveGroup(const HostAddress& multicastGroup) override;
-    virtual bool leaveGroup(const HostAddress& multicastGroup, const HostAddress& multicastIF) override;
+    virtual bool leaveGroup(const HostAddress& multicastGroup, const HostAddress& multicastIF)
+        override;
 
-    virtual int send( const void* buffer, std::size_t bufferLen ) override;
+    virtual int send(const void* buffer, std::size_t bufferLen) override;
 
-    virtual bool setDestAddr( const SocketAddress& foreignEndpoint ) override;
+    virtual bool setDestAddr(const SocketAddress& foreignEndpoint) override;
 
     virtual bool sendTo(
         const void* buffer,
         std::size_t bufferLen,
-        const SocketAddress& foreignEndpoint ) override;
+        const SocketAddress& foreignEndpoint) override;
 
     virtual void sendToAsync(
         const nx::Buffer* buf,
         const SocketAddress& foreignAddress,
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode, SocketAddress, size_t)> completionHandler) override;
+        nx::MoveOnlyFunc<void(SystemError::ErrorCode, SocketAddress, size_t)> completionHandler)
+        override;
 
     /**
      * Actually calls UDPSocket::recvFrom and makes datagram source address/port
      *   available through UDPSocket::lastDatagramSourceAddress.
      */
-    virtual int recv( void* buffer, std::size_t bufferLen, int flags ) override;
+    virtual int recv(void* buffer, std::size_t bufferLen, int flags) override;
 
-    virtual int recvFrom(
-        void* buffer,
-        std::size_t bufferLen,
-        SocketAddress* const sourceAddress ) override;
+    virtual int recvFrom(void* buffer, std::size_t bufferLen, SocketAddress* const sourceAddress)
+        override;
 
     virtual void recvFromAsync(
         nx::Buffer* const buf,
@@ -361,7 +344,7 @@ public:
      * Sets the multicast send interface.
      * @param multicastIF multicast interface for sending packets.
      */
-    virtual bool setMulticastIF( const std::string& multicastIF ) override;
+    virtual bool setMulticastIF(const std::string& multicastIF) override;
 
 private:
     SystemSocketAddress m_destAddr;
@@ -375,7 +358,7 @@ private:
         void* buffer,
         std::size_t bufferLen,
         HostAddress* const sourceAddress,
-        quint16* const sourcePort );
+        quint16* const sourcePort);
 };
 
 qint64 NX_NETWORK_API totalSocketBytesSent();

@@ -4,9 +4,9 @@
 #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "sized_data_decoder.h"
-
 #include <cstring>
+
+#include "sized_data_decoder.h"
 
 namespace nx {
 namespace utils {
@@ -17,7 +17,7 @@ bool SizedDataDecodingFilter::processData(const ConstBufferRefType& data)
     // TODO: #akolesnikov Introduce streaming implementation.
 
     ConstBufferRefType::size_type pos = 0;
-    for (; pos < data.size(); )
+    for (; pos < data.size();)
     {
         uint32_t dataSize = 0;
         if (data.size() - pos < sizeof(dataSize))

@@ -18,14 +18,12 @@ class AtomicUniquePtr
     void this_type_does_not_support_comparisons() const {}
 
 public:
-    AtomicUniquePtr(T* ptr = nullptr)
-    :
+    AtomicUniquePtr(T* ptr = nullptr):
         m_ptr(ptr)
     {
     }
     template<class D>
-    AtomicUniquePtr(std::unique_ptr<D> ptr)
-    :
+    AtomicUniquePtr(std::unique_ptr<D> ptr):
         m_ptr(ptr.release())
     {
     }
@@ -45,14 +43,8 @@ public:
         auto oldPtr = m_ptr.exchange(ptr);
         delete oldPtr;
     }
-    T* release()
-    {
-        return m_ptr.exchange(nullptr);
-    }
-    T* get() const
-    {
-        return m_ptr.load();
-    }
+    T* release() { return m_ptr.exchange(nullptr); }
+    T* get() const { return m_ptr.load(); }
 
     template<typename D>
     AtomicUniquePtr& operator=(AtomicUniquePtr<D>&& rhs)
@@ -69,44 +61,34 @@ public:
         reset(rhs.release());
         return *this;
     }
-    T* operator->() const
-    {
-        return get();
-    }
+    T* operator->() const { return get(); }
 
-    T& operator*()
-    {
-        return *get();
-    }
+    T& operator*() { return *get(); }
 
-    const T& operator*() const
-    {
-        return *get();
-    }
+    const T& operator*() const { return *get(); }
 
     operator bool_type() const
     {
-        return m_ptr.load()
-            ? &AtomicUniquePtr<T>::this_type_does_not_support_comparisons
-            : nullptr;
+        return m_ptr.load() ? &AtomicUniquePtr<T>::this_type_does_not_support_comparisons
+                            : nullptr;
     }
 
 private:
     std::atomic<T*> m_ptr;
 };
 
-template<typename T, typename ... Param>
-AtomicUniquePtr<T> make_atomic_unique(Param&& ... params)
+template<typename T, typename... Param>
+AtomicUniquePtr<T> make_atomic_unique(Param&&... params)
 {
     return AtomicUniquePtr<T>(new T(std::forward<Param>(params)...));
 }
 
-}   //utils
-}   //nx
+} // namespace utils
+} // namespace nx
 
 namespace std {
 
-template <typename T>
+template<typename T>
 struct DependentFalse
 {
     static constexpr bool value = false;
@@ -115,7 +97,8 @@ struct DependentFalse
 template<typename T>
 void swap(nx::utils::AtomicUniquePtr<T>& /*one*/, nx::utils::AtomicUniquePtr<T>& /*two*/)
 {
-    // DependentFalse is needed for assert to work at template instantiation time, not at definition time.
+    // DependentFalse is needed for assert to work at template instantiation time, not at
+    // definition time.
     static_assert(
         DependentFalse<T>::value,
         "There is no swap implementation for nx::utils::AtomicUniquePtr yet. Use std::move");

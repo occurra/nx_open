@@ -7,8 +7,8 @@
 #include <nx/utils/log/log.h>
 
 #include "detail/query_execution_thread.h"
-#include "sql_query_execution_helper.h"
 #include "query.h"
+#include "sql_query_execution_helper.h"
 
 namespace nx::sql {
 
@@ -33,31 +33,29 @@ void AbstractAsyncSqlQueryExecutor::executeUpdateWithoutTran(
 //-------------------------------------------------------------------------------------------------
 
 static const size_t kDesiredMaxQueuedQueriesPerConnection = 5;
-static constexpr std::chrono::minutes kDefaultStatisticsAggregationPeriod = std::chrono::minutes(1);
+static constexpr std::chrono::minutes kDefaultStatisticsAggregationPeriod =
+    std::chrono::minutes(1);
 
 const int AsyncSqlQueryExecutor::kDefaultQueryPriority = detail::QueryQueue::kDefaultPriority;
 
-AsyncSqlQueryExecutor::AsyncSqlQueryExecutor(
-    const ConnectionOptions& connectionOptions)
-    :
+AsyncSqlQueryExecutor::AsyncSqlQueryExecutor(const ConnectionOptions& connectionOptions):
     m_connectionOptions(connectionOptions),
-    m_statisticsCollector(
-        kDefaultStatisticsAggregationPeriod,
-        m_queryQueue,
-        &m_dbThreadPoolSize)
+    m_statisticsCollector(kDefaultStatisticsAggregationPeriod, m_queryQueue, &m_dbThreadPoolSize)
 {
-    m_dropConnectionThread = std::thread(
-        std::bind(&AsyncSqlQueryExecutor::dropExpiredConnectionsThreadFunc, this));
+    m_dropConnectionThread =
+        std::thread(std::bind(&AsyncSqlQueryExecutor::dropExpiredConnectionsThreadFunc, this));
 
-    m_queryQueue.setOnItemStayTimeout([this](auto&&... args) {
-        reportQueryCancellation(std::forward<decltype(args)>(args)...);
-    });
+    m_queryQueue.setOnItemStayTimeout(
+        [this](auto&&... args)
+        {
+            reportQueryCancellation(std::forward<decltype(args)>(args)...);
+        });
 
     m_queryQueue.setAggregationLimit(
         m_connectionOptions.maxQueriesAggregatedUnderSingleTransaction);
 
     if (m_connectionOptions.maxPeriodQueryWaitsForAvailableConnection
-            > std::chrono::minutes::zero())
+        > std::chrono::minutes::zero())
     {
         m_queryQueue.setItemStayTimeout(
             m_connectionOptions.maxPeriodQueryWaitsForAvailableConnection);
@@ -74,7 +72,11 @@ AsyncSqlQueryExecutor::AsyncSqlQueryExecutor(
             *m_connectionOptions.concurrentModificationQueryLimit);
     }
 
-    m_queryTimeoutThread = std::thread([this]() { reportQueryTimeoutThreadMain(); });
+    m_queryTimeoutThread = std::thread(
+        [this]()
+        {
+            reportQueryTimeoutThreadMain();
+        });
 }
 
 AsyncSqlQueryExecutor::~AsyncSqlQueryExecutor()
@@ -154,8 +156,8 @@ DBResult AsyncSqlQueryExecutor::execSqlScript(
 bool AsyncSqlQueryExecutor::init()
 {
     // Opening a single connection thread and waiting for its initialization result.
-    auto executorThread = createNewConnectionThread(
-        m_connectionOptions, &m_queryQueue, &m_statisticsCollector);
+    auto executorThread =
+        createNewConnectionThread(m_connectionOptions, &m_queryQueue, &m_statisticsCollector);
     executorThread->start();
 
     // Waiting for connection to change state.
@@ -242,7 +244,8 @@ void AsyncSqlQueryExecutor::removeCursor(nx::Uuid id)
 int AsyncSqlQueryExecutor::openCursorCount() const
 {
     return std::accumulate(
-        m_cursorProcessorContexts.begin(), m_cursorProcessorContexts.end(),
+        m_cursorProcessorContexts.begin(),
+        m_cursorProcessorContexts.end(),
         0,
         [](int sum, const std::unique_ptr<CursorProcessorContext>& element) -> int
         {
@@ -250,8 +253,7 @@ int AsyncSqlQueryExecutor::openCursorCount() const
         });
 }
 
-void AsyncSqlQueryExecutor::setCustomConnectionFactory(
-    std::optional<ConnectionFactoryFunc> func)
+void AsyncSqlQueryExecutor::setCustomConnectionFactory(std::optional<ConnectionFactoryFunc> func)
 {
     m_connectionFactory = std::move(func);
 }
@@ -263,14 +265,12 @@ void AsyncSqlQueryExecutor::setConcurrentModificationQueryLimit(int value)
 
 void AsyncSqlQueryExecutor::setQueryTimeoutEnabled(bool enabled)
 {
-    m_queryQueue.setItemStayTimeout(enabled
-        ? std::make_optional(m_connectionOptions.maxPeriodQueryWaitsForAvailableConnection)
-        : std::nullopt);
+    m_queryQueue.setItemStayTimeout(
+        enabled ? std::make_optional(m_connectionOptions.maxPeriodQueryWaitsForAvailableConnection)
+                : std::nullopt);
 }
 
-void AsyncSqlQueryExecutor::setQueryPriority(
-    QueryType queryType,
-    int newPriority)
+void AsyncSqlQueryExecutor::setQueryPriority(QueryType queryType, int newPriority)
 {
     m_queryQueue.setQueryPriority(queryType, newPriority);
 }
@@ -295,8 +295,8 @@ void AsyncSqlQueryExecutor::openNewConnection(
     const nx::Locker<nx::Mutex>& lock,
     std::chrono::milliseconds connectDelay)
 {
-    auto executorThread = createNewConnectionThread(
-        m_connectionOptions, &m_queryQueue, &m_statisticsCollector);
+    auto executorThread =
+        createNewConnectionThread(m_connectionOptions, &m_queryQueue, &m_statisticsCollector);
     auto executorThreadPtr = executorThread.get();
     saveOpenedConnection(lock, std::move(executorThread));
     executorThreadPtr->start(connectDelay);
@@ -339,10 +339,9 @@ void AsyncSqlQueryExecutor::dropExpiredConnectionsThreadFunc()
 {
     for (;;)
     {
-        std::unique_ptr<detail::BaseQueryExecutor> dbConnection =
-            m_connectionsToDropQueue.pop();
+        std::unique_ptr<detail::BaseQueryExecutor> dbConnection = m_connectionsToDropQueue.pop();
         if (!dbConnection)
-            return; //null is used as a termination mark
+            return; // null is used as a termination mark
 
         dbConnection->join();
         dbConnection.reset();
@@ -356,8 +355,7 @@ void AsyncSqlQueryExecutor::reportQueryCancellation(
     expiredQuery->reportErrorWithoutExecution(DBResultCode::cancelled);
 }
 
-void AsyncSqlQueryExecutor::onConnectionClosed(
-    detail::BaseQueryExecutor* const executorThreadPtr)
+void AsyncSqlQueryExecutor::onConnectionClosed(detail::BaseQueryExecutor* const executorThreadPtr)
 {
     NX_MUTEX_LOCKER lk(&m_mutex);
     dropConnectionAsync(lk, executorThreadPtr);

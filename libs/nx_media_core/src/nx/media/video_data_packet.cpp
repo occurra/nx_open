@@ -2,16 +2,15 @@
 
 #include "video_data_packet.h"
 
-QnCompressedVideoData::QnCompressedVideoData( CodecParametersConstPtr ctx )
-:
-    QnAbstractMediaData( VIDEO ),
-    width( -1 ),
-    height( -1 ),
-    pts( AV_NOPTS_VALUE )
+QnCompressedVideoData::QnCompressedVideoData(CodecParametersConstPtr ctx):
+    QnAbstractMediaData(VIDEO),
+    width(-1),
+    height(-1),
+    pts(AV_NOPTS_VALUE)
 {
-    //useTwice = false;
+    // useTwice = false;
     context = ctx;
-    //ignore = false;
+    // ignore = false;
     flags = {};
 }
 
@@ -26,14 +25,13 @@ void QnCompressedVideoData::assign(const QnCompressedVideoData* other)
 
 QnWritableCompressedVideoData::QnWritableCompressedVideoData(
     size_t capacity,
-    CodecParametersConstPtr ctx)
-    :
+    CodecParametersConstPtr ctx):
     QnCompressedVideoData(ctx),
     m_data(CL_MEDIA_ALIGNMENT, capacity, AV_INPUT_BUFFER_PADDING_SIZE)
 {
 }
 
-//!Implementation of QnAbstractMediaData::clone
+//! Implementation of QnAbstractMediaData::clone
 QnWritableCompressedVideoData* QnWritableCompressedVideoData::clone() const
 {
     auto rez = new QnWritableCompressedVideoData();
@@ -41,13 +39,13 @@ QnWritableCompressedVideoData* QnWritableCompressedVideoData::clone() const
     return rez;
 }
 
-//!Implementation of QnAbstractMediaData::data
+//! Implementation of QnAbstractMediaData::data
 const char* QnWritableCompressedVideoData::data() const
 {
     return m_data.data();
 }
 
-//!Implementation of QnAbstractMediaData::dataSize
+//! Implementation of QnAbstractMediaData::dataSize
 size_t QnWritableCompressedVideoData::dataSize() const
 {
     return m_data.size();

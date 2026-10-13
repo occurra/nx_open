@@ -14,14 +14,8 @@ namespace nx::rtsp {
 class SrtpInit
 {
 public:
-    SrtpInit()
-    {
-        srtp_init();
-    }
-    ~SrtpInit()
-    {
-        srtp_shutdown();
-    }
+    SrtpInit() { srtp_init(); }
+    ~SrtpInit() { srtp_shutdown(); }
 };
 static SrtpInit init;
 
@@ -63,7 +57,7 @@ bool SrtpEncryptor::init(const EncryptionData& masterKeys)
 
     if (srtp_err_status_t err = srtp_add_stream(m_srtpIn, &inbound))
     {
-        NX_WARNING(this, "SRTP add inbound stream failed, status=%1", (int)err);
+        NX_WARNING(this, "SRTP add inbound stream failed, status=%1", (int) err);
         return false;
     }
 
@@ -79,7 +73,7 @@ bool SrtpEncryptor::init(const EncryptionData& masterKeys)
 
     if (srtp_err_status_t err = srtp_add_stream(m_srtpOut, &outbound))
     {
-        NX_WARNING(this, "SRTP add outbound stream failed, status=%1", (int)err);
+        NX_WARNING(this, "SRTP add outbound stream failed, status=%1", (int) err);
         return false;
     }
     return true;
@@ -89,31 +83,29 @@ bool SrtpEncryptor::encryptPacket(nx::utils::ByteArray* data, int offset)
 {
     if (data->size() % 4)
     {
-        nx::rtp::RtpHeader* packet =
-            (nx::rtp::RtpHeader*)(data->data() + offset);
+        nx::rtp::RtpHeader* packet = (nx::rtp::RtpHeader*) (data->data() + offset);
         if (!packet->isRtcp())
         {
             uint8_t padding = 4 - data->size() % 4;
             packet->padding = true;
             if (padding > 1)
                 data->write("\x00\x00\x00", padding - 1);
-            data->write((const char*)&padding, 1);
+            data->write((const char*) &padding, 1);
         }
     }
 
     data->reserve(data->size() + SRTP_MAX_TRAILER_LEN);
     int size = data->size() - offset;
-    bool result = encryptPacket((uint8_t*)data->data() + offset, &size);
+    bool result = encryptPacket((uint8_t*) data->data() + offset, &size);
     data->resize(size + offset);
     return result;
 }
 
 bool SrtpEncryptor::encryptPacket(uint8_t* data, int* inOutSize)
 {
-    nx::rtp::RtpHeader* packet = (nx::rtp::RtpHeader*)(data);
-    srtp_err_status_t error = packet->isRtcp()
-        ? srtp_protect_rtcp(m_srtpOut, data, inOutSize)
-        : srtp_protect(m_srtpOut, data, inOutSize);
+    nx::rtp::RtpHeader* packet = (nx::rtp::RtpHeader*) (data);
+    srtp_err_status_t error = packet->isRtcp() ? srtp_protect_rtcp(m_srtpOut, data, inOutSize)
+                                               : srtp_protect(m_srtpOut, data, inOutSize);
     if (error == srtp_err_status_replay_fail)
         NX_WARNING(this, "Outgoing SRTCP packet is a replay");
     else if (error)
@@ -125,14 +117,13 @@ bool SrtpEncryptor::encryptPacket(uint8_t* data, int* inOutSize)
 
 bool SrtpEncryptor::decryptPacket(uint8_t* data, int* inOutSize)
 {
-    nx::rtp::RtpHeader* packet = (nx::rtp::RtpHeader*)(data);
-    srtp_err_status_t error = packet->isRtcp()
-        ? srtp_unprotect_rtcp(m_srtpIn, data, inOutSize)
-        : srtp_unprotect(m_srtpIn, data, inOutSize);
+    nx::rtp::RtpHeader* packet = (nx::rtp::RtpHeader*) (data);
+    srtp_err_status_t error = packet->isRtcp() ? srtp_unprotect_rtcp(m_srtpIn, data, inOutSize)
+                                               : srtp_unprotect(m_srtpIn, data, inOutSize);
     if (error == srtp_err_status_replay_fail)
         NX_WARNING(this, "Incoming SRTCP packet is a replay");
     else if (error)
-        NX_WARNING(this, "SRTCP unprotect error, status=%1", (int)error);
+        NX_WARNING(this, "SRTCP unprotect error, status=%1", (int) error);
     NX_VERBOSE(this, "Unprotected SRTCP packet size=%1", *inOutSize);
 
     return error == 0;

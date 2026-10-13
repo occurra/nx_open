@@ -30,7 +30,10 @@ struct ThreadAffinityDeleter
         {
             QMetaObject::invokeMethod(
                 dispatcher,
-                [handle = std::move(handle)]() mutable { handle.reset(); },
+                [handle = std::move(handle)]() mutable
+                {
+                    handle.reset();
+                },
                 Qt::QueuedConnection);
         }
     }

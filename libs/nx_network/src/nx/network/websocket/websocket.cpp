@@ -18,8 +18,7 @@ WebSocket::WebSocket(
     ReceiveMode receiveMode,
     Role role,
     FrameType frameType,
-    network::websocket::CompressionType compressionType)
-    :
+    network::websocket::CompressionType compressionType):
     m_socket(std::move(streamSocket)),
     m_parser(role, std::bind(&WebSocket::gotFrame, this, _1, _2, _3)),
     m_serializer(role == Role::client),
@@ -44,8 +43,7 @@ WebSocket::WebSocket(
     std::unique_ptr<AbstractStreamSocket> streamSocket,
     Role role,
     FrameType frameType,
-    network::websocket::CompressionType compressionType)
-    :
+    network::websocket::CompressionType compressionType):
     WebSocket(
         std::move(streamSocket),
         SendMode::singleMessage,
@@ -66,7 +64,12 @@ WebSocket::~WebSocket()
 
 void WebSocket::start()
 {
-    m_pingTimer->start(m_aliveTimeout, [this]() { onPingTimer(); });
+    m_pingTimer->start(
+        m_aliveTimeout,
+        [this]()
+        {
+            onPingTimer();
+        });
     m_socket->readSomeAsync(
         &m_readBuffer,
         [this](SystemError::ErrorCode error, size_t transferred)
@@ -91,8 +94,7 @@ void WebSocket::resumeReadingConnection()
                         onRead(error, transferred);
                     });
             }
-        }
-    );
+        });
 }
 
 void WebSocket::suspendReadingConnection()
@@ -120,7 +122,12 @@ void WebSocket::onPingTimer()
     if (m_pingPongMode == PingPongMode::pingPong)
         sendControlRequest(FrameType::ping);
 
-    m_pingTimer->start(m_aliveTimeout, [this]() { onPingTimer(); });
+    m_pingTimer->start(
+        m_aliveTimeout,
+        [this]()
+        {
+            onPingTimer();
+        });
 }
 
 size_t WebSocket::handleRead(nx::Buffer* const bufferPtr, Frame* const framePtr)
@@ -157,7 +164,7 @@ void WebSocket::onRead(SystemError::ErrorCode error, size_t transferred)
         return;
     }
 
-    m_parser.consume(m_readBuffer.data(), (int)transferred);
+    m_parser.consume(m_readBuffer.data(), (int) transferred);
     if (m_failed) //< Might be set while parsing
     {
         callOnReadhandler(SystemError::connectionAbort, 0);
@@ -240,7 +247,11 @@ void WebSocket::stopWhileInAioThread()
 
 void WebSocket::setIsLastFrame()
 {
-    dispatch([this]() { m_isLastFrame = true; });
+    dispatch(
+        [this]()
+        {
+            m_isLastFrame = true;
+        });
 }
 
 void WebSocket::readAsync(Frame* const frame, IoCompletionHandler handler)
@@ -254,7 +265,9 @@ void WebSocket::readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler hand
 }
 
 void WebSocket::readAnyAsync(
-    nx::Buffer* const buffer, Frame* const frame, IoCompletionHandler handler)
+    nx::Buffer* const buffer,
+    Frame* const frame,
+    IoCompletionHandler handler)
 {
     post(
         [this, buffer, frame, handler = std::move(handler)]() mutable
@@ -340,12 +353,20 @@ void WebSocket::setAliveTimeout(std::chrono::milliseconds timeout)
 
 void WebSocket::sendCloseAsync()
 {
-    post([this]() { sendControlRequest(FrameType::close); });
+    post(
+        [this]()
+        {
+            sendControlRequest(FrameType::close);
+        });
 }
 
 void WebSocket::sendPingAsync(nx::Buffer payload)
 {
-    post([this, payload = std::move(payload)]() { sendControlRequest(FrameType::ping, payload); });
+    post(
+        [this, payload = std::move(payload)]()
+        {
+            sendControlRequest(FrameType::ping, payload);
+        });
 }
 
 void WebSocket::sendMessage(const nx::Buffer& message, int writeSize, IoCompletionHandler handler)
@@ -353,9 +374,7 @@ void WebSocket::sendMessage(const nx::Buffer& message, int writeSize, IoCompleti
     NX_VERBOSE(this, "SendMessage: IsFailed: %1, Write size: %2", m_failed, writeSize);
     if (m_failed)
     {
-        NX_VERBOSE(
-            this,
-            "sendMessage() called after connection has been terminated. Ignoring.");
+        NX_VERBOSE(this, "sendMessage() called after connection has been terminated. Ignoring.");
         handler(SystemError::connectionAbort, 0);
         return;
     }
@@ -485,8 +504,10 @@ void WebSocket::gotFrame(FrameType type, nx::Buffer&& data, bool fin)
         default:
             setFailedState(nx::format("Invalid frame type %1", (int) type));
             NX_DEBUG(
-                this, "%1: Got frame with invalid type %2. Going to failed state.",
-                __func__, (int) type);
+                this,
+                "%1: Got frame with invalid type %2. Going to failed state.",
+                __func__,
+                (int) type);
             break;
     }
 }
@@ -496,14 +517,14 @@ void WebSocket::sendControlResponse(FrameType type, const Buffer& payload)
     nx::Buffer responseFrame = m_serializer.prepareMessage(payload, type);
 
     sendMessage(
-        responseFrame, responseFrame.size(),
+        responseFrame,
+        responseFrame.size(),
         [this, type](SystemError::ErrorCode error, size_t /*transferred*/)
         {
             NX_VERBOSE(
                 this,
-                nx::format("Control response %1 has been sent. Result: %2").args(
-                    frameTypeString(type),
-                    error));
+                nx::format("Control response %1 has been sent. Result: %2")
+                    .args(frameTypeString(type), error));
         });
 }
 
@@ -511,14 +532,14 @@ void WebSocket::sendControlRequest(FrameType type, const Buffer& payload)
 {
     nx::Buffer requestFrame = m_serializer.prepareMessage(payload, type);
     sendMessage(
-        requestFrame, requestFrame.size(),
+        requestFrame,
+        requestFrame.size(),
         [this, type](SystemError::ErrorCode error, size_t /*transferred*/)
         {
             NX_VERBOSE(
                 this,
-                nx::format("Control request %1 has been sent. Result: %2").args(
-                    frameTypeString(type),
-                    error));
+                nx::format("Control request %1 has been sent. Result: %2")
+                    .args(frameTypeString(type), error));
         });
 }
 
@@ -526,12 +547,18 @@ std::string frameTypeString(FrameType type)
 {
     switch (type)
     {
-        case FrameType::continuation: return "continuation";
-        case FrameType::text: return "text";
-        case FrameType::binary: return "binary";
-        case FrameType::close: return "close";
-        case FrameType::ping: return "ping";
-        case FrameType::pong: return "pong";
+        case FrameType::continuation:
+            return "continuation";
+        case FrameType::text:
+            return "text";
+        case FrameType::binary:
+            return "binary";
+        case FrameType::close:
+            return "close";
+        case FrameType::ping:
+            return "ping";
+        case FrameType::pong:
+            return "pong";
     }
 
     return "";

@@ -8,7 +8,7 @@
 
 #if defined(ANDROID) || defined(__ANDROID__)
 
-#include <sstream>
+    #include <sstream>
 
 namespace std {
 
@@ -22,11 +22,11 @@ string to_string(const T& value)
 
 int stoi(string str)
 {
-   stringstream ss(str);
-   int n;
-   ss << str;
-   ss >> n;
-   return n;
+    stringstream ss(str);
+    int n;
+    ss << str;
+    ss >> n;
+    return n;
 }
 
 } // namespace std

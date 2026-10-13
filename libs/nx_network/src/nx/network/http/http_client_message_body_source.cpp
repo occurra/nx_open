@@ -6,8 +6,7 @@ namespace nx::network::http {
 
 HttpClientMessageBodySource::HttpClientMessageBodySource(
     const Response& response,
-    std::unique_ptr<AsyncMessagePipeline> messagePipeline)
-    :
+    std::unique_ptr<AsyncMessagePipeline> messagePipeline):
     m_messagePipeline(std::move(messagePipeline))
 {
     bindToAioThread(m_messagePipeline->getAioThread());
@@ -17,11 +16,20 @@ HttpClientMessageBodySource::HttpClientMessageBodySource(
         m_contentLength = nx::utils::stoull(it->second);
 
     m_messagePipeline->setOnSomeMessageBodyAvailable(
-        [this](auto&&... args) { onSomeMessageBodyAvailable(std::forward<decltype(args)>(args)...); });
+        [this](auto&&... args)
+        {
+            onSomeMessageBodyAvailable(std::forward<decltype(args)>(args)...);
+        });
     m_messagePipeline->setOnMessageEnd(
-        [this](auto&&... args) { onMessageEnd(std::forward<decltype(args)>(args)...); });
+        [this](auto&&... args)
+        {
+            onMessageEnd(std::forward<decltype(args)>(args)...);
+        });
     m_messagePipeline->registerCloseHandler(
-        [this](auto reason, auto /*connectionDestroyed*/) { onConnectionClosed(reason); });
+        [this](auto reason, auto /*connectionDestroyed*/)
+        {
+            onConnectionClosed(reason);
+        });
 }
 
 void HttpClientMessageBodySource::bindToAioThread(aio::AbstractAioThread* aioThread)
@@ -42,8 +50,7 @@ std::optional<uint64_t> HttpClientMessageBodySource::contentLength() const
     return m_contentLength;
 }
 
-void HttpClientMessageBodySource::readAsync(
-    CompletionHandler completionHandler)
+void HttpClientMessageBodySource::readAsync(CompletionHandler completionHandler)
 {
     post(
         [this, completionHandler = std::move(completionHandler)]() mutable
@@ -95,8 +102,7 @@ void HttpClientMessageBodySource::onMessageEnd()
     onSomeMessageBodyAvailable(nx::Buffer());
 }
 
-void HttpClientMessageBodySource::onConnectionClosed(
-    SystemError::ErrorCode reason)
+void HttpClientMessageBodySource::onConnectionClosed(SystemError::ErrorCode reason)
 {
     NX_VERBOSE(this, "Connection closed with %1", SystemError::toString(reason));
 

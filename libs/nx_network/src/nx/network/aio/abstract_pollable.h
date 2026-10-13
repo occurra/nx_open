@@ -15,8 +15,7 @@ class AbstractAioThread;
  * Abstract base for a class living in aio thread.
  * TODO: #akolesnikov concept is still a draft.
  */
-class AbstractPollable:
-    public QnStoppableAsync
+class AbstractPollable: public QnStoppableAsync
 {
 public:
     virtual ~AbstractPollable() = default;

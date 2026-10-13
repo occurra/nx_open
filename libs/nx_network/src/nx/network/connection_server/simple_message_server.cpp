@@ -9,8 +9,7 @@ namespace nx::network::server {
 SimpleMessageServerConnection::SimpleMessageServerConnection(
     std::unique_ptr<AbstractStreamSocket> _socket,
     nx::Buffer request,
-    nx::Buffer response)
-    :
+    nx::Buffer response):
     m_socket(std::move(_socket)),
     m_request(std::move(request)),
     m_response(std::move(response)),
@@ -36,7 +35,8 @@ void SimpleMessageServerConnection::startReadingConnection(
         m_readBuffer.reserve(m_request.size());
         // Reading request.
         m_socket->readAsyncAtLeast(
-            &m_readBuffer, m_request.size(),
+            &m_readBuffer,
+            m_request.size(),
             std::bind(&SimpleMessageServerConnection::onDataRead, this, _1, _2));
     }
 }
@@ -65,16 +65,20 @@ void SimpleMessageServerConnection::onDataRead(
 
     if (errorCode != SystemError::noError)
     {
-        NX_VERBOSE(this, nx::format("Failure while reading connection from %1. %2")
-            .args(m_socket->getForeignAddress(), SystemError::toString(errorCode)));
+        NX_VERBOSE(
+            this,
+            nx::format("Failure while reading connection from %1. %2")
+                .args(m_socket->getForeignAddress(), SystemError::toString(errorCode)));
         triggerConnectionClosedEvent(errorCode);
         return;
     }
 
     if (!m_readBuffer.starts_with(m_request))
     {
-        NX_VERBOSE(this, nx::format("Received unexpected message %1 from %2 while expecting %3")
-            .args(m_readBuffer, m_socket->getForeignAddress(), m_request));
+        NX_VERBOSE(
+            this,
+            nx::format("Received unexpected message %1 from %2 while expecting %3")
+                .args(m_readBuffer, m_socket->getForeignAddress(), m_request));
         triggerConnectionClosedEvent(SystemError::invalidData);
         return;
     }
@@ -88,7 +92,8 @@ void SimpleMessageServerConnection::onDataRead(
         m_readBuffer.reserve(m_request.size());
         // Reading request
         m_socket->readAsyncAtLeast(
-            &m_readBuffer, m_request.size(),
+            &m_readBuffer,
+            m_request.size(),
             std::bind(&SimpleMessageServerConnection::onDataRead, this, _1, _2));
     }
 }
@@ -117,9 +122,11 @@ void SimpleMessageServerConnection::onDataSent(
 
     if (errorCode != SystemError::noError)
     {
-        NX_VERBOSE(this, nx::format("Failed to send to %1. %2")
-            .arg(m_socket->getForeignAddress())
-            .arg(SystemError::toString(errorCode)));
+        NX_VERBOSE(
+            this,
+            nx::format("Failed to send to %1. %2")
+                .arg(m_socket->getForeignAddress())
+                .arg(SystemError::toString(errorCode)));
     }
 
     if (!m_keepConnection)
@@ -133,8 +140,7 @@ void SimpleMessageServerConnection::onDataSent(
     }
 }
 
-void SimpleMessageServerConnection::triggerConnectionClosedEvent(
-    SystemError::ErrorCode reason)
+void SimpleMessageServerConnection::triggerConnectionClosedEvent(SystemError::ErrorCode reason)
 {
     auto handlers = std::exchange(m_connectionClosedHandlers, {});
     nx::utils::InterruptionFlag::Watcher watcher(&m_connectionFreedFlag);

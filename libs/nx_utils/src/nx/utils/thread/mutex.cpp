@@ -31,7 +31,7 @@ bool Mutex::isRecursive() const
     return m_delegate->isRecursive();
 }
 
-MutexLocker::MutexLocker(Mutex* mutex, const char* sourceFile, int sourceLine) :
+MutexLocker::MutexLocker(Mutex* mutex, const char* sourceFile, int sourceLine):
     Locker<Mutex>(mutex, &Mutex::lock, sourceFile, sourceLine)
 {
 }

@@ -56,7 +56,12 @@ struct NX_REFLECT_API DeserializationResult
     bool hasField(std::string_view name) const
     {
         return std::find_if(
-                fields.begin(), fields.end(), [&name](const auto& f) { return f.name == name; })
+                   fields.begin(),
+                   fields.end(),
+                   [&name](const auto& f)
+                   {
+                       return f.name == name;
+                   })
             != fields.end();
     }
 

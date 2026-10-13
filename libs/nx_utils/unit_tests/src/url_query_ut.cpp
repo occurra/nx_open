@@ -6,15 +6,14 @@
 
 namespace nx::utils::test {
 
-class UrlQuery:
-    public ::testing::Test
+class UrlQuery: public ::testing::Test
 {
 protected:
     template<typename T>
     void assertRepresentedAs(T val, const std::string& expectedStr)
     {
-        auto keys = std::make_tuple(
-            std::string("key"), std::string_view("key"), QString("key"), "key");
+        auto keys =
+            std::make_tuple(std::string("key"), std::string_view("key"), QString("key"), "key");
 
         // Testing with different key types.
         std::apply(

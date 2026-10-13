@@ -4,7 +4,6 @@
 
 #include <nx/utils/crypt/linux_passwd_crypt.h>
 
-
 TEST(linuxCrypt, generateSalt)
 {
     for (int i = 0; i < 10000; ++i)

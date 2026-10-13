@@ -7,21 +7,16 @@
 
 namespace nx::network::http {
 
-class RepeatingBufferMsgBodySource:
-    public nx::network::http::AbstractMsgBodySource
+class RepeatingBufferMsgBodySource: public nx::network::http::AbstractMsgBodySource
 {
 public:
-    RepeatingBufferMsgBodySource(
-        const std::string& mimeType,
-        nx::Buffer buffer);
+    RepeatingBufferMsgBodySource(const std::string& mimeType, nx::Buffer buffer);
 
     virtual std::string mimeType() const override;
     virtual std::optional<uint64_t> contentLength() const override;
 
     virtual void readAsync(
-        nx::MoveOnlyFunc<
-            void(SystemError::ErrorCode, nx::Buffer)
-        > completionHandler) override;
+        nx::MoveOnlyFunc<void(SystemError::ErrorCode, nx::Buffer)> completionHandler) override;
 
 private:
     const std::string m_mimeType;

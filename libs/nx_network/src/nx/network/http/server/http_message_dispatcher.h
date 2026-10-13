@@ -25,7 +25,8 @@ static constexpr char kAnyPath[] = "";
 
 template<typename Value>
 const std::pair<const std::string, Value>* findByMaxPrefix(
-    const std::map<std::string, Value>& map, const std::string& key)
+    const std::map<std::string, Value>& map,
+    const std::string& key)
 {
     auto it = map.upper_bound(key);
     if (it == map.begin())
@@ -45,8 +46,7 @@ const std::pair<const std::string, Value>* findByMaxPrefix(
  * Provides a pure virtual AbstractMessageDispatcher::getHandler method that must be implemented by
  * a descendant.
  */
-class NX_NETWORK_API AbstractMessageDispatcher:
-    public AbstractRequestHandler
+class NX_NETWORK_API AbstractMessageDispatcher: public AbstractRequestHandler
 {
 public:
     using HandlerFactoryFunc = std::function<std::unique_ptr<RequestHandlerWithContext>()>;
@@ -73,8 +73,7 @@ public:
         Func func,
         MessageBodyDeliveryType requestBodyDeliveryType = MessageBodyDeliveryType::buffer)
     {
-        using RequestHandlerType =
-            nx::network::http::server::handler::CustomRequestHandler<Func>;
+        using RequestHandlerType = nx::network::http::server::handler::CustomRequestHandler<Func>;
 
         return registerRequestProcessor(
             path,
@@ -100,9 +99,7 @@ public:
      *      has been started, false otherwise.
      */
     template<class CompletionFuncRefType>
-    bool dispatchRequest(
-        RequestContext requestContext,
-        CompletionFuncRefType completionFunc) const
+    bool dispatchRequest(RequestContext requestContext, CompletionFuncRefType completionFunc) const
     {
         using namespace std::chrono;
         applyModRewrite(&requestContext.request.requestLine.url);
@@ -117,8 +114,8 @@ public:
         if (!requestContext.pathTemplate.empty())
             requestContext.telemetrySpan.setRoute(requestContext.pathTemplate);
 
-        auto statisticsKey = requestContext.request.requestLine.method.toString() + " " +
-            handlerContext->pathTemplate;
+        auto statisticsKey = requestContext.request.requestLine.method.toString() + " "
+            + handlerContext->pathTemplate;
 
         // NOTE: Cannot capture scoped increment in lambda since the capture variable
         // destruction order is unspecified.
@@ -128,19 +125,23 @@ public:
         auto requestProcessStartTime = steady_clock::now();
 
         const int seq = ++m_requestSeq;
-        m_activeRequests.emplace(seq,
-            ActiveRequest{requestContext.request.requestLine.toString(),
+        m_activeRequests.emplace(
+            seq,
+            ActiveRequest{
+                requestContext.request.requestLine.toString(),
                 requestContext.traceContext ? requestContext.traceContext->traceId : "",
                 requestProcessStartTime});
 
         handlerPtr->serve(
             std::move(requestContext),
-            [this, handler = std::move(handlerContext->handler), seq,
-                completionFunc = std::move(completionFunc), counter = m_runningRequestCounter,
-                requestProcessStartTime, statisticsKey = std::move(statisticsKey)](
-                    RequestResult result) mutable
+            [this,
+             handler = std::move(handlerContext->handler),
+             seq,
+             completionFunc = std::move(completionFunc),
+             counter = m_runningRequestCounter,
+             requestProcessStartTime,
+             statisticsKey = std::move(statisticsKey)](RequestResult result) mutable
             {
-
                 recordStatistics(
                     result,
                     statisticsKey,
@@ -195,9 +196,8 @@ protected:
     /**
      * @return HTTP message handler functor that corresponds to the given HTTP method and path.
      */
-    virtual std::optional<HandlerContext> getHandler(
-        const Method& method,
-        const std::string& path) const = 0;
+    virtual std::optional<HandlerContext> getHandler(const Method& method, const std::string& path)
+        const = 0;
 
 private:
     void recordStatistics(
@@ -213,9 +213,9 @@ private:
      */
     std::shared_ptr<nx::utils::Counter> m_runningRequestCounter;
 
-    mutable nx::utils::PartitionedConcurrentHashMap<
-        std::string, server::RequestStatisticsCalculator
-    > m_requestStatisticsCalculators;
+    mutable nx::utils::
+        PartitionedConcurrentHashMap<std::string, server::RequestStatisticsCalculator>
+            m_requestStatisticsCalculators;
 
     mutable nx::utils::PartitionedConcurrentHashMap<int /*sequence*/, ActiveRequest>
         m_activeRequests;
@@ -244,8 +244,7 @@ public:
  * PathMatcherType must satisfy AbstractPathMatcher. Inheriting it is not required.
  */
 template<template<typename> class PathMatcherType>
-class BasicMessageDispatcher:
-    public AbstractMessageDispatcher
+class BasicMessageDispatcher: public AbstractMessageDispatcher
 {
 public:
     virtual ~BasicMessageDispatcher() = default;
@@ -277,7 +276,10 @@ public:
     {
         return registerRequestProcessor(
             path,
-            []() { return std::make_unique<RequestHandlerType>(); },
+            []()
+            {
+                return std::make_unique<RequestHandlerType>();
+            },
             method);
     }
 
@@ -306,10 +308,7 @@ private:
             RequestPathParams pathParams,
             std::string pathTemplate) const
         {
-            HandlerContext handlerContext{
-                func(),
-                std::move(pathTemplate)
-            };
+            HandlerContext handlerContext{func(), std::move(pathTemplate)};
             handlerContext.handler->setRequestPathParams(std::move(pathParams));
             return handlerContext;
         }
@@ -334,9 +333,8 @@ private:
         }
     }
 
-    virtual std::optional<HandlerContext> getHandler(
-        const Method& method,
-        const std::string& path) const override
+    virtual std::optional<HandlerContext> getHandler(const Method& method, const std::string& path)
+        const override
     {
         auto methodFactory = m_factories.find(method);
         if (methodFactory != m_factories.end())
@@ -364,7 +362,9 @@ private:
             pathMatchContext.pathToFactory.match(path);
 
         if (result)
-            return result->value.instantiate(std::move(result->pathParams), std::string(result->pathTemplate));
+            return result->value.instantiate(
+                std::move(result->pathParams),
+                std::string(result->pathTemplate));
 
         if (pathMatchContext.defaultHandlerFactory)
         {
@@ -379,8 +379,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class MessageDispatcher:
-    public BasicMessageDispatcher<ExactPathMatcher>
+class MessageDispatcher: public BasicMessageDispatcher<ExactPathMatcher>
 {
 };
 

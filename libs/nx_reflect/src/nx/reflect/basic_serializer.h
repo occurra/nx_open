@@ -64,8 +64,7 @@ public:
     }
 
     template<typename... Args>
-    void writeValue(
-        const std::chrono::time_point<Args...>& val)
+    void writeValue(const std::chrono::time_point<Args...>& val)
     {
         using namespace std::chrono;
         writeValue(floor<milliseconds>(val.time_since_epoch()));
@@ -98,7 +97,8 @@ private:
 //     { decltype(a.composer) } -> std::convertible_to<AbstractComposer>;
 // };
 
-template<typename Composer, typename Data> class Visitor;
+template<typename Composer, typename Data>
+class Visitor;
 
 /**
  * Serializes some type to a format that can be composed using AbstractComposer class.
@@ -139,21 +139,17 @@ void serializeAdl(SerializationContext* ctx, const Data& data)
 template<typename Composer>
 struct VisitorDeclarator
 {
-    template<typename... Args> using type = Visitor<Composer, Args...>;
+    template<typename... Args>
+    using type = Visitor<Composer, Args...>;
 };
 
-template<
-    typename SerializationContext,
-    typename Container
->
+template<typename SerializationContext, typename Container>
 void serialize(
     SerializationContext* ctx,
     const Container& data,
-    std::enable_if_t<IsArrayV<Container>
-        || IsSequenceContainerV<Container>
-        || IsSetContainerV<Container>
-        || IsUnorderedSetContainerV<Container>
-    >* = nullptr)
+    std::enable_if_t<
+        IsArrayV<Container> || IsSequenceContainerV<Container> || IsSetContainerV<Container>
+        || IsUnorderedSetContainerV<Container>>* = nullptr)
 {
     ctx->composer.startArray();
     for (auto it = data.begin(); it != data.end(); ++it)
@@ -161,17 +157,13 @@ void serialize(
     ctx->composer.endArray(data.size());
 }
 
-template<
-    typename SerializationContext,
-    typename C
->
+template<typename SerializationContext, typename C>
 void serialize(
     SerializationContext* ctx,
     const C& data,
     std::enable_if_t<
         (IsAssociativeContainerV<C> && !IsSetContainerV<C>)
-            || (IsUnorderedAssociativeContainerV<C> && !IsUnorderedSetContainerV<C>)
-    >* = nullptr)
+        || (IsUnorderedAssociativeContainerV<C> && !IsUnorderedSetContainerV<C>)>* = nullptr)
 {
     constexpr bool hasSpecificToStringForKey =
         requires(const SerializationContext& c, const typename C::key_type& v) { c.toString(v); };
@@ -189,16 +181,16 @@ void serialize(
 }
 
 template<typename SerializationContext>
-void serialize(
-    SerializationContext* ctx,
-    const std::string& val)
+void serialize(SerializationContext* ctx, const std::string& val)
 {
     ctx->composer.writeValue(val);
 }
 
 template<typename SerializationContext, typename Value>
 void serialize(
-    SerializationContext* ctx, const Value& val, std::enable_if_t<!IsContainerV<Value>>* = nullptr)
+    SerializationContext* ctx,
+    const Value& val,
+    std::enable_if_t<!IsContainerV<Value>>* = nullptr)
 {
     if constexpr (std::is_same_v<Value, bool>)
     {
@@ -228,30 +220,29 @@ void serialize(
 }
 
 template<typename SerializationContext, typename... Args>
-void serialize(
-    SerializationContext* ctx,
-    const std::chrono::duration<Args...>& val)
+void serialize(SerializationContext* ctx, const std::chrono::duration<Args...>& val)
 {
     ctx->composer.writeValue(val);
 }
 
 template<typename SerializationContext, typename... Args>
-void serialize(
-    SerializationContext* ctx,
-    const std::chrono::time_point<Args...>& val)
+void serialize(SerializationContext* ctx, const std::chrono::time_point<Args...>& val)
 {
     ctx->composer.writeValue(val);
 }
 
 template<typename SerializationContext, typename... Args>
-void serialize(
-    SerializationContext* ctx,
-    const std::variant<Args...>& val)
+void serialize(SerializationContext* ctx, const std::variant<Args...>& val)
 {
     if (val.valueless_by_exception())
         ctx->composer.writeNull();
     else
-        std::visit([ctx](auto&& arg) { serializeAdl(ctx, arg); }, val);
+        std::visit(
+            [ctx](auto&& arg)
+            {
+                serializeAdl(ctx, arg);
+            },
+            val);
 }
 
 template<typename SerializationContext, typename T>
@@ -292,8 +283,7 @@ void serializeAdl(SerializationContext* ctx, const std::optional<Data>& data)
 //-------------------------------------------------------------------------------------------------
 
 template<typename SerializationContext, typename Data>
-class Visitor:
-    public nx::reflect::GenericVisitor<Visitor<SerializationContext, Data>>
+class Visitor: public nx::reflect::GenericVisitor<Visitor<SerializationContext, Data>>
 {
 public:
     Visitor(SerializationContext* ctx, const Data& data):

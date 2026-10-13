@@ -4,18 +4,18 @@
 
 #ifdef ENABLE_SSL
 
-#include <chrono>
-#include <map>
-#include <optional>
-#include <set>
-#include <string>
-#include <vector>
+    #include <chrono>
+    #include <map>
+    #include <optional>
+    #include <set>
+    #include <string>
+    #include <vector>
 
-#include <openssl/ssl.h>
+    #include <openssl/ssl.h>
 
-#include <nx/network/socket_common.h>
-#include <nx/utils/buffer.h>
-#include <nx/utils/string.h>
+    #include <nx/network/socket_common.h>
+    #include <nx/utils/buffer.h>
+    #include <nx/utils/string.h>
 
 namespace nx::network::ssl {
 
@@ -56,14 +56,16 @@ struct X509Name
     std::string toString() const
     {
         return nx::utils::join(
-            attrs.begin(), attrs.end(), ",",
-            [](const auto& attr) { return nx::utils::buildString(attr.first, "=", attr.second); });
+            attrs.begin(),
+            attrs.end(),
+            ",",
+            [](const auto& attr)
+            {
+                return nx::utils::buildString(attr.first, "=", attr.second);
+            });
     }
 
-    bool operator==(const X509Name& right) const
-    {
-        return attrs == right.attrs;
-    }
+    bool operator==(const X509Name& right) const { return attrs == right.attrs; }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const X509Name& issuer)
@@ -162,8 +164,7 @@ public:
     Certificate(X509* x509 = nullptr);
     explicit Certificate(const CertificateView& view);
 
-    static std::vector<Certificate> parse(
-        const std::string& pemString);
+    static std::vector<Certificate> parse(const std::string& pemString);
 
 private:
     std::shared_ptr<X509> m_x509;
@@ -171,9 +172,11 @@ private:
 
 inline std::ostream& operator<<(std::ostream& os, const Certificate& cert)
 {
-    os << "Serial Number:\n" <<
-        "    " << cert.serialNumber() << "\n"
-        "Issuer: " << cert.issuer() << "\n";
+    os << "Serial Number:\n"
+       << "    " << cert.serialNumber()
+       << "\n"
+          "Issuer: "
+       << cert.issuer() << "\n";
     return os;
 }
 
@@ -251,9 +254,7 @@ public:
     Pem(const Pem& pem);
     Pem& operator=(const Pem& pem);
 
-    bool parse(
-        const std::string& str,
-        std::string* errorMessage = nullptr);
+    bool parse(const std::string& str, std::string* errorMessage = nullptr);
 
     bool bindToContext(SSL_CTX* sslContext, std::string* errorMessage = nullptr) const;
 
@@ -265,9 +266,7 @@ public:
     const PKeyPtr& privateKey() const { return m_pkey; }
 
 private:
-    bool loadPrivateKey(
-        const std::string& pem,
-        std::string* errorMessage = nullptr);
+    bool loadPrivateKey(const std::string& pem, std::string* errorMessage = nullptr);
 
 private:
     X509Certificate m_certificate;
@@ -357,7 +356,8 @@ NX_NETWORK_API bool useOrCreateCertificate(
 
 /**
  * Loads certificate from filePath and sets it as default.
- * @return true if a certificate was read from the file and was successfully set as the default one.
+ * @return true if a certificate was read from the file and was successfully set as the default
+ * one.
  */
 NX_NETWORK_API bool loadCertificateFromFile(const std::string& filePath);
 
@@ -371,10 +371,13 @@ NX_NETWORK_API void useRandomCertificate(
 NX_NETWORK_API std::optional<Pem> readPemFile(const std::string& filePath);
 
 NX_NETWORK_API bool verifyBySystemCertificates(
-    STACK_OF(X509)* chain, const std::string& hostName, std::string* outErrorMessage = nullptr);
+    STACK_OF(X509) * chain,
+    const std::string& hostName,
+    std::string* outErrorMessage = nullptr);
 
 NX_NETWORK_API std::vector<Certificate> completeCertificateChain(
-    STACK_OF(X509)* chain, bool* ok = nullptr);
+    STACK_OF(X509) * chain,
+    bool* ok = nullptr);
 
 NX_NETWORK_API void addTrustedRootCertificate(const CertificateView& cert);
 

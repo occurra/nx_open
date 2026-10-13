@@ -5,9 +5,9 @@
 #include <optional>
 
 #include <nx/network/app_info.h>
-#include <nx/utils/random_cryptographic_device.h>
 #include <nx/utils/cryptographic_hash.h>
 #include <nx/utils/random.h>
+#include <nx/utils/random_cryptographic_device.h>
 #include <nx/utils/scope_guard.h>
 #include <nx/utils/string.h>
 
@@ -19,8 +19,7 @@ namespace nx::network::http::server {
 AuthenticationManager::AuthenticationManager(
     AbstractRequestHandler* nextHandler,
     AbstractAuthenticationDataProvider* authenticationDataProvider,
-    Role role)
-    :
+    Role role):
     base_type(nextHandler),
     m_authenticationDataProvider(authenticationDataProvider),
     m_role(role)
@@ -43,8 +42,8 @@ void AuthenticationManager::serve(
 {
     std::optional<header::DigestAuthorization> authzHeader;
     const bool isProxy = this->isProxy(ctx.request.requestLine.method);
-    const auto authHeaderIter =
-        ctx.request.headers.find(isProxy ? header::kProxyAuthorization : header::Authorization::NAME);
+    const auto authHeaderIter = ctx.request.headers.find(
+        isProxy ? header::kProxyAuthorization : header::Authorization::NAME);
     if (authHeaderIter != ctx.request.headers.end())
     {
         authzHeader.emplace(header::DigestAuthorization());
@@ -71,11 +70,7 @@ void AuthenticationManager::serve(
     if (!validateNonce(authzHeader->digest->params["nonce"]))
         return reportAuthenticationFailure(std::move(completionHandler), isProxy);
 
-    lookupPassword(
-        std::move(ctx),
-        std::move(completionHandler),
-        std::move(*authzHeader),
-        isSsl);
+    lookupPassword(std::move(ctx), std::move(completionHandler), std::move(*authzHeader), isSsl);
 }
 
 std::string AuthenticationManager::realm()
@@ -84,16 +79,18 @@ std::string AuthenticationManager::realm()
 }
 
 void AuthenticationManager::reportAuthenticationFailure(
-    AuthenticationCompletionHandler completionHandler, bool isProxy)
+    AuthenticationCompletionHandler completionHandler,
+    bool isProxy)
 {
-    completionHandler(nx::network::http::RequestResult(
-        isProxy ? StatusCode::proxyAuthenticationRequired : StatusCode::unauthorized,
-        nx::network::http::HttpHeaders{generateWwwAuthenticateHeader(isProxy)},
-        /*no body*/ nullptr));
+    completionHandler(
+        nx::network::http::RequestResult(
+            isProxy ? StatusCode::proxyAuthenticationRequired : StatusCode::unauthorized,
+            nx::network::http::HttpHeaders{generateWwwAuthenticateHeader(isProxy)},
+            /*no body*/ nullptr));
 }
 
-std::pair<std::string, std::string>
-    AuthenticationManager::generateWwwAuthenticateHeader(bool isProxy)
+std::pair<std::string, std::string> AuthenticationManager::generateWwwAuthenticateHeader(
+    bool isProxy)
 {
     header::WWWAuthenticate wwwAuthenticate;
     wwwAuthenticate.authScheme = header::AuthScheme::digest;
@@ -115,11 +112,11 @@ void AuthenticationManager::lookupPassword(
     m_authenticationDataProvider->getPasswordByUserName(
         userId,
         [this,
-            completionHandler = std::move(completionHandler),
-            requestContext = std::move(requestContext),
-            authorizationHeader = std::move(authorizationHeader),
-            isSsl,
-            locker = m_startedAsyncCallsCounter.getScopedIncrement()](
+         completionHandler = std::move(completionHandler),
+         requestContext = std::move(requestContext),
+         authorizationHeader = std::move(authorizationHeader),
+         isSsl,
+         locker = m_startedAsyncCallsCounter.getScopedIncrement()](
             PasswordLookupResult passwordLookupResult) mutable
         {
             const auto method = requestContext.request.requestLine.method;
@@ -147,7 +144,9 @@ void AuthenticationManager::lookupPassword(
                 uriIter != authorizationHeader.digest->params.end())
             {
                 if (digestUri(method, requestContext.request.requestLine.url) != uriIter->second)
-                    return reportAuthenticationFailure(std::move(completionHandler), isProxy(method));
+                    return reportAuthenticationFailure(
+                        std::move(completionHandler),
+                        isProxy(method));
             }
 
             reportSuccess(std::move(requestContext), std::move(completionHandler));

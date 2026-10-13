@@ -6,9 +6,15 @@
 
 struct NxImageIniConfig: public nx::kit::IniConfig
 {
-    NxImageIniConfig(): nx::kit::IniConfig("nx_image.ini") { reload(); }
+    NxImageIniConfig():
+        nx::kit::IniConfig("nx_image.ini")
+    {
+        reload();
+    }
 
-    NX_INI_FLAG(1, enableSseColorConvertion,
+    NX_INI_FLAG(
+        1,
+        enableSseColorConvertion,
         "Enables SSE color conversion optimizations. If false Ffmpeg sws_scale will be used");
 };
 

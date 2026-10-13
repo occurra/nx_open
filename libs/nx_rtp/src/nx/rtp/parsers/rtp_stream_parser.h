@@ -22,7 +22,10 @@ public:
     virtual Result processRtpExtension(
         const RtpHeaderExtensionHeader& /*extensionHeader*/,
         quint8* /*data*/,
-        int /*size*/) { return true; }
+        int /*size*/)
+    {
+        return true;
+    }
     virtual Result processData(
         const RtpHeader& header,
         quint8* rtpBufferBase,
@@ -60,7 +63,6 @@ protected:
 
 class NX_RTP_API AudioStreamParser: public StreamParser
 {
-
 public:
     virtual CodecParametersConstPtr getCodecParameters() = 0;
     virtual QnAbstractMediaDataPtr nextData() override;

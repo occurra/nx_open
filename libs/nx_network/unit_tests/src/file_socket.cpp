@@ -36,7 +36,7 @@ bool FileSocket::connect(
 
 int FileSocket::recv(void* buffer, std::size_t bufferLen, int /*flags*/)
 {
-    m_file.read((char*)buffer, bufferLen);
+    m_file.read((char*) buffer, bufferLen);
     m_bytesRead += m_file.gcount();
     return m_file.gcount();
 }

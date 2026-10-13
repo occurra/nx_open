@@ -2,8 +2,8 @@
 
 #include <gtest/gtest.h>
 
-#include <nx/utils/log/log.h>
 #include <nx/network/url/url_parse_helper.h>
+#include <nx/utils/log/log.h>
 
 namespace nx {
 namespace network {

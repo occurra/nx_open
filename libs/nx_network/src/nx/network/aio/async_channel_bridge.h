@@ -28,8 +28,7 @@ namespace nx::network::aio {
  *   bridge->start(functor_executed_on_bridge_closure);
  * @endcode
  */
-class AsyncChannelBridge:
-    public aio::BasicPollable
+class AsyncChannelBridge: public aio::BasicPollable
 {
 public:
     static constexpr std::size_t kDefaultReadBufferSize = 16 * 1024;
@@ -47,8 +46,7 @@ public:
  * LeftChannelPtr and RightChannelPtr are either smart or raw pointers.
  */
 template<typename LeftChannelPtr, typename RightChannelPtr>
-class AsyncChannelBridgeImpl:
-    public AsyncChannelBridge
+class AsyncChannelBridgeImpl: public AsyncChannelBridge
 {
     using base_type = AsyncChannelBridge;
 
@@ -108,22 +106,26 @@ public:
             [this]()
             {
                 m_leftToRight->start(
-                    std::bind(&AsyncChannelBridgeImpl::handleChannelClosure, this,
-                        _1, m_rightToLeft.get()));
+                    std::bind(
+                        &AsyncChannelBridgeImpl::handleChannelClosure,
+                        this,
+                        _1,
+                        m_rightToLeft.get()));
                 m_rightToLeft->start(
-                    std::bind(&AsyncChannelBridgeImpl::handleChannelClosure, this,
-                        _1, m_leftToRight.get()));
+                    std::bind(
+                        &AsyncChannelBridgeImpl::handleChannelClosure,
+                        this,
+                        _1,
+                        m_leftToRight.get()));
                 startInactivityTimerIfNeeded();
             });
     }
 
 private:
-    std::unique_ptr<
-        detail::AsyncChannelUnidirectionalBridgeImpl<LeftChannel*, RightChannel*>
-    > m_leftToRight;
-    std::unique_ptr<
-        detail::AsyncChannelUnidirectionalBridgeImpl<RightChannel*, LeftChannel*>
-    > m_rightToLeft;
+    std::unique_ptr<detail::AsyncChannelUnidirectionalBridgeImpl<LeftChannel*, RightChannel*>>
+        m_leftToRight;
+    std::unique_ptr<detail::AsyncChannelUnidirectionalBridgeImpl<RightChannel*, LeftChannel*>>
+        m_rightToLeft;
 
     LeftChannelPtr m_leftChannel;
     RightChannelPtr m_rightChannel;
@@ -154,7 +156,8 @@ private:
     template<typename Source, typename Destination>
     // requires AsyncChannel<Source> && AsyncChannel<Destination>
     void initializeOneWayChannel(
-        std::unique_ptr<detail::AsyncChannelUnidirectionalBridgeImpl<Source*, Destination*>>* channel,
+        std::unique_ptr<detail::AsyncChannelUnidirectionalBridgeImpl<Source*, Destination*>>*
+            channel,
         Source& source,
         Destination& destination)
     {
@@ -164,7 +167,11 @@ private:
                 &destination);
         (*channel)->setReadBufferSize(AsyncChannelBridge::kDefaultReadBufferSize);
         (*channel)->setMaxSendQueueSizeBytes(AsyncChannelBridge::kDefaultMaxSendQueueSizeBytes);
-        (*channel)->setOnSomeActivity([this]() { onSomeActivity(); });
+        (*channel)->setOnSomeActivity(
+            [this]()
+            {
+                onSomeActivity();
+            });
     }
 
     void handleChannelClosure(
@@ -172,8 +179,7 @@ private:
         const detail::AsyncChannelUnidirectionalBridge* theOtherUnidirectionalBridge)
     {
         ++m_closedChannelCount;
-        if (m_closedChannelCount < 2 &&
-            !theOtherUnidirectionalBridge->isSendQueueEmpty())
+        if (m_closedChannelCount < 2 && !theOtherUnidirectionalBridge->isSendQueueEmpty())
         {
             return;
         }
@@ -204,10 +210,7 @@ private:
             std::bind(&AsyncChannelBridgeImpl::onInactivityTimer, this));
     }
 
-    void onSomeActivity()
-    {
-        m_prevActivityTime = std::chrono::steady_clock::now();
-    }
+    void onSomeActivity() { m_prevActivityTime = std::chrono::steady_clock::now(); }
 
     void reportFailure(SystemError::ErrorCode sysErrorCode)
     {
@@ -226,8 +229,9 @@ private:
  */
 template<typename LeftChannelPtr, typename RightChannelPtr>
 // requires MoveConstructible<LeftChannelPtr> && MoveConstructible<RightChannelPtr>
-std::unique_ptr<AsyncChannelBridgeImpl<LeftChannelPtr, RightChannelPtr>>
-    makeAsyncChannelBridge(LeftChannelPtr leftChannel, RightChannelPtr rightChannel)
+std::unique_ptr<AsyncChannelBridgeImpl<LeftChannelPtr, RightChannelPtr>> makeAsyncChannelBridge(
+    LeftChannelPtr leftChannel,
+    RightChannelPtr rightChannel)
 {
     return std::make_unique<AsyncChannelBridgeImpl<LeftChannelPtr, RightChannelPtr>>(
         std::move(leftChannel),
@@ -247,11 +251,10 @@ std::unique_ptr<AsyncChannelBridgeImpl<LeftChannelPtr, RightChannelPtr>>
 template<typename SourcePtr, typename DestinationPtr>
 // requires MoveConstructible<SourcePtr> && MoveConstructible<DestinationPtr>
 std::unique_ptr<detail::AsyncChannelUnidirectionalBridgeImpl<SourcePtr, DestinationPtr>>
-    makeAsyncChannelUnidirectionalBridge(
-        SourcePtr source,
-        DestinationPtr destination)
+    makeAsyncChannelUnidirectionalBridge(SourcePtr source, DestinationPtr destination)
 {
-    return std::make_unique<detail::AsyncChannelUnidirectionalBridgeImpl<SourcePtr, DestinationPtr>>(
+    return std::make_unique<
+        detail::AsyncChannelUnidirectionalBridgeImpl<SourcePtr, DestinationPtr>>(
         std::move(source),
         std::move(destination));
 }

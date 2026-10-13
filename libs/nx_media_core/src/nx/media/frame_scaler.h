@@ -11,7 +11,8 @@
 class NX_MEDIA_CORE_API QnFrameScaler
 {
 public:
-    enum DownscaleFactor {
+    enum DownscaleFactor
+    {
         factor_any = 0,
         factor_1 = 1,
         factor_2 = 2,
@@ -31,7 +32,10 @@ public:
      * Downscale avFrame if scaler supports it. If function returns false sws_scale should be
      * used as fallback.
      */
-    static bool downscale(const AVFrame* src, CLVideoDecoderOutput* dst, bool useIntrinsicsOnly = true);
+    static bool downscale(
+        const AVFrame* src,
+        CLVideoDecoderOutput* dst,
+        bool useIntrinsicsOnly = true);
 
 private:
     static void downscalePlate_factor2(

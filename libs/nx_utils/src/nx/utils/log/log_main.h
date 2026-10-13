@@ -14,9 +14,7 @@ NX_UTILS_API std::shared_ptr<AbstractLogger> mainLogger();
 
 NX_UTILS_API bool setMainLogger(std::unique_ptr<AbstractLogger> logger);
 
-NX_UTILS_API bool addLogger(
-    std::unique_ptr<AbstractLogger> logger,
-    bool writeLogHeader = true);
+NX_UTILS_API bool addLogger(std::unique_ptr<AbstractLogger> logger, bool writeLogHeader = true);
 
 /** Every setMainLogger and addLogger calls will fail until unlockConfiguration is called. */
 NX_UTILS_API void lockConfiguration();
@@ -47,7 +45,10 @@ namespace detail {
 class LevelReducer
 {
 public:
-    LevelReducer(Level level): m_level(level) {}
+    LevelReducer(Level level):
+        m_level(level)
+    {
+    }
     Level baseLevel() const { return m_level; }
 
     std::pair<Level, bool /*isOnLimit*/> nextLevel()
@@ -59,7 +60,8 @@ public:
         const auto windowSizeS = (uint32_t) nx::utils::ini().logLevelReducerWindowSizeS;
 
         const auto nowS = (uint32_t) std::chrono::duration_cast<std::chrono::seconds>(
-            nx::utils::monotonicTime().time_since_epoch()).count();
+                              nx::utils::monotonicTime().time_since_epoch())
+                              .count();
 
         const auto windowStartS = m_windowStartS.load();
         if (m_passCount == 0 || windowStartS + windowSizeS <= nowS || windowStartS > nowS)
@@ -73,8 +75,7 @@ public:
         const auto newCount = ++m_passCount;
         return {
             (newCount <= limit) ? m_level : Level::debug,
-            /*isOnLimit*/ (newCount == limit)
-        };
+            /*isOnLimit*/ (newCount == limit)};
     }
 
     static void setEnabled(bool value) { s_isEnabled = value; }
@@ -119,9 +120,9 @@ public:
     explicit operator bool() const { return m_logger.get(); }
 
 protected:
-   const Tag m_tag;
-   LevelReducer* const m_levelReducer = nullptr;
-   std::shared_ptr<AbstractLogger> m_logger;
+    const Tag m_tag;
+    LevelReducer* const m_levelReducer = nullptr;
+    std::shared_ptr<AbstractLogger> m_logger;
 };
 
 class Stream: public Helper
@@ -173,30 +174,34 @@ inline void setLevelReducerEnabled(bool value)
 /**
  * NOTE: Preserves current system error code (SystemError::getLastOSErrorCode()).
  */
-#define NX_UTILS_LOG_MESSAGE(LEVEL, TAG, ...) do \
-{ \
-    struct ScopeTag{}; /*< Used by NX_SCOPE_TAG to get scope from demangled type_info::name(). */ \
-    if ((LEVEL) <= nx::log::maxLevel()) \
+#define NX_UTILS_LOG_MESSAGE(LEVEL, TAG, ...) \
+    do \
     { \
-        const auto systemErrorBak = SystemError::getLastOSErrorCode(); \
-        static nx::log::detail::LevelReducer levelReducer(LEVEL); \
-        if (auto _log_helper = nx::log::detail::Helper(&levelReducer, (TAG))) \
-            _log_helper.log(::nx::format(__VA_ARGS__)); \
-        SystemError::setLastErrorCode(systemErrorBak); \
-    } \
-} while (0)
+        struct ScopeTag \
+        { \
+        }; /*< Used by NX_SCOPE_TAG to get scope from demangled type_info::name(). */ \
+        if ((LEVEL) <= nx::log::maxLevel()) \
+        { \
+            const auto systemErrorBak = SystemError::getLastOSErrorCode(); \
+            static nx::log::detail::LevelReducer levelReducer(LEVEL); \
+            if (auto _log_helper = nx::log::detail::Helper(&levelReducer, (TAG))) \
+                _log_helper.log(::nx::format(__VA_ARGS__)); \
+            SystemError::setLastErrorCode(systemErrorBak); \
+        } \
+    } while (0)
 
 #define NX_UTILS_LOG_STREAM(LEVEL, TAG) \
     for (auto stream = \
-            [&]() \
-            { \
-                if ((LEVEL) > nx::log::maxLevel()) \
-                    return nx::log::detail::Stream(); \
-                static nx::log::detail::LevelReducer levelReducer(LEVEL); \
-                return nx::log::detail::Stream(&levelReducer, (TAG));  \
-            }(); \
-        stream; stream.flush()) \
-            stream /* <<... */
+             [&]() \
+         { \
+             if ((LEVEL) > nx::log::maxLevel()) \
+                 return nx::log::detail::Stream(); \
+             static nx::log::detail::LevelReducer levelReducer(LEVEL); \
+             return nx::log::detail::Stream(&levelReducer, (TAG)); \
+         }(); \
+         stream; \
+         stream.flush()) \
+    stream /* <<... */
 
 /**
  * Can be used to redirect nx_kit's NX_PRINT to log as following:
@@ -226,14 +231,23 @@ inline void setLevelReducerEnabled(bool value)
 #define NX_UTILS_LOG(...) \
     /* Choose one of the two macros depending on the number of args supplied to this macro. */ \
     NX_MSVC_EXPAND(NX_GET_15TH_ARG( \
-        __VA_ARGS__, \
-        /* Repeat 12 times: allow for up to 11 args which are %N-substituted into the message. */ \
-        NX_UTILS_LOG_MESSAGE, NX_UTILS_LOG_MESSAGE, NX_UTILS_LOG_MESSAGE, NX_UTILS_LOG_MESSAGE, \
-        NX_UTILS_LOG_MESSAGE, NX_UTILS_LOG_MESSAGE, NX_UTILS_LOG_MESSAGE, NX_UTILS_LOG_MESSAGE, \
-        NX_UTILS_LOG_MESSAGE, NX_UTILS_LOG_MESSAGE, NX_UTILS_LOG_MESSAGE, NX_UTILS_LOG_MESSAGE, \
+        __VA_ARGS__, /* Repeat 12 times: allow for up to 11 args which are %N-substituted into \
+                        the message. */ \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
+        NX_UTILS_LOG_MESSAGE, \
         NX_UTILS_LOG_STREAM, /*< Chosen when called with TAG arg only (without a message). */ \
         args_required /*< Chosen when called without arguments; leads to an error. */ \
-    )(__VA_ARGS__))
+        )(__VA_ARGS__))
 
 /**
  * Prints a critical error that is likely to cause a complete service interruption. The message

@@ -6,9 +6,9 @@ namespace nx::media::h265 {
 
 bool ScalingListData::read(nx::utils::BitStreamReader& reader)
 {
-    for (uint8_t sizeId = 0; sizeId < 4; ++ sizeId)
+    for (uint8_t sizeId = 0; sizeId < 4; ++sizeId)
     {
-        for (uint8_t matrixId = 0; matrixId < ((sizeId  ==  3) ? 2 : 6); ++ matrixId)
+        for (uint8_t matrixId = 0; matrixId < ((sizeId == 3) ? 2 : 6); ++matrixId)
         {
             data[sizeId][matrixId].scaling_list_pred_mode_flag = reader.getBits(1);
             if (!data[sizeId][matrixId].scaling_list_pred_mode_flag)
@@ -22,16 +22,18 @@ bool ScalingListData::read(nx::utils::BitStreamReader& reader)
                 uint8_t coefNum = std::min(64, (1 << (4 + (sizeId << 1))));
                 if (sizeId > 1)
                 {
-                    data[sizeId - 2][matrixId].scaling_list_dc_coef_minus8 = reader.getSignedGolomb();
-                    data[sizeId][matrixId].scaling_list_dc_coef_minus8 = 8; // when not present, inferred to 8?...
-                    if (data[sizeId - 2][matrixId].scaling_list_dc_coef_minus8 < -7 ||
-                        data[sizeId - 2][matrixId].scaling_list_dc_coef_minus8 > 247)
+                    data[sizeId - 2][matrixId].scaling_list_dc_coef_minus8 =
+                        reader.getSignedGolomb();
+                    data[sizeId][matrixId].scaling_list_dc_coef_minus8 =
+                        8; // when not present, inferred to 8?...
+                    if (data[sizeId - 2][matrixId].scaling_list_dc_coef_minus8 < -7
+                        || data[sizeId - 2][matrixId].scaling_list_dc_coef_minus8 > 247)
                     {
                         return false;
                     }
                 }
 
-                for (uint8_t i = 0; i < coefNum; ++ i)
+                for (uint8_t i = 0; i < coefNum; ++i)
                     data[sizeId][matrixId].scaling_list_delta_coef[i] = reader.getSignedGolomb();
 
                 data[sizeId][matrixId].coefNum = coefNum;

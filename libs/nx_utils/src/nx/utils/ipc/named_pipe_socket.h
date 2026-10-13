@@ -26,7 +26,8 @@ public:
      * @param timeoutMillis if -1, can wait indefinitely.
      */
     SystemError::ErrorCode connectToServerSync(
-        const std::string& pipeName, int timeoutMillis = -1);
+        const std::string& pipeName,
+        int timeoutMillis = -1);
 
     /**
      * Writes in synchronous mode.

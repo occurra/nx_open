@@ -19,7 +19,8 @@ class NxReflectWrapper
 public:
     template<typename T>
     static std::tuple<nx::Buffer, bool /*result*/> serialize(
-        Qn::SerializationFormat format, const T& data)
+        Qn::SerializationFormat format,
+        const T& data)
     {
         if (format == Qn::SerializationFormat::json)
             return serializeToJson(data);
@@ -36,8 +37,7 @@ public:
     template<typename T>
     static std::tuple<nx::Buffer, bool /*result*/> serializeToJson(const T& data)
     {
-        return std::make_tuple(
-            nx::Buffer(nx::reflect::json::serialize(data)), true);
+        return std::make_tuple(nx::Buffer(nx::reflect::json::serialize(data)), true);
     }
 
     template<class T>
@@ -53,7 +53,8 @@ public:
 
             case Qn::SerializationFormat::urlEncoded:
                 return nx::reflect::urlencoded::deserialize(
-                    std::string_view(data.data(), data.size()), target);
+                    std::string_view(data.data(), data.size()),
+                    target);
 
             default:
                 return false;
@@ -63,8 +64,7 @@ public:
     template<class T>
     static bool deserializeFromJson(const nx::Buffer& data, T* const target)
     {
-        return nx::reflect::json::deserialize(
-            std::string_view(data.data(), data.size()), target);
+        return nx::reflect::json::deserialize(std::string_view(data.data(), data.size()), target);
     }
 };
 

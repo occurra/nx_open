@@ -29,25 +29,25 @@ struct RtpHeader
     static const int kVersion = 2;
     static const int kCsrcSize = 4;
 #if Q_BYTE_ORDER == Q_BIG_ENDIAN
-    unsigned short   version:2;     /* packet type                */
-    unsigned short   padding:1;     /* padding flag               */
-    unsigned short   extension:1;   /* header extension flag      */
-    unsigned short   CSRCCount:4;   /* CSRC count                 */
-    unsigned short   marker:1;      /* marker bit                 */
-    unsigned short   payloadType:7; /* payload type               */
+    unsigned short version : 2; /* packet type                */
+    unsigned short padding : 1; /* padding flag               */
+    unsigned short extension : 1; /* header extension flag      */
+    unsigned short CSRCCount : 4; /* CSRC count                 */
+    unsigned short marker : 1; /* marker bit                 */
+    unsigned short payloadType : 7; /* payload type               */
 #else
-    unsigned short   CSRCCount:4;   /* CSRC count                 */
-    unsigned short   extension:1;   /* header extension flag      */
-    unsigned short   padding:1;     /* padding flag               */
-    unsigned short   version:2;     /* packet type                */
-    unsigned short   payloadType:7; /* payload type               */
-    unsigned short   marker:1;      /* marker bit                 */
+    unsigned short CSRCCount : 4; /* CSRC count                 */
+    unsigned short extension : 1; /* header extension flag      */
+    unsigned short padding : 1; /* padding flag               */
+    unsigned short version : 2; /* packet type                */
+    unsigned short payloadType : 7; /* payload type               */
+    unsigned short marker : 1; /* marker bit                 */
 #endif
-    uint16_t sequence;               // sequence number
-    uint32_t timestamp;              // timestamp
-    uint32_t ssrc;                   // synchronization source
-    //uint32_t csrc;                  // synchronization source
-    //uint32_t csrc[1];               // optional CSRC list
+    uint16_t sequence; // sequence number
+    uint32_t timestamp; // timestamp
+    uint32_t ssrc; // synchronization source
+    // uint32_t csrc;                  // synchronization source
+    // uint32_t csrc[1];               // optional CSRC list
 
     uint32_t payloadOffset() const { return kSize + CSRCCount * kCsrcSize; }
     uint32_t getTimestamp() const { return ntohl(timestamp); }
@@ -70,7 +70,7 @@ struct RtpHeader
     {
         if (!data || size < kSize)
             return {};
-        const RtpHeader* header = (RtpHeader*)(data);
+        const RtpHeader* header = (RtpHeader*) (data);
         std::optional<int> res;
         res.emplace(header->payloadType);
         return res;
@@ -120,7 +120,7 @@ inline void buildRtpHeader(
     uint8_t payloadType,
     uint16_t sequence)
 {
-    RtpHeader* rtp = (RtpHeader*)buffer;
+    RtpHeader* rtp = (RtpHeader*) buffer;
     rtp->version = RtpHeader::kVersion;
     rtp->padding = 0;
     rtp->extension = 0;
@@ -137,6 +137,7 @@ static constexpr char kFfmpegMetadataCodecName[] = "ffmpeg-metadata";
 constexpr int const kMetadataChannelNumber = 7;
 constexpr int kNxPayloadType = 102;
 constexpr int kNxMetadataPayloadType = 126;
-constexpr int kNxPayloadTypeFallback = 103; //< Use this type to pass proprietary Nx RTP via single ssrc.
+constexpr int kNxPayloadTypeFallback =
+    103; //< Use this type to pass proprietary Nx RTP via single ssrc.
 
 } // namespace nx::rtp

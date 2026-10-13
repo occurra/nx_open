@@ -28,8 +28,7 @@ protected:
 /**
  * Forks handler into several handlers and waits for all of them to be called in destructor.
  */
-class NX_UTILS_API BarrierWaiter:
-    public BarrierHandler
+class NX_UTILS_API BarrierWaiter: public BarrierHandler
 {
 public:
     BarrierWaiter();

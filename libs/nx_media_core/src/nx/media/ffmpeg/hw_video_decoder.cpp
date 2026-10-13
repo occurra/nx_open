@@ -33,7 +33,7 @@ static bool isHwPixelFormat(AVPixelFormat format)
     }
 }
 
-static enum AVPixelFormat getHwFormat(AVCodecContext *ctx, const enum AVPixelFormat *pix_fmts)
+static enum AVPixelFormat getHwFormat(AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts)
 {
     if (!ctx || !ctx->opaque)
     {
@@ -41,9 +41,9 @@ static enum AVPixelFormat getHwFormat(AVCodecContext *ctx, const enum AVPixelFor
         return AV_PIX_FMT_NONE;
     }
 
-    auto nxDecoder = (nx::media::ffmpeg::HwVideoDecoder*)ctx->opaque;
+    auto nxDecoder = (nx::media::ffmpeg::HwVideoDecoder*) ctx->opaque;
     auto format = nxDecoder->getPixelFormat();
-    const enum AVPixelFormat *p;
+    const enum AVPixelFormat* p;
     for (p = pix_fmts; *p != -1; p++)
     {
         if (*p == format)
@@ -62,7 +62,7 @@ static enum AVPixelFormat getHwFormat(AVCodecContext *ctx, const enum AVPixelFor
 
 static AVPixelFormat getHwPixelFormatForCodec(const AVCodec* codec, AVHWDeviceType deviceType)
 {
-    for (int i = 0; ; i++)
+    for (int i = 0;; i++)
     {
         const AVCodecHWConfig* config = avcodec_get_hw_config(codec, i);
         if (!config)
@@ -94,8 +94,11 @@ std::tuple<const AVCodec*, AVPixelFormat> findHwDecoderForCodec(
         if (pixelFormat != AV_PIX_FMT_NONE)
             return {codec, pixelFormat};
 
-        NX_DEBUG(NX_SCOPE_TAG, "Codec %1 can decode %2 only in SW",
-            codec->name, avcodec_get_name(codecId));
+        NX_DEBUG(
+            NX_SCOPE_TAG,
+            "Codec %1 can decode %2 only in SW",
+            codec->name,
+            avcodec_get_name(codecId));
     }
 
     return {nullptr, AV_PIX_FMT_NONE};
@@ -106,8 +109,7 @@ HwVideoDecoder::HwVideoDecoder(
     nx::metric::Storage* metrics,
     const std::string& device,
     std::unique_ptr<AvOptions> options,
-    InitFunc initFunc)
-    :
+    InitFunc initFunc):
     m_type(type),
     m_initFunc(initFunc),
     m_metrics(metrics)
@@ -158,7 +160,9 @@ bool HwVideoDecoder::initializeSoftware(const QnConstCompressedVideoDataPtr& dat
     auto codec = avcodec_find_decoder(data->compressionType);
     if (codec == nullptr)
     {
-        NX_ERROR(this, "Failed to open ffmpeg video decoder, codec not found: %1",
+        NX_ERROR(
+            this,
+            "Failed to open ffmpeg video decoder, codec not found: %1",
             data->compressionType);
         return false;
     }
@@ -169,7 +173,9 @@ bool HwVideoDecoder::initializeSoftware(const QnConstCompressedVideoDataPtr& dat
     if (m_mtDecodingPolicy != MultiThreadDecodePolicy::disabled)
     {
         m_decoderContext->thread_count = std::min(kMaxDecodeThread, av_cpu_count());
-        NX_DEBUG(this, "Hardware decoder thread_count: %1(used in case of software fallback)",
+        NX_DEBUG(
+            this,
+            "Hardware decoder thread_count: %1(used in case of software fallback)",
             m_decoderContext->thread_count);
     }
 
@@ -177,7 +183,9 @@ bool HwVideoDecoder::initializeSoftware(const QnConstCompressedVideoDataPtr& dat
     if (status < 0)
     {
         avcodec_free_context(&m_decoderContext);
-        NX_ERROR(this, "Failed to open ffmpeg video decoder, error: %1",
+        NX_ERROR(
+            this,
+            "Failed to open ffmpeg video decoder, error: %1",
             nx::media::ffmpeg::avErrorToString(status));
         return false;
     }
@@ -196,17 +204,22 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
     }
 
     AVHWDeviceType typeIter = AV_HWDEVICE_TYPE_NONE;
-    while((typeIter = av_hwdevice_iterate_types(typeIter)) != AV_HWDEVICE_TYPE_NONE)
+    while ((typeIter = av_hwdevice_iterate_types(typeIter)) != AV_HWDEVICE_TYPE_NONE)
         NX_DEBUG(this, "available device %1", av_hwdevice_get_type_name(typeIter));
 
-    NX_DEBUG(this, "Trying to initialize hardware decoder, type: %1, codec: %2",
-        av_hwdevice_get_type_name(m_type), data->compressionType);
+    NX_DEBUG(
+        this,
+        "Trying to initialize hardware decoder, type: %1, codec: %2",
+        av_hwdevice_get_type_name(m_type),
+        data->compressionType);
 
     auto [decoder, pixelFormat] = findHwDecoderForCodec(data->compressionType, m_type);
 
     if (pixelFormat == AV_PIX_FMT_NONE)
     {
-        NX_WARNING(this, "Cannot find HW decoder for codec %1 (%2) and device type %3.",
+        NX_WARNING(
+            this,
+            "Cannot find HW decoder for codec %1 (%2) and device type %3.",
             data->compressionType,
             avcodec_get_name(data->compressionType),
             av_hwdevice_get_type_name(m_type));
@@ -215,14 +228,21 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
 
     m_targetPixelFormat = pixelFormat;
 
-    NX_DEBUG(this, "Found pixel format %1 for decoder %2 and device type %3.",
-        m_targetPixelFormat, decoder->name, av_hwdevice_get_type_name(m_type));
+    NX_DEBUG(
+        this,
+        "Found pixel format %1 for decoder %2 and device type %3.",
+        m_targetPixelFormat,
+        decoder->name,
+        av_hwdevice_get_type_name(m_type));
 
     if (!(m_decoderContext = avcodec_alloc_context3(decoder)))
         return false;
 
     auto decoderCtxGuard = nx::utils::makeScopeGuard(
-        [this]() { avcodec_free_context(&m_decoderContext); });
+        [this]()
+        {
+            avcodec_free_context(&m_decoderContext);
+        });
 
     if (avcodec_parameters_to_context(m_decoderContext, data->context->getAvCodecParameters()) < 0)
     {
@@ -257,7 +277,8 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
     {
         const char* hwDevice = m_device.empty() ? nullptr : m_device.c_str();
         AVDictionary* options = m_options ? m_options->get() : nullptr;
-        if ((status = av_hwdevice_ctx_create(&m_hwDeviceContext, m_type, hwDevice, options, 0)) < 0)
+        if ((status = av_hwdevice_ctx_create(&m_hwDeviceContext, m_type, hwDevice, options, 0))
+            < 0)
         {
             NX_DEBUG(this, "Failed to create HW device context %1", avErrorToString(status));
             return false;
@@ -290,7 +311,7 @@ bool HwVideoDecoder::sendPacket(const QnConstCompressedVideoDataPtr& data)
     if (data)
     {
         avPacket = av_packet_alloc();
-        avPacket->data = (uint8_t*)(data->data());
+        avPacket->data = (uint8_t*) (data->data());
         avPacket->size = data->dataSize();
         avPacket->dts = data->timestamp;
         avPacket->pts = data->timestamp;
@@ -344,7 +365,8 @@ bool HwVideoDecoder::receiveFrame(CLVideoDecoderOutputPtr* const outFrame)
 }
 
 bool HwVideoDecoder::decode(
-    const QnConstCompressedVideoDataPtr& data, CLVideoDecoderOutputPtr* const outFrame)
+    const QnConstCompressedVideoDataPtr& data,
+    CLVideoDecoderOutputPtr* const outFrame)
 {
     if (!sendPacket(data))
         return false;
@@ -401,8 +423,14 @@ void HwVideoDecoder::setMultiThreadDecodePolicy(MultiThreadDecodePolicy policy)
     m_mtDecodingPolicy = policy;
 }
 
-int HwVideoDecoder::getWidth() const { return m_decoderContext ? m_decoderContext->width : 0; }
-int HwVideoDecoder::getHeight() const { return m_decoderContext ? m_decoderContext->height : 0; }
+int HwVideoDecoder::getWidth() const
+{
+    return m_decoderContext ? m_decoderContext->width : 0;
+}
+int HwVideoDecoder::getHeight() const
+{
+    return m_decoderContext ? m_decoderContext->height : 0;
+}
 AVCodecID HwVideoDecoder::codec() const
 {
     return m_decoderContext ? m_decoderContext->codec_id : AV_CODEC_ID_NONE;

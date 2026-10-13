@@ -36,8 +36,7 @@ public:
 
 using QnAbstractDataReceptorPtr = QSharedPointer<QnAbstractDataReceptor>;
 
-class QnAbstractMediaDataReceptor:
-    public QnAbstractDataReceptor
+class QnAbstractMediaDataReceptor: public QnAbstractDataReceptor
 {
 public:
     /**

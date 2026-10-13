@@ -20,15 +20,19 @@ class QnServerAdditionalAddressesDictionary;
 class QnLongRunableCleanup;
 
 namespace nx::analytics::taxonomy {
+
 class AbstractState;
 class AbstractStateWatcher;
 class DescriptorContainer;
-} // namespace nx::analytics::taxonomy;
+
+} // namespace nx::analytics::taxonomy
 
 namespace nx::core::access {
+
 class AccessRightsManager;
 class GlobalPermissionsWatcher;
 class ResourceAccessSubjectHierarchy;
+
 } // namespace nx::core::access
 
 namespace nx::metric { struct Storage; }
@@ -37,8 +41,10 @@ namespace nx::vms::event { class RuleManager; }
 namespace nx::vms::rules { class Engine; }
 
 namespace nx::network::http {
+
 class ClientPool;
 class Credentials;
+
 } // namespace nx::network::http
 
 namespace nx::vms::common {
@@ -154,7 +160,7 @@ public:
 
     QnCommonMessageProcessor* messageProcessor() const;
 
-    template <class MessageProcessorType, typename ...Args>
+    template<class MessageProcessorType, typename... Args>
     MessageProcessorType* createMessageProcessor(Args... args)
     {
         const auto processor = new MessageProcessorType(this, args...);

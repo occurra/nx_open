@@ -28,4 +28,4 @@ struct NX_RTP_API OnvifHeaderExtension
     uint8_t cSeq = 0;
 };
 
-}  // namespace rtp::streaming::nx
+} // namespace nx::rtp

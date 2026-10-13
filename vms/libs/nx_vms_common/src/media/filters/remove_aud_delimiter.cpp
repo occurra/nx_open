@@ -27,12 +27,14 @@ inline int h265NalType(const uint8_t* nal)
 
 uint32_t readBe32(const uint8_t* p)
 {
-    return (uint32_t(p[0]) << 24) | (uint32_t(p[1]) << 16) | (uint32_t(p[2]) << 8) | uint32_t(p[3]);
+    return (uint32_t(p[0]) << 24) | (uint32_t(p[1]) << 16) | (uint32_t(p[2]) << 8)
+        | uint32_t(p[3]);
 }
 
 } // namespace
 
-QnConstAbstractDataPacketPtr H2645RemoveAudDelimiter::processData(const QnConstAbstractDataPacketPtr& data)
+QnConstAbstractDataPacketPtr H2645RemoveAudDelimiter::processData(
+    const QnConstAbstractDataPacketPtr& data)
 {
     const QnConstCompressedVideoDataPtr videoData =
         std::dynamic_pointer_cast<const QnCompressedVideoData>(data);
@@ -50,11 +52,13 @@ QnConstAbstractDataPacketPtr H2645RemoveAudDelimiter::processData(const QnConstA
 QnCompressedVideoDataPtr H2645RemoveAudDelimiter::removeAuxFromAnexBFormat(
     const QnConstCompressedVideoDataPtr& videoData)
 {
-    QnWritableCompressedVideoDataPtr result(new QnWritableCompressedVideoData(videoData->dataSize()));
+    QnWritableCompressedVideoDataPtr result(
+        new QnWritableCompressedVideoData(videoData->dataSize()));
     result->QnCompressedVideoData::assign(videoData.get());
 
     const auto units = nx::media::nal::findNalUnitsAnnexB(
-        (const uint8_t*)videoData->data(), videoData->dataSize());
+        (const uint8_t*) videoData->data(),
+        videoData->dataSize());
 
     bool hasAud = false;
     for (const auto& unit: units)
@@ -71,7 +75,7 @@ QnCompressedVideoDataPtr H2645RemoveAudDelimiter::removeAuxFromAnexBFormat(
     if (!hasAud)
         return nullptr; // Keep unchanged
 
-    uint8_t* dst = (uint8_t*)result->data();
+    uint8_t* dst = (uint8_t*) result->data();
     for (const auto& unit: units)
     {
         bool isAudNalForCodec = (videoData->compressionType == AV_CODEC_ID_H264)
@@ -92,14 +96,15 @@ QnCompressedVideoDataPtr H2645RemoveAudDelimiter::removeAuxFromAnexBFormat(
 QnCompressedVideoDataPtr H2645RemoveAudDelimiter::removeAuxFromMp4Format(
     const QnConstCompressedVideoDataPtr& videoData)
 {
-    QnWritableCompressedVideoDataPtr result(new QnWritableCompressedVideoData(videoData->dataSize()));
+    QnWritableCompressedVideoDataPtr result(
+        new QnWritableCompressedVideoData(videoData->dataSize()));
     result->QnCompressedVideoData::assign(videoData.get());
 
-    const auto units = nx::media::nal::findNalUnitsMp4(
-        (const uint8_t*)videoData->data(), videoData->dataSize());
+    const auto units =
+        nx::media::nal::findNalUnitsMp4((const uint8_t*) videoData->data(), videoData->dataSize());
 
     bool hasAud = false;
-    for (const auto& unit : units)
+    for (const auto& unit: units)
     {
         bool isAudNalForCodec = (videoData->compressionType == AV_CODEC_ID_H264)
             ? (h264NalType(unit.data) == 9) // AVC AUD
@@ -113,8 +118,8 @@ QnCompressedVideoDataPtr H2645RemoveAudDelimiter::removeAuxFromMp4Format(
     if (!hasAud)
         return nullptr; // Keep unchanged
 
-    uint8_t* dst = (uint8_t*)result->data();
-    for (const auto& unit : units)
+    uint8_t* dst = (uint8_t*) result->data();
+    for (const auto& unit: units)
     {
         bool isAudNalForCodec = (videoData->compressionType == AV_CODEC_ID_H264)
             ? (h264NalType(unit.data) == 9) // AVC AUD
@@ -125,7 +130,7 @@ QnCompressedVideoDataPtr H2645RemoveAudDelimiter::removeAuxFromMp4Format(
             dst += unit.size + 4;
         }
     }
-    result->m_data.resize(dst - (uint8_t*)result->data());
+    result->m_data.resize(dst - (uint8_t*) result->data());
     return result;
 }
 

@@ -6,8 +6,7 @@
 
 WaitConditionTimer::WaitConditionTimer(
     nx::WaitCondition* waitCondition,
-    std::chrono::milliseconds timeout)
-    :
+    std::chrono::milliseconds timeout):
     m_waitCondition(waitCondition),
     m_timeout(timeout),
     m_startTime(nx::utils::monotonicTime())

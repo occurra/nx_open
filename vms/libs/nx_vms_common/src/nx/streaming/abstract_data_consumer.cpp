@@ -2,16 +2,13 @@
 
 #include "abstract_data_consumer.h"
 
-#include <utils/common/sleep.h>
 #include <nx/utils/log/log.h>
+#include <utils/common/sleep.h>
 
-namespace {
-    static constexpr std::chrono::milliseconds kWaitTimeoutMs(200);
-} // namespace
+namespace { static constexpr std::chrono::milliseconds kWaitTimeoutMs(200); } // namespace
 
-
-QnAbstractDataConsumer::QnAbstractDataConsumer(int maxQueueSize)
-    : m_dataQueue(maxQueueSize)
+QnAbstractDataConsumer::QnAbstractDataConsumer(int maxQueueSize):
+    m_dataQueue(maxQueueSize)
 {
 }
 
@@ -20,7 +17,7 @@ bool QnAbstractDataConsumer::canAcceptData() const
     return (m_dataQueue.size() < m_dataQueue.maxSize());
 }
 
-void QnAbstractDataConsumer::putData( const QnAbstractDataPacketPtr& data )
+void QnAbstractDataConsumer::putData(const QnAbstractDataPacketPtr& data)
 {
     if (!needToStop())
         m_dataQueue.push(data);
@@ -56,13 +53,13 @@ void QnAbstractDataConsumer::resumeDataQueue()
 
 void QnAbstractDataConsumer::run()
 {
-//    const int timeoutMs = 100;
+    //    const int timeoutMs = 100;
 
     initSystemThreadId();
     beforeRun();
     resumeDataQueue();
 
-    while(!needToStop())
+    while (!needToStop())
     {
         pauseDelay();
         runCycle();
@@ -81,7 +78,7 @@ void QnAbstractDataConsumer::runCycle()
         QnSleep::msleep(kNoDataDelayIntervalMs);
         return;
     }
-    while(!needToStop())
+    while (!needToStop())
     {
         if (processData(data))
             break;

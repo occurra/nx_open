@@ -7,12 +7,13 @@
 #include "core/resource/storage_resource.h"
 
 /*
-* QnQtFileStorageResource uses Qt based IO access
-*/
+ * QnQtFileStorageResource uses Qt based IO access
+ */
 
 class NX_VMS_COMMON_API QnQtFileStorageResource: public QnStorageResource
 {
     using base_type = QnStorageResource;
+
 public:
     QnQtFileStorageResource();
 
@@ -29,6 +30,8 @@ public:
     virtual bool isDirExists(const QString& url) override;
     virtual qint64 getFreeSpace() override;
     virtual qint64 getTotalSpace() const override;
+
 protected:
-    virtual QIODevice* openInternal(const QString& fileName, QIODevice::OpenMode openMode) override;
+    virtual QIODevice* openInternal(const QString& fileName, QIODevice::OpenMode openMode)
+        override;
 };

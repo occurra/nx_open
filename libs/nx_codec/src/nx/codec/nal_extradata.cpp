@@ -17,7 +17,10 @@ int getNalSize(const uint8_t* ptr)
 
 void appendNalUnit(std::vector<uint8_t>& result, const uint8_t* data, int size)
 {
-    result.insert(result.end(), nx::media::nal::kStartCode.begin(), nx::media::nal::kStartCode.end());
+    result.insert(
+        result.end(),
+        nx::media::nal::kStartCode.begin(),
+        nx::media::nal::kStartCode.end());
     result.insert(result.end(), data, data + size);
 }
 
@@ -31,13 +34,15 @@ std::vector<uint8_t> readH264SeqHeaderFromExtraData(const uint8_t* extraData, in
         return result;
 
     const uint8_t* p = extraData;
-    //sps & pps is in the extradata, parsing it...
-    //following code has been taken from libavcodec/h264.c
+    // sps & pps is in the extradata, parsing it...
+    // following code has been taken from libavcodec/h264.c
 
     int lengthSizeMinusOne = (extraData[4] & 0x03);
     if (lengthSizeMinusOne != 3)
     {
-        NX_WARNING(NX_SCOPE_TAG, "Unsupported NAL length size: %1, TODO impl this",
+        NX_WARNING(
+            NX_SCOPE_TAG,
+            "Unsupported NAL length size: %1, TODO impl this",
             lengthSizeMinusOne + 1);
         return result;
     }
@@ -49,7 +54,7 @@ std::vector<uint8_t> readH264SeqHeaderFromExtraData(const uint8_t* extraData, in
     for (int i = 0; i < cnt; i++)
     {
         const int nalsize = getNalSize(p);
-        p += 2; //skipping nalusize
+        p += 2; // skipping nalusize
         if (nalsize > extraDataSize - (p - extraData))
             break;
         appendNalUnit(result, p, nalsize);
@@ -85,7 +90,9 @@ std::vector<uint8_t> readH265SeqHeaderFromExtraData(const uint8_t* extraData, in
     }
     if (hvcc.lengthSizeMinusOne != 3)
     {
-        NX_WARNING(NX_SCOPE_TAG, "Unsupported NAL length size: %1, TODO impl this",
+        NX_WARNING(
+            NX_SCOPE_TAG,
+            "Unsupported NAL length size: %1, TODO impl this",
             hvcc.lengthSizeMinusOne + 1);
         return result;
     }

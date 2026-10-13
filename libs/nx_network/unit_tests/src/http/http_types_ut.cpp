@@ -3,8 +3,8 @@
 #include <gtest/gtest.h>
 
 #include <nx/network/http/http_types.h>
-#include <nx/utils/test_support/custom_gtest_printers.h>
 #include <nx/utils/string.h>
+#include <nx/utils/test_support/custom_gtest_printers.h>
 
 namespace nx::network::http::header {
 
@@ -15,10 +15,8 @@ void PrintTo(const Via& val, ::std::ostream* os)
 
 bool operator==(const Via::ProxyEntry& left, const Via::ProxyEntry& right)
 {
-    return left.protoName == right.protoName &&
-        left.protoVersion == right.protoVersion &&
-        left.receivedBy == right.receivedBy &&
-        left.comment == right.comment;
+    return left.protoName == right.protoName && left.protoVersion == right.protoVersion
+        && left.receivedBy == right.receivedBy && left.comment == right.comment;
 }
 
 bool operator==(const Via& left, const Via& right)
@@ -69,10 +67,10 @@ TEST(HttpTypesHeader, serializeHeaders)
 {
     {
         nx::Buffer buffer;
-        serializeHeaders({{"Content-Length", "1024"}, {"Content-Type", "application/json"}}, &buffer);
-        ASSERT_EQ(
-            "Content-Length: 1024\r\nContent-Type: application/json\r\n",
-            buffer);
+        serializeHeaders(
+            {{"Content-Length", "1024"}, {"Content-Type", "application/json"}},
+            &buffer);
+        ASSERT_EQ("Content-Length: 1024\r\nContent-Type: application/json\r\n", buffer);
     }
 
     {
@@ -91,13 +89,13 @@ TEST(HttpTypesHeaderRange, parse)
     range.parse("650-");
     ASSERT_EQ(range.rangeSpecList.size(), 1U);
     ASSERT_EQ(range.rangeSpecList[0].start, 650U);
-    ASSERT_FALSE(static_cast< bool >(range.rangeSpecList[0].end));
+    ASSERT_FALSE(static_cast<bool>(range.rangeSpecList[0].end));
 
     range.rangeSpecList.clear();
     range.parse("100,200-230");
     ASSERT_EQ(range.rangeSpecList.size(), 2U);
     ASSERT_EQ(range.rangeSpecList[0].start, 100U);
-    ASSERT_TRUE(static_cast< bool >(range.rangeSpecList[0].end));
+    ASSERT_TRUE(static_cast<bool>(range.rangeSpecList[0].end));
     ASSERT_EQ(*range.rangeSpecList[0].end, 100U);
     ASSERT_EQ(range.rangeSpecList[1].start, 200U);
     ASSERT_EQ(*range.rangeSpecList[1].end, 230U);
@@ -552,16 +550,15 @@ TEST(HttpTypesHeaderWWWAuthenticate, parse)
 TEST(HttpTypesHeaderAuthorization, parse)
 {
     {
-        static constexpr char testData[] =
-            "Digest username=\"Mufasa\","
-            "realm=\"testrealm@host.com\","
-            "nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\","
-            "uri=\"/dir/index.html\","
-            "qop=auth,"
-            "nc=00000001,"
-            "cnonce=\"0a4f113b\","
-            "response=\"6629fae49393a05397450978507c4ef1\","
-            "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
+        static constexpr char testData[] = "Digest username=\"Mufasa\","
+                                           "realm=\"testrealm@host.com\","
+                                           "nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\","
+                                           "uri=\"/dir/index.html\","
+                                           "qop=auth,"
+                                           "nc=00000001,"
+                                           "cnonce=\"0a4f113b\","
+                                           "response=\"6629fae49393a05397450978507c4ef1\","
+                                           "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
         header::Authorization auth;
         ASSERT_TRUE(auth.parse(testData));
         ASSERT_EQ(auth.authScheme, header::AuthScheme::digest);
@@ -591,7 +588,9 @@ TEST(HttpTypesHeaderAuthorization, parse)
         ASSERT_EQ(auth.digest->params["realm"], "AXIS_ACCC8E338EDF");
         ASSERT_EQ(auth.digest->params["algorithm"], "MD5");
         ASSERT_EQ(auth.digest->params["qop"], "auth");
-        ASSERT_EQ(auth.digest->params["nonce"], "p65VeyEWBQA=0b7e4955ab1d73d00a4b903c19d91c67931ef7ad");
+        ASSERT_EQ(
+            auth.digest->params["nonce"],
+            "p65VeyEWBQA=0b7e4955ab1d73d00a4b903c19d91c67931ef7ad");
     }
 
     {
@@ -681,14 +680,10 @@ TEST(HttpTypesHeaderKeepAlive, parse)
 //-------------------------------------------------------------------------------------------------
 // Server
 
-class HttpTypesHeaderServer:
-    public ::testing::Test
+class HttpTypesHeaderServer: public ::testing::Test
 {
 protected:
-    void test(
-        bool isValid,
-        const header::Server& serverHeader,
-        const std::string& serializedValue)
+    void test(bool isValid, const header::Server& serverHeader, const std::string& serializedValue)
     {
         if (isValid)
             testSerialization(serverHeader, serializedValue);
@@ -722,9 +717,7 @@ TEST_F(HttpTypesHeaderServer, single_product_without_comment)
 {
     header::Server serverHeader;
     serverHeader.products.clear();
-    serverHeader.products.push_back(
-        header::Server::Product{
-            "ProductName", "1.2.3.4", "" });
+    serverHeader.products.push_back(header::Server::Product{"ProductName", "1.2.3.4", ""});
     test(true, serverHeader, "ProductName/1.2.3.4");
 }
 
@@ -732,8 +725,7 @@ TEST_F(HttpTypesHeaderServer, single_product_without_version)
 {
     header::Server serverHeader;
     serverHeader.products.clear();
-    serverHeader.products.push_back(
-        header::Server::Product{"ProductName", "", ""});
+    serverHeader.products.push_back(header::Server::Product{"ProductName", "", ""});
     test(true, serverHeader, "ProductName");
 }
 
@@ -741,10 +733,8 @@ TEST_F(HttpTypesHeaderServer, multiple_product_header_is_parsed)
 {
     header::Server serverHeader;
     serverHeader.products.clear();
-    serverHeader.products.push_back(
-        header::Server::Product{"Product1", "1.2.3.4", "" });
-    serverHeader.products.push_back(
-        header::Server::Product{"Product2", "5.6.7.8", "comment2" });
+    serverHeader.products.push_back(header::Server::Product{"Product1", "1.2.3.4", ""});
+    serverHeader.products.push_back(header::Server::Product{"Product2", "5.6.7.8", "comment2"});
     test(true, serverHeader, "Product1/1.2.3.4 Product2/5.6.7.8 (comment2)");
 }
 
@@ -807,15 +797,18 @@ TEST(HttpTypesHeaderContentType, parse)
         EXPECT_EQ("multipart/form-data; boundary=ExampleBoundaryString", contentType.toString());
     }
     {
-        #define EXPECT_CT_EQ(L, R) EXPECT_EQ(header::ContentType(L), header::ContentType(R))
-        #define EXPECT_CT_NE(L, R) EXPECT_NE(header::ContentType(L), header::ContentType(R))
+#define EXPECT_CT_EQ(L, R) EXPECT_EQ(header::ContentType(L), header::ContentType(R))
+#define EXPECT_CT_NE(L, R) EXPECT_NE(header::ContentType(L), header::ContentType(R))
 
         EXPECT_CT_EQ("text/plain; charset=utf-8", "text/plain;charset=utf-8");
-        EXPECT_CT_EQ("multipart/form-data; boundary=ExampleBoundaryString",
+        EXPECT_CT_EQ(
+            "multipart/form-data; boundary=ExampleBoundaryString",
             "multipart/form-data;boundary=ExampleBoundaryString");
         EXPECT_CT_NE("text/plain; charset=utf-8", "text/plain");
         EXPECT_CT_NE("text/plain; charset=utf-8", "text/plain; charset=utf-16");
-        EXPECT_CT_NE("text/plain; charset=utf-8", "multipart/form-data; boundary=ExampleBoundaryString");
+        EXPECT_CT_NE(
+            "text/plain; charset=utf-8",
+            "multipart/form-data; boundary=ExampleBoundaryString");
         EXPECT_CT_NE("text/plain", "multipart/form-data");
     }
 }
@@ -852,9 +845,11 @@ TEST(HttpTypesRequestLine, parse)
         ASSERT_TRUE(requestLine.parse(Buffer(
             "CONNECT 3219eff5-ac50-4c63-9f71-3c8a8f8f4385.c52c5aaf-b246-4465-8286-c10cf069a00b HTTP/1.1")));
         ASSERT_EQ(requestLine.method, Method::connect);
-        ASSERT_EQ(requestLine.url.authority().toStdString(),
+        ASSERT_EQ(
+            requestLine.url.authority().toStdString(),
             "3219eff5-ac50-4c63-9f71-3c8a8f8f4385.c52c5aaf-b246-4465-8286-c10cf069a00b");
-        ASSERT_EQ(requestLine.url.host().toStdString(),
+        ASSERT_EQ(
+            requestLine.url.host().toStdString(),
             "3219eff5-ac50-4c63-9f71-3c8a8f8f4385.c52c5aaf-b246-4465-8286-c10cf069a00b");
         ASSERT_EQ(requestLine.version, http_1_1);
     }
@@ -892,17 +887,14 @@ TEST(HttpTypesRequest, parse)
 {
     Request request;
     ASSERT_TRUE(request.parse(kTestRequest));
-    ASSERT_EQ(
-        9693025000LL,
-        nx::utils::stoll(getHeaderValue(request.headers, "x-media-step")));
+    ASSERT_EQ(9693025000LL, nx::utils::stoll(getHeaderValue(request.headers, "x-media-step")));
 }
 
 TEST(HttpTypesRequest, removeCookieNoHeader)
 {
-    static constexpr char kTestRequest[] =
-        "GET http://192.168.0.25:7001/ HTTP/1.0\r\n"
-        "Accept-Language: en-us,en;q=0.5\r\n"
-        "Accept-Encoding: gzip,deflate\t\n";
+    static constexpr char kTestRequest[] = "GET http://192.168.0.25:7001/ HTTP/1.0\r\n"
+                                           "Accept-Language: en-us,en;q=0.5\r\n"
+                                           "Accept-Encoding: gzip,deflate\t\n";
 
     Request request;
     ASSERT_TRUE(request.parse(kTestRequest));
@@ -945,9 +937,7 @@ TEST(HttpTypesRequest, removeCookieFirst)
     Request request;
     ASSERT_TRUE(request.parse(kTestRequestWithCookies));
     request.removeCookie("name1");
-    ASSERT_EQ(
-        "name2=value2; name3=value3",
-        getHeaderValue(request.headers, "Cookie"));
+    ASSERT_EQ("name2=value2; name3=value3", getHeaderValue(request.headers, "Cookie"));
 }
 
 TEST(HttpTypesRequest, removeCookieLast)
@@ -955,9 +945,7 @@ TEST(HttpTypesRequest, removeCookieLast)
     Request request;
     ASSERT_TRUE(request.parse(kTestRequestWithCookies));
     request.removeCookie("name3");
-    ASSERT_EQ(
-        "name1=value1; name2=value2",
-        getHeaderValue(request.headers, "Cookie"));
+    ASSERT_EQ("name1=value1; name2=value2", getHeaderValue(request.headers, "Cookie"));
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -984,9 +972,9 @@ TEST(HttpTypesResponse, parse)
     Response request;
     ASSERT_TRUE(request.parse(kTestResponse));
     ASSERT_EQ(kTestCookie, request.getCookies());
-    ASSERT_EQ("{d1a49afe-a2a2-990a-2c54-b77e768e6ad2}",
+    ASSERT_EQ(
+        "{d1a49afe-a2a2-990a-2c54-b77e768e6ad2}",
         getHeaderValue(request.headers, "X-Runtime-Guid"));
-
 }
 
-} // namespace nx::network::http::header
+} // namespace nx::network::http::test

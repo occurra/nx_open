@@ -22,8 +22,7 @@ TEST(NalUnits, decodeNal)
         {{"00000304"}, {"00000304"}},
         {{"00000301 00000302"}, {"000001 000002"}},
         {{"00000302 00000302"}, {"000002 000002"}},
-        {{"00000302 000003" }, {"000002 000003"}}
-    };
+        {{"00000302 000003"}, {"000002 000003"}}};
 
     QByteArray source;
     QByteArray destination;
@@ -34,10 +33,10 @@ TEST(NalUnits, decodeNal)
         destination.resize(result.size());
 
         nx::media::nal::decodeEpb(
-            (const quint8*)source.constData(),
-            (const quint8*)source.constData() + source.size(),
-            (quint8*)destination.data(),
-            (size_t)destination.size());
+            (const quint8*) source.constData(),
+            (const quint8*) source.constData() + source.size(),
+            (quint8*) destination.data(),
+            (size_t) destination.size());
 
         ASSERT_EQ(result, destination);
     }
@@ -91,15 +90,14 @@ TEST(NalUnits, hevcDecodeSpsNoCrash)
     static const std::map<SourcePayload, ParsingResult> kEncodedSps = {
         {"", false},
         {"01", false},
-        {"0101", false}
-    };
+        {"0101", false}};
 
-    for (const auto& entry : kEncodedSps)
+    for (const auto& entry: kEncodedSps)
     {
         const auto buffer = QByteArray::fromHex(entry.first);
         nx::media::h265::SequenceParameterSet sps;
-        const auto result = nx::media::h265::parseNalUnit(
-            (const uint8_t*) buffer.constData(), buffer.size(), sps);
+        const auto result =
+            nx::media::h265::parseNalUnit((const uint8_t*) buffer.constData(), buffer.size(), sps);
         ASSERT_EQ(result, entry.second);
     }
 }
@@ -108,8 +106,7 @@ TEST(NalUnits, find4BytesStartcodes)
 {
     // Simple
     {
-        uint8_t data[] = {
-            0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8};
+        uint8_t data[] = {0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8};
 
         auto sizes = nx::media::nal::findNalUnitsAnnexB(data, sizeof(data));
         ASSERT_EQ(sizes.size(), 1);
@@ -118,8 +115,21 @@ TEST(NalUnits, find4BytesStartcodes)
     }
     {
         uint8_t data[] = {
-            0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8,
-            0x00, 0x00, 0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1};
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x1c,
+            0xe8,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0xe5,
+            0xaf,
+            0xfc,
+            0x69,
+            0xb1};
 
         auto sizes = nx::media::nal::findNalUnitsAnnexB(data, sizeof(data));
         ASSERT_EQ(sizes.size(), 2);
@@ -129,8 +139,7 @@ TEST(NalUnits, find4BytesStartcodes)
         ASSERT_EQ(sizes[1].size, 5);
     }
     {
-        uint8_t data[] = {
-            0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1, 0x1c, 0xe8};
+        uint8_t data[] = {0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1, 0x1c, 0xe8};
 
         auto sizes = nx::media::nal::findNalUnitsAnnexB(data, sizeof(data));
         ASSERT_EQ(sizes.size(), 0);
@@ -139,8 +148,24 @@ TEST(NalUnits, find4BytesStartcodes)
     // Trailing zeros
     {
         uint8_t data[] = {
-            0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8, 0x00,
-            0x00, 0x00, 0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1, 0x00, 0x00};
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x1c,
+            0xe8,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0xe5,
+            0xaf,
+            0xfc,
+            0x69,
+            0xb1,
+            0x00,
+            0x00};
 
         auto sizes = nx::media::nal::findNalUnitsAnnexB(data, sizeof(data));
         ASSERT_EQ(sizes.size(), 2);
@@ -153,9 +178,8 @@ TEST(NalUnits, find4BytesStartcodes)
 
     // Dropped first startcode
     {
-        uint8_t data[] = {
-            0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x01, 0xff, 0xff, 0xff,
-            0x00, 0x00, 0x00, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+        uint8_t data[] = {0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x01, 0xff, 0xff, 0xff,
+                          0x00, 0x00, 0x00, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
         auto sizes = nx::media::nal::findNalUnitsAnnexB(data, sizeof(data), true);
         ASSERT_EQ(sizes.size(), 3);
@@ -174,8 +198,7 @@ TEST(NalUnits, convertStartCodesToSizes)
 {
     // Simple.
     {
-        uint8_t data[] = {
-            0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8};
+        uint8_t data[] = {0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8};
 
         auto converted = nx::media::nal::convertStartCodesToSizes(data, sizeof(data));
         ASSERT_EQ(converted.size(), sizeof(data));
@@ -191,8 +214,21 @@ TEST(NalUnits, convertStartCodesToSizes)
     }
     {
         uint8_t data[] = {
-            0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8,
-            0x00, 0x00, 0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1};
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x1c,
+            0xe8,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0xe5,
+            0xaf,
+            0xfc,
+            0x69,
+            0xb1};
 
         auto converted = nx::media::nal::convertStartCodesToSizes(data, sizeof(data));
         ASSERT_EQ(converted.size(), sizeof(data));
@@ -214,8 +250,21 @@ TEST(NalUnits, convertStartCodesToSizes)
     // Padding.
     {
         uint8_t data[] = {
-            0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8,
-            0x00, 0x00, 0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1};
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x1c,
+            0xe8,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0xe5,
+            0xaf,
+            0xfc,
+            0x69,
+            0xb1};
 
         auto converted = nx::media::nal::convertStartCodesToSizes(data, sizeof(data), 32);
         ASSERT_EQ(converted.size(), sizeof(data) + 32);
@@ -243,8 +292,24 @@ TEST(NalUnits, convertStartCodesToSizes)
     // Trailing zeros.
     {
         uint8_t data[] = {
-            0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8, 0x00,
-            0x00, 0x00, 0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1, 0x00, 0x00};
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x1c,
+            0xe8,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0xe5,
+            0xaf,
+            0xfc,
+            0x69,
+            0xb1,
+            0x00,
+            0x00};
 
         auto converted = nx::media::nal::convertStartCodesToSizes(data, sizeof(data));
         ASSERT_EQ(converted.size(), sizeof(data) - 3);
@@ -262,9 +327,8 @@ TEST(NalUnits, convertStartCodesToSizes)
     }
     // 3 bytes startcode
     {
-        uint8_t data[] = {
-            0x00, 0x00, 0x01, 0x1c, 0xe8,
-            0x00, 0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1};
+        uint8_t data[] =
+            {0x00, 0x00, 0x01, 0x1c, 0xe8, 0x00, 0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1};
 
         auto converted = nx::media::nal::convertStartCodesToSizes(data, sizeof(data));
         ASSERT_EQ(converted.size(), sizeof(data) + 2);

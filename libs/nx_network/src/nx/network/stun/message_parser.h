@@ -18,8 +18,7 @@
 
 namespace nx::network::stun {
 
-class NX_NETWORK_API MessageParser:
-    public nx::network::server::AbstractMessageParser<Message>
+class NX_NETWORK_API MessageParser: public nx::network::server::AbstractMessageParser<Message>
 {
 private:
     enum class LegacyState
@@ -71,7 +70,8 @@ public:
      * - source data depleted
 
      * @param bytesProcessed Number of bytes from buf which were read and parsed is stored here.
-     * NOTE: *buf MAY NOT contain whole message, but any part of it (it can be as little as 1 byte).
+     * NOTE: *buf MAY NOT contain whole message, but any part of it (it can be as little as 1
+     byte).
      * NOTE: Reads whole message even if parse error occurred.
      */
     virtual nx::network::server::ParserState parse(

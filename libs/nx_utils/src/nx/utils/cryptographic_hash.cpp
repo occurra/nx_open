@@ -4,12 +4,12 @@
 
 #include <cstdio>
 
-#include <QtCore/QIODevice>
-
 #include <openssl/evp.h>
 #include <openssl/md4.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
+
+#include <QtCore/QIODevice>
 
 namespace nx::utils {
 
@@ -23,10 +23,10 @@ public:
     virtual ~QnCryptographicHashPrivate() {}
 
     virtual void init() = 0;
-    virtual void update(const char *data, int length) = 0;
-    virtual void final(unsigned char *result) = 0;
+    virtual void update(const char* data, int length) = 0;
+    virtual void final(unsigned char* result) = 0;
     virtual int size() const = 0;
-    virtual QnCryptographicHashPrivate *clone() const = 0;
+    virtual QnCryptographicHashPrivate* clone() const = 0;
 
 private:
     friend class QnCryptographicHash;
@@ -38,10 +38,13 @@ class QnMd4CryptographicHashPrivate: public QnCryptographicHashPrivate
 {
 public:
     virtual void init() override { MD4_Init(&ctx); }
-    virtual void update(const char *data, int length) override { MD4_Update(&ctx, data, length); }
-    virtual void final(unsigned char *result) override { MD4_Final(result, &ctx); }
+    virtual void update(const char* data, int length) override { MD4_Update(&ctx, data, length); }
+    virtual void final(unsigned char* result) override { MD4_Final(result, &ctx); }
     virtual int size() const override { return MD4_DIGEST_LENGTH; }
-    virtual QnCryptographicHashPrivate *clone() const override { return new QnMd4CryptographicHashPrivate(*this); }
+    virtual QnCryptographicHashPrivate* clone() const override
+    {
+        return new QnMd4CryptographicHashPrivate(*this);
+    }
 
 private:
     MD4_CTX ctx;
@@ -51,10 +54,13 @@ class QnMd5CryptographicHashPrivate: public QnCryptographicHashPrivate
 {
 public:
     virtual void init() override { MD5_Init(&ctx); }
-    virtual void update(const char *data, int length) override { MD5_Update(&ctx, data, length); }
-    virtual void final(unsigned char *result) override { MD5_Final(result, &ctx); }
+    virtual void update(const char* data, int length) override { MD5_Update(&ctx, data, length); }
+    virtual void final(unsigned char* result) override { MD5_Final(result, &ctx); }
     virtual int size() const override { return MD5_DIGEST_LENGTH; }
-    virtual QnCryptographicHashPrivate *clone() const override { return new QnMd5CryptographicHashPrivate(*this); }
+    virtual QnCryptographicHashPrivate* clone() const override
+    {
+        return new QnMd5CryptographicHashPrivate(*this);
+    }
 
 private:
     MD5_CTX ctx;
@@ -64,10 +70,13 @@ class QnSha1CryptographicHashPrivate: public QnCryptographicHashPrivate
 {
 public:
     virtual void init() override { SHA1_Init(&ctx); }
-    virtual void update(const char *data, int length) override { SHA1_Update(&ctx, data, length); }
-    virtual void final(unsigned char *result) override { SHA1_Final(result, &ctx); }
+    virtual void update(const char* data, int length) override { SHA1_Update(&ctx, data, length); }
+    virtual void final(unsigned char* result) override { SHA1_Final(result, &ctx); }
     virtual int size() const override { return SHA_DIGEST_LENGTH; }
-    virtual QnCryptographicHashPrivate *clone() const override { return new QnSha1CryptographicHashPrivate(*this); }
+    virtual QnCryptographicHashPrivate* clone() const override
+    {
+        return new QnSha1CryptographicHashPrivate(*this);
+    }
 
 private:
     SHA_CTX ctx;
@@ -77,16 +86,22 @@ class QnSha256CryptographicHashPrivate: public QnCryptographicHashPrivate
 {
 public:
     virtual void init() override { SHA256_Init(&ctx); }
-    virtual void update(const char *data, int length) override { SHA256_Update(&ctx, data, length); }
-    virtual void final(unsigned char *result) override { SHA256_Final(result, &ctx); }
+    virtual void update(const char* data, int length) override
+    {
+        SHA256_Update(&ctx, data, length);
+    }
+    virtual void final(unsigned char* result) override { SHA256_Final(result, &ctx); }
     virtual int size() const override { return SHA256_DIGEST_LENGTH; }
-    virtual QnCryptographicHashPrivate *clone() const override { return new QnSha256CryptographicHashPrivate(*this); }
+    virtual QnCryptographicHashPrivate* clone() const override
+    {
+        return new QnSha256CryptographicHashPrivate(*this);
+    }
 
 private:
     SHA256_CTX ctx;
 };
 
-using EvpFunc = const EVP_MD*(*)();
+using EvpFunc = const EVP_MD* (*)();
 
 class EvpDigestCalculator: public QnCryptographicHashPrivate
 {
@@ -164,29 +179,31 @@ QnCryptographicHash::QnCryptographicHash(Algorithm algorithm)
 {
     switch (algorithm)
     {
-    case Md4:
-        d.reset(new QnMd4CryptographicHashPrivate());
-        break;
-    case Md5:
-        d.reset(new QnMd5CryptographicHashPrivate());
-        break;
-    case Sha1:
-        d.reset(new QnSha1CryptographicHashPrivate());
-        break;
-    case Sha256:
-        d.reset(new QnSha256CryptographicHashPrivate());
-        break;
-    case Sha3_256:
-        d.reset(new QnSha3256CryptographicHashPrivate());
-        break;
-    case Sha3_512:
-        d.reset(new QnSha3512CryptographicHashPrivate());
-        break;
-    default:
-        std::printf("%s: Invalid cryptographic hash algorithm %d.\n",
-            Q_FUNC_INFO, static_cast<int>(algorithm));
-        d.reset(new QnMd5CryptographicHashPrivate());
-        break;
+        case Md4:
+            d.reset(new QnMd4CryptographicHashPrivate());
+            break;
+        case Md5:
+            d.reset(new QnMd5CryptographicHashPrivate());
+            break;
+        case Sha1:
+            d.reset(new QnSha1CryptographicHashPrivate());
+            break;
+        case Sha256:
+            d.reset(new QnSha256CryptographicHashPrivate());
+            break;
+        case Sha3_256:
+            d.reset(new QnSha3256CryptographicHashPrivate());
+            break;
+        case Sha3_512:
+            d.reset(new QnSha3512CryptographicHashPrivate());
+            break;
+        default:
+            std::printf(
+                "%s: Invalid cryptographic hash algorithm %d.\n",
+                Q_FUNC_INFO,
+                static_cast<int>(algorithm));
+            d.reset(new QnMd5CryptographicHashPrivate());
+            break;
     }
 
     d->init();
@@ -197,19 +214,19 @@ QnCryptographicHash::~QnCryptographicHash()
     return;
 }
 
-QnCryptographicHash::QnCryptographicHash(const QnCryptographicHash &other)
+QnCryptographicHash::QnCryptographicHash(const QnCryptographicHash& other)
 {
     d.reset(other.d->clone());
 }
 
-QnCryptographicHash &QnCryptographicHash::operator=(const QnCryptographicHash &other)
+QnCryptographicHash& QnCryptographicHash::operator=(const QnCryptographicHash& other)
 {
     this->~QnCryptographicHash();
     new (this) QnCryptographicHash(other);
     return *this;
 }
 
-void QnCryptographicHash::addData(const char *data, int length)
+void QnCryptographicHash::addData(const char* data, int length)
 {
     d->update(data, length);
 }
@@ -273,7 +290,7 @@ QByteArray QnCryptographicHash::result() const
     return d->m_result;
 }
 
-QByteArray QnCryptographicHash::hash(const QByteArray &data, Algorithm algorithm)
+QByteArray QnCryptographicHash::hash(const QByteArray& data, Algorithm algorithm)
 {
     QnCryptographicHash hash(algorithm);
     hash.addData(data);

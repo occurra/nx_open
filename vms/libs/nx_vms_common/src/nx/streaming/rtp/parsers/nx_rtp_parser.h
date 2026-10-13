@@ -16,6 +16,7 @@ namespace nx::rtp {
 class NX_VMS_COMMON_API QnNxRtpParser: public VideoStreamParser
 {
     using base_type = VideoStreamParser;
+
 public:
     /** @param tag Human-readable tag for logging. */
     QnNxRtpParser(nx::Uuid deviceId, const QString& tag);
@@ -49,9 +50,10 @@ public:
 private:
     void logMediaData(const QnAbstractMediaDataPtr& metadata);
     Result processData(
-        const RtpHeader& rtpHeader, const uint8_t* payload,
-        int dataSize, bool& gotData);
-
+        const RtpHeader& rtpHeader,
+        const uint8_t* payload,
+        int dataSize,
+        bool& gotData);
 
 private:
     nx::utils::SoftwareVersion m_serverVersion;

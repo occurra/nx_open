@@ -54,4 +54,4 @@ NX_UTILS_API std::optional<std::string> encode(
     const std::string& salt,
     const Options& options = {});
 
-} // nx::scrypt
+} // namespace nx::scrypt

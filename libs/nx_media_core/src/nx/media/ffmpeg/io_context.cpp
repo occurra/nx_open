@@ -13,8 +13,8 @@ extern "C" {
 
 namespace nx::media::ffmpeg {
 
-static int ffmpegRead(void *opaque, uint8_t* buffer, int size);
-static int ffmpegWrite(void *opaque, const uint8_t* buffer, int size);
+static int ffmpegRead(void* opaque, uint8_t* buffer, int size);
+static int ffmpegWrite(void* opaque, const uint8_t* buffer, int size);
 static int64_t ffmpegSeek(void* opaque, int64_t pos, int whence);
 
 IoContext::IoContext(uint32_t bufferSize, bool writable, bool seekable)
@@ -44,7 +44,7 @@ AVIOContext* IoContext::getAvioContext()
     return m_avioContext;
 }
 
-static int ffmpegRead(void *opaque, uint8_t* buffer, int size)
+static int ffmpegRead(void* opaque, uint8_t* buffer, int size)
 {
     IoContext* owner = reinterpret_cast<IoContext*>(opaque);
     if (!owner->readHandler)
@@ -53,7 +53,7 @@ static int ffmpegRead(void *opaque, uint8_t* buffer, int size)
     return bytesRead == 0 ? AVERROR_EOF : bytesRead;
 }
 
-static int ffmpegWrite(void *opaque, const uint8_t* buffer, int size)
+static int ffmpegWrite(void* opaque, const uint8_t* buffer, int size)
 {
     IoContext* owner = reinterpret_cast<IoContext*>(opaque);
     if (!owner->writeHandler)
@@ -75,36 +75,34 @@ IoContextPtr openFile(const std::string& fileName)
     if (!file->is_open())
         return nullptr;
 
-    auto ioContext = std::make_unique<IoContext>(1024*64, /*writable*/false, /*seekable*/true);
-    ioContext->readHandler =
-        [file](uint8_t* buffer, int size)
-        {
-            file->read((char*)buffer, size);
-            return (int)file->gcount();
-        };
+    auto ioContext = std::make_unique<IoContext>(1024 * 64, /*writable*/ false, /*seekable*/ true);
+    ioContext->readHandler = [file](uint8_t* buffer, int size)
+    {
+        file->read((char*) buffer, size);
+        return (int) file->gcount();
+    };
 
-    ioContext->seekHandler =
-        [file] (int64_t pos, int whence)
-        {
-            if (file->eof())
-                file->clear();
+    ioContext->seekHandler = [file](int64_t pos, int whence)
+    {
+        if (file->eof())
+            file->clear();
 
-            switch (whence)
-            {
-                case SEEK_SET:
-                    file->seekg(pos, std::ios_base::beg);
-                    break;
-                case SEEK_CUR:
-                    file->seekg(pos, std::ios_base::cur);
-                    break;
-                case SEEK_END:
-                    file->seekg(pos, std::ios_base::end);
-                    break;
-                default:
-                    return AVERROR(ENOENT);
-            }
-            return (int)file->tellg();
-        };
+        switch (whence)
+        {
+            case SEEK_SET:
+                file->seekg(pos, std::ios_base::beg);
+                break;
+            case SEEK_CUR:
+                file->seekg(pos, std::ios_base::cur);
+                break;
+            case SEEK_END:
+                file->seekg(pos, std::ios_base::end);
+                break;
+            default:
+                return AVERROR(ENOENT);
+        }
+        return (int) file->tellg();
+    };
     return ioContext;
 }
 
@@ -120,35 +118,33 @@ IoContextPtr fromBuffer(const uint8_t* data, int size)
     memoryFile->size = size;
     memoryFile->data = data;
 
-    auto ioContext = std::make_unique<IoContext>(1024*64, /*writable*/false, /*seekable*/true);
-    ioContext->readHandler =
-        [memoryFile](uint8_t* buffer, int size) -> int
-        {
-            auto actualSize = std::min((int) (memoryFile->size - memoryFile->pos), size);
-            memcpy(buffer, memoryFile->data + memoryFile->pos, actualSize);
-            memoryFile->pos += actualSize;
-            return actualSize;
-        };
+    auto ioContext = std::make_unique<IoContext>(1024 * 64, /*writable*/ false, /*seekable*/ true);
+    ioContext->readHandler = [memoryFile](uint8_t* buffer, int size) -> int
+    {
+        auto actualSize = std::min((int) (memoryFile->size - memoryFile->pos), size);
+        memcpy(buffer, memoryFile->data + memoryFile->pos, actualSize);
+        memoryFile->pos += actualSize;
+        return actualSize;
+    };
 
-    ioContext->seekHandler =
-        [memoryFile] (int64_t pos, int whence) -> int64_t
+    ioContext->seekHandler = [memoryFile](int64_t pos, int whence) -> int64_t
+    {
+        switch (whence)
         {
-            switch (whence)
-            {
-                case SEEK_SET:
-                    memoryFile->pos = pos;
-                    break;
-                case SEEK_CUR:
-                    memoryFile->pos += pos;
-                    break;
-                case SEEK_END:
-                    memoryFile->pos = memoryFile->size - pos;
-                    break;
-                default:
-                    return AVERROR(ENOENT);
-            }
-            return memoryFile->pos;
-        };
+            case SEEK_SET:
+                memoryFile->pos = pos;
+                break;
+            case SEEK_CUR:
+                memoryFile->pos += pos;
+                break;
+            case SEEK_END:
+                memoryFile->pos = memoryFile->size - pos;
+                break;
+            default:
+                return AVERROR(ENOENT);
+        }
+        return memoryFile->pos;
+    };
     return ioContext;
 }
 
@@ -158,33 +154,31 @@ IoContextPtr createFile(const std::string& fileName)
     if (!file->is_open())
         return nullptr;
 
-    auto ioContext = std::make_unique<IoContext>(1024*64, /*writable*/true, /*seekable*/true);
-    ioContext->writeHandler =
-        [file](const uint8_t* buffer, int size) -> int
-        {
-            file->write((char*)buffer, size);
-            return size;
-        };
+    auto ioContext = std::make_unique<IoContext>(1024 * 64, /*writable*/ true, /*seekable*/ true);
+    ioContext->writeHandler = [file](const uint8_t* buffer, int size) -> int
+    {
+        file->write((char*) buffer, size);
+        return size;
+    };
 
-    ioContext->seekHandler =
-        [file] (int64_t pos, int whence) -> int64_t
+    ioContext->seekHandler = [file](int64_t pos, int whence) -> int64_t
+    {
+        switch (whence)
         {
-            switch (whence)
-            {
-                case SEEK_SET:
-                    file->seekp(pos, std::ios_base::beg);
-                    break;
-                case SEEK_CUR:
-                    file->seekp(pos, std::ios_base::cur);
-                    break;
-                case SEEK_END:
-                    file->seekp(pos, std::ios_base::end);
-                    break;
-                default:
-                    return AVERROR(ENOENT);
-            }
-            return (int)file->tellp();
-        };
+            case SEEK_SET:
+                file->seekp(pos, std::ios_base::beg);
+                break;
+            case SEEK_CUR:
+                file->seekp(pos, std::ios_base::cur);
+                break;
+            case SEEK_END:
+                file->seekp(pos, std::ios_base::end);
+                break;
+            default:
+                return AVERROR(ENOENT);
+        }
+        return (int) file->tellp();
+    };
     return ioContext;
 }
 

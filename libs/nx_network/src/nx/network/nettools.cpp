@@ -4,8 +4,6 @@
 #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "nettools.h"
-
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -20,36 +18,36 @@
 #include <nx/utils/log/log.h>
 #include <nx/utils/string.h>
 
+#include "nettools.h"
+
 #if defined(Q_OS_LINUX)
     #include <netdb.h>
 
     #ifndef Q_OS_ANDROID
         #include <ifaddrs.h>
     #endif
-    #include <unistd.h>
-
-    #include <net/if.h>
     #include <sys/ioctl.h>
     #include <sys/socket.h>
     #include <sys/types.h>
+    #include <unistd.h>
 
-    #include <net/if_arp.h>
-
-    #include <netinet/in.h>
     #include <arpa/inet.h>
+    #include <net/if.h>
+    #include <net/if_arp.h>
+    #include <netinet/in.h>
 #elif defined(Q_OS_MAC)
     #include <err.h>
     #include <ifaddrs.h>
     #include <stdio.h>
     #include <stdlib.h>
-
-    #include <net/if.h>
-    #include <net/if_dl.h>
-    #include <netinet/in.h>
     #include <sys/file.h>
     #include <sys/socket.h>
     #include <sys/sysctl.h>
     #include <sys/types.h>
+
+    #include <net/if.h>
+    #include <net/if_dl.h>
+    #include <netinet/in.h>
     #ifndef Q_OS_IOS
         #include <net/route.h>
         #include <netinet/if_ether.h>
@@ -58,10 +56,13 @@
 
 namespace {
 
-// NOTE: It is unknown if this legacy is used by somebody. Better to remove it some day if possible.
+// NOTE: It is unknown if this legacy is used by somebody. Better to remove it some day if
+// possible.
 static QList<QHostAddress> allowedAddresses;
 
-struct nettoolsFunctionsTag {};
+struct nettoolsFunctionsTag
+{
+};
 static const nx::log::Tag kLogTag(typeid(nettoolsFunctionsTag));
 static const std::chrono::seconds kUpdateNetworkInterfacesTimeout(10);
 
@@ -90,7 +91,9 @@ QHostAddress QnInterfaceAndAddr::subNetworkAddress() const
 bool QnInterfaceAndAddr::isHostBelongToIpv4Network(const QHostAddress& address) const
 {
     auto between = [](const quint32 min, const quint32 value, const quint32 max)
-    { return min <= value && value < max; };
+    {
+        return min <= value && value < max;
+    };
 
     return between(
         subNetworkAddress().toIPv4Address(),
@@ -128,7 +131,7 @@ QnInterfaceAndAddrList getAllIPv4Interfaces(
 {
     QList<QnInterfaceAndAddr> result;
     QList<QNetworkInterface> interfaces = allInterfaces();
-    for (const QNetworkInterface &iface : interfaces)
+    for (const QNetworkInterface& iface: interfaces)
     {
         if (!iface.flags().testFlag(QNetworkInterface::IsUp))
             continue;
@@ -144,7 +147,7 @@ QnInterfaceAndAddrList getAllIPv4Interfaces(
         bool addInterfaceAnyway =
             interfaceListPolicy == InterfaceListPolicy::allowInterfacesWithoutAddress;
         QList<QNetworkAddressEntry> addresses = iface.addressEntries();
-        for (const QNetworkAddressEntry& address : addresses)
+        for (const QNetworkAddressEntry& address: addresses)
         {
             if (ignoreLoopback && address.ip() == QHostAddress::LocalHost)
                 continue;
@@ -153,8 +156,8 @@ QnInterfaceAndAddrList getAllIPv4Interfaces(
 
             if (allowedAddresses.isEmpty() || allowedAddresses.contains(address.ip()))
             {
-                result.append(QnInterfaceAndAddr(
-                    iface.name(), address.ip(), address.netmask(), iface));
+                result.append(
+                    QnInterfaceAndAddr(iface.name(), address.ip(), address.netmask(), iface));
                 addInterfaceAnyway = false;
                 if (interfaceListPolicy != InterfaceListPolicy::keepAllAddressesPerInterface)
                     break;
@@ -202,13 +205,13 @@ QList<HostAddress> allLocalAddresses(AddressFilters filter)
     QList<QNetworkInterface> interfaces = allInterfaces();
 
     QList<HostAddress> result;
-    for (const QNetworkInterface &iface : interfaces)
+    for (const QNetworkInterface& iface: interfaces)
     {
         if (!(iface.flags() & QNetworkInterface::IsUp))
             continue;
 
-        if ((iface.flags().testFlag(QNetworkInterface::IsLoopBack)) &&
-            (filter.testFlag(AddressFilter::noLoopback)))
+        if ((iface.flags().testFlag(QNetworkInterface::IsLoopBack))
+            && (filter.testFlag(AddressFilter::noLoopback)))
         {
             continue;
         }
@@ -258,7 +261,7 @@ QString getIfaceIPv4Addr(const QNetworkInterface& iface)
     for (const auto& addr: iface.addressEntries())
     {
         if (QAbstractSocket::IPv4Protocol == addr.ip().protocol() && // if it has IPV4
-            addr.ip() != QHostAddress::LocalHost &&// if this is not 0.0.0.0 or 127.0.0.1
+            addr.ip() != QHostAddress::LocalHost && // if this is not 0.0.0.0 or 127.0.0.1
             addr.netmask().toIPv4Address() != 0) // and mask !=0
             return addr.ip().toString();
     }
@@ -271,10 +274,10 @@ QSet<QString> getLocalIpV4AddressList()
     QSet<QString> result;
 
     QList<QNetworkInterface> interfaces = allInterfaces();
-    for (const QNetworkInterface &iface: interfaces)
+    for (const QNetworkInterface& iface: interfaces)
     {
-        if (!(iface.flags() & QNetworkInterface::IsUp) ||
-            (iface.flags() & QNetworkInterface::IsLoopBack))
+        if (!(iface.flags() & QNetworkInterface::IsUp)
+            || (iface.flags() & QNetworkInterface::IsLoopBack))
         {
             continue;
         }
@@ -292,7 +295,7 @@ QSet<QString> getLocalIpV4AddressList()
 std::set<HostAddress> getLocalIpV4HostAddressList()
 {
     std::set<HostAddress> localIpList;
-    for (const auto& ip : nx::network::getLocalIpV4AddressList())
+    for (const auto& ip: nx::network::getLocalIpV4AddressList())
         localIpList.insert(ip.toStdString());
     return localIpList;
 }
@@ -301,20 +304,21 @@ std::set<HostAddress> getLocalIpV4HostAddressList()
 #if defined(Q_OS_WIN)
 
 // this is only works in local networks
-//if net == true it returns the mac of the first device responded on ARP request; in case if net = true it might take time...
+// if net == true it returns the mac of the first device responded on ARP request; in case if net =
+// true it might take time...
 // if net = false it returns last device responded on ARP request
 utils::MacAddress getMacByIP(const QHostAddress& ip, bool net)
 {
     if (net)
     {
         HRESULT hr;
-        IPAddr  ipAddr;
-        ULONG   pulMac[2];
-        ULONG   ulLen;
+        IPAddr ipAddr;
+        ULONG pulMac[2];
+        ULONG ulLen;
 
         ipAddr = htonl(ip.toIPv4Address());
 
-        //ipAddr = inet_addr (ip.toLatin1().data());
+        // ipAddr = inet_addr (ip.toLatin1().data());
         memset(pulMac, 0xff, sizeof(pulMac));
         ulLen = 6;
 
@@ -323,7 +327,7 @@ utils::MacAddress getMacByIP(const QHostAddress& ip, bool net)
         if (ulLen == 0)
             return nx::utils::MacAddress();
 
-        return nx::utils::MacAddress::fromRawData((unsigned char*)pulMac);
+        return nx::utils::MacAddress::fromRawData((unsigned char*) pulMac);
     }
 
     nx::utils::MacAddress res;
@@ -332,7 +336,7 @@ utils::MacAddress getMacByIP(const QHostAddress& ip, bool net)
     unsigned long ulSize = 0;
     GetIpNetTable(0, &ulSize, false);
 
-    MIB_IPNETTABLE *mtb = new MIB_IPNETTABLE[ulSize / sizeof(MIB_IPNETTABLE) + 1];
+    MIB_IPNETTABLE* mtb = new MIB_IPNETTABLE[ulSize / sizeof(MIB_IPNETTABLE) + 1];
 
     if (GetIpNetTable(mtb, &ulSize, false) == NO_ERROR)
     {
@@ -345,7 +349,8 @@ utils::MacAddress getMacByIP(const QHostAddress& ip, bool net)
             QString wip = QString::fromLatin1(addressStr); // ### NLS support?
             if (wip == ip.toString())
             {
-                res = nx::utils::MacAddress::fromRawData((unsigned char*)(mtb->table[i].bPhysAddr));
+                res =
+                    nx::utils::MacAddress::fromRawData((unsigned char*) (mtb->table[i].bPhysAddr));
                 break;
             }
         }
@@ -357,14 +362,14 @@ utils::MacAddress getMacByIP(const QHostAddress& ip, bool net)
 }
 
 #elif defined(Q_OS_MAC)
-#if defined(Q_OS_IOS)
+    #if defined(Q_OS_IOS)
 utils::MacAddress getMacByIP(const QHostAddress& /*ip*/, bool /*net*/)
 {
     return nx::utils::MacAddress();
 }
-#else // defined(Q_OS_IOS)
+    #else // defined(Q_OS_IOS)
 
-#define ROUNDUP(a) ((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
+        #define ROUNDUP(a) ((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 
 utils::MacAddress getMacByIP(const QHostAddress& ip, bool /*net*/)
 {
@@ -398,16 +403,19 @@ utils::MacAddress getMacByIP(const QHostAddress& ip, bool /*net*/)
     char* next = buf.get();
     while (next < lim)
     {
-        struct rt_msghdr *rtm = (struct rt_msghdr *)next;
-        struct sockaddr_inarp *sinarp = (struct sockaddr_inarp *)(rtm + 1);
-        struct sockaddr_dl *sdl = (struct sockaddr_dl *)((char *)sinarp + ROUNDUP(sinarp->sin_len));
+        struct rt_msghdr* rtm = (struct rt_msghdr*) next;
+        struct sockaddr_inarp* sinarp = (struct sockaddr_inarp*) (rtm + 1);
+        struct sockaddr_dl* sdl =
+            (struct sockaddr_dl*) ((char*) sinarp + ROUNDUP(sinarp->sin_len));
 
         if (sdl->sdl_alen)
         {
             /* complete ARP entry */
-            NX_DEBUG(kLogTag, nx::format("%1 ? %2").arg(ip.toIPv4Address()).arg(ntohl(sinarp->sin_addr.s_addr)));
+            NX_DEBUG(
+                kLogTag,
+                nx::format("%1 ? %2").arg(ip.toIPv4Address()).arg(ntohl(sinarp->sin_addr.s_addr)));
             if (ip.toIPv4Address() == ntohl(sinarp->sin_addr.s_addr))
-                return nx::utils::MacAddress::fromRawData((unsigned char*)LLADDR(sdl));
+                return nx::utils::MacAddress::fromRawData((unsigned char*) LLADDR(sdl));
         }
 
         next += rtm->rtm_msglen;
@@ -416,15 +424,21 @@ utils::MacAddress getMacByIP(const QHostAddress& ip, bool /*net*/)
     return nx::utils::MacAddress();
 }
 
-#endif
+    #endif
 
 #else // Linux
 utils::MacAddress getMacByIP(const QHostAddress& ip, bool /*net*/)
 {
     const auto interfaceList = getAllIPv4Interfaces(
-        /* ignore usb */ false, InterfaceListPolicy::keepAllAddressesPerInterface);
-    const auto it = std::find_if(interfaceList.begin(), interfaceList.end(),
-        [&ip](const auto& iface) { return iface.isHostBelongToIpv4Network(ip); });
+        /* ignore usb */ false,
+        InterfaceListPolicy::keepAllAddressesPerInterface);
+    const auto it = std::find_if(
+        interfaceList.begin(),
+        interfaceList.end(),
+        [&ip](const auto& iface)
+        {
+            return iface.isHostBelongToIpv4Network(ip);
+        });
     if (it == interfaceList.end())
         return nx::utils::MacAddress(); //< Can't proceed without interface name.
 
@@ -487,13 +501,11 @@ bool isNewDiscoveryAddressBetter(
     // TODO: Compare binary values, not strings!
     // TODO: Rename or move this function out of here.
 
-    const auto eq1 = nx::utils::maxCommonPrefix(
-        host.toString(),
-        newAddress.toString().toStdString()).size();
+    const auto eq1 =
+        nx::utils::maxCommonPrefix(host.toString(), newAddress.toString().toStdString()).size();
 
-    const auto eq2 = nx::utils::maxCommonPrefix(
-        host.toString(),
-        oldAddress.toString().toStdString()).size();
+    const auto eq2 =
+        nx::utils::maxCommonPrefix(host.toString(), oldAddress.toString().toStdString()).size();
 
     return eq1 > eq2;
 }
@@ -502,7 +514,7 @@ int getFirstMacAddress(char MAC_str[MAC_ADDR_LEN], char** host)
 {
     memset(MAC_str, 0, MAC_ADDR_LEN);
     *host = 0;
-    for (const auto& iface : QNetworkInterface::allInterfaces())
+    for (const auto& iface: QNetworkInterface::allInterfaces())
     {
         QByteArray addr = iface.hardwareAddress().toLocal8Bit().replace(':', '-');
         if (addr.isEmpty() || addr == QByteArray("00-00-00-00-00-00"))
@@ -528,33 +540,36 @@ int getMacFromPrimaryIF(char MAC_str[MAC_ADDR_LEN], char** host)
 int getMacFromEth0(char MAC_str[MAC_ADDR_LEN], char** host)
 {
     memset(MAC_str, 0, MAC_ADDR_LEN);
-#define HWADDR_len 6
+    #define HWADDR_len 6
     struct ifreq ifr;
     int s = socket(AF_INET, SOCK_DGRAM, 0);
     if (s == -1)
         return -1;
-    auto SCOPED_GUARD_FUNC = [](int* socketHandlePtr) { close(*socketHandlePtr); };
+    auto SCOPED_GUARD_FUNC = [](int* socketHandlePtr)
+    {
+        close(*socketHandlePtr);
+    };
     std::unique_ptr<int, decltype(SCOPED_GUARD_FUNC)> SCOPED_GUARD(&s, SCOPED_GUARD_FUNC);
 
-    //TODO #akolesnikov read interface name
+    // TODO #akolesnikov read interface name
     strcpy(ifr.ifr_name, "eth0");
 
-    //reading mac address
+    // reading mac address
     if (ioctl(s, SIOCGIFHWADDR, &ifr) == -1)
         return -1;
     for (int i = 0; i < HWADDR_len; i++)
     {
         char buffer[4];
-        snprintf(buffer, sizeof(buffer), "%02X-", ((unsigned char*)ifr.ifr_hwaddr.sa_data)[i]);
+        snprintf(buffer, sizeof(buffer), "%02X-", ((unsigned char*) ifr.ifr_hwaddr.sa_data)[i]);
         memmove(&MAC_str[i * 3], buffer, 3);
     }
     MAC_str[MAC_ADDR_LEN - 1] = 0;
 
-    //reading interface IP
+    // reading interface IP
     if (ioctl(s, SIOCGIFADDR, &ifr) == -1)
         return -1;
-    const sockaddr_in* ip = (sockaddr_in*)&ifr.ifr_addr;
-    //TODO #akolesnikov replace with inet_ntop?
+    const sockaddr_in* ip = (sockaddr_in*) &ifr.ifr_addr;
+    // TODO #akolesnikov replace with inet_ntop?
     *host = inet_ntoa(ip->sin_addr);
 
     return 0;
@@ -569,7 +584,7 @@ int getMacFromPrimaryIF(char MAC_str[MAC_ADDR_LEN], char** host)
         return result;
 }
 
-#else    //mac, bsd
+#else // mac, bsd
 
 int getMacFromPrimaryIF(char MAC_str[MAC_ADDR_LEN], char** host)
 {
@@ -581,14 +596,23 @@ int getMacFromPrimaryIF(char MAC_str[MAC_ADDR_LEN], char** host)
     std::map<std::string, std::string> ifNameToInetAddress;
     for (struct ifaddrs* ifaptr = ifap; ifaptr != NULL; ifaptr = (ifaptr)->ifa_next)
     {
-        std::cout << "family = " << (int)((ifaptr)->ifa_addr)->sa_family << std::endl;
+        std::cout << "family = " << (int) ((ifaptr)->ifa_addr)->sa_family << std::endl;
         switch (((ifaptr)->ifa_addr)->sa_family)
         {
             case AF_LINK:
             {
-                unsigned char* ptr = (unsigned char *)LLADDR((struct sockaddr_dl *)(ifaptr)->ifa_addr);
-                snprintf(MAC_str, MAC_ADDR_LEN * sizeof(char), "%02x:%02x:%02x:%02x:%02x:%02x",
-                    *ptr, *(ptr + 1), *(ptr + 2), *(ptr + 3), *(ptr + 4), *(ptr + 5));
+                unsigned char* ptr =
+                    (unsigned char*) LLADDR((struct sockaddr_dl*) (ifaptr)->ifa_addr);
+                snprintf(
+                    MAC_str,
+                    MAC_ADDR_LEN * sizeof(char),
+                    "%02x:%02x:%02x:%02x:%02x:%02x",
+                    *ptr,
+                    *(ptr + 1),
+                    *(ptr + 2),
+                    *(ptr + 3),
+                    *(ptr + 4),
+                    *(ptr + 5));
                 std::cout << "AF_LINK. " << ifaptr->ifa_name << ": " << MAC_str << std::endl;
                 ifNameToLinkAddress[ifaptr->ifa_name] = MAC_str;
                 break;
@@ -596,8 +620,11 @@ int getMacFromPrimaryIF(char MAC_str[MAC_ADDR_LEN], char** host)
 
             case AF_INET:
             {
-                std::cout << "AF_INET. " << ifaptr->ifa_name << ": " << inet_ntoa(((struct sockaddr_in*)ifaptr->ifa_addr)->sin_addr) << std::endl;
-                ifNameToInetAddress[ifaptr->ifa_name] = inet_ntoa(((struct sockaddr_in*)ifaptr->ifa_addr)->sin_addr);
+                std::cout << "AF_INET. " << ifaptr->ifa_name << ": "
+                          << inet_ntoa(((struct sockaddr_in*) ifaptr->ifa_addr)->sin_addr)
+                          << std::endl;
+                ifNameToInetAddress[ifaptr->ifa_name] =
+                    inet_ntoa(((struct sockaddr_in*) ifaptr->ifa_addr)->sin_addr);
                 break;
             }
         }
@@ -606,10 +633,10 @@ int getMacFromPrimaryIF(char MAC_str[MAC_ADDR_LEN], char** host)
     freeifaddrs(ifap);
 
     if (ifNameToInetAddress.empty())
-        return -1;    //no ipv4 address
+        return -1; // no ipv4 address
     auto hwIter = ifNameToLinkAddress.find(ifNameToInetAddress.begin()->first);
     if (hwIter == ifNameToLinkAddress.end())
-        return -1;    //ipv4 interface has no link-level address
+        return -1; // ipv4 interface has no link-level address
 
     strncpy(MAC_str, hwIter->second.c_str(), MAC_ADDR_LEN - 1);
     if (host)
@@ -621,7 +648,7 @@ int getMacFromPrimaryIF(char MAC_str[MAC_ADDR_LEN], char** host)
 
 QString getMacFromPrimaryIF()
 {
-    char  mac[MAC_ADDR_LEN];
+    char mac[MAC_ADDR_LEN];
     char* host = 0;
     if (getMacFromPrimaryIF(mac, &host) != 0)
         return QString();

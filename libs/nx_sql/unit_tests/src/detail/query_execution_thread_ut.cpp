@@ -1,9 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <memory>
 
+#include <gtest/gtest.h>
 
 #include <nx/sql/detail/query_execution_thread.h>
 
@@ -11,16 +10,12 @@
 
 namespace nx::sql::detail::test {
 
-class QueryExecutionThread:
-    public nx::sql::test::BaseDbTest
+class QueryExecutionThread: public nx::sql::test::BaseDbTest
 {
     using base_type = nx::sql::test::BaseDbTest;
 
 public:
-    QueryExecutionThread()
-    {
-        initializeDatabase();
-    }
+    QueryExecutionThread() { initializeDatabase(); }
 
 protected:
     void givenRunningThread()
@@ -32,15 +27,9 @@ protected:
         m_thread->start();
     }
 
-    void whenAskedThreadToStop()
-    {
-        m_thread->pleaseStop();
-    }
+    void whenAskedThreadToStop() { m_thread->pleaseStop(); }
 
-    void verifyThatThreadHasStopped()
-    {
-        m_thread->join();
-    }
+    void verifyThatThreadHasStopped() { m_thread->join(); }
 
 private:
     QueryExecutorQueue m_queryExecutorQueue;
