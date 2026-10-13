@@ -655,12 +655,6 @@ void AsyncClient::doRequest(const Method& method, const nx::Url& urlOriginal)
             m_harEntry->setRequestBody(m_request.messageBody);
     }
 
-    m_telemetrySpan = telemetry::HttpSpan::clientSpan(
-        method.toString(),
-        url.path().toStdString(),
-        m_request.headers);
-    auto spanScope = m_telemetrySpan.activate();
-
     initiateHttpMessageDelivery();
 }
 
@@ -974,8 +968,6 @@ void AsyncClient::onMessageReceived(Message message)
         return;
     }
 
-    auto spanScope = m_telemetrySpan.activate();
-
     m_response = std::move(message);
 
     m_isPersistentConnection = (m_response.version() == nx::network::http::http_1_1)
@@ -992,8 +984,6 @@ void AsyncClient::onMessageReceived(Message message)
         emitDone();
         return;
     }
-
-    m_telemetrySpan.setStatusCode(m_response.response->statusLine.statusCode);
 
     std::string responseText;
     if (logTraffic())
@@ -1189,8 +1179,6 @@ void AsyncClient::initiateHttpMessageDelivery()
     dispatch(
         [this, connectionReusePolicy]()
         {
-            auto spanScope = m_telemetrySpan.activate();
-
             switch (connectionReusePolicy)
             {
                 case ConnectionReusePolicy::establishedPipeline:
@@ -1306,7 +1294,6 @@ void AsyncClient::initiateTcpConnection()
     m_socket = SocketFactory::createStreamSocket(
         proxyEndpoint() ? proxyAdapterFunc() : m_adapterFunc,
         isSecureConnection,
-        nx::network::NatTraversalSupport::enabled,
         ipVersion);
     m_socket->bindToAioThread(getAioThread());
     if (m_keepAliveOptions)
@@ -1584,17 +1571,6 @@ void AsyncClient::prepareRequestHeaders(bool useHttp11, const Method& httpMethod
 
 void AsyncClient::addAppropriateAuthenticationInformation()
 {
-    // Adding X-Nx-User-Name to help server to port data from 2.1 to 2.3 and to 3.0
-    // (generate user's digest after changing realm).
-    // TODO: #akolesnikov Remove it after version prior to 3.0 support is over.
-    if (!credentials().username.empty()
-        && m_request.headers.find(Qn::CUSTOM_USERNAME_HEADER_NAME) == m_request.headers.end())
-    {
-        nx::network::http::insertOrReplaceHeader(
-            &m_request.headers,
-            HttpHeader(Qn::CUSTOM_USERNAME_HEADER_NAME, credentials().username));
-    }
-
     if (proxyCredentials().authToken.isBearerToken())
     {
         header::BearerAuthorization bearerAuthorization(proxyCredentials().authToken.value);
@@ -1915,13 +1891,7 @@ AsyncClient::Result AsyncClient::emitDone()
 {
     m_lastReportedMessageNumber = m_currentMessageNumber;
 
-    auto span = m_telemetrySpan; //< AsyncClient may be destroyed during `invokeHandler`.
-
-    const auto result = invokeHandler(m_onDone);
-
-    span.end();
-
-    return result;
+    return invokeHandler(m_onDone);
 }
 
 AsyncClient::Result AsyncClient::emitRequestHasBeenSent(bool authorizationTried)
@@ -1947,31 +1917,19 @@ AsyncClient::Result AsyncClient::invokeHandler(
     if (!handler)
         return Result::proceed;
 
-    auto span = m_telemetrySpan;
-    auto spanScope = span.activate();
-
     const auto requestSequenceBak = m_requestSequence.load();
     nx::utils::InterruptionFlag::Watcher objectDestructionWatcher(&m_objectDestructionFlag);
 
     handler(args...);
 
     if (objectDestructionWatcher.interrupted())
-    {
-        span.end();
         return Result::thisDestroyed;
-    }
 
     if (m_requestSequence != requestSequenceBak)
-    {
-        span.end();
         return Result::newRequestScheduled;
-    }
 
     if (!m_socket && !m_messagePipeline)
-    {
-        span.end();
         return Result::cancelled;
-    }
 
     return Result::proceed;
 }

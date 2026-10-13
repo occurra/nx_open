@@ -10,7 +10,6 @@
 
 #include <nx/network/aio/abstract_pollset.h>
 #include <nx/network/system_socket.h>
-#include <nx/network/udt/udt_socket.h>
 #include <nx/utils/random.h>
 #include <nx/utils/test_support/utils.h>
 
@@ -21,7 +20,6 @@ class PollSetAcceptance: public ::testing::Test
 {
 protected:
     void initializeSocketOfRandomType();
-    void initializeUdtSocket();
     void subscribeSocketsToEvents(int events);
     void unsubscribeSocketFromEvents(Pollable* const socket, int events);
 
@@ -84,12 +82,6 @@ template<typename PollsetHelperType>
 void PollSetAcceptance<PollsetHelperType>::initializeSocketOfRandomType()
 {
     m_sockets.push_back(m_pollsetHelper.createSocketOfRandomType());
-}
-
-template<typename PollsetHelperType>
-void PollSetAcceptance<PollsetHelperType>::initializeUdtSocket()
-{
-    m_sockets.push_back(std::make_unique<UdtStreamSocket>(AF_INET));
 }
 
 template<typename PollsetHelperType>

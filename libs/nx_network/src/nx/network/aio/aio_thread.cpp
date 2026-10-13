@@ -10,7 +10,8 @@
 
 #include "aio_task_queue.h"
 #include "aio_thread_watcher.h"
-#include "pollset_factory.h"
+#include "pollset.h"
+#include "pollset_wrapper.h"
 
 // TODO: #akolesnikov Memory order semantic used with std::atomic.
 // TODO: #akolesnikov Move task queues to socket for optimization.
@@ -18,7 +19,7 @@
 namespace nx::network::aio {
 
 AioThread::AioThread(std::unique_ptr<AbstractPollSet> pollSet, AioThreadWatcher* aioThreadWatcher):
-    m_pollSet(pollSet ? std::move(pollSet) : PollSetFactory::instance()->create()),
+    m_pollSet(pollSet ? std::move(pollSet) : std::make_unique<PollSetWrapper<PollSet>>()),
     m_taskQueue(std::make_unique<detail::AioTaskQueue>(m_pollSet.get()))
 {
     setObjectName("AioThread");

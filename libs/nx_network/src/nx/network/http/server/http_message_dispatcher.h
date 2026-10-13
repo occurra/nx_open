@@ -111,8 +111,6 @@ public:
             return false;
 
         requestContext.pathTemplate = handlerContext->pathTemplate;
-        if (!requestContext.pathTemplate.empty())
-            requestContext.telemetrySpan.setRoute(requestContext.pathTemplate);
 
         auto statisticsKey = requestContext.request.requestLine.method.toString() + " "
             + handlerContext->pathTemplate;

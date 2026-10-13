@@ -163,7 +163,7 @@ void DnsResolver::addEtcHost(const std::string& name, std::vector<HostAddress> a
 {
     std::deque<AddressEntry> entries;
     for (auto& address: addresses)
-        entries.push_back({AddressType::direct, address});
+        entries.push_back({address});
 
     m_predefinedHostResolver->replaceMapping(name, std::move(entries));
 }

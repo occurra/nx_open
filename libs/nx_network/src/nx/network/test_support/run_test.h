@@ -6,9 +6,7 @@
 
 #include <gtest/gtest.h>
 
-#include <nx/network/cloud/cloud_connect_controller.h>
-#include <nx/network/cloud/tunnel/outgoing_tunnel_pool.h>
-#include <nx/network/http/tunneling/detail/client_factory.h>
+#include <nx/network/http/http_async_client.h>
 #include <nx/network/socket_global.h>
 #include <nx/utils/log/log.h>
 #include <nx/utils/test_support/run_test.h>
@@ -27,8 +25,6 @@ protected:
             "======== Test %1.%2 =========",
             test_info.test_suite_name(),
             test_info.name());
-
-        nx::network::http::tunneling::detail::ClientFactory::instance().reset();
     }
 };
 
@@ -39,7 +35,6 @@ inline int runTest(
     int argc,
     const char* argv[],
     nx::utils::test::InitFunction extraInit = nullptr,
-    int socketGlobalsFlags = 0,
     int gtestRunFlags = 0)
 {
     std::vector<std::string> args;
@@ -59,15 +54,11 @@ inline int runTest(
     return nx::utils::test::runTest(
         newArgv.size(),
         newArgv.data(),
-        [extraInit = std::move(extraInit), socketGlobalsFlags](const ArgumentParser& args)
+        [extraInit = std::move(extraInit)](const ArgumentParser& args)
         {
             ::testing::UnitTest::GetInstance()->listeners().Append(new EventRecordingListener());
 
-            auto sgGuard = std::make_unique<SocketGlobalsHolder>(args, socketGlobalsFlags);
-            SocketGlobals::cloud().outgoingTunnelPool().assignOwnPeerId(
-                "ut",
-                nx::Uuid::createUuid());
-            cloud::OutgoingTunnelPool::ignoreOwnPeerIdChange();
+            auto sgGuard = std::make_unique<SocketGlobalsHolder>(args);
 
             nx::utils::test::DeinitFunctions deinitFunctions;
             if (extraInit)
@@ -95,15 +86,9 @@ inline int runTest(
     int argc,
     char* argv[],
     nx::utils::test::InitFunction extraInit = nullptr,
-    int socketGlobalsFlags = 0,
     int gtestRunFlags = 0)
 {
-    return runTest(
-        argc,
-        (const char**) argv,
-        std::move(extraInit),
-        socketGlobalsFlags,
-        gtestRunFlags);
+    return runTest(argc, (const char**) argv, std::move(extraInit), gtestRunFlags);
 }
 
 } // namespace nx::network::test

@@ -56,7 +56,7 @@ class NX_NETWORK_API AioThread: public AbstractAioThread
 {
 public:
     /**
-     * @param pollSet If null, will be created using PollSetFactory.
+     * @param pollSet If null, will be created automatically.
      */
     AioThread(
         std::unique_ptr<AbstractPollSet> pollSet = nullptr,

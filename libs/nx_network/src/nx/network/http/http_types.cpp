@@ -1742,7 +1742,7 @@ Server::Server()
 {
     products.push_back(
         Product{
-            nx::branding::brand().toStdString(),
+            nx::branding::companyId().toStdString(),
             nx::build_info::vmsVersion().toStdString(),
             nx::branding::company().toStdString()});
 }
@@ -2191,7 +2191,7 @@ int ChunkHeader::serialize(nx::Buffer* /*dest*/) const
 std::string userAgentString()
 {
     static const auto defaultUserAgentString = nx::utils::buildString(
-        nx::branding::vmsName().toStdString(),
+        nx::branding::company().toStdString(),
         PRODUCT_NAME_SUFFIX,
         '/',
         nx::build_info::vmsVersion().toStdString(),
@@ -2219,7 +2219,7 @@ header::UserAgent defaultUserAgent()
 std::string serverString()
 {
     static const auto defaultServerString = nx::utils::buildString(
-        nx::branding::vmsName().toStdString(),
+        nx::branding::company().toStdString(),
         '/',
         nx::build_info::vmsVersion().toStdString(),
         " (",

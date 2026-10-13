@@ -7,7 +7,6 @@
 #include <gtest/gtest.h>
 
 #include <nx/network/aio/timer.h>
-#include <nx/network/deprecated/asynchttpclient.h>
 #include <nx/network/http/buffer_source.h>
 #include <nx/network/http/http_async_client.h>
 #include <nx/network/http/http_client.h>
@@ -41,8 +40,10 @@ public:
         http::RequestContext /*requestContext*/,
         nx::network::http::RequestProcessedHandler completionHandler)
     {
+        // Long enough that the client is always gone by the time the handler completes, which
+        // is the situation under test, and no longer: the test waits this out five times over.
         m_timer.start(
-            std::chrono::seconds(5),
+            std::chrono::milliseconds(200),
             [completionHandler = std::move(completionHandler)]
             {
                 completionHandler(nx::network::http::StatusCode::ok);
@@ -75,9 +76,10 @@ TEST_F(HttpAsyncServerConnectionTest, connectionRemovedBeforeRequestHasBeenProce
                          .toUrl();
 
     auto client =
-        nx::network::http::AsyncHttpClient::create(nx::network::ssl::kAcceptAnyCertificate);
+        std::make_unique<nx::network::http::AsyncClient>(nx::network::ssl::kAcceptAnyCertificate);
     client->doGet(url);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    client->pleaseStopSync();
     client.reset();
 
     std::this_thread::sleep_for(std::chrono::seconds(1));

@@ -42,8 +42,6 @@ public:
      */
     SocketSequence socketSequence;
 
-    bool isUdtSocket = false;
-
     CommonSocketImpl();
     virtual ~CommonSocketImpl() = default;
 };

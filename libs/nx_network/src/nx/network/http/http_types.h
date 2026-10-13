@@ -18,8 +18,8 @@
 #include <nx/utils/log/assert.h>
 #include <nx/utils/software_version.h>
 #include <nx/utils/std/cpp20.h>
+#include <nx/utils/std_string_utils.h>
 #include <nx/utils/stree/attribute_dictionary.h>
-#include <nx/utils/string.h>
 #include <nx/utils/url.h>
 
 /**

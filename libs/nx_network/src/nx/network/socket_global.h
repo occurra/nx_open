@@ -20,7 +20,6 @@ namespace aio { class AIOService; }
 class AddressResolver;
 
 namespace http { class GlobalContext; }
-namespace cloud { class CloudConnectController; }
 
 struct SocketGlobalsImpl;
 
@@ -46,8 +45,6 @@ public:
     static aio::AIOService& aioService();
     static AddressResolver& addressResolver();
     static http::GlobalContext& httpGlobalContext();
-    static cloud::CloudConnectController& cloud();
-    static int initializationFlags();
 
     /**
      * Allocates required resources. E.g., starts AIO threads.
@@ -56,32 +53,20 @@ public:
      * The following command-line arguments are supported:
      * - aio-thread-pool-size Number of AIO threads to create. By default, 0 (the number of threads
      * is auto-detected)
-     * - cloud-host Cloud domain name to use
      */
-    static void init(const ArgumentParser& arguments, int initializationFlags = 0);
+    static void init(const ArgumentParser& arguments);
 
     /**
      * Must be called before any socket use.
      */
-    static void init(
-        int initializationFlags = 0,
-        const std::string& customCloudHost = std::string());
+    static void init();
 
     static void deinit(); /**< Should be called when sockets are not needed any more. */
     static void verifyInitialization();
     static bool isInitialized();
 
-    /**
-     * Change the cloud host to the given value.
-     * Warning! This function is not safe in any means. Do not use it directly in the production
-     * code. For debug/support/developer purposes only.
-     */
-    static void switchCloudHost(const std::string& customCloudHost);
-
     static void printArgumentsHelp(std::ostream* outputStream);
     static void applyArguments(const ArgumentParser& arguments);
-
-    bool isUdtEnabled() const;
 
     /**
      * Block sockets from connecting to a host that matches the regular expression given with
@@ -109,13 +94,8 @@ public:
     class InitGuard
     {
     public:
-        InitGuard(int initializationFlags = 0) { init(initializationFlags); }
-
-        InitGuard(const ArgumentParser& arguments, int initializationFlags = 0)
-        {
-            init(arguments, initializationFlags);
-        }
-
+        InitGuard() { init(); }
+        InitGuard(const ArgumentParser& arguments) { init(arguments); }
         ~InitGuard() { deinit(); }
 
         InitGuard(const InitGuard&) = delete;
@@ -130,10 +110,7 @@ private:
     debug::ObjectCounters m_debugCounters;
     nx::utils::debug::AllocationAnalyzer m_allocationAnalyzer;
 
-    /**
-     * @param initializationFlags Bitset of nx::network::InitializationFlags.
-     */
-    SocketGlobals(int initializationFlags);
+    SocketGlobals();
     ~SocketGlobals();
 
     SocketGlobals(const SocketGlobals&) = delete;
@@ -143,9 +120,6 @@ private:
 
     void initializeNetworking(const ArgumentParser& arguments);
     void applyRedirectHosts();
-
-    void initializeCloudConnectivity(const std::string& customCloudHost);
-    void deinitializeCloudConnectivity();
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -158,21 +132,20 @@ class NX_NETWORK_API SocketGlobalsHolder
 {
 public:
     /**
-     * Invokes SocketGlobalsHolder::initialize(false).
+     * Invokes SocketGlobalsHolder::initialize().
      */
-    SocketGlobalsHolder(int initializationFlags = 0);
-    SocketGlobalsHolder(const ArgumentParser& arguments, int initializationFlags = 0);
+    SocketGlobalsHolder();
+    SocketGlobalsHolder(const ArgumentParser& arguments);
     ~SocketGlobalsHolder();
 
-    void initialize(bool initializePeerId = true);
+    void initialize();
     void uninitialize();
-    void reinitialize(bool initializePeerId = true);
+    void reinitialize();
 
     static SocketGlobalsHolder* instance();
 
 private:
     const nx::ArgumentParser m_args;
-    const int m_initializationFlags;
     std::unique_ptr<SocketGlobals::InitGuard> m_socketGlobalsGuard;
 };
 

@@ -2,7 +2,6 @@
 
 #include "app_info.h"
 
-#include <nx/branding.h>
 #include <nx/utils/string.h>
 
 namespace nx::network {
@@ -10,16 +9,6 @@ namespace nx::network {
 std::string AppInfo::realm()
 {
     return "VMS";
-}
-
-std::string AppInfo::defaultCloudPortalUrl(const std::string& cloudHost)
-{
-    return nx::utils::buildString("https://", cloudHost);
-}
-
-std::string AppInfo::defaultCloudModulesXmlUrl(const std::string& cloudHost)
-{
-    return nx::utils::buildString("https://", cloudHost, "/discovery/v2/cloud_modules.xml");
 }
 
 } // namespace nx::network

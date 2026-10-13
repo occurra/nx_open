@@ -337,18 +337,18 @@ static void testHttpClientForFastRemove(const nx::Url& url)
 
 TEST_F(HttpClientAsync, FastRemove)
 {
-    testHttpClientForFastRemove(lit("http://127.0.0.1/"));
-    testHttpClientForFastRemove(lit("http://localhost/"));
-    testHttpClientForFastRemove(lit("http://doestNotExist.host/"));
+    testHttpClientForFastRemove("http://127.0.0.1/");
+    testHttpClientForFastRemove("http://localhost/");
+    testHttpClientForFastRemove("http://doestNotExist.host/");
 
-    testHttpClientForFastRemove(lit("https://127.0.0.1/"));
-    testHttpClientForFastRemove(lit("https://localhost/"));
-    testHttpClientForFastRemove(lit("https://doestNotExist.host/"));
+    testHttpClientForFastRemove("https://127.0.0.1/");
+    testHttpClientForFastRemove("https://localhost/");
+    testHttpClientForFastRemove("https://doestNotExist.host/");
 }
 
 TEST_F(HttpClientAsync, FastRemoveBadHost)
 {
-    nx::Url url(lit("http://doestNotExist.host/"));
+    nx::Url url("http://doestNotExist.host/");
 
     for (int i = 0; i < 99; ++i)
     {
@@ -390,7 +390,8 @@ TEST_F(HttpClientAsync, motionJpegRetrieval)
     ASSERT_TRUE(m_testHttpServer->bindAndListen());
 
     // fetching mjpeg with async http client
-    const nx::Url url(lit("http://127.0.0.1:%1/mjpg").arg(m_testHttpServer->serverAddress().port));
+    const nx::Url url(
+        QString("http://127.0.0.1:%1/mjpg").arg(m_testHttpServer->serverAddress().port));
 
     struct ClientContext
     {
@@ -509,7 +510,7 @@ private:
         for (std::size_t i = 0; i < m_requests.size(); ++i)
         {
             m_requests[i].url =
-                nx::Url(lit("http://127.0.0.1/AsyncHttpClientTestMultiRequest_%1").arg(i));
+                nx::Url(QString("http://127.0.0.1/AsyncHttpClientTestMultiRequest_%1").arg(i));
             m_requests[i].message = nx::utils::buildString("SimpleMessage_", std::to_string(i));
         }
 
@@ -657,59 +658,6 @@ TEST_F(HttpClientAsyncCustom, ConnectionBreak)
             EXPECT_EQ(nx::Buffer("not enough content"), client->fetchMessageBodyBuffer());
             EXPECT_NE(SystemError::noError, client->lastSysErrorCode());
         });
-}
-
-TEST_F(HttpClientAsyncCustom, DISABLED_cameraThumbnail)
-{
-    static const nx::Buffer kResponseHeader =
-        "HTTP/1.1 204 No Content\r\n"
-        "Date: Wed, 12 Apr 2017 15:14:43 +0000\r\n"
-        "Pragma: no-cache\r\n"
-        "Server: sample_http_server/3.0.0.14559 (Sample Name) Apache/2.4.16 (Unix)\r\n"
-        "Connection: Keep-Alive\r\n"
-        "Keep-Alive: timeout=5\r\n"
-        "Content-Type: application/ubjson\r\n"
-        "Cache-Control: post-check=0, pre-check=0\r\n"
-        "Cache-Control: no-store, no-cache, must-revalidate, max-age=0\r\n"
-        "Content-Length: 46\r\n"
-        "Access-Control-Allow-Origin: *\r\n\r\n";
-
-    static const nx::Buffer kResponseBody(
-        nx::utils::fromHex(ConstBufferRefType(
-            "5b6c000000035355244e6f20696d61676520666f756e6420666f722074686520676976656e20726571756573745d")));
-
-    static const std::string kRequestQuery =
-        "ec2/cameraThumbnail?format=ubjson&cameraId=%7B38c5e727-b304-d188-0733-8619d09baae5%7D"
-        "&time=latest&rotate=-1&height=184&width=0&imageFormat=jpeg&method=after";
-
-    static const nx::network::http::HttpHeaders kRequestHeaders = {
-        {"X-server-guid", "{d16e21d4-0899-0a68-18c5-7e1058f229c4}"},
-        {"X-Nx-User-Name", "admin"},
-        {"X-runtime-guid", "{48c828fc-a821-462d-8015-49ae20b9936e}"},
-        {"Accept-Encoding", "gzip"},
-    };
-
-    start(kResponseHeader + kResponseBody, false);
-    auto client = std::make_unique<AsyncClient>(ssl::kAcceptAnyCertificate);
-    auto clientGuard = nx::utils::makeScopeGuard(
-        [&client]()
-        {
-            client->pleaseStopSync();
-        });
-
-    for (size_t i = 0; i < 5; ++i)
-    {
-        testGet(
-            client.get(),
-            kRequestQuery,
-            [&](nx::network::http::AsyncClient* client)
-            {
-                // Response is invalid, it has a message body with code "204 No Content" what is
-                // forbidden by HTTP RFC.
-                EXPECT_TRUE(client->failed());
-            },
-            kRequestHeaders);
-    }
 }
 
 namespace {

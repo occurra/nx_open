@@ -37,7 +37,6 @@ namespace Protocol {
 
 static constexpr int tcp = 6;
 static constexpr int udp = 17;
-static constexpr int udt = 256;
 
 /**
  * Custom protocol numbers should start with incrementing this number.

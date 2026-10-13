@@ -17,8 +17,7 @@ SystemError::ErrorCode TextIpAddressResolver::resolve(
 
     if (ipVersion == AF_INET && hostAddress.ipV4())
     {
-        resolveResult->entries.push_back(
-            {{AddressEntry(AddressType::direct, *hostAddress.ipV4())}});
+        resolveResult->entries.push_back({{AddressEntry(*hostAddress.ipV4())}});
         return SystemError::noError;
     }
 
@@ -26,9 +25,8 @@ SystemError::ErrorCode TextIpAddressResolver::resolve(
     if (!ipV6WithScope.first || !hostAddress.isPureIpV6())
         return SystemError::hostUnreachable;
 
-    resolveResult->entries.push_back({{AddressEntry(
-        AddressType::direct,
-        HostAddress(*ipV6WithScope.first, ipV6WithScope.second))}});
+    resolveResult->entries.push_back(
+        {{AddressEntry(HostAddress(*ipV6WithScope.first, ipV6WithScope.second))}});
     return SystemError::noError;
 }
 

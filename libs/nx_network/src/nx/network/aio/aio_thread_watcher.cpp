@@ -3,6 +3,7 @@
 #include "aio_thread_watcher.h"
 
 #include <nx/utils/log/log.h>
+#include <nx/utils/time.h>
 
 namespace nx::network::aio {
 

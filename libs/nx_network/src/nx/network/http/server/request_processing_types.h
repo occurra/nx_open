@@ -5,7 +5,6 @@
 #include <memory>
 
 #include <nx/network/http/http_types.h>
-#include <nx/telemetry/http_span.h>
 #include <nx/utils/move_only_func.h>
 #include <nx/utils/stree/attribute_dictionary.h>
 #include <nx/utils/string.h>
@@ -84,8 +83,6 @@ struct NX_NETWORK_API RequestContext
 
     /** Request tracing context. */
     std::optional<TraceContext> traceContext;
-
-    nx::telemetry::HttpSpan telemetrySpan;
 
     RequestContext();
 

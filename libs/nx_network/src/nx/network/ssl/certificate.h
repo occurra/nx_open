@@ -15,7 +15,7 @@
 
     #include <nx/network/socket_common.h>
     #include <nx/utils/buffer.h>
-    #include <nx/utils/string.h>
+    #include <nx/utils/std_string_utils.h>
 
 namespace nx::network::ssl {
 

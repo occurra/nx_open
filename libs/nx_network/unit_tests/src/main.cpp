@@ -20,6 +20,5 @@ int main(int argc, char** argv)
             nx::network::ssl::useRandomCertificate("nx_network_ut");
             return nx::utils::test::DeinitFunctions();
         },
-        nx::network::InitializationFlags::none,
         nx::utils::test::TestRunFlag::throwOnFailure);
 }

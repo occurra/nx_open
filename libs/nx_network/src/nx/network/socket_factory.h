@@ -34,17 +34,9 @@ class SocketFactoryImpl;
 class NX_NETWORK_API SocketFactory
 {
 public:
-    enum class SocketType
-    {
-        cloud, //< Production mode.
-        tcp, //< \class TcpSocket and \class TcpServerSocket.
-        udt, //< \class UdtSocket and \class UdtServerSocket.
-    };
-
     using CreateStreamSocketFuncType = std::function<std::unique_ptr<AbstractStreamSocket>(
         ssl::AdapterFunc adapterFunc,
         bool /*sslRequired*/,
-        nx::network::NatTraversalSupport /*natTraversalRequired*/,
         std::optional<int> /*ipVersion*/)>;
 
     using CreateStreamServerSocketFuncType = std::function<std::unique_ptr<
@@ -68,7 +60,6 @@ public:
     static std::unique_ptr<AbstractStreamSocket> createStreamSocket(
         ssl::AdapterFunc adapterFunc,
         bool sslRequired = false,
-        NatTraversalSupport natTraversalRequired = NatTraversalSupport::enabled,
         std::optional<int> ipVersion = std::nullopt);
 
     static std::unique_ptr<AbstractStreamServerSocket> createStreamServerSocket(
@@ -79,17 +70,6 @@ public:
         std::unique_ptr<nx::network::AbstractStreamServerSocket> serverSocket,
         ssl::Context* context,
         ssl::EncryptionUse encryptionUse);
-
-    static std::string toString(SocketType type);
-    static SocketType stringToSocketType(std::string type);
-
-    /**
-     * Enforces factory to produce certain sockets
-     * NOTE: DEBUG use ONLY!
-     */
-    static void enforceStreamSocketType(SocketType type);
-    static void enforceStreamSocketType(std::string type);
-    static bool isStreamSocketTypeEnforced();
 
     /**
      * Set new factory.
@@ -116,7 +96,6 @@ public:
     static std::unique_ptr<AbstractStreamSocket> defaultStreamSocketFactoryFunc(
         ssl::AdapterFunc adapterFunc,
         bool sslRequired,
-        nx::network::NatTraversalSupport nttType,
         std::optional<int> _ipVersion);
 
     static std::unique_ptr<AbstractStreamServerSocket> defaultStreamServerSocketFactoryFunc(
@@ -131,8 +110,6 @@ private:
     SocketFactory& operator=(const SocketFactory&) = delete;
 
     ~SocketFactory();
-
-    static std::atomic<SocketType> s_enforcedStreamSocketType;
 
     static std::atomic<int> s_udpIpVersion;
     static std::atomic<int> s_tcpClientIpVersion;

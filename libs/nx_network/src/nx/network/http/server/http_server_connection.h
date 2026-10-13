@@ -11,7 +11,6 @@
 #include <nx/network/http/chunked_stream_parser.h>
 #include <nx/network/http/http_types.h>
 #include <nx/network/http/writable_message_body.h>
-#include <nx/telemetry/http_span.h>
 #include <nx/utils/interruption_flag.h>
 
 #include "abstract_http_request_handler.h"
@@ -100,15 +99,21 @@ public:
      */
     void setPersistentConnectionEnabled(bool value);
 
+    /** Default cap on the size of an inbound request body (ANAS-323). */
+    static constexpr std::uint64_t kDefaultMaxMessageBodySize = 16 * 1024 * 1024;
+
+    /** Default cap on the total bytes of the request line plus headers (ANAS-323). */
+    static constexpr std::uint64_t kDefaultMaxHeadersSize = 96 * 1024;
+
     /**
      * Caps the size of an inbound request body this connection will buffer. 0 means no limit.
-     * See server::Settings::maxMessageBodySize (ANAS-323).
+     * See kDefaultMaxMessageBodySize (ANAS-323).
      */
     void setMaxMessageBodySize(std::uint64_t value);
 
     /**
      * Caps the total bytes of the request line plus headers this connection will buffer.
-     * 0 means no limit. See server::Settings::maxHeadersSize (ANAS-323).
+     * 0 means no limit. See kDefaultMaxHeadersSize (ANAS-323).
      */
     void setMaxHeadersSize(std::uint64_t value);
 
@@ -174,21 +179,18 @@ private:
         std::unique_ptr<nx::network::http::AbstractMsgBodySource> msgBody;
         ConnectionEvents connectionEvents;
         time_point requestReceivedTime;
-        nx::telemetry::Span telemetrySpan;
 
         ResponseMessageContext(
             RequestLine requestLine,
             nx::network::http::Message msg,
             std::unique_ptr<nx::network::http::AbstractMsgBodySource> msgBody,
             ConnectionEvents connectionEvents,
-            time_point requestReceivedTime,
-            nx::telemetry::Span span = nx::telemetry::Span{}):
+            time_point requestReceivedTime):
             requestLine(std::move(requestLine)),
             msg(std::move(msg)),
             msgBody(std::move(msgBody)),
             connectionEvents(std::move(connectionEvents)),
-            requestReceivedTime(requestReceivedTime),
-            telemetrySpan(span.isValid() ? span : nx::telemetry::Span::activeSpan())
+            requestReceivedTime(requestReceivedTime)
         {
         }
     };
@@ -214,8 +216,6 @@ private:
     std::optional<SystemError::ErrorCode> m_markedForClosure;
     std::unique_ptr<aio::AsyncChannelBridge> m_bridge;
     nx::utils::InterruptionFlag m_destructionFlag;
-    nx::telemetry::HttpSpan m_currentMessageSpan;
-
     void extractClientEndpoint(const HttpHeaders& headers);
     void extractClientEndpointFromXForwardedHeader(const HttpHeaders& headers);
     void extractClientEndpointFromForwardedHeader(const HttpHeaders& headers);
