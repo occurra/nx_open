@@ -25,8 +25,6 @@ private:
     nx::sql::ConnectionOptions m_dbConnectionOptions;
 
     static std::optional<nx::sql::ConnectionOptions> sDbConnectionOptions;
-
-    void cleanDatabase();
 };
 
 } // namespace nx::sql::test

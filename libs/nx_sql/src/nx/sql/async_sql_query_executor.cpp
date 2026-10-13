@@ -37,15 +37,9 @@ static constexpr std::chrono::minutes kDefaultStatisticsAggregationPeriod{1};
 
 const int AsyncSqlQueryExecutor::kDefaultQueryPriority = detail::QueryQueue::kDefaultPriority;
 
-AsyncSqlQueryExecutor::AsyncSqlQueryExecutor(
-    const ConnectionOptions& connectionOptions,
-    nx::prometheus::Registry* metricsRegistry):
+AsyncSqlQueryExecutor::AsyncSqlQueryExecutor(const ConnectionOptions& connectionOptions):
     m_connectionOptions(connectionOptions),
-    m_statisticsCollector(
-        kDefaultStatisticsAggregationPeriod,
-        m_queryQueue,
-        &m_dbThreadPoolSize,
-        metricsRegistry)
+    m_statisticsCollector(kDefaultStatisticsAggregationPeriod, m_queryQueue, &m_dbThreadPoolSize)
 {
     m_dropConnectionThread =
         std::thread(std::bind(&AsyncSqlQueryExecutor::dropExpiredConnectionsThreadFunc, this));
@@ -66,16 +60,8 @@ AsyncSqlQueryExecutor::AsyncSqlQueryExecutor(
             m_connectionOptions.maxPeriodQueryWaitsForAvailableConnection);
     }
 
-    if (m_connectionOptions.driverType == RdbmsDriverType::sqlite)
-    {
-        // SQLite does not support concurrent DB updates.
-        m_queryQueue.setConcurrentModificationQueryLimit(1);
-    }
-    else if (m_connectionOptions.concurrentModificationQueryLimit)
-    {
-        m_queryQueue.setConcurrentModificationQueryLimit(
-            *m_connectionOptions.concurrentModificationQueryLimit);
-    }
+    // SQLite does not support concurrent DB updates.
+    m_queryQueue.setConcurrentModificationQueryLimit(1);
 
     m_queryTimeoutThread = std::thread(
         [this]()

@@ -23,8 +23,6 @@
 #include "query_context.h"
 #include "types.h"
 
-namespace nx::prometheus { class Registry; }
-
 namespace nx::sql {
 
 class NX_SQL_API AbstractAsyncSqlQueryExecutor
@@ -332,13 +330,7 @@ class NX_SQL_API AsyncSqlQueryExecutor: public AbstractAsyncSqlQueryExecutor
 public:
     static const int kDefaultQueryPriority;
 
-    /**
-     * If metricsRegistry is not null, Prometheus series about query execution are emitted
-     * through it (see StatisticsCollector).
-     */
-    AsyncSqlQueryExecutor(
-        const ConnectionOptions& connectionOptions,
-        nx::prometheus::Registry* metricsRegistry = nullptr);
+    AsyncSqlQueryExecutor(const ConnectionOptions& connectionOptions);
     virtual ~AsyncSqlQueryExecutor();
 
     virtual void pleaseStopSync() override;

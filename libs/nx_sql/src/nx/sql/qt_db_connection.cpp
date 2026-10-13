@@ -13,23 +13,17 @@
 
 namespace nx::sql {
 
-QtDbConnection::QtDbConnection(const ConnectionOptions& connectionOptions):
-    m_driverType(connectionOptions.driverType)
+QtDbConnection::QtDbConnection(const ConnectionOptions& connectionOptions)
 {
     m_connectionName = QUuid::createUuid().toString();
-    m_connection = Database::addDatabase(toString(connectionOptions.driverType), m_connectionName);
+    m_connection = Database::addDatabase("QSQLITE", m_connectionName);
 
     NX_DEBUG(
         this,
         "Opening DB connection with the following parameters: %1",
         nx::reflect::json::serialize(connectionOptions));
 
-    m_connection.setConnectOptions(connectionOptions.connectOptions);
     m_connection.setDatabaseName(connectionOptions.dbName);
-    m_connection.setHostName(connectionOptions.hostName);
-    m_connection.setUserName(connectionOptions.userName);
-    m_connection.setPassword(connectionOptions.password);
-    m_connection.setPort(connectionOptions.port);
 }
 
 QtDbConnection::~QtDbConnection()
@@ -99,11 +93,6 @@ DBResult QtDbConnection::lastError()
 std::unique_ptr<AbstractSqlQuery> QtDbConnection::createQuery()
 {
     return std::make_unique<SqlQuery>(m_connection, statisticsCollector());
-}
-
-RdbmsDriverType QtDbConnection::driverType() const
-{
-    return m_driverType;
 }
 
 QSqlDatabase* QtDbConnection::qtSqlConnection()

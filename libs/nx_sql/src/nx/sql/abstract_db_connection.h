@@ -33,8 +33,6 @@ public:
 
     virtual std::unique_ptr<AbstractSqlQuery> createQuery() = 0;
 
-    virtual RdbmsDriverType driverType() const = 0;
-
     virtual bool tableExist(std::string_view tableName) = 0;
 
     // TODO: #akolesnikov Remove this method. This requires switching every SqlQuery usage to

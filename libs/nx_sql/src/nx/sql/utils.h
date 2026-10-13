@@ -18,11 +18,10 @@ struct Info
 
 /**
  * Read DB info.
- * Note: implemented for some DB types only.
- * @return DB version as reported by the DB. std::nullopt in case if DB type is not supported.
+ * @return DB version as reported by the DB.
  * Note: throws on error.
  */
-NX_SQL_API std::optional<Info> fetchRdbmsInfo(QueryContext* qctx);
+NX_SQL_API Info fetchRdbmsInfo(QueryContext* qctx);
 
 //-------------------------------------------------------------------------------------------------
 

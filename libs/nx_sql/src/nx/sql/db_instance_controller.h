@@ -6,7 +6,6 @@
 
 #include "async_sql_query_executor.h"
 #include "db_statistics_collector.h"
-#include "db_structure_updater.h"
 #include "types.h"
 
 namespace nx::sql {
@@ -21,20 +20,16 @@ public:
 
     const StatisticsCollector& statisticsCollector() const;
 
-    bool initialize(bool runUpdateScripts = true);
+    bool initialize();
 
     void stop();
 
-    static DBResult configureSqliteInstance(QueryContext* queryContext);
-
-    DbStructureUpdater& dbStructureUpdater();
+    static DBResult configureDbInstance(QueryContext* queryContext);
 
 private:
     const ConnectionOptions m_dbConnectionOptions;
     std::unique_ptr<AsyncSqlQueryExecutor> m_queryExecutor;
-    DbStructureUpdater m_dbStructureUpdater;
 
-    bool updateDbStructure();
     bool configureDb();
 };
 
