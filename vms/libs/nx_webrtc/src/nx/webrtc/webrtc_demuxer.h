@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <core/resource/resource_fwd.h>
 #include <nx/rtp/parsers/rtp_parser.h>
 #include <nx/rtp/parsers/rtp_stream_parser.h>
 #include <nx/rtp/reordering_cache.h>
@@ -29,8 +28,6 @@ public:
     void setSrtpEncryptionData(const rtsp::EncryptionData& data);
     bool hasVideo() const { return m_hasVideo; }
     bool hasAudio() const { return m_hasAudio; }
-    void setResource(QnVirtualCameraResourcePtr resource) { m_resource = resource; }
-    QnVirtualCameraResourcePtr resource() { return m_resource; }
     CodecParametersConstPtr audioCodecParameters() const { return m_audioCodecParameters; }
 
 private:
@@ -83,7 +80,6 @@ private:
     std::deque<nx::Buffer> m_feedbacks;
     bool m_hasVideo = false;
     bool m_hasAudio = false;
-    QnVirtualCameraResourcePtr m_resource;
     nx::rtp::RtcpFirFeedback m_rtcpFir;
     CodecParametersConstPtr m_audioCodecParameters;
     TwccController m_twcc;

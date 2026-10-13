@@ -2,71 +2,39 @@
 
 #pragma once
 
-#include <memory>
-#include <unordered_map>
+#include <functional>
+#include <optional>
 
-#include <nx/network/abstract_socket.h>
-#include <nx/network/socket_common.h>
-#include <nx/utils/elapsed_timer.h>
 #include <nx/utils/thread/mutex.h>
-
-// Cloud.
-#include <nx/cloud/db/client/cdb_connection.h>
-#include <nx/network/cloud/cloud_module_url_fetcher.h>
 
 #include "webrtc_utils.h"
 
-namespace nx::vms::common { class SystemSettings; }
-
 namespace nx::webrtc {
-
-class ConnectionProcessor;
 
 class NX_WEBRTC_API TurnInfoFetcher
 {
 public:
-    using TurnInfoHandler = std::function<void(const TurnServerInfo&)>;
-    using OauthInfoHandler = std::function<void(const OauthInfo&)>;
+    /// Returns current TURN credentials, or std::nullopt if none are available
+    /// (fetch failed / no cloud configured). Supplied by the media server.
+    using CredentialProvider = std::function<std::optional<TurnServerInfo>()>;
 
 public:
-    TurnInfoFetcher(nx::vms::common::SystemSettings* settings);
+    TurnInfoFetcher(const std::string realm, const std::string cloudHost);
     ~TurnInfoFetcher();
 
-    void fetchTurnInfo(const std::string& sessionId, const TurnInfoHandler& handler);
-    void removeTurnInfoHandler(const std::string& sessionId);
+    void setCredentialProvider(CredentialProvider provider);
 
-    // API for IceRelay.
-    void fetchThirdPartyAuthorization(
-        const std::string& sessionId,
-        const std::string& serverName,
-        const OauthInfoHandler& handler);
-    void removeOauthInfoHandler(const std::string& sessionId);
-
-    void stop();
-
-private:
-    void getTurnServerInfoUnsafe(const std::string& sessionId);
-    void fillTurnInfoDefaults();
-    void onTurnServerInfoUnsafe();
-    void onOauthInfoUnsafe();
-    void fetchTurnInfoUnsafe();
+    /// Resolution order:
+    ///   1. ini() static override (dev/local), if set;
+    ///   2. injected credential provider, if set and it returns a value;
+    ///   3. bare server address (no creds).
+    TurnServerInfo turnServerInfo() const;
 
 private:
     mutable nx::Mutex m_mutex;
-
-    nx::vms::common::SystemSettings* const m_systemSettings;
-
-    // Cloud-related.
-    TurnServerInfo m_turnInfo;
-    std::optional<OauthInfo> m_oauthInfo;
-    nx::utils::ElapsedTimer m_turnInfoTimer;
-    std::unordered_map<std::string, TurnInfoHandler> m_turnInfoSessions;
-    std::unordered_map<std::string, OauthInfoHandler> m_oauthSessions;
-    nx::network::cloud::CloudModuleUrlFetcher m_turnInfoFetcher;
-
-    // Should be destroyed first to ensure all handlers are stopped before
-    // other memebers destruction.
-    nx::cloud::db::client::Connection m_cdbConnection;
+    TurnServerInfo m_turnInfo; ///< Address + ini override creds.
+    bool m_iniOverrideHasCreds = false; ///< True if ini supplied user/password.
+    CredentialProvider m_credentialProvider;
 };
 
 } // namespace nx::webrtc

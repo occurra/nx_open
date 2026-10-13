@@ -2,10 +2,6 @@
 
 #include "webrtc_session_pool.h"
 
-#include <core/resource/media_server_resource.h>
-#include <core/resource_management/resource_pool.h>
-#include <nx/network/cloud/cloud_connect_controller.h>
-#include <nx/network/cloud/mediator_connector.h>
 #include <nx/vms/common/system_context.h>
 #include <nx/vms/common/system_settings.h>
 
@@ -14,20 +10,34 @@
 
 namespace nx::webrtc {
 
+namespace {
+
+// Skip addresses that can never form a useful ICE host candidate for a remote peer:
+// loopback (127/8, ::1) and link-local (169.254/16, fe80::/10).
+bool isUsableIceHostAddress(const nx::network::SocketAddress& a)
+{
+    return !a.address.isLoopback() && !a.address.isIpv4LinkLocalNetwork()
+        && !a.address.isIpv6LinkLocalNetwork();
+}
+
+} // namespace
+
 SessionPool::SessionPool(
+    const std::string realm,
+    const std::string cloudHost,
     nx::vms::common::SystemContext* context,
     nx::utils::TimerManager* timerManager,
     QnFfmpegVideoTranscoder::TranscodePolicy transcodePolicy,
     const std::vector<nx::network::SocketAddress>& defaultStunServers):
     nx::vms::common::SystemContextAware(context),
     m_timerManager(timerManager),
-    m_turnInfoFetcher(context->globalSettings()),
+    m_turnInfoFetcher(std::make_unique<TurnInfoFetcher>(realm, cloudHost)),
     m_transcodePolicy(transcodePolicy),
     m_defaultStunServers(defaultStunServers)
 {
     static const std::chrono::milliseconds kMinTimeout(100);
     using namespace std::chrono;
-    m_keepAliveTimeout = globalSettings()->mediaSendTimeout();
+    m_keepAliveTimeout = systemSettings()->webrtcSessionTimeout();
     const milliseconds timeout =
         std::max(kMinTimeout, milliseconds(m_keepAliveTimeout.count() / 4));
     using namespace std::placeholders;
@@ -45,7 +55,6 @@ SessionPool::~SessionPool()
 void SessionPool::stop()
 {
     m_timerManager->joinAndDeleteTimer(m_timerId);
-    m_turnInfoFetcher.stop();
 
     // TODO move working ice to session and use simple crear() without swap and deletion order.
     // Now it should be deleted before sessions, since ices have pointer to session.
@@ -60,18 +69,19 @@ void SessionPool::stop()
 
 std::vector<nx::network::SocketAddress> SessionPool::getStunServers()
 {
-    auto connectionMediatorAddress = SocketGlobals::cloud().mediatorConnector().address();
-
     std::vector<nx::network::SocketAddress> result;
-    if (connectionMediatorAddress)
-        result.push_back(connectionMediatorAddress->stunUdpEndpoint);
     result.insert(result.end(), m_defaultStunServers.begin(), m_defaultStunServers.end());
     return result;
 }
 
-TurnInfoFetcher& SessionPool::turnInfoFetcher()
+TurnInfoFetcher* SessionPool::turnInfoFetcher() const
 {
-    return m_turnInfoFetcher;
+    return m_turnInfoFetcher.get();
+}
+
+void SessionPool::setTurnCredentialProvider(TurnInfoFetcher::CredentialProvider provider)
+{
+    m_turnInfoFetcher->setCredentialProvider(std::move(provider));
 }
 
 std::string SessionPool::emitUfrag()
@@ -88,37 +98,15 @@ std::string SessionPool::emitUfrag()
     return localUfrag;
 }
 
-bool SessionPool::takeUfrag(const std::string& ufrag)
-{
-    NX_MUTEX_LOCKER lk(&m_mutex);
-
-    if (m_sessionById.count(ufrag) > 0)
-        return false;
-
-    m_sessionById[ufrag] = nullptr;
-    return true;
-}
-
 std::shared_ptr<Session> SessionPool::createInternal(
     createDataProviderFactory providerFactory,
     Purpose purpose,
     const nx::network::SocketAddress& address,
     const std::string& localUfrag,
-    const SessionConfig& config)
+    const SessionConfig& config,
+    const QList<nx::network::SocketAddress>& hostAddresses,
+    nx::network::aio::AbstractAioThread* aioThread)
 {
-    auto server = systemContext()->resourcePool()->getResourceById<QnMediaServerResource>(
-        systemContext()->peerId());
-
-    if (!server)
-    {
-        NX_WARNING(
-            this,
-            "Server not found for session %1, peerID: %2",
-            localUfrag,
-            systemContext()->peerId());
-        return nullptr;
-    }
-
     std::shared_ptr<Session> session;
     {
         NX_MUTEX_LOCKER lk(&m_mutex);
@@ -138,37 +126,68 @@ std::shared_ptr<Session> SessionPool::createInternal(
             address,
             config,
             getStunServers(),
-            purpose);
+            purpose,
+            aioThread);
 
         m_sessionById[session->id()] = session;
     }
 
+    // Compose the built-in filter (skip loopback + link-local) with the
+    // optional caller-supplied filter (typically a per-server admin allow/deny
+    // list). The factory is snapshotted under the mutex, then invoked once
+    // *outside* the mutex to build a session-scoped filter.
+    HostAddressFilterFactory factory;
+    {
+        NX_MUTEX_LOCKER lk(&m_mutex);
+        factory = m_hostAddressExtraFilterFactory;
+    }
+    HostAddressFilter extraFilter;
+    if (factory)
+        extraFilter = factory();
+    auto composed = [extraFilter =
+                         std::move(extraFilter)](const nx::network::SocketAddress& a) -> bool
+    {
+        if (!isUsableIceHostAddress(a))
+            return false;
+        if (extraFilter && !extraFilter(a))
+            return false;
+        return true;
+    };
+
     NX_DEBUG(this, "Started session %1", localUfrag);
-    session->start(server->getAllAvailableAddresses());
+    QList<nx::network::SocketAddress> addresses;
+    for (const auto& hostAddress: hostAddresses)
+    {
+        if (composed(hostAddress))
+            addresses.push_back(hostAddress);
+    }
+    session->start(addresses);
     return session;
 }
 
-std::shared_ptr<Session> SessionPool::create(
-    createDataProviderFactory providerFactory,
-    Purpose purpose,
-    const nx::network::SocketAddress& address,
-    const std::string& localUfrag,
-    const SessionConfig& config)
+void SessionPool::setHostAddressExtraFilterFactory(HostAddressFilterFactory factory)
 {
-    if (!takeUfrag(localUfrag))
-        return nullptr;
-
-    return createInternal(std::move(providerFactory), purpose, address, localUfrag, config);
+    NX_MUTEX_LOCKER lk(&m_mutex);
+    m_hostAddressExtraFilterFactory = std::move(factory);
 }
 
 std::shared_ptr<Session> SessionPool::create(
     createDataProviderFactory providerFactory,
     Purpose purpose,
     const nx::network::SocketAddress& address,
-    const SessionConfig& config)
+    const SessionConfig& config,
+    const QList<nx::network::SocketAddress>& hostAddresses,
+    nx::network::aio::AbstractAioThread* aioThread)
 {
     const auto localUfrag = emitUfrag();
-    return createInternal(std::move(providerFactory), purpose, address, localUfrag, config);
+    return createInternal(
+        std::move(providerFactory),
+        purpose,
+        address,
+        localUfrag,
+        config,
+        hostAddresses,
+        aioThread);
 }
 
 std::weak_ptr<Session> SessionPool::getSession(const std::string& id)
@@ -193,7 +212,23 @@ void SessionPool::onTimer(const quint64& /*timerId*/)
             auto& ctx = it->second;
             if (ctx && ctx->hasExpired(m_keepAliveTimeout))
             {
-                NX_DEBUG(this, "Remove session on timer: %1", ctx);
+                if (ctx->isStreaming())
+                {
+                    // A streaming session whose peer went silent (a hung browser
+                    // tab, or a relay path dropped without consent checks) is
+                    // being collected - distinct from an ordinary idle removal
+                    // so a wedge is identifiable when debug logging is on.
+                    NX_DEBUG(
+                        this,
+                        "Reaping streaming session %1: no inbound from peer for "
+                        "%2 - peer likely gone (hung tab or dropped relay)",
+                        ctx,
+                        m_keepAliveTimeout);
+                }
+                else
+                {
+                    NX_DEBUG(this, "Remove idle session on timer: %1", ctx);
+                }
                 sessionsToRemove.push_back(std::move(it->second));
                 it = m_sessionById.erase(it);
             }
@@ -216,6 +251,9 @@ void SessionPool::onTimer(const quint64& /*timerId*/)
             }
         }
     }
+
+    for (auto& session: sessionsToRemove)
+        Session::stop(std::move(session)); //< Sequences the safe destruction; see Session::stop().
 }
 
 void SessionPool::drop(const std::string& id)
@@ -231,6 +269,7 @@ void SessionPool::drop(const std::string& id)
         m_sessionById.erase(sessionIter);
         NX_DEBUG(this, "Dropped session %1", id);
     }
+    Session::stop(std::move(toRemove)); //< Sequences the safe destruction; see Session::stop().
 }
 
 void SessionPool::gotIceTcp(std::unique_ptr<IceTcp>&& iceTcp)
@@ -241,9 +280,36 @@ void SessionPool::gotIceTcp(std::unique_ptr<IceTcp>&& iceTcp)
     m_tcpIces.push_back(std::move(iceTcp));
 }
 
+void SessionPool::onTcpConnection(
+    std::unique_ptr<nx::network::AbstractStreamSocket> socket,
+    const QByteArray& readBuffer)
+{
+    gotIceTcp(std::make_unique<IceTcp>(std::move(socket), this, SessionConfig(), readBuffer));
+}
+
 QnFfmpegVideoTranscoder::TranscodePolicy SessionPool::transcodePolicy() const
 {
     return m_transcodePolicy;
+}
+
+SessionPool::Stats SessionPool::stats() const
+{
+    std::vector<SessionPtr> sessions;
+    {
+        NX_MUTEX_LOCKER lk(&m_mutex);
+        for (const auto& [id, session]: m_sessionById)
+        {
+            if (session && session->purpose() != Purpose::data)
+                sessions.push_back(session);
+        }
+    }
+
+    // Each session locks itself, so the cameras are counted with the pool unlocked.
+    Stats result;
+    result.sessions = (int) sessions.size();
+    for (const auto& session: sessions)
+        result.cameras += (int) session->allProviders().size();
+    return result;
 }
 
 } // namespace nx::webrtc

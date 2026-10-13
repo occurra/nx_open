@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <optional>
-
 #include <nx/utils/uuid.h>
 
 #include "webrtc_utils.h"
@@ -32,11 +30,6 @@ struct NX_WEBRTC_API Track
     TrackState offerState{};
     TrackState answerState{};
     bool useTranscoding = false;
-    // A renegotiation offer was sent (Session::renegotiateProvider()) but not answered yet, so the
-    // client doesn't know the new SSRC/payload type.
-    bool pendingAnswer = false;
-    // Valid only while pendingAnswer: where to resume the provider (DATETIME_NOW for live).
-    int64_t resumePositionUs = 0;
 };
 
 const std::string& toSdpAttribute(Purpose purpose);
@@ -49,21 +42,34 @@ class NX_WEBRTC_API Tracks
 public:
     void addTrack(std::unique_ptr<Track> track);
 
-    // Without `newSsrc` assigns a fresh random one, telling the receiver that the RTP stream
-    // restarted, e.g. on a mid-session codec change. `newSsrc` can be set to roll back to the old
-    // ssrc when the codec change fails. Returns the ssrc in use, or 0 if `newSsrc` is taken.
-    uint32_t updateSsrc(Track* track, std::optional<uint32_t> newSsrc = std::nullopt);
-
     Tracks(Session* session);
     virtual ~Tracks() = default;
 
     Track* videoTrack(nx::Uuid deviceId) const;
     Track* audioTrack(nx::Uuid deviceId) const;
     Track* track(uint32_t ssrc) const;
+
+    /// Assign a fresh SSRC to a device's track and re-key it. Used on a codec
+    /// switch so the peer builds a new SRTP/jitter context for the rebuilt
+    /// encoder, instead of discarding the reseeded sequence numbers under the
+    /// old SSRC's replay window. Returns the new SSRC, or 0 if no such track.
+    uint32_t rotateSsrc(nx::Uuid deviceId, TrackType type);
+
+    /// Re-point every track of device `from` at device `to`, keeping its ssrc,
+    /// mid and payload type. deviceId is a server-side association only - it
+    /// never appears in the SDP - so an in-place camera switch keeps the
+    /// negotiated m-lines valid and needs no offer/answer.
+    /// @return Number of tracks re-pointed.
+    int retargetDevice(nx::Uuid from, nx::Uuid to);
+
+    /// The given devices ordered by the mid of their video track, lowest first, so a camera
+    /// switch hands the freed m-lines to the arriving cameras in the order the peer expects.
+    /// A device with no video track sorts last.
+    std::vector<nx::Uuid> orderByMid(std::vector<nx::Uuid> deviceIds) const;
+
     std::vector<Track> allTracks() const;
     std::map<uint32_t, std::unique_ptr<Track>>& tracks() { return m_tracks; }
 
-    virtual std::string mimeType() const = 0;
     virtual bool examineSdp(const std::string& sdp) = 0;
 
     virtual std::string getSdpForTrack(const Track* track, uint16_t port) const;
@@ -84,20 +90,6 @@ public:
     TracksForSend(Session* session);
     virtual ~TracksForSend() override = default;
 
-    virtual std::string mimeType() const override;
-    virtual bool examineSdp(const std::string& sdp) override;
-    virtual std::string getSdpForTrack(const Track* track, uint16_t port) const override;
-};
-
-class NX_WEBRTC_API TracksForRecv: public Tracks
-{
-    using base_type = Tracks;
-
-public:
-    TracksForRecv(Session* session);
-    virtual ~TracksForRecv() override = default;
-
-    virtual std::string mimeType() const override;
     virtual bool examineSdp(const std::string& sdp) override;
     virtual std::string getSdpForTrack(const Track* track, uint16_t port) const override;
 };

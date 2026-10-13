@@ -2,15 +2,40 @@
 
 #pragma once
 
+#include <functional>
+#include <string>
+#include <vector>
+
+#include <nx/utils/uuid.h>
+
 #include "webrtc_consumer.h"
 #include "webrtc_ice.h"
 
 namespace nx::webrtc {
 
+/**
+ * Talk-back callbacks the media_server installs on a video (Purpose::send)
+ * session so the browser's microphone can ride the same data channel as the
+ * playback commands, instead of a separate connection (see Streamer).
+ */
+struct TalkHandlers
+{
+    /** Talk-back turned on or off for a set of cameras: {"talk":{"deviceIds":[...],"on"}}
+     *  (a legacy single "deviceId" is accepted as a one-element list). */
+    std::function<void(const std::vector<nx::Uuid>& deviceIds, bool on)> onControl;
+
+    /** One Opus packet for a camera, carried by a deviceId-prefixed binary frame. Taken by
+     *  value so the payload moves from the frame all the way to the worker with no copy. */
+    std::function<void(const nx::Uuid& deviceId, std::string opus)> onAudio;
+};
+
 class NX_WEBRTC_API Streamer: public AbstractIceDelegate
 {
 public:
     Streamer(Session* session);
+
+    /** Routes the {"talk"} control command and binary audio frames to the media_server. */
+    void setTalkHandlers(TalkHandlers handlers);
 
     // From AbstractIceDelegate.
     virtual bool start(Ice* ice, Dtls* dtls) override final;
@@ -22,8 +47,16 @@ public:
 
     // Interface for Consumer.
     Ice* ice();
-    void sendTimestamp(int64_t timestampUs, uint32_t rtpTimestamp);
-    void handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus result);
+    void sendTimestamp(nx::Uuid deviceId, int64_t timestampUs, uint32_t rtpTimestamp);
+    /** {"seq": n, "positions": [{"deviceId", "timestampUs"}, ...]} - where paused playback
+     *  settled per camera after the frame step the client tagged with seq. */
+    void sendPosition(int seq, const std::vector<CameraPosition>& positions);
+    /**
+     * Sends {"deviceId", "timestampMs", "status"} - the reply every playback command gets.
+     * seq, when non-zero, is echoed from the command being answered, so the client can pair
+     * the reply with it; server-initiated statuses (end of archive, reconnect) carry none.
+     */
+    void handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus result, int seq = 0);
 
     std::string idForToStringFromPtr() const;
 
@@ -34,6 +67,7 @@ private:
     Session* m_session = nullptr;
     Ice* m_ice = nullptr;
     IceCandidate::Filter m_iceType = IceCandidate::Filter::None;
+    TalkHandlers m_talkHandlers;
 };
 
 } // namespace nx::webrtc

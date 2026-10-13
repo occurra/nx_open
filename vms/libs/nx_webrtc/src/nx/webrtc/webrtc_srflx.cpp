@@ -14,11 +14,19 @@ using namespace nx::network;
 Srflx::Srflx(
     const std::string& sessionId,
     const std::vector<nx::network::SocketAddress>& stunServers,
-    const Handler& handler):
+    const Handler& handler,
+    nx::network::aio::AbstractAioThread* aioThread):
     m_sessionId(sessionId),
     m_socket(nx::network::SocketFactory::createDatagramSocket()),
     m_handler(handler)
 {
+    //< Both are fresh here, which is the only safe moment to place them: put
+    //< the socket on the session's thread and follow it with our pollable. The
+    //< destructor waits for its aio thread, and ~Session runs on the session's
+    //< thread - so sharing that thread turns the wait into a direct call
+    //< instead of one aio thread blocking on another.
+    if (aioThread)
+        m_socket->bindToAioThread(aioThread);
     m_pollable.bindToAioThread(m_socket->getAioThread());
     for (const auto& stunServer: stunServers)
         m_addrQueue.push_back(stunServer);

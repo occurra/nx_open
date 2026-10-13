@@ -3,6 +3,7 @@
 #include "media_queue.h"
 
 #include <nx/media/video_data_packet.h>
+#include <nx/streaming/abstract_stream_data_provider.h> //< CL_MAX_CHANNEL_NUMBER.
 #include <nx/utils/log/log.h>
 
 namespace nx::vms::server {
@@ -10,6 +11,16 @@ namespace nx::vms::server {
 MediaQueue::MediaQueue(int maxSize):
     m_maxSize(maxSize)
 {
+}
+
+void MediaQueue::setKeyDataFound(bool value)
+{
+    NX_MUTEX_LOCKER lock(&m_mutex);
+    //< Every device and channel, not just the ones seen so far: this is normally
+    //< called before any data arrives, when the map is still empty.
+    m_keyDataFoundForNewDevices = value;
+    for (auto& [_, keyDataFound]: m_keyDataFound)
+        keyDataFound.assign(CL_MAX_CHANNEL_NUMBER, value);
 }
 
 // Normally should drop only first gop for the first appeared channel in media queue, and all audio
@@ -69,6 +80,7 @@ void MediaQueue::clearTillLastGopUnsafe()
     // Fallback.
     m_mediaQueue.clear();
     m_keyDataFound.clear();
+    m_keyDataFoundForNewDevices = false;
 }
 
 void MediaQueue::setMaxSize(int maxSize)
@@ -91,7 +103,10 @@ void MediaQueue::putData(const QnConstAbstractMediaDataPtr& media)
     if (const auto& video = std::dynamic_pointer_cast<const QnCompressedVideoData>(media))
     {
         const bool isKeyFrame = video->isKeyFrame();
-        auto& keyDataFound = m_keyDataFound[video->deviceId];
+        const auto [it, isNewDevice] = m_keyDataFound.try_emplace(video->deviceId);
+        auto& keyDataFound = it->second;
+        if (isNewDevice && m_keyDataFoundForNewDevices)
+            keyDataFound.assign(CL_MAX_CHANNEL_NUMBER, true);
         if (keyDataFound.size() <= video->channelNumber)
             keyDataFound.resize(video->channelNumber + 1);
         if (isKeyFrame)
@@ -103,6 +118,14 @@ void MediaQueue::putData(const QnConstAbstractMediaDataPtr& media)
         }
     }
     m_mediaQueue.push_back(media);
+    m_needToStop = false;
+    m_waitForFrame.wakeAll();
+}
+
+void MediaQueue::pushFront(const QnConstAbstractMediaDataPtr& media)
+{
+    NX_MUTEX_LOCKER lock(&m_mutex);
+    m_mediaQueue.push_front(media);
     m_needToStop = false;
     m_waitForFrame.wakeAll();
 }
@@ -131,24 +154,22 @@ void MediaQueue::stop()
     m_waitForFrame.wakeAll();
 }
 
-void MediaQueue::clearUnprocessedData()
+void MediaQueue::clearUnprocessedData(std::optional<nx::Uuid> deviceId)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
-    m_mediaQueue.clear();
-    m_keyDataFound.clear();
-}
-
-void MediaQueue::clearDataForDevice(nx::Uuid deviceId)
-{
-    NX_MUTEX_LOCKER lock(&m_mutex);
+    if (!deviceId)
+    {
+        m_mediaQueue.clear();
+        m_keyDataFound.clear();
+        m_keyDataFoundForNewDevices = false;
+        return;
+    }
     std::erase_if(
         m_mediaQueue,
-        [deviceId](const auto& value)
+        [&deviceId](const auto& media)
         {
-            return value->deviceId == deviceId;
+            return media->deviceId == *deviceId;
         });
-    // The device restarts from scratch, so require a keyframe again, like clearUnprocessedData().
-    m_keyDataFound.erase(deviceId);
 }
 
 } // namespace nx::vms::server
