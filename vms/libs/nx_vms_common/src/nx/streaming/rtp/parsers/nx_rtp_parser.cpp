@@ -2,13 +2,11 @@
 
 #include "nx_rtp_parser.h"
 
-#include <analytics/common/object_metadata.h>
-#include <nx/analytics/analytics_logging_ini.h>
 #include <nx/kit/utils.h>
 #include <nx/media/audio_data_packet.h>
 #include <nx/media/codec_parameters.h>
 #include <nx/media/config.h>
-#include <nx/media/motion_detection.h>
+#include <nx/media/meta_data_packet.h>
 #include <nx/media/video_data_packet.h>
 #include <nx/rtp/rtp.h>
 #include <nx/streaming/nx_streaming_ini.h>
@@ -23,29 +21,13 @@ static const int RTSP_FFMPEG_GENERIC_HEADER_SIZE = 8;
 static const int RTSP_FFMPEG_VIDEO_HEADER_SIZE = 3;
 static const int RTSP_FFMPEG_METADATA_HEADER_SIZE = 8; //< m_duration + metadataType
 
-QnNxRtpParser::QnNxRtpParser(nx::Uuid deviceId, const QString& tag):
+QnNxRtpParser::QnNxRtpParser(nx::Uuid /*deviceId*/, const QString& /*tag*/):
     base_type()
 {
-    using namespace nx::analytics;
-    m_primaryLogger = std::make_unique<MetadataLogger>(
-        nx::format("rtp_parser_%1@%2_").args(tag, nx::kit::utils::toString(this)),
-        deviceId,
-        /*engineId*/ nx::Uuid(),
-        nx::vms::api::StreamIndex::primary);
-    m_secondaryLogger = std::make_unique<MetadataLogger>(
-        nx::format("rtp_parser_%1@%2_").args(tag, nx::kit::utils::toString(this)),
-        deviceId,
-        /*engineId*/ nx::Uuid(),
-        nx::vms::api::StreamIndex::secondary);
 }
 
 QnNxRtpParser::QnNxRtpParser()
 {
-}
-
-void QnNxRtpParser::setServerVersion(const nx::utils::SoftwareVersion& serverVersion)
-{
-    m_serverVersion = serverVersion;
 }
 
 QnAbstractMediaDataPtr QnNxRtpParser::nextData()
@@ -58,15 +40,8 @@ QnAbstractMediaDataPtr QnNxRtpParser::nextData()
     return result;
 }
 
-void QnNxRtpParser::logMediaData(const QnAbstractMediaDataPtr& data)
+void QnNxRtpParser::logMediaData(const QnAbstractMediaDataPtr& /*data*/)
 {
-    if (!nx::analytics::loggingIni().isLoggingEnabled() || !data)
-        return;
-
-    const bool isSecondaryProvider = data->flags & QnAbstractMediaData::MediaFlags_LowQuality;
-    auto& logger = isSecondaryProvider ? m_secondaryLogger : m_primaryLogger;
-    if (logger)
-        logger->pushData(data);
 }
 
 Result QnNxRtpParser::processData(const uint8_t* data, int dataSize, bool& gotData)
@@ -111,17 +86,8 @@ Result QnNxRtpParser::processData(
     const bool isCodecContext = qFromBigEndian(rtpHeader.ssrc) & 1;
     if (isCodecContext)
     {
-        int contextVersion = 0;
         auto context = std::make_shared<CodecParameters>();
-        if (qBetween(
-                nx::utils::SoftwareVersion(5, 0),
-                m_serverVersion,
-                nx::utils::SoftwareVersion(5, 0, 34644)))
-        {
-            contextVersion = 1;
-        }
-
-        if (!context->deserialize((const char*) payload, dataSize, contextVersion))
+        if (!context->deserialize((const char*) payload, dataSize))
             return {false, "Failed to parse codec parameters from RTP packet."};
 
         m_context = context;
@@ -157,16 +123,6 @@ Result QnNxRtpParser::processData(
             const quint16 flags = (payload[0] << 8) + payload[1];
             payload += 2;
 
-            // TODO #lbusygin: just for vms_4.2 version, get rid of this code when the mobile
-            // client stops supporting servers < 5.0.
-            if (m_context && m_context->version() == 0)
-            {
-                if (dataType == 3)
-                    dataType = QnAbstractMediaData::GENERIC_METADATA;
-                if (dataType == 4)
-                    dataType = QnAbstractMediaData::EMPTY_DATA;
-            }
-
             if (dataType == QnAbstractMediaData::EMPTY_DATA)
             {
                 QnEmptyMediaData* emptyMediaData = new QnEmptyMediaData();
@@ -183,23 +139,8 @@ Result QnNxRtpParser::processData(
                             0)};
                 }
             }
-            else if (
-                dataType == QnAbstractMediaData::META_V1
-                || dataType == QnAbstractMediaData::GENERIC_METADATA)
+            else if (dataType == QnAbstractMediaData::METADATA)
             {
-                if (dataType == QnAbstractMediaData::META_V1
-                    && dataSize
-                        != Qn::kMotionGridWidth * Qn::kMotionGridHeight / 8
-                            + RTSP_FFMPEG_METADATA_HEADER_SIZE)
-                {
-                    return {
-                        false,
-                        NX_FMT(
-                            "Unexpected data size for metadata packet. "
-                            "Got %1 expected %2 bytes.",
-                            dataSize,
-                            Qn::kMotionGridWidth * Qn::kMotionGridHeight / 8)};
-                }
                 if (dataSize < RTSP_FFMPEG_METADATA_HEADER_SIZE)
                 {
                     return {
@@ -217,16 +158,8 @@ Result QnNxRtpParser::processData(
 
                 QnAbstractCompressedMetadata* metadata = nullptr;
 
-                if (dataType == QnAbstractMediaData::META_V1
-                    || metadataType == MetadataType::Motion)
-                {
-                    metadata = new QnMetaDataV1(qnSyncTime->currentTimePoint());
-                }
-                else
-                {
-                    metadata = new QnCompressedMetadata(metadataType);
-                    metadata->metadataType = metadataType;
-                }
+                metadata = new QnCompressedMetadata(metadataType);
+                metadata->metadataType = metadataType;
 
                 metadata->m_data.clear();
                 context.reset();

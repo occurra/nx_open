@@ -10,53 +10,11 @@
 
 #include "system_context_aware.h" //< Forward declarations.
 
-class QnCameraNamesWatcher;
-class QnLicensePool;
-class QnResourceDataPool;
-class QnResourcePropertyDictionary;
-class QnResourceStatusDictionary;
-class QnRouter;
-class QnServerAdditionalAddressesDictionary;
-class QnLongRunableCleanup;
-
-namespace nx::analytics::taxonomy {
-
-class AbstractState;
-class AbstractStateWatcher;
-class DescriptorContainer;
-
-} // namespace nx::analytics::taxonomy
-
-namespace nx::core::access {
-
-class AccessRightsManager;
-class GlobalPermissionsWatcher;
-class ResourceAccessSubjectHierarchy;
-
-} // namespace nx::core::access
-
 namespace nx::metric { struct Storage; }
-namespace nx::vms::discovery { class Manager; }
-namespace nx::vms::event { class RuleManager; }
-namespace nx::vms::rules { class Engine; }
-
-namespace nx::network::http {
-
-class ClientPool;
-class Credentials;
-
-} // namespace nx::network::http
 
 namespace nx::vms::common {
 
-class AbstractCertificateVerifier;
-class DeviceLicenseUsageWatcher;
-class VideoWallLicenseUsageWatcher;
 class SystemSettings;
-class UserGroupManager;
-class PixelationSettings;
-
-namespace saas { class ServiceManager; }
 
 /**
  * Storage for the application Resource Context classes. One Resource Context corresponds to one
@@ -68,45 +26,12 @@ class NX_VMS_COMMON_API SystemContext: public QObject
     Q_OBJECT
 
 public:
-    /** Various types of system contexts. Some of them require shortened initialization. */
-    enum class Mode
-    {
-        /** Generic System Context for the Desktop or Mobile Client. */
-        client,
-
-        /** Generic System Context for the Server. */
-        server,
-
-        /** System Context for the cross-system connection. */
-        crossSystem,
-
-        /** System Context for the cloud layouts storage. */
-        cloudLayouts,
-
-        /** System Context for the unit tests. */
-        unitTests,
-
-        // There will be separate type for the local files context in the future.
-    };
-
     /**
      * @param peerId Id of the current peer in the Message Bus. It is persistent and is not changed
      *     between the application runs. See ::peerId() for the details.
      */
-    SystemContext(Mode mode, nx::Uuid peerId, QObject* parent = nullptr);
+    SystemContext(nx::Uuid peerId, QObject* parent = nullptr);
     virtual ~SystemContext();
-
-    Mode mode() const;
-
-    template<typename Target>
-    Target* as()
-    {
-        if (const auto result = qobject_cast<Target*>(this))
-            return result;
-
-        NX_ASSERT(false, "Can't cast system context.");
-        return nullptr;
-    }
 
     /**
      * Id of the current peer in the Message Bus. It is persistent and is not changed between the
@@ -118,170 +43,11 @@ public:
     const nx::Uuid& peerId() const;
 
     /**
-     * Id of the connection in the Audit Trail and Runtime Info Manager. Must be implemented in
-     * descendant classes.
-     */
-    virtual nx::Uuid auditId() const;
-
-    /**
-     * Interface to create SSL certificate validation functors.
-     */
-    virtual AbstractCertificateVerifier* certificateVerifier() const;
-
-    /**
-     * Start checking what VMS Server network interfaces are accessible.
-     */
-    virtual void startModuleDiscovery(nx::vms::discovery::Manager* moduleDiscoveryManager);
-
-    /**
-     * Helper class to find the shortest route to the VMS Server. Can be null, e.g. in unit tests
-     * or in the cross-System contexts.
-     */
-    nx::vms::discovery::Manager* moduleDiscoveryManager() const;
-
-    /**
-     * Interface for the Message Bus connection.
-     */
-    std::shared_ptr<ec2::AbstractECConnection> messageBusConnection() const;
-
-    /**
-     * Return current connection credentials. Actual only for client-side contexts only.
-     */
-    virtual nx::network::http::Credentials credentials() const;
-
-    QnCommonMessageProcessor* messageProcessor() const;
-
-    template<class MessageProcessorType, typename... Args>
-    MessageProcessorType* createMessageProcessor(Args... args)
-    {
-        const auto processor = new MessageProcessorType(this, args...);
-        setMessageProcessor(processor);
-        return processor;
-    }
-
-    void deleteMessageProcessor();
-
-    /**
-     * List of all licenses, installed in the System.
-     */
-    QnLicensePool* licensePool() const;
-
-    saas::ServiceManager* saasServiceManager() const;
-
-    /** Watches and notifies when Device license usage is changed in the System. */
-    DeviceLicenseUsageWatcher* deviceLicenseUsageWatcher() const;
-
-    /** Watches and notifies when Video Wall license usage is changed in the System. */
-    VideoWallLicenseUsageWatcher* videoWallLicenseUsageWatcher() const;
-
-    PixelationSettings* pixelationSettings() const;
-
-    /**
-     * List of all Resources in the System. Some data is stored in the external dictionaries.
-     */
-    QnResourcePool* resourcePool() const;
-
-    /**
-     * Information about default Device property values based on Device model.
-     */
-    QnResourceDataPool* resourceDataPool() const;
-
-    /**
-     * Resource external data: status.
-     */
-    QnResourceStatusDictionary* resourceStatusDictionary() const;
-
-    /**
-     * Resource external data: properties.
-     */
-    QnResourcePropertyDictionary* resourcePropertyDictionary() const;
-
-    /**
-     * Information about Servers, storing Device footage.
-     */
-    QnCameraHistoryPool* cameraHistoryPool() const;
-
-    /**
-     * A pool of reusable HTTP connections.
-     */
-    nx::network::http::ClientPool* httpClientPool() const;
-
-    /**
-     * Resource external data: Server additional addresses.
-     */
-    QnServerAdditionalAddressesDictionary* serverAdditionalAddressesDictionary() const;
-
-    /**
-     * List of all peers, connected to the System.
-     */
-    QnRuntimeInfoManager* runtimeInfoManager() const;
-
-    /**
      * System settings, which do not depend on any Device or Server and are applied globally.
-     * Currently stored as Resource Properties for the `admin` User.
      */
-    SystemSettings* globalSettings() const;
-
-    /**
-     * List of all User Groups.
-     */
-    UserGroupManager* userGroupManager() const;
-
-    /**
-     * Manages which Resources are directly shared with Users or Roles.
-     */
-    nx::core::access::AccessRightsManager* accessRightsManager() const;
-
-    /**
-     * Keeps track of User and User Group own global permissions and notifies about their changes.
-     */
-    nx::core::access::GlobalPermissionsWatcher* globalPermissionsWatcher() const;
-
-    /**
-     * Manages which permissions User has on each of its accessible Resources.
-     */
-    QnResourceAccessManager* resourceAccessManager() const;
-
-    /**
-     * Manages relations between Users and Groups.
-     */
-    nx::core::access::ResourceAccessSubjectHierarchy* accessSubjectHierarchy() const;
-
-    /**
-     * Manages Showreels.
-     */
-    ShowreelManager* showreelManager() const;
-
-    /**
-     * Manages Lookup Lists. Initialized on the server side by default, on the desktop client only
-     * after first use. While not initialized, it is accessible but contains no data.
-     */
-    LookupListManager* lookupListManager() const;
-
-    /**
-     * Manages old event rules.
-     */
-    nx::vms::event::RuleManager* eventRuleManager() const;
-
-    nx::vms::rules::Engine* vmsRulesEngine() const;
-    void setVmsRulesEngine(nx::vms::rules::Engine* engine);
-
-    nx::analytics::taxonomy::DescriptorContainer* analyticsDescriptorContainer() const;
-
-    nx::analytics::taxonomy::AbstractStateWatcher* analyticsTaxonomyStateWatcher() const;
-
-    std::shared_ptr<nx::analytics::taxonomy::AbstractState> analyticsTaxonomyState() const;
+    SystemSettings* systemSettings() const;
 
     std::shared_ptr<nx::metric::Storage> metrics() const;
-
-    QnCameraNamesWatcher* cameraNamesWatcher() const;
-
-protected:
-    virtual void setMessageProcessor(QnCommonMessageProcessor* messageProcessor);
-    void setCameraHistoryPool(QnCameraHistoryPool* pool);
-
-signals:
-    void credentialsChanged();
 
 private:
     struct Private;

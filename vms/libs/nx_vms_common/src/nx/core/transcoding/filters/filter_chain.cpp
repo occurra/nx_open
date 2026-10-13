@@ -2,11 +2,7 @@
 
 #include "filter_chain.h"
 
-#include <core/resource/media_resource.h>
-#include <nx/core/transcoding/filters/motion_filter.h>
-#include <nx/core/transcoding/filters/object_info_filter.h>
 #include <nx/core/transcoding/filters/paint_image_filter.h>
-#include <nx/core/transcoding/filters/pixelation_image_filter.h>
 #include <nx/core/transcoding/filters/timestamp_filter.h>
 #include <nx/core/transcoding/filters/watermark_filter.h>
 #include <nx/utils/log/assert.h>
@@ -45,10 +41,6 @@ void FilterChain::prepare(const QSize& srcFrameResolution, const QSize& resoluti
     if (isPanoramicCamera)
         m_filters.push_back(QnAbstractImageFilterPtr(new QnTiledImageFilter(m_settings.layout)));
 
-    createPixelationImageFilter();
-    createObjectInfoFilter();
-    createMotionFilter();
-
     prepareZoomWindowFilter();
     prepareDewarpingFilter();
     prepareImageEnhancementFilter();
@@ -74,10 +66,6 @@ void FilterChain::prepareForImage(const QSize& fullImageResolution)
     // TODO: here there are no settings.pixelation enabled
     if (!isImageTranscodingRequired(fullImageResolution, kDefaultResolutionLimit))
         return;
-
-    createPixelationImageFilter();
-    createObjectInfoFilter();
-    createMotionFilter();
 
     prepareImageArFilter(fullImageResolution);
     prepareZoomWindowFilter();
@@ -119,34 +107,12 @@ bool FilterChain::isReady() const
 void FilterChain::reset()
 {
     m_filters.clear();
-    m_metadataFilters.clear();
     m_ready = false;
-}
-
-void FilterChain::setMetadata(
-    const std::vector<common::metadata::ObjectMetadataPacketPtr>& objectsData,
-    const std::vector<QnConstMetaDataV1Ptr>& motionData)
-{
-    for (auto filter: m_filters)
-    {
-        if (auto pixelationFilter = filter.dynamicCast<PixelationImageFilter>())
-            pixelationFilter->setMetadata(objectsData);
-    }
-    for (auto filter: m_metadataFilters)
-    {
-        if (auto objectInfoFilter = filter.dynamicCast<ObjectInfoFilter>())
-            objectInfoFilter->setMetadata(objectsData);
-
-        if (auto motionFilter = filter.dynamicCast<MotionFilter>())
-            motionFilter->setMetadata(motionData);
-    }
 }
 
 QSize FilterChain::apply(const QSize& resolution) const
 {
     auto result = resolution;
-    for (auto filter: m_metadataFilters)
-        result = filter->updatedResolution(result);
     for (auto filter: m_filters)
         result = filter->updatedResolution(result);
     return result;
@@ -154,29 +120,14 @@ QSize FilterChain::apply(const QSize& resolution) const
 
 CLVideoDecoderOutputPtr FilterChain::apply(const CLVideoDecoderOutputPtr& source) const
 {
-    if ((m_filters.empty() && m_metadataFilters.empty()) || !source)
+    if (m_filters.empty() || !source)
         return source;
 
     CLVideoDecoderOutputPtr result;
-    if (!m_metadataFilters.empty())
-    {
-        auto image = source->toImage();
-        for (auto filter: m_metadataFilters)
-            filter->updateImage(image);
-
-        // Force color scheme to translate colors used to draw metadata precisely.
-        // Otherwise, them are changed into blurred and unclear colors with incorrect opacity
-        // level.
-        result = CLVideoDecoderOutputPtr(new CLVideoDecoderOutput(image, SWS_CS_ITU601));
-        result->assignMiscData(source.get());
-    }
-    else
-    {
-        // Make a deep copy of the source frame since modifying a frame received from a decoder can
-        // affect further decoding process.
-        result = CLVideoDecoderOutputPtr(new CLVideoDecoderOutput());
-        result->copyFrom(source.get());
-    }
+    // Make a deep copy of the source frame since modifying a frame received from a decoder can
+    // affect further decoding process.
+    result = CLVideoDecoderOutputPtr(new CLVideoDecoderOutput());
+    result->copyFrom(source.get());
 
     for (auto filter: m_filters)
         result = filter->updateImage(result);
@@ -312,32 +263,6 @@ void FilterChain::createScaleImageFilter(const QSize& dstSize)
     {
         scaleFilter->setOutputImageSize(dstSize);
     }
-}
-
-void FilterChain::createPixelationImageFilter()
-{
-    if (m_settings.pixelationSettings)
-    {
-        m_filters.push_front(
-            QnAbstractImageFilterPtr(new PixelationImageFilter(*m_settings.pixelationSettings)));
-    }
-}
-
-void FilterChain::createMotionFilter()
-{
-    const auto& motionSettings = m_settings.motionExportSettings;
-    if (motionSettings)
-        m_metadataFilters.push_back(AbstractMetadataFilterPtr(new MotionFilter(*motionSettings)));
-}
-
-void FilterChain::createObjectInfoFilter()
-{
-    const auto& oESettings = m_settings.objectExportSettings;
-    if (!oESettings || !oESettings->taxonomyState || oESettings->typeSettings.empty())
-        return;
-
-    m_metadataFilters.push_back(
-        AbstractMetadataFilterPtr(new ObjectInfoFilter(*oESettings, m_settings)));
 }
 
 void FilterChain::prepareDownscaleFilter(

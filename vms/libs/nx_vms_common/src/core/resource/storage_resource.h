@@ -4,8 +4,6 @@
 
 #include <core/resource/abstract_storage_resource.h>
 #include <nx/utils/crypt/encryptable.h>
-#include <nx/vms/api/data/storage_archive_mode.h>
-#include <nx/vms/api/data/storage_flags.h>
 
 class QnAbstractMediaStreamDataProvider;
 
@@ -15,24 +13,14 @@ class NX_VMS_COMMON_API QnStorageResource:
 {
     using base_type = QnAbstractStorageResource;
 
-    Q_OBJECT
-
-    Q_PROPERTY(qint64 spaceLimit READ getSpaceLimit WRITE setSpaceLimit)
-    Q_PROPERTY(int maxStoreTime READ getMaxStoreTime WRITE setMaxStoreTime)
 public:
-    static const qint64 kNasStorageLimit;
-    static const qint64 kThirdPartyStorageLimit;
-
     virtual ~QnStorageResource();
-
-    QnMediaServerResourcePtr getParentServer() const;
 
     void setSpaceLimit(qint64 value);
     virtual qint64 getSpaceLimit() const;
 
     void setStorageType(const QString& type);
     QString getStorageType() const;
-    bool isCloudStorage() const;
 
     void setMaxStoreTime(int timeInSeconds);
     int getMaxStoreTime() const;
@@ -40,21 +28,10 @@ public:
     void setUsedForWriting(bool isUsedForWriting);
     bool isUsedForWriting() const;
 
-    void setRuntimeStatusFlags(nx::vms::api::StorageRuntimeFlags flags);
-    nx::vms::api::StorageRuntimeFlags runtimeStatusFlags() const;
-
-    void setPersistentStatusFlags(nx::vms::api::StoragePersistentFlags flags);
-    nx::vms::api::StoragePersistentFlags persistentStatusFlags() const;
-
-    void setStorageArchiveMode(nx::vms::api::StorageArchiveMode mode);
-    nx::vms::api::StorageArchiveMode storageArchiveMode() const;
-
     static QString urlToPath(const QString& url);
     static QString urlWithoutCredentials(const QString& url);
     QString urlWithoutCredentials() const;
 
-    void fillID();
-    static nx::Uuid fillID(const nx::Uuid& mserverId, const QString& url);
     bool isExternal() const;
     virtual bool isSystem() const { return false; }
 
@@ -67,9 +44,8 @@ public:
      * Short and unique storage ID. It is addition related ID field, and used for memory usage
      * optimization
      */
-    virtual void setUrl(const QString& value) override;
-
-    virtual void updateInternal(const QnResourcePtr& source, NotifierList& notifiers) override;
+    void setUrl(const QString& value);
+    virtual QString getUrl() const;
 
     static QString toNativeDirPath(const QString& dirPath);
 
@@ -83,13 +59,6 @@ public:
 
     virtual QIODevice* open(const QString& fileName, QIODevice::OpenMode openMode) override;
 
-signals:
-    void isUsedForWritingChanged(const QnResourcePtr& resource);
-    void isBackupChanged(const QnResourcePtr& resource);
-    void spaceLimitChanged(const QnResourcePtr& resource);
-    void typeChanged(const QnResourcePtr& resource);
-    void runtimeFlagsChanged(const QnStorageResourcePtr& storage);
-
 protected:
     virtual QIODevice* openInternal(const QString& fileName, QIODevice::OpenMode openMode) = 0;
 
@@ -102,5 +71,5 @@ private:
     QSet<QnAbstractMediaStreamDataProvider*> m_providers;
     mutable nx::Mutex m_bitrateMtx;
     bool m_isBackup = false;
-    std::atomic<nx::vms::api::StorageRuntimeFlags> m_runtimeStatusFlags;
+    QString m_url;
 };

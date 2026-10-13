@@ -4,7 +4,8 @@
 
 #include <chrono>
 
-#include <core/resource/camera_resource.h>
+#include <QtCore/QThread>
+
 #include <core/resource/resource_media_layout.h>
 #include <nx/media/config.h>
 #include <nx/media/media_data_packet.h>
@@ -12,14 +13,11 @@
 #include <nx/streaming/nx_streaming_ini.h>
 #include <nx/utils/log/log.h>
 #include <nx/utils/time_helper.h>
-#include <utils/common/sleep.h>
 #include <utils/common/synctime.h>
 #include <utils/common/util.h>
 
 using namespace std::chrono_literals;
 
-static const qint64 TIME_RESYNC_THRESHOLD = 15'000'000ll;
-static const qint64 kMinFrameDurationUsec = 1'000;
 static const int kMaxErrorsToReportIssue = 2;
 
 static std::chrono::microseconds sMediaStatisticsWindowSize = 2s;
@@ -49,29 +47,11 @@ void QnAbstractMediaStreamDataProvider::onEvent(CameraDiagnostics::Result event)
         ++m_numberOfErrors;
 }
 
-QnAbstractMediaStreamDataProvider::QnAbstractMediaStreamDataProvider(
-    const QnResourcePtr& resource):
-    m_resource(resource),
-    m_numberOfChannels(
-        [this]
-        {
-            auto mediaResource = m_resource.dynamicCast<QnMediaResource>();
-            return mediaResource ? mediaResource->getVideoLayout(this)->channelCount() : 1;
-        })
-
+QnAbstractMediaStreamDataProvider::QnAbstractMediaStreamDataProvider(const QString& url):
+    m_url(url)
 {
     m_gotKeyFrame.fill(0);
     resetTimeCheck();
-    m_isCamera = (bool) resource.dynamicCast<QnVirtualCameraResource>();
-    connect(
-        resource.data(),
-        &QnResource::propertyChanged,
-        this,
-        [this](const QnResourcePtr& /*resource*/, const QString& propertyName)
-        {
-            if (propertyName == nx::vms::api::device_properties::kVideoLayout)
-                m_numberOfChannels.reset();
-        });
 }
 
 QnAbstractMediaStreamDataProvider::~QnAbstractMediaStreamDataProvider()
@@ -110,7 +90,6 @@ bool QnAbstractMediaStreamDataProvider::needKeyData() const
 
 void QnAbstractMediaStreamDataProvider::beforeRun()
 {
-    m_numberOfChannels.reset();
     setNeedKeyData();
     resetMediaStatistics();
     m_numberOfErrors = 0;
@@ -137,8 +116,7 @@ const QnMediaStreamStatistics* QnAbstractMediaStreamDataProvider::getStatistics(
 
 int QnAbstractMediaStreamDataProvider::getNumberOfChannels() const
 {
-    NX_ASSERT(m_numberOfChannels.get(), "No channels?");
-    return std::min(CL_MAX_CHANNEL_NUMBER, std::max(1, m_numberOfChannels.get()));
+    return 1;
 }
 
 qint64 QnAbstractMediaStreamDataProvider::bitrateBitsPerSecond() const
@@ -173,54 +151,7 @@ void QnAbstractMediaStreamDataProvider::resetTimeCheck()
         m_lastMediaTime[i] = AV_NOPTS_VALUE;
 }
 
-void QnAbstractMediaStreamDataProvider::checkAndFixTimeFromCamera(
-    const QnAbstractMediaDataPtr& media)
-{
-    if (m_isCamera && media
-        && (media->dataType == QnAbstractMediaData::VIDEO
-            || media->dataType == QnAbstractMediaData::AUDIO))
-    {
-        // correct packets timestamp if we have got several packets very fast
-        int channel = media->channelNumber;
-        if (media->dataType == QnAbstractMediaData::AUDIO)
-            channel = CL_MAX_CHANNEL_NUMBER; //< use last vector element for audio timings control
-
-        if (nxStreamingIni().enableTimeCorrection)
-        {
-            if (media->flags
-                & (QnAbstractMediaData::MediaFlags_BOF
-                   | QnAbstractMediaData::MediaFlags_ReverseBlockStart))
-            {
-                resetTimeCheck();
-            }
-            else if (m_lastMediaTime[channel] != AV_NOPTS_VALUE)
-            {
-                qint64 timeDiff = media->timestamp - m_lastMediaTime[channel];
-                // if timeDiff < -N it may be time correction or daylight time change
-                if (timeDiff >= -TIME_RESYNC_THRESHOLD && timeDiff < kMinFrameDurationUsec)
-                {
-                    // Most likely, timestamps reported by the camera are not so good.
-                    NX_DEBUG(
-                        this,
-                        "Timestamp correction. ts diff %1, camera %2, %3 stream",
-                        timeDiff,
-                        m_resource,
-                        media->isLQ() ? "low" : "high");
-
-                    media->timestamp = m_lastMediaTime[channel] + kMinFrameDurationUsec;
-                }
-            }
-        }
-        m_lastMediaTime[channel] = media->timestamp;
-    }
-}
-
 CameraDiagnostics::Result QnAbstractMediaStreamDataProvider::diagnoseMediaStreamConnection()
 {
     return CameraDiagnostics::NotImplementedResult();
-}
-
-const QnResourcePtr& QnAbstractMediaStreamDataProvider::resource() const
-{
-    return m_resource;
 }

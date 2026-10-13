@@ -7,7 +7,6 @@
 
 #include <nx/network/http/http_types.h>
 #include <nx/network/rest/result.h>
-#include <nx/network/rest/user_access_data.h>
 #include <nx/network/socket.h>
 #include <nx/network/socket_delegate.h>
 #include <nx/string.h>
@@ -121,8 +120,6 @@ public:
         const QByteArray& page,
         QByteArray* contentType);
     int notFound(QByteArray& contentType);
-    nx::network::rest::AuthSession authSession() const;
-
     QnTcpListener* owner() const;
     const nx::vms::common::SystemSettings* globalSettings() const { return m_globalSettings(); }
     QnResourcePool* resourcePool() const { return m_resourcePool; }
@@ -137,8 +134,6 @@ public:
         const nx::Buffer& httpMessageBodyOnly);
 
 protected:
-    nx::network::rest::AuthSession authSession(
-        const nx::network::rest::UserAccessData& accessRights) const;
     QString extractPath() const;
     static QString extractPath(const QString& fullUrl);
 
@@ -192,11 +187,6 @@ protected:
     void sendErrorResponse(
         nx::network::http::StatusCode::Value httpResult,
         const nx::String& errorDetails = {});
-
-    void sendUnauthorizedResponse(
-        nx::network::http::StatusCode::Value httpResult,
-        const nx::network::rest::Result& result,
-        const QByteArray& messageBody = {});
 
 private:
     const nx::Uuid m_peerId;

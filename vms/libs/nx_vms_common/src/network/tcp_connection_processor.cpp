@@ -10,13 +10,13 @@
 #endif
 
 #include <core/resource/resource.h>
-#include <core/resource_management/resource_pool.h>
 #include <nx/metric/metrics_storage.h>
-#include <nx/network/aio/unified_pollset.h>
+#include <nx/network/aio/pollset.h>
 #include <nx/network/flash_socket/types.h>
 #include <nx/network/http/custom_headers.h>
 #include <nx/network/http/http_types.h>
 #include <nx/network/stun/message.h>
+#include <nx/reflect/json.h>
 #include <nx/utils/datetime.h>
 #include <nx/utils/gzip/gzip_compressor.h>
 #include <nx/utils/log/log.h>
@@ -305,13 +305,13 @@ bool QnTCPConnectionProcessor::sendBufferThreadSafe(
                 }
                 const std::chrono::milliseconds kPollTimeout =
                     std::chrono::milliseconds(sendTimeout);
-                nx::network::aio::UnifiedPollSet pollSet;
+                nx::network::aio::PollSet pollSet;
                 if (!pollSet.add(d->socket->pollable(), nx::network::aio::etWrite))
                 {
                     NX_WARNING(this, "Unable to start polling the socket.");
                     return false;
                 }
-                if (pollSet.poll(kPollTimeout) < 1)
+                if (pollSet.poll(kPollTimeout.count()) < 1)
                 {
                     NX_WARNING(this, "Unable to poll the socket.");
                     return false;
@@ -373,7 +373,7 @@ std::pair<nx::String, nx::String> QnTCPConnectionProcessor::generateErrorRespons
     {
         return std::pair<nx::String, nx::String>(
             header::ContentType::kJson.toString(),
-            QJson::serialized(
+            nx::reflect::json::serialize(
                 nx::network::rest::Result{
                     errorId.value_or(nx::network::rest::Result::errorFromHttpStatus(errorCode)),
                     details}));
@@ -467,7 +467,7 @@ nx::String QnTCPConnectionProcessor::createResponse(
             d->response.headers.insert(
                 nx::network::http::HttpHeader(
                     "Keep-Alive",
-                    lit("timeout=%1").arg(KEEP_ALIVE_TIMEOUT / 1000).toLatin1()));
+                    "timeout=" + std::to_string(KEEP_ALIVE_TIMEOUT / 1000)));
     }
 
     nx::network::http::insertOrReplaceHeader(
@@ -757,7 +757,6 @@ void QnTCPConnectionProcessor::copyClientRequestTo(QnTCPConnectionProcessor& oth
     other.d_ptr->request = d->request;
     other.d_ptr->response = d->response;
     other.d_ptr->protocol = d->protocol;
-    other.d_ptr->accessRights = d->accessRights;
     other.d_ptr->authenticatedOnce = d->authenticatedOnce;
     other.d_ptr->requestLogged = d->requestLogged;
     other.d_ptr->requestAuthTrusted = d->requestAuthTrusted;
@@ -859,26 +858,6 @@ bool QnTCPConnectionProcessor::isConnectionCanBePersistent() const
     }
 }
 
-nx::network::rest::AuthSession QnTCPConnectionProcessor::authSession() const
-{
-    Q_D(const QnTCPConnectionProcessor);
-    return authSession(d->accessRights);
-}
-
-nx::network::rest::AuthSession QnTCPConnectionProcessor::authSession(
-    const nx::network::rest::UserAccessData& accessRights) const
-{
-    Q_D(const QnTCPConnectionProcessor);
-    const auto user = resourcePool()->getResourceById(accessRights.userId);
-    const auto sessionId = accessRights.sessionId();
-    return {
-        sessionId.empty() ? nx::Uuid{} : nx::Uuid::fromArbitraryData(sessionId),
-        user ? user->getName() : QString(),
-        d->request,
-        d->socket->getForeignAddress().address,
-        d->requestAuthTrusted};
-}
-
 void QnTCPConnectionProcessor::sendErrorResponse(
     nx::network::http::StatusCode::Value httpResult,
     const nx::String& errorDetails)
@@ -888,80 +867,6 @@ void QnTCPConnectionProcessor::sendErrorResponse(
     std::tie(contentType, d->response.messageBody) =
         generateErrorResponse(httpResult, errorDetails);
     sendResponse(httpResult, contentType);
-}
-
-void QnTCPConnectionProcessor::sendUnauthorizedResponse(
-    nx::network::http::StatusCode::Value httpResult,
-    const nx::network::rest::Result& result,
-    const QByteArray& messageBody)
-{
-    Q_D(QnTCPConnectionProcessor);
-
-    nx::String contentType = nx::network::http::header::ContentType::kHtml.toString();
-    if (d->request.requestLine.method == nx::network::http::Method::get
-        || d->request.requestLine.method == nx::network::http::Method::head)
-    {
-        if (messageBody.isEmpty())
-        {
-            std::tie(contentType, d->response.messageBody) = generateErrorResponse(
-                nx::network::http::StatusCode::unauthorized,
-                result.errorString,
-                result.errorId);
-        }
-        else
-        {
-            d->response.messageBody = messageBody;
-        }
-    }
-    else if (messageBody.isEmpty())
-    {
-        if (nx::network::http::header::ContentType(
-                nx::network::http::getHeaderValue(
-                    d->request.headers,
-                    nx::network::http::header::kAccept))
-                .value
-            == nx::network::http::header::ContentType::kJson.value)
-        {
-            contentType = nx::network::http::header::ContentType::kJson.toString();
-            d->response.messageBody = QJson::serialized(result);
-        }
-    }
-
-    if (nx::network::http::getHeaderValue(d->response.headers, Qn::SERVER_GUID_HEADER_NAME)
-            .empty())
-    {
-        d->response.headers.insert(
-            nx::network::http::HttpHeader(
-                Qn::SERVER_GUID_HEADER_NAME,
-                peerId().toSimpleStdString()));
-    }
-
-    auto acceptEncodingHeaderIter = d->request.headers.find("Accept-Encoding");
-    QByteArray contentEncoding;
-    if (acceptEncodingHeaderIter != d->request.headers.end())
-    {
-        nx::network::http::header::AcceptEncodingHeader acceptEncodingHeader(
-            acceptEncodingHeaderIter->second);
-        if (acceptEncodingHeader.encodingIsAllowed("identity"))
-        {
-            contentEncoding = "identity";
-        }
-        else if (acceptEncodingHeader.encodingIsAllowed("gzip"))
-        {
-            contentEncoding = "gzip";
-            if (!d->response.messageBody.empty())
-                d->response.messageBody =
-                    nx::utils::bstream::gzip::Compressor::compressData(d->response.messageBody);
-        }
-        else
-        {
-            // TODO #akolesnikov not supported encoding requested
-        }
-    }
-    sendResponse(
-        httpResult,
-        d->response.messageBody.empty() ? QByteArray() : contentType,
-        contentEncoding);
 }
 
 QnTcpListener* QnTCPConnectionProcessor::owner() const
