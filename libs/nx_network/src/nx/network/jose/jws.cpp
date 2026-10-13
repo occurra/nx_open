@@ -13,6 +13,8 @@ std::size_t estimateSignatureLength(const std::string& algorithm)
     std::size_t len = 0;
     if (algorithm == "RS256")
         len = 3072 / 8;
+    else if (algorithm == "EdDSA")
+        len = 64; // Ed25519 signatures are always 64 bytes.
     else if (algorithm == "HS256")
         len = 64;
     else
