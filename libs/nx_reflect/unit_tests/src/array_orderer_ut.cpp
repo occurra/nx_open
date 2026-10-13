@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <nx/reflect/array_orderer.h>
+#include <nx/reflect/instrument.h>
 
 namespace nx::reflect::test {
 

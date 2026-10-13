@@ -4,7 +4,5 @@ nx_add_test(nx_reflect_ut
     NO_NX_UTILS
     PUBLIC_LIBS
         nx_reflect Qt6::Core
-    PROJECT NXLIB
-    SUITES
     FOLDER common/tests
 )

@@ -50,7 +50,7 @@ private:
 struct SerializationContext
 {
     JsonComposer composer;
-    int flags = (int) SerializationFlag::uuidWithBraces;
+    int flags = 0;
 
     bool uuidWithBraces() const { return flags & ((int) SerializationFlag::uuidWithBraces); }
 

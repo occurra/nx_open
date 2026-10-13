@@ -7,7 +7,6 @@ find_package(RapidJSON REQUIRED)
 nx_add_target(nx_reflect LIBRARY
     NO_MOC
     PUBLIC_LIBS
-        nx_preprocessor
         Boost::headers
         RapidJSON::RapidJSON
     FOLDER common/libs

@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include <nx/preprocessor/for_each.h>
-
+#include "pp_for_each.h"
 #include "utils.h"
 
 namespace nx::reflect {
