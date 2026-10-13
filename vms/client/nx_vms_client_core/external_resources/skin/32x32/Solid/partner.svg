@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 32 32">
-  <g class="32x32/Solid/partner">
-    <path fill="#D3DBDE" d="M16 18.75c-4.286 0-11.786-1.637-15-2.5V8.893c0-.631.512-1.143 1.143-1.143h27.714c.631 0 1.143.512 1.143 1.143v7.357c-3.214.863-10.714 2.5-15 2.5Z" class="Primary"/>
-    <path fill="#B0B9C4" fill-rule="evenodd" d="M12.25 3.75a.25.25 0 0 1 .25-.25h7a.25.25 0 0 1 .25.25v3h1.5v-3A1.75 1.75 0 0 0 19.5 2h-7a1.75 1.75 0 0 0-1.75 1.75v3h1.5v-3ZM1 28.857V17.25s9.061 2.5 15 2.5 15-2.5 15-2.5v11.607c0 .631-.512 1.143-1.143 1.143H2.143A1.143 1.143 0 0 1 1 28.857Z" class="Secondary" clip-rule="evenodd"/>
-  </g>
-</svg>

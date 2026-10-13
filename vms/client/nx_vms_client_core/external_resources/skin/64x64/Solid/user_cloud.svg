@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 64 64">
-  <g class="64x64/Solid/user_cloud">
-    <circle cx="32" cy="32" r="32" fill="#212A2F" class="Primary"/>
-    <path fill="#A5B7C0" fill-rule="evenodd" d="M26 24a6 6 0 1 1 12 0v2a6 6 0 1 1-12 0v-2Zm-6.789 17.927c.708-3.451 3.728-5.927 7.23-5.927h5.09c-.149.247-.287.5-.416.759-3.81.8-6.115 4.498-6.115 8.041 0 .067 0 .133.002.2h-4.156a1.854 1.854 0 0 1-1.807-2.233l.172-.84Z" class="Secondary" clip-rule="evenodd"/>
-    <path fill="#E1E7EA" fill-rule="evenodd" d="M45.989 40.6h1.344c2.025 0 3.667 1.88 3.667 4.2 0 2.32-1.642 4.2-3.667 4.2H32.667C30.642 49 29 47.12 29 44.8c0-2.32 1.642-4.2 3.667-4.2h1.344C34.577 37.405 37.043 35 40 35c2.956 0 5.423 2.405 5.989 5.6Z" class="Tertiary" clip-rule="evenodd"/>
-  </g>
-</svg>

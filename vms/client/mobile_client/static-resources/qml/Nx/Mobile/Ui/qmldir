@@ -1,4 +1,0 @@
-module Nx.Mobile.Ui
-
-TitleLabel 1.0 TitleLabel.qml
-ResourceTreeDelegate 1.0 ResourceTreeDelegate.qml
