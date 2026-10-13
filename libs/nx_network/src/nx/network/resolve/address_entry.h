@@ -9,24 +9,6 @@
 
 namespace nx::network {
 
-enum class AddressType
-{
-    unknown,
-    direct, /**< Address for direct simple connection. */
-    cloud, /**< Address that requires mediator (e.g. hole punching). */
-};
-
-std::string toString(const AddressType& type);
-
-struct TypedAddress
-{
-    HostAddress address;
-    AddressType type;
-
-    TypedAddress(HostAddress address_, AddressType type_);
-    std::string toString() const;
-};
-
 enum class AddressAttributeType
 {
     unknown,
@@ -47,11 +29,10 @@ struct NX_NETWORK_API AddressAttribute
 
 struct NX_NETWORK_API AddressEntry
 {
-    AddressType type;
     HostAddress host;
     std::vector<AddressAttribute> attributes;
 
-    AddressEntry(AddressType type_ = AddressType::unknown, HostAddress host_ = HostAddress());
+    AddressEntry(HostAddress host_ = HostAddress());
 
     AddressEntry(const SocketAddress& address);
 

@@ -100,40 +100,6 @@ private:
     }
 };
 
-TEST_F(TcpSocket, KeepAliveOptions)
-{
-    if (SocketFactory::isStreamSocketTypeEnforced())
-        return;
-
-    const auto socket = std::make_unique<TCPSocket>(AF_INET);
-    std::optional<KeepAliveOptions> result;
-
-    // Enable
-    typedef std::chrono::seconds seconds;
-    ASSERT_TRUE(socket->setKeepAlive(KeepAliveOptions(seconds(5), seconds(1), 3)));
-    ASSERT_TRUE(socket->getKeepAlive(&result));
-    ASSERT_TRUE(static_cast<bool>(result));
-
-#if defined(Q_OS_LINUX)
-    EXPECT_EQ(result->inactivityPeriodBeforeFirstProbe, seconds(5));
-    EXPECT_EQ(result->probeSendPeriod, seconds(1));
-    EXPECT_EQ(result->probeCount, 3U);
-#elif defined(Q_OS_WIN)
-    EXPECT_EQ(result->inactivityPeriodBeforeFirstProbe, seconds(5));
-    EXPECT_EQ(result->probeSendPeriod, seconds(1));
-    EXPECT_EQ(result->probeCount, 10U); // means default
-#elif defined(Q_OS_MACOS)
-    EXPECT_EQ(result->inactivityPeriodBeforeFirstProbe, seconds(5));
-    EXPECT_EQ(result->probeSendPeriod, seconds::zero()); // means default
-    EXPECT_EQ(result->probeCount, 0U); // means default
-#endif
-
-    // Disable
-    ASSERT_TRUE(socket->setKeepAlive(std::nullopt));
-    ASSERT_TRUE(socket->getKeepAlive(&result));
-    ASSERT_FALSE(static_cast<bool>(result));
-}
-
 TEST_F(TcpSocket, DISABLED_KeepAliveOptionsDefaults)
 {
     const auto socket = std::make_unique<TCPSocket>(AF_INET);

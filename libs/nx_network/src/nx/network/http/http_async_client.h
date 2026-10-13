@@ -11,7 +11,6 @@
 #include <nx/network/aio/basic_pollable.h>
 #include <nx/network/aio/timer.h>
 #include <nx/reflect/enum_instrument.h>
-#include <nx/telemetry/http_span.h>
 #include <nx/utils/interruption_flag.h>
 #include <nx/utils/move_only_func.h>
 #include <nx/utils/thread/mutex.h>
@@ -449,8 +448,6 @@ private:
     nx::network::server::CloseHandlerSubscription m_closeSubscription;
     ssl::AdapterFunc m_adapterFunc;
     std::optional<KeepAliveOptions> m_keepAliveOptions;
-    nx::telemetry::HttpSpan m_telemetrySpan;
-
     virtual void stopWhileInAioThread() override;
 
     void reportConnectionFailure(SystemError::ErrorCode errorCode);

@@ -7,8 +7,6 @@
 #include <bit>
 #include <cstring>
 
-#include <QtCore/QJsonObject>
-#include <QtCore/QJsonValue>
 #include <QtCore/QString>
 #include <QtNetwork/QHostAddress>
 
@@ -245,6 +243,13 @@ bool HostAddress::isIpv4LinkLocalNetwork() const
         const auto addr = ntohl(ip->s_addr);
         return (addr & 0xFFFF0000) == 0xA9FE0000; // 169.254.0.0
     }
+    return false;
+}
+
+bool HostAddress::isIpv6LinkLocalNetwork() const
+{
+    if (const auto ip = ipV6().first) //< Note the absence of `&` to work around an MSVC bug.
+        return ip->s6_addr[0] == 0xFE && (ip->s6_addr[1] & 0xC0) == 0x80; // fe80::/10
     return false;
 }
 
@@ -595,26 +600,6 @@ std::pair<std::string_view, std::optional<int>> SocketAddress::split(const std::
 void PrintTo(const SocketAddress& val, ::std::ostream* os)
 {
     *os << val.toString();
-}
-
-void serialize(QnJsonContext*, const SocketAddress& value, QJsonValue* target)
-{
-    QJsonObject serialized;
-    serialized.insert("address", QString::fromStdString(value.address.toString()));
-    serialized.insert("port", value.port);
-    *target = serialized;
-}
-
-bool deserialize(QnJsonContext*, const QJsonValue& source, SocketAddress* value)
-{
-    if (!source.isObject())
-        return false;
-
-    const auto obj = source.toObject();
-    value->address = HostAddress(obj.value("address").toString().toStdString());
-    value->port = obj.value("port").toInt();
-
-    return true;
 }
 
 //-------------------------------------------------------------------------------------------------

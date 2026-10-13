@@ -15,7 +15,6 @@
 namespace nx::network {
 
 class AbstractResolver;
-class CloudAddressResolver;
 
 /**
  * Resolves hostname to IP address or cloud host id which
@@ -59,9 +58,6 @@ public:
      * Handler is called with complete address list including:
      * - Addresses reported by AddressResolver::addFixedAddress.
      * - Resolve result from DnsResolver.
-     * - Resolve result from MediatorAddressResolver.
-     *
-     * @param natTraversalSupport defines if mediator should be used for address resolution.
      *
      * NOTE: Handler might be called within this function in case if
      *     values are available from cache.
@@ -69,14 +65,10 @@ public:
     void resolveAsync(
         const HostAddress& hostName,
         ResolveHandler handler,
-        NatTraversalSupport natTraversalSupport,
         int ipVersion,
         void* requestId = nullptr);
 
-    std::deque<AddressEntry> resolveSync(
-        const HostAddress& hostName,
-        NatTraversalSupport natTraversalSupport,
-        int ipVersion);
+    std::deque<AddressEntry> resolveSync(const HostAddress& hostName, int ipVersion);
 
     /**
      * Cancels request.
@@ -87,10 +79,6 @@ public:
     void cancel(void* requestId, nx::MoveOnlyFunc<void()> handler = nullptr);
 
     bool isRequestIdKnown(void* requestId) const;
-
-    bool isCloudHostname(std::string_view hostname) const;
-    bool isCloudHostname(const QString& hostname) const;
-    bool isCloudHostname(const char* hostname) const;
 
     void pleaseStop(nx::MoveOnlyFunc<void()> handler) override;
 
@@ -155,11 +143,7 @@ protected:
         RequestInfo(std::string hostname, ResolveHandler handler);
     };
 
-    bool resolveNonBlocking(
-        const std::string& hostName,
-        NatTraversalSupport natTraversalSupport,
-        int ipVersion,
-        ResolveResult* resolved);
+    bool resolveNonBlocking(const std::string& hostName, int ipVersion, ResolveResult* resolved);
 
     void dnsResolve(HaInfoIterator info, nx::Locker<nx::Mutex>* lk, int ipVersion);
 
@@ -181,7 +165,6 @@ protected:
     DnsResolver m_dnsResolver;
 
     std::vector<std::unique_ptr<AbstractResolver>> m_nonBlockingResolvers;
-    CloudAddressResolver* m_cloudAddressResolver = nullptr;
     PredefinedHostResolver* m_predefinedHostResolver = nullptr;
 
 private:

@@ -116,7 +116,7 @@ private:
         if (hostName == delayedResolveHost)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            resolved->entries.push_back({AddressType::direct, HostAddress::localhost});
+            resolved->entries.push_back({HostAddress::localhost});
             return SystemError::noError;
         }
 
@@ -129,7 +129,7 @@ private:
         if (!m_pipelinedRequests.empty())
             startNextPipelinedTask();
 
-        resolved->entries.push_back({AddressType::direct, HostAddress::localhost});
+        resolved->entries.push_back({HostAddress::localhost});
         return SystemError::noError;
     }
 

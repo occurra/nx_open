@@ -1,6 +1,6 @@
 ## Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-if(MACOSX OR IOS)
+if(MACOSX)
     set(mac_sources
         src/nx/network/ssl/certificate_mac.mm
     )
@@ -16,22 +16,7 @@ nx_add_target(nx_network LIBRARY
         nx_kit
         nx_utils
         nx_reflect
-        nx_telemetry
-        nx_prometheus
-    PRIVATE_LIBS
-        udt
     FOLDER common/libs
-)
-
-set(mocableNetworkFiles
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nx/network/public_ip_discovery.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nx/network/http/async_http_client_reply.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nx/network/deprecated/asynchttpclient.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nx/network/upnp/upnp_device_searcher.h)
-
-nx_add_qt_mocables(nx_network ${mocableNetworkFiles}
-    INCLUDE_DIRS
-        "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
 target_compile_definitions(nx_network
@@ -47,7 +32,7 @@ if(WINDOWS)
     )
 endif()
 
-if(MACOSX OR IOS)
+if(MACOSX)
     target_link_libraries(nx_network
         PRIVATE
             "-framework Security"

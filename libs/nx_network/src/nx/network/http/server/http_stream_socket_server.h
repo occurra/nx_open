@@ -8,7 +8,6 @@
 #include "http_message_dispatcher.h"
 #include "http_server_connection.h"
 #include "http_statistics.h"
-#include "settings.h"
 
 namespace nx::network::http {
 
@@ -69,12 +68,10 @@ private:
     nx::network::http::AbstractRequestHandler* m_requestHandler = nullptr;
     bool m_persistentConnectionEnabled = true;
     HttpHeaders m_extraSuccessResponseHeaders;
-    // Safe by default even for callers that construct this server directly, bypassing
-    // server::Builder/MultiEndpointServer (which would otherwise apply server::Settings
-    // explicitly, including 0 to disable the cap) (ANAS-323).
-    std::uint64_t m_maxMessageBodySize =
-        nx::network::http::server::Settings::kDefaultMaxMessageBodySize;
-    std::uint64_t m_maxHeadersSize = nx::network::http::server::Settings::kDefaultMaxHeadersSize;
+    // Safe by default: the caps apply unless the owner overrides them via setMaxMessageBodySize /
+    // setMaxHeadersSize (0 disables the cap) (ANAS-323).
+    std::uint64_t m_maxMessageBodySize = HttpServerConnection::kDefaultMaxMessageBodySize;
+    std::uint64_t m_maxHeadersSize = HttpServerConnection::kDefaultMaxHeadersSize;
 
     mutable nx::Mutex m_mutex;
     /** Calculates HttpStatistics aggregate statistics that live in its parent, RequestStatistics

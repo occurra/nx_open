@@ -15,6 +15,7 @@
 #include <QtNetwork/QHostInfo>
 
 #include <nx/utils/elapsed_timer.h>
+#include <nx/utils/lockable.h>
 #include <nx/utils/log/log.h>
 #include <nx/utils/string.h>
 

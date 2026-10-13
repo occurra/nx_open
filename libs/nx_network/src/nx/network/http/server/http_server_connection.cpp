@@ -8,7 +8,6 @@
 #include <nx/network/aio/async_channel_bridge.h>
 #include <nx/network/socket_global.h>
 #include <nx/network/url/url_builder.h>
-#include <nx/telemetry/http_span.h>
 #include <nx/utils/datetime.h>
 #include <nx/utils/log/log.h>
 
@@ -116,16 +115,6 @@ void HttpServerConnection::processMessage(nx::network::http::Message requestMess
         return;
     }
 
-    m_currentMessageSpan = telemetry::HttpSpan::serverSpan(
-        requestMessage.request->requestLine.method.toString(),
-        requestMessage.request->requestLine.url.path().toStdString(),
-        requestMessage.request->requestLine.url.toStdString(),
-        requestMessage.request->headers);
-
-    m_currentMessageSpan.setAttribute("startTime", nx::toString(clock_type::now()).toStdString());
-
-    auto spanScope = m_currentMessageSpan.activate();
-
     extractClientEndpoint(requestMessage.request->headers);
 
     auto requestContext = prepareRequestAuthContext(std::move(*requestMessage.request));
@@ -155,8 +144,7 @@ void HttpServerConnection::processMessage(nx::network::http::Message requestMess
                 std::move(response),
                 /*response body*/ nullptr,
                 ConnectionEvents(),
-                requestContext->requestReceivedTime,
-                m_currentMessageSpan));
+                requestContext->requestReceivedTime));
         return;
     }
 
@@ -165,16 +153,12 @@ void HttpServerConnection::processMessage(nx::network::http::Message requestMess
 
 void HttpServerConnection::processSomeMessageBody(nx::Buffer buffer)
 {
-    auto spanScope = m_currentMessageSpan.activate();
-
     if (m_currentRequestBodyWriter)
         m_currentRequestBodyWriter->writeBodyData(std::move(buffer));
 }
 
 void HttpServerConnection::processMessageEnd()
 {
-    auto spanScope = m_currentMessageSpan.activate();
-
     if (m_currentRequestBodyWriter)
     {
         nx::utils::InterruptionFlag::Watcher watcher(&m_destructionFlag);
@@ -287,8 +271,6 @@ void HttpServerConnection::invokeRequestHandler(
         if (!strongThis)
             return;
 
-        auto spanScope = m_currentMessageSpan.activate();
-
         Message response(http::MessageType::response);
         response.response->statusLine.statusCode = result.statusCode;
         response.response->statusLine.reasonPhrase = StatusCode::toString(result.statusCode);
@@ -304,14 +286,11 @@ void HttpServerConnection::invokeRequestHandler(
                 std::move(response),
                 std::move(result.body),
                 std::move(result.connectionEvents),
-                requestReceivedTime,
-                m_currentMessageSpan));
+                requestReceivedTime));
     };
 
     if (!m_requestHandler)
         return sendResponseFunc(RequestResult(StatusCode::notFound));
-
-    auto spanScope = m_currentMessageSpan.activate();
 
     m_requestHandler->serve(
         buildRequestContext(std::move(*requestAuthContext)),
@@ -367,8 +346,6 @@ void HttpServerConnection::prepareAndSendResponse(
     RequestDescriptor requestDescriptor,
     std::unique_ptr<ResponseMessageContext> responseMessageContext)
 {
-    auto spanScope = m_currentMessageSpan.activate();
-
     responseMessageContext->msg.response->statusLine.version =
         std::move(requestDescriptor.requestLine.version);
 
@@ -509,9 +486,6 @@ void HttpServerConnection::sendNextResponse()
 {
     NX_ASSERT(!m_responseQueue.empty());
 
-    nx::telemetry::HttpSpan span(m_responseQueue.front()->telemetrySpan);
-    auto scope = span.activate();
-
     m_currentMsgBody = std::exchange(m_responseQueue.front()->msgBody, nullptr);
 
     m_chunkedBodyParser = std::nullopt;
@@ -523,8 +497,6 @@ void HttpServerConnection::sendNextResponse()
     }
 
     const auto statusCode = m_responseQueue.front()->msg.response->statusLine.statusCode;
-    span.setStatusCode(statusCode);
-
     sendMessage(
         std::exchange(m_responseQueue.front()->msg, {}),
         std::bind(
@@ -538,10 +510,6 @@ void HttpServerConnection::responseSent(
     const time_point& requestReceivedTime,
     StatusCode::Value statusCode)
 {
-    NX_ASSERT(!m_responseQueue.empty());
-
-    auto spanScope = m_responseQueue.front()->telemetrySpan.activate();
-
     if (m_responseSentHandler)
     {
         using namespace std::chrono;
@@ -655,8 +623,6 @@ void HttpServerConnection::fullMessageHasBeenSent()
     NX_VERBOSE(this, "Complete response message has been sent");
 
     NX_ASSERT(!m_responseQueue.empty());
-
-    m_responseQueue.front()->telemetrySpan.end();
 
     const auto onResponseHasBeenSent =
         std::exchange(m_responseQueue.front()->connectionEvents.onResponseHasBeenSent, nullptr);
@@ -808,7 +774,6 @@ void HttpServerConnection::cleanUpOnConnectionClosure(SystemError::ErrorCode rea
     m_currentMsgBody.reset();
 
     m_responseQueue.clear();
-    m_currentMessageSpan.end();
 }
 
 } // namespace nx::network::http

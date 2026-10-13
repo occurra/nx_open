@@ -7,37 +7,6 @@
 
 namespace nx::network {
 
-std::string toString(const AddressType& type)
-{
-    switch (type)
-    {
-        case AddressType::unknown:
-            return "unknown";
-        case AddressType::direct:
-            return "direct";
-        case AddressType::cloud:
-            return "cloud";
-    };
-
-    NX_ASSERT(false, "undefined AddressType");
-    return nx::format("undefined=%1").arg(static_cast<int>(type)).toStdString();
-}
-
-//-------------------------------------------------------------------------------------------------
-
-TypedAddress::TypedAddress(HostAddress address_, AddressType type_):
-    address(std::move(address_)),
-    type(std::move(type_))
-{
-}
-
-std::string TypedAddress::toString() const
-{
-    return nx::utils::buildString(address.toString(), '(', network::toString(type), ')');
-}
-
-//-------------------------------------------------------------------------------------------------
-
 AddressAttribute::AddressAttribute(AddressAttributeType type_, std::uint64_t value_):
     type(type_),
     value(value_)
@@ -70,14 +39,12 @@ std::string AddressAttribute::toString() const
 
 //-------------------------------------------------------------------------------------------------
 
-AddressEntry::AddressEntry(AddressType type_, HostAddress host_):
-    type(type_),
+AddressEntry::AddressEntry(HostAddress host_):
     host(std::move(host_))
 {
 }
 
 AddressEntry::AddressEntry(const SocketAddress& address):
-    type(AddressType::direct),
     host(address.address)
 {
     if (address.port != 0)
@@ -88,7 +55,7 @@ AddressEntry::AddressEntry(const SocketAddress& address):
 
 bool AddressEntry::operator==(const AddressEntry& rhs) const
 {
-    return type == rhs.type && host == rhs.host && attributes == rhs.attributes;
+    return host == rhs.host && attributes == rhs.attributes;
 }
 
 bool AddressEntry::operator<(const AddressEntry& rhs) const
@@ -96,8 +63,6 @@ bool AddressEntry::operator<(const AddressEntry& rhs) const
     // NOTE: std::tie was originally used to implement this function, but Android NDK r29
     // has issues with tuple comparison when std::vector<std::string> is involved, so the
     // code was refactored to use explicit field-by-field comparison.
-    if (type != rhs.type)
-        return type < rhs.type;
     if (host != rhs.host)
         return host < rhs.host;
     return std::lexicographical_compare(
@@ -109,11 +74,7 @@ bool AddressEntry::operator<(const AddressEntry& rhs) const
 
 std::string AddressEntry::toString() const
 {
-    return nx::format("%1:%2(%3)")
-        .arg(network::toString(type))
-        .arg(host)
-        .container(attributes)
-        .toStdString();
+    return nx::format("%1(%2)").arg(host).container(attributes).toStdString();
 }
 
 SocketAddress AddressEntry::toEndpoint() const

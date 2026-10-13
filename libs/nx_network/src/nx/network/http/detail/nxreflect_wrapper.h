@@ -11,8 +11,7 @@
 namespace nx::network::http::detail {
 
 /**
- * Wraps nx_reflect serialization/deserialization to provide common API with nx_fusion.
- * This is needed while nx_reflect and nx_fusion are both used in the codebase.
+ * Wraps nx_reflect serialization/deserialization to provide a common API.
  */
 class NxReflectWrapper
 {

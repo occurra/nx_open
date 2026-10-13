@@ -7,6 +7,7 @@
 #include <nx/utils/datetime.h>
 #include <nx/utils/log/log_main.h>
 #include <nx/utils/std_string_utils.h>
+#include <nx/utils/time.h>
 
 namespace nx::network::rtsp {
 

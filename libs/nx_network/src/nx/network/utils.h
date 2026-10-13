@@ -23,7 +23,7 @@ concept CookieViewFilterPredicate =
 
 constexpr nx::Closure cookiesView =
     []<CookieViewFilterPredicate Predicate = nx::traits::AlwaysTrue>(
-        const HttpHeaders& headers,
+        const http::HttpHeaders& headers,
         Predicate&& filter = {})
     -> nx::ranges::ViewOf<std::pair<std::string_view, std::string_view>> auto
 {
