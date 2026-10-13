@@ -2,25 +2,16 @@
 
 #pragma once
 
-#include <common/common_globals.h>
-#include <core/resource/resource.h>
 #include <core/resource/resource_media_layout.h>
 #include <nx/media/abstract_data_packet.h>
 #include <nx/utils/lockable.h>
-#include <nx/utils/thread/long_runnable.h>
-#include <utils/common/from_this_to_shared.h>
 
-class QnAbstractStreamDataProvider;
-class QnResource;
 class QnAbstractMediaDataReceptor;
 
-#define CL_MAX_DATASIZE \
-    (10 * 1024 * 1024) // assume we can never get compressed data with  size greater than this
 #define CL_MAX_CHANNEL_NUMBER (10)
 
-class NX_VMS_COMMON_API QnAbstractStreamDataProvider: public QnLongRunnable
+class NX_VMS_COMMON_API QnAbstractStreamDataProvider
 {
-    Q_OBJECT
 public:
     QnAbstractStreamDataProvider();
     virtual ~QnAbstractStreamDataProvider();
@@ -28,41 +19,32 @@ public:
     virtual bool dataCanBeAccepted() const;
 
     int processorsCount() const;
-    void addDataProcessor(QnAbstractMediaDataReceptor* dp);
-    void removeDataProcessor(QnAbstractMediaDataReceptor* dp);
-
-    virtual void subscribe(QnAbstractMediaDataReceptor* dp) { addDataProcessor(dp); }
-    virtual void unsubscribe(QnAbstractMediaDataReceptor* dp) { removeDataProcessor(dp); }
-
-    virtual bool isReverseMode() const { return false; }
-
-    void setNeedSleep(bool sleep);
-
-    double getSpeed() const;
-
-    /* One resource may have several providers used with different roles*/
-    virtual void setRole(Qn::ConnectionRole role);
-    Qn::ConnectionRole getRole() const;
+    virtual void addDataProcessor(QnAbstractMediaDataReceptor* dp);
+    virtual void removeDataProcessor(QnAbstractMediaDataReceptor* dp);
 
     virtual QnConstResourceVideoLayoutPtr getVideoLayout() const
     {
         return QnConstResourceVideoLayoutPtr();
     }
     virtual bool hasVideo() const { return true; }
-    virtual bool needConfigureProvider() const;
-    virtual void startIfNotRunning() { start(); }
-
-signals:
-    void videoLayoutChanged();
 
 protected:
     virtual void putData(const QnAbstractDataPacketPtr& data);
 
+    using LockedDataProcessors = nx::Lockable<QList<QnAbstractMediaDataReceptor*>>::LockedType;
+
+    // Register / unregister a processor when the m_dataprocessors lock is already
+    // held by the caller, so a subclass can extend add/remove atomically with its
+    // own per-processor state. Pass the handle returned by m_dataprocessors.lock().
+    void addDataProcessorUnsafe(
+        LockedDataProcessors& dataProcessors,
+        QnAbstractMediaDataReceptor* dp);
+    void removeDataProcessorUnsafe(
+        LockedDataProcessors& dataProcessors,
+        QnAbstractMediaDataReceptor* dp);
+
 protected:
     nx::Lockable<QList<QnAbstractMediaDataReceptor*>> m_dataprocessors;
-
-private:
-    std::atomic<Qn::ConnectionRole> m_role;
 };
 
 using QnAbstractStreamDataProviderPtr = std::shared_ptr<QnAbstractStreamDataProvider>;

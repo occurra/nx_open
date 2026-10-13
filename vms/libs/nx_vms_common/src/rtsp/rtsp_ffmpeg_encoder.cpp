@@ -109,7 +109,7 @@ void QnRtspFfmpegEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
     if (m_media->flags & QnAbstractMediaData::MediaFlags_AfterEOF)
         m_contextSent.reset();
 
-    QnConstMetaDataV1Ptr metadata = std::dynamic_pointer_cast<const QnMetaDataV1>(m_media);
+    auto metadata = std::dynamic_pointer_cast<const QnCompressedMetadata>(m_media);
     if (!metadata && m_media->compressionType)
     {
         CodecParametersConstPtr currentContext = m_media->context;
@@ -119,10 +119,7 @@ void QnRtspFfmpegEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
         if (!m_contextSent || !m_contextSent->isEqual(*currentContext.get()))
         {
             m_contextSent = currentContext;
-            if (!m_serverVersion.isNull() && m_serverVersion.major < 5)
-                m_codecParamsData = currentContext->serializeInDeprecatedFormat42();
-            else
-                m_codecParamsData = currentContext->serialize();
+            m_codecParamsData = currentContext->serialize();
         }
     }
     m_eofReached = false;
@@ -253,9 +250,4 @@ void QnRtspFfmpegEncoder::setLiveMarker(int value)
 void QnRtspFfmpegEncoder::setAdditionFlags(quint16 value)
 {
     m_additionFlags = value;
-}
-
-void QnRtspFfmpegEncoder::setServerVersion(const nx::utils::SoftwareVersion& serverVersion)
-{
-    m_serverVersion = serverVersion;
 }

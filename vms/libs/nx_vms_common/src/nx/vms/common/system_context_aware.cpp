@@ -6,7 +6,6 @@
 
 #include <nx/utils/log/assert.h>
 #include <nx/utils/log/log.h>
-#include <nx/vms/common/network/abstract_certificate_verifier.h>
 
 #include "system_context.h"
 
@@ -56,101 +55,9 @@ nx::Uuid SystemContextAware::peerId() const
     return systemContext()->peerId();
 }
 
-std::shared_ptr<ec2::AbstractECConnection> SystemContextAware::messageBusConnection() const
-{
-    return systemContext()->messageBusConnection();
-}
-
-QnResourceAccessManager* SystemContextAware::resourceAccessManager() const
-{
-    return systemContext()->resourceAccessManager();
-}
-
-QnResourcePool* SystemContextAware::resourcePool() const
-{
-    return systemContext()->resourcePool();
-}
-
-QnResourcePropertyDictionary* SystemContextAware::resourcePropertyDictionary() const
-{
-    return systemContext()->resourcePropertyDictionary();
-}
-
-QnCommonMessageProcessor* SystemContextAware::messageProcessor() const
-{
-    return systemContext()->messageProcessor();
-}
-
-QnCameraHistoryPool* SystemContextAware::cameraHistoryPool() const
-{
-    return systemContext()->cameraHistoryPool();
-}
-
 SystemSettings* SystemContextAware::systemSettings() const
 {
-    return systemContext()->globalSettings();
-}
-
-ShowreelManager* SystemContextAware::showreelManager() const
-{
-    return systemContext()->showreelManager();
-}
-
-LookupListManager* SystemContextAware::lookupListManager() const
-{
-    return systemContext()->lookupListManager();
-}
-
-QnRuntimeInfoManager* SystemContextAware::runtimeInfoManager() const
-{
-    return systemContext()->runtimeInfoManager();
-}
-
-UserGroupManager* SystemContextAware::userGroupManager() const
-{
-    return systemContext()->userGroupManager();
-}
-
-nx::core::access::AccessRightsManager* SystemContextAware::accessRightsManager() const
-{
-    return systemContext()->accessRightsManager();
-}
-
-QnLicensePool* SystemContextAware::licensePool() const
-{
-    return systemContext()->licensePool();
-}
-
-nx::vms::event::RuleManager* SystemContextAware::eventRuleManager() const
-{
-    return systemContext()->eventRuleManager();
-}
-
-QnResourceStatusDictionary* SystemContextAware::resourceStatusDictionary() const
-{
-    return systemContext()->resourceStatusDictionary();
-}
-
-QnServerAdditionalAddressesDictionary* SystemContextAware::serverAdditionalAddressesDictionary()
-    const
-{
-    return systemContext()->serverAdditionalAddressesDictionary();
-}
-
-saas::ServiceManager* SystemContextAware::saasServiceManager() const
-{
-    return systemContext()->saasServiceManager();
-}
-
-std::shared_ptr<nx::analytics::taxonomy::AbstractState> SystemContextAware::
-    analyticsTaxonomyState() const
-{
-    return systemContext()->analyticsTaxonomyState();
-}
-
-AbstractCertificateVerifier* SystemContextAware::verifier() const
-{
-    return systemContext()->certificateVerifier();
+    return systemContext()->systemSettings();
 }
 
 } // namespace nx::vms::common

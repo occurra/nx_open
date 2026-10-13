@@ -6,16 +6,12 @@
 #include <core/resource/resource.h>
 #include <nx/utils/log/log.h>
 
-QnAbstractStreamDataProvider::QnAbstractStreamDataProvider():
-    m_role(Qn::CR_Default)
+QnAbstractStreamDataProvider::QnAbstractStreamDataProvider()
 {
-    NX_DEBUG(this, "New");
 }
 
 QnAbstractStreamDataProvider::~QnAbstractStreamDataProvider()
 {
-    NX_DEBUG(this, "Delete");
-    stop();
 }
 
 bool QnAbstractStreamDataProvider::dataCanBeAccepted() const
@@ -42,22 +38,16 @@ void QnAbstractStreamDataProvider::addDataProcessor(QnAbstractMediaDataReceptor*
     NX_CRITICAL(dp);
     auto dataProcessors = m_dataprocessors.lock();
     if (!dataProcessors->contains(dp))
-    {
-        NX_DEBUG(this, "Add data processor: %1", dp);
-        dataProcessors->push_back(dp);
-        dp->consumers += 1;
-    }
+        addDataProcessorUnsafe(dataProcessors, dp);
 }
 
-bool QnAbstractStreamDataProvider::needConfigureProvider() const
+void QnAbstractStreamDataProvider::addDataProcessorUnsafe(
+    LockedDataProcessors& dataProcessors,
+    QnAbstractMediaDataReceptor* dp)
 {
-    const auto dataProviders = m_dataprocessors.lock();
-    for (auto processor: *dataProviders)
-    {
-        if (processor->needConfigureProvider())
-            return true;
-    }
-    return false;
+    NX_DEBUG(this, "Add data processor: %1", dp);
+    dataProcessors->push_back(dp);
+    dp->consumers += 1;
 }
 
 void QnAbstractStreamDataProvider::removeDataProcessor(QnAbstractMediaDataReceptor* dp)
@@ -65,7 +55,15 @@ void QnAbstractStreamDataProvider::removeDataProcessor(QnAbstractMediaDataRecept
     if (!dp)
         return;
 
-    if (m_dataprocessors.lock()->removeOne(dp))
+    auto dataProcessors = m_dataprocessors.lock();
+    removeDataProcessorUnsafe(dataProcessors, dp);
+}
+
+void QnAbstractStreamDataProvider::removeDataProcessorUnsafe(
+    LockedDataProcessors& dataProcessors,
+    QnAbstractMediaDataReceptor* dp)
+{
+    if (dataProcessors->removeOne(dp))
     {
         dp->consumers -= 1;
         NX_DEBUG(this, "Remove data processor: %1", dp);
@@ -84,15 +82,4 @@ void QnAbstractStreamDataProvider::putData(const QnAbstractDataPacketPtr& data)
     const auto dataProcessors = m_dataprocessors.lock();
     for (const auto& p: *dataProcessors)
         p->putData(data);
-}
-
-void QnAbstractStreamDataProvider::setRole(Qn::ConnectionRole role)
-{
-    NX_ASSERT(!isRunning());
-    m_role = role;
-}
-
-Qn::ConnectionRole QnAbstractStreamDataProvider::getRole() const
-{
-    return m_role;
 }

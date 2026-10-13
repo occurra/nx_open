@@ -4,7 +4,6 @@
 
 #include <QtCore/QMap>
 
-#include <nx/utils/software_version.h>
 #include <transcoding/ffmpeg_video_transcoder.h>
 
 #include "abstract_rtsp_encoder.h"
@@ -33,8 +32,6 @@ public:
     void setLiveMarker(int value);
     void setAdditionFlags(quint16 value);
 
-    void setServerVersion(const nx::utils::SoftwareVersion& serverVersion);
-
 private:
     DecoderConfig m_decoderConfig;
     bool m_gotLivePacket;
@@ -52,7 +49,6 @@ private:
 
     std::unique_ptr<QnFfmpegVideoTranscoder> m_videoTranscoder;
     nx::metric::Storage* m_metrics = nullptr;
-    nx::utils::SoftwareVersion m_serverVersion;
 
     CodecParametersConstPtr getGeneratedContext(AVCodecID compressionType);
     QnConstAbstractMediaDataPtr transcodeVideoPacket(QnConstAbstractMediaDataPtr media);

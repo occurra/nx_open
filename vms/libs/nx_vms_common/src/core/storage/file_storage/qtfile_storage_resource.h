@@ -2,14 +2,11 @@
 
 #pragma once
 
-#include <nx/vms/api/data/storage_space_data.h>
-
 #include "core/resource/storage_resource.h"
 
 /*
  * QnQtFileStorageResource uses Qt based IO access
  */
-
 class NX_VMS_COMMON_API QnQtFileStorageResource: public QnStorageResource
 {
     using base_type = QnStorageResource;

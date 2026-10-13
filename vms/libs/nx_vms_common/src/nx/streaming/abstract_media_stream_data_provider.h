@@ -4,20 +4,24 @@
 
 #include <QtCore/QSharedPointer>
 
+#include <core/resource/resource_fwd.h>
 #include <nx/media/config.h>
 #include <nx/media/media_data_packet.h>
 #include <nx/streaming/abstract_stream_data_provider.h>
 #include <nx/streaming/media_stream_statistics.h>
+#include <nx/utils/thread/long_runnable.h>
 #include <nx/utils/value_cache.h>
 #include <utils/camera/camera_diagnostics.h>
 
-class NX_VMS_COMMON_API QnAbstractMediaStreamDataProvider: public QnAbstractStreamDataProvider
+class NX_VMS_COMMON_API QnAbstractMediaStreamDataProvider:
+    public QnAbstractStreamDataProvider,
+    public QnLongRunnable
 {
 public:
     static void setMediaStatisticsWindowSize(std::chrono::microseconds value);
     static void setMediaStatisticsMaxDurationInFrames(int value);
 
-    explicit QnAbstractMediaStreamDataProvider(const QnResourcePtr& resource);
+    explicit QnAbstractMediaStreamDataProvider(const QString& url);
     virtual ~QnAbstractMediaStreamDataProvider();
 
     const QnMediaStreamStatistics* getStatistics(int channel) const;
@@ -34,7 +38,8 @@ public:
     virtual bool hasThread() const { return true; }
     virtual bool reinitResourceOnStreamError() const { return true; }
     bool isConnectionLost() const;
-    const QnResourcePtr& resource() const;
+
+    QString getUrl() const { return m_url; }
 
 protected:
     virtual void sleepIfNeeded() {}
@@ -42,7 +47,6 @@ protected:
     virtual void afterRun();
     virtual bool beforeGetData() { return true; }
 
-    void checkAndFixTimeFromCamera(const QnAbstractMediaDataPtr& data);
     void resetTimeCheck();
     void onEvent(CameraDiagnostics::Result event);
     void resetMediaStatistics();
@@ -56,14 +60,15 @@ protected:
     virtual bool needKeyData(int channel) const;
     virtual bool needKeyData() const;
 
+protected:
+    const QString m_url;
+
 private:
     int getNumberOfChannels() const;
 
 private:
     QnResourcePtr m_resource;
-    nx::utils::CachedValue<int> m_numberOfChannels;
     qint64 m_lastMediaTime[CL_MAX_CHANNEL_NUMBER + 1]; //< max video channels + audio channel
-    bool m_isCamera;
     std::atomic<int> m_numberOfErrors{};
 };
 

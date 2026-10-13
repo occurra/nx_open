@@ -2,8 +2,9 @@
 
 #include "abstract_data_consumer.h"
 
+#include <QtCore/QThread>
+
 #include <nx/utils/log/log.h>
-#include <utils/common/sleep.h>
 
 namespace { static constexpr std::chrono::milliseconds kWaitTimeoutMs(200); } // namespace
 
@@ -75,7 +76,7 @@ void QnAbstractDataConsumer::runCycle()
 
     if (!get)
     {
-        QnSleep::msleep(kNoDataDelayIntervalMs);
+        QThread::msleep(kNoDataDelayIntervalMs);
         return;
     }
     while (!needToStop())
@@ -83,7 +84,7 @@ void QnAbstractDataConsumer::runCycle()
         if (processData(data))
             break;
         else
-            QnSleep::msleep(kNoDataDelayIntervalMs);
+            QThread::msleep(kNoDataDelayIntervalMs);
     }
 }
 

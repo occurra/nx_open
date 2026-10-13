@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <nx/fusion/model_functions_fwd.h>
+#include <nx/reflect/instrument.h>
 #include <nx/vms/api/data/watermark_settings.h>
 
 namespace nx {
@@ -18,8 +18,7 @@ struct Watermark
     bool visible() const { return settings.useWatermark && !text.isEmpty(); };
 };
 #define Watermark_Fields (settings)(text)
-
-QN_FUSION_DECLARE_FUNCTIONS(Watermark, (json), NX_VMS_COMMON_API)
+NX_REFLECTION_INSTRUMENT(Watermark, Watermark_Fields)
 
 } // namespace core
 } // namespace nx

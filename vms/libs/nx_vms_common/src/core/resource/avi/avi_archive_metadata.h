@@ -6,7 +6,6 @@
 
 #include <QtCore/QSize>
 
-#include <nx/fusion/model_functions_fwd.h>
 #include <nx/reflect/enum_instrument.h>
 #include <nx/reflect/instrument.h>
 #include <nx/utils/json/qt_geometry_reflect.h>
@@ -65,5 +64,4 @@ struct NX_VMS_COMMON_API QnAviArchiveMetadata
     (version)(signature)( \
         timeZoneOffset) (timeZoneId) (startTimeMs) (videoLayoutChannels) (videoLayoutSize) (dewarpingParams) (overridenAr) (integrityHash) (metadataStreamVersion) (encryptionData) (rotation)
 
-QN_FUSION_DECLARE_FUNCTIONS(QnAviArchiveMetadata, (json), NX_VMS_COMMON_API)
 NX_REFLECTION_INSTRUMENT(QnAviArchiveMetadata, QnAviArchiveMetadata_Fields)

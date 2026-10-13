@@ -5,33 +5,10 @@
 #include <QtCore/QList>
 #include <QtCore/QString>
 
-#include <core/resource/resource_fwd.h>
-#include <nx/media/stream_event.h>
 #include <nx/utils/url.h>
 
 //! Holds types related to performing camera availability diagnostics
 namespace CameraDiagnostics {
-
-namespace Step {
-
-enum Value
-{
-    none = 0,
-    //! checking server availability
-    mediaServerAvailability,
-    //! checking that camera responses on base API requests
-    cameraAvailability,
-    //! checking that camera provides media stream
-    mediaStreamAvailability,
-    //! checking media stream provided by camera for errors
-    mediaStreamIntegrity,
-    end
-};
-
-NX_VMS_COMMON_API QString toString(Value val);
-NX_VMS_COMMON_API Value fromString(const QString& str);
-
-} // namespace Step
 
 //! Contains error codes
 namespace ErrorCode {
@@ -83,17 +60,9 @@ enum Value
 
 typedef QList<QString> ErrorParams;
 
-NX_VMS_COMMON_API QString toString(
-    Value val,
-    QnResourcePool* resourcePool,
-    const QnVirtualCameraResourcePtr& device,
-    const ErrorParams& errorParams = ErrorParams());
+NX_VMS_COMMON_API QString toString(Value val, const ErrorParams& errorParams = ErrorParams());
 
-NX_VMS_COMMON_API QString toString(
-    int val,
-    QnResourcePool* resourcePool,
-    const QnVirtualCameraResourcePtr& device,
-    const ErrorParams& errorParams = ErrorParams());
+NX_VMS_COMMON_API QString toString(int val, const ErrorParams& errorParams = ErrorParams());
 
 } // namespace ErrorCode
 
@@ -113,11 +82,8 @@ public:
         const QString& param2 = QString());
 
     explicit operator bool() const;
-    bool isOk() const;
-    bool isUnauthorized() const;
-    QString toString(QnResourcePool* resourcePool) const;
-    QString toString(QnResourcePool* resourcePool, const QnVirtualCameraResourcePtr& device) const;
-    nx::media::StreamEvent toMediaStreamEvent() const;
+
+    QString toString() const;
 
 protected:
     QString urlToStr(const nx::Url& value) const;

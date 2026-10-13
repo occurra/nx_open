@@ -10,19 +10,15 @@
 #include <QtGui/QRegion>
 
 #include <core/resource/avi/avi_archive_metadata.h>
-#include <core/resource/motion_window.h>
 #include <core/resource/resource_fwd.h>
 #include <core/resource/resource_media_layout.h>
-#include <motion/abstract_motion_archive.h>
 #include <nx/media/abstract_data_packet.h>
+#include <nx/media/media_data_packet.h>
 #include <nx/reflect/instrument.h>
 #include <nx/string.h>
 #include <nx/utils/uuid.h>
 #include <nx/vms/api/types/resource_types.h>
-#include <nx/vms/api/types/storage_location.h>
 #include <utils/camera/camera_diagnostics.h>
-
-#include "abstract_archive_integrity_watcher.h"
 
 // Trailing `_` is removed from a name serialization by NX_REFLECTION_ENUM_CLASS implementation.
 NX_REFLECTION_ENUM_CLASS(PlaybackMode,
@@ -75,9 +71,7 @@ public:
     QnAbstractArchiveDelegate() = default;
     virtual ~QnAbstractArchiveDelegate() = default;
 
-    virtual bool open(
-        const QnResourcePtr& resource,
-        AbstractArchiveIntegrityWatcher* archiveIntegrityWatcher = nullptr) = 0;
+    virtual bool open(const QString& url) = 0;
     virtual void close() = 0;
     virtual bool reopen() { return true; };
     virtual qint64 startTime() const = 0;
@@ -132,23 +126,11 @@ public:
      * time interval*/
     virtual void setRange(qint64 /*startTime*/, qint64 /*endTime*/, qint64 /*frameStep*/) {}
 
-    virtual QnAbstractMotionArchiveConnectionPtr getMotionConnection(int /*channel*/)
-    {
-        return nullptr;
-    }
-    virtual QnAbstractMotionArchiveConnectionPtr getAnalyticsConnection(int /*channel*/)
-    {
-        return nullptr;
-    }
-
     virtual void setStreamDataFilter(nx::vms::api::StreamDataFilters /*filter*/) {}
     virtual nx::vms::api::StreamDataFilters streamDataFilter() const
     {
         return nx::vms::api::StreamDataFilter::media;
     }
-    virtual void setStorageLocationFilter(nx::vms::api::StorageLocation /*filter*/) {}
-
-    virtual void setMotionRegion(const QnMotionRegion& /*region*/) {}
 
     /** This function used for multi-view delegate to help connect different streams together
      * (VMAX) */

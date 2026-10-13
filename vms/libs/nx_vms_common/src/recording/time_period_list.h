@@ -11,6 +11,7 @@
     #include <QtCore/QList>
 #endif
 
+#include <nx/reflect/instrument.h>
 #include <nx/utils/log/assert.h>
 #include <nx/utils/uuid.h>
 
@@ -284,21 +285,5 @@ QnTimePeriodList timePeriodListFromRange(
 
     return result;
 }
-
-struct NX_VMS_COMMON_API MultiServerPeriodData
-{
-    /** Guid of the server, owning this periods. */
-    nx::Uuid guid;
-    QnTimePeriodList periods;
-
-    bool operator==(const MultiServerPeriodData& other) const = default;
-};
-
-typedef std::vector<MultiServerPeriodData> MultiServerPeriodDataList;
-
-QN_FUSION_DECLARE_FUNCTIONS(
-    MultiServerPeriodData,
-    (json) (ubjson) (xml) (csv_record) (compressed_time),
-    NX_VMS_COMMON_API);
 
 #endif // QN_TIME_PERIOD_LIST_H

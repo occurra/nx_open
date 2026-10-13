@@ -3,10 +3,11 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 
+#include <QtCore/QByteArray>
 #include <QtCore/QLatin1String>
-
-#include <nx/fusion/model_functions_fwd.h>
+#include <QtCore/QString>
 
 extern "C" {
 #include <openssl/evp.h>
@@ -41,6 +42,7 @@ struct NX_VMS_COMMON_API AesKey
     bool operator==(const AesKey& other) const = default;
 };
 #define AesKey_Fields (cipherKey)(ivVect)(salt)
+NX_REFLECTION_INSTRUMENT(AesKey, AesKey_Fields)
 
 struct AesKeyWithTime: public AesKey
 {
@@ -77,8 +79,6 @@ NX_VMS_COMMON_API std::pair<AesKey, uint64_t> fromEncryptionData(
 
 NX_VMS_COMMON_API const EVP_CIPHER* toCipher(Algorithm algorithm);
 
-QN_FUSION_DECLARE_FUNCTIONS(AesKey, (json), NX_VMS_COMMON_API)
-QN_FUSION_DECLARE_FUNCTIONS(AesKeyWithTime, (json), NX_VMS_COMMON_API)
 NX_REFLECTION_INSTRUMENT(AesKeyWithTime, AesKeyWithTime_Fields)
 
 } // namespace nx::vms::crypt
