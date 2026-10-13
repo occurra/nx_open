@@ -100,7 +100,11 @@ bool QnFfmpegAudioDecoder::decode(QnCompressedAudioDataPtr& data, nx::utils::Byt
             m_outFrame->nb_samples * QnFfmpegHelper::audioSampleSize(m_audioDecoderCtx);
         if (outbuf_len + decodedBytes > (int) result.capacity())
         {
-            result.reserve(result.capacity() * 2);
+            // reserve() itself grows to at least double the current capacity; asking it to
+            // double here too means a buffer starting at capacity 0 never grows at all, since
+            // 0 * 2 stays 0 - result.data() then keeps returning null while finishWriting()
+            // still advances m_size, handing every caller a size/pointer mismatch.
+            result.reserve(outbuf_len + decodedBytes);
             outbuf = (quint8*) result.data() + outbuf_len;
         }
 

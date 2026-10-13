@@ -11,7 +11,7 @@
 struct SwrContext;
 struct AVFrame;
 
-class FfmpegAudioResampler
+class NX_VMS_COMMON_API FfmpegAudioResampler
 {
 public:
     struct Config

@@ -2,7 +2,6 @@
 
 #include "filter_helper.h"
 
-#include <core/resource/media_resource.h>
 #include <nx/core/transcoding/filters/text_image_filter.h>
 #include <nx/media/ffmpeg/frame_info.h>
 #include <nx/utils/log/log.h>

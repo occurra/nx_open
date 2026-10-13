@@ -2,14 +2,10 @@
 
 #include "transcoding_utils.h"
 
-#include <array>
-
-#include <core/resource/camera_media_stream_info.h>
-#include <core/resource/camera_resource.h>
 #include <nx/codec/h263/h263_utils.h>
-#include <nx/fusion/serialization/json.h>
 #include <nx/media/codec_parameters.h>
 #include <nx/media/ffmpeg_helper.h>
+#include <nx/media/sse_helper.h>
 #include <nx/streaming/abstract_stream_data_provider.h>
 #include <nx/utils/log/log.h>
 #include <nx/utils/math/math.h>
@@ -187,11 +183,11 @@ QSize normalizeResolution(const QSize& target, const QSize& source)
 int suggestBitrate(
     AVCodecID /*codec*/,
     QSize resolution,
-    Qn::StreamQuality quality,
+    nx::vms::api::StreamQuality quality,
     const char* codecName)
 {
-    // I assume for a Qn::StreamQuality::highest quality 30 fps for 1080 we need 10 mbps
-    // I assume for a Qn::StreamQuality::lowest quality 30 fps for 1080 we need 1 mbps
+    // I assume for a StreamQuality::highest quality 30 fps for 1080 we need 10 mbps
+    // I assume for a StreamQuality::lowest quality 30 fps for 1080 we need 1 mbps
 
     if (resolution.width() == 0)
         resolution.setWidth(resolution.height() * 4 / 3);
@@ -199,22 +195,22 @@ int suggestBitrate(
     int hiEnd;
     switch (quality)
     {
-        case Qn::StreamQuality::lowest:
+        case nx::vms::api::StreamQuality::lowest:
             hiEnd = 1024;
             break;
-        case Qn::StreamQuality::low:
+        case nx::vms::api::StreamQuality::low:
             hiEnd = 1024 + 512;
             break;
-        case Qn::StreamQuality::normal:
+        case nx::vms::api::StreamQuality::normal:
             hiEnd = 1024 * 2;
             break;
-        case Qn::StreamQuality::high:
+        case nx::vms::api::StreamQuality::high:
             hiEnd = 1024 * 3;
             break;
-        case Qn::StreamQuality::rapidReview:
+        case nx::vms::api::StreamQuality::rapidReview:
             hiEnd = 1024 * 10;
             break;
-        case Qn::StreamQuality::highest:
+        case nx::vms::api::StreamQuality::highest:
         default:
             hiEnd = 1024 * 5;
             break;
@@ -237,7 +233,7 @@ int suggestBitrate(
     return qMax(128, result) * 1024;
 }
 
-QnCodecParams::Value suggestMediaStreamParams(AVCodecID codec, Qn::StreamQuality quality)
+QnCodecParams::Value suggestMediaStreamParams(AVCodecID codec, nx::vms::api::StreamQuality quality)
 {
     QnCodecParams::Value params;
 
@@ -248,20 +244,20 @@ QnCodecParams::Value suggestMediaStreamParams(AVCodecID codec, Qn::StreamQuality
             int qVal = 1;
             switch (quality)
             {
-                case Qn::StreamQuality::lowest:
+                case nx::vms::api::StreamQuality::lowest:
                     qVal = 8;
                     break;
-                case Qn::StreamQuality::low:
+                case nx::vms::api::StreamQuality::low:
                     qVal = 4;
                     break;
-                case Qn::StreamQuality::normal:
+                case nx::vms::api::StreamQuality::normal:
                     qVal = 3;
                     break;
-                case Qn::StreamQuality::high:
+                case nx::vms::api::StreamQuality::high:
                     qVal = 2;
                     break;
-                case Qn::StreamQuality::highest:
-                case Qn::StreamQuality::rapidReview:
+                case nx::vms::api::StreamQuality::highest:
+                case nx::vms::api::StreamQuality::rapidReview:
                     qVal = 1;
                     break;
                 default:
@@ -279,27 +275,27 @@ QnCodecParams::Value suggestMediaStreamParams(AVCodecID codec, Qn::StreamQuality
 
             switch (quality)
             {
-                case Qn::StreamQuality::lowest:
+                case nx::vms::api::StreamQuality::lowest:
                     cpuUsed = 5;
                     break;
-                case Qn::StreamQuality::low:
+                case nx::vms::api::StreamQuality::low:
                     cpuUsed = 4;
                     break;
-                case Qn::StreamQuality::normal:
+                case nx::vms::api::StreamQuality::normal:
                     cpuUsed = 3;
                     break;
-                case Qn::StreamQuality::high:
+                case nx::vms::api::StreamQuality::high:
                     cpuUsed = 1;
                     break;
-                case Qn::StreamQuality::highest:
-                case Qn::StreamQuality::rapidReview:
+                case nx::vms::api::StreamQuality::highest:
+                case nx::vms::api::StreamQuality::rapidReview:
                     cpuUsed = 0;
                     break;
                 default:
                     break;
             }
 
-            if (quality <= Qn::StreamQuality::normal)
+            if (quality <= nx::vms::api::StreamQuality::normal)
             {
                 // [0..3] Bigger numbers mean less possibilities for encoder.
                 params.insert("profile", 1);

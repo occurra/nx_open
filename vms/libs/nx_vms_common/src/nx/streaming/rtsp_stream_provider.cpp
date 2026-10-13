@@ -6,11 +6,7 @@
 
 #include <QtCore/QSettings>
 
-#include <core/resource/camera_resource.h>
-#include <core/resource/media_resource.h>
 #include <core/resource/resource_media_layout.h>
-#include <core/resource_management/resource_data_pool.h>
-#include <nx/fusion/serialization/json_functions.h>
 #include <nx/network/compat_poll.h>
 #include <nx/network/rtsp/rtsp_types.h>
 #include <nx/reflect/string_conversion.h>
@@ -31,7 +27,6 @@
 #include <nx/vms/api/types/rtp_types.h>
 #include <nx/vms/common/system_context.h>
 #include <nx/vms/common/system_settings.h>
-#include <nx/vms/rules/network_issue_info.h>
 #include <utils/common/synctime.h>
 #include <utils/common/util.h>
 
@@ -47,31 +42,6 @@ static const int MEDIA_DATA_READ_TIMEOUT_MS = 100;
 // prefix has the following format $<ChannelId(1byte)><PayloadLength(2bytes)>
 static const int kInterleavedRtpOverTcpPrefixLength = 4;
 
-QString getConfiguredVideoLayout(const QnVirtualCameraResourcePtr& device)
-{
-    if (auto layout = device->resourceData().value<QString>(ResourceDataKey::kVideoLayout);
-        !layout.isEmpty())
-    {
-        return layout;
-    }
-
-    if (QnResourceTypePtr resType = qnResTypePool->getResourceType(device->getTypeId()))
-        return resType->defaultValue(nx::vms::api::device_properties::kVideoLayout);
-
-    return {};
-}
-
-bool isEmptyMediaAllowed(const QnResourcePtr& res)
-{
-    if (const auto camera = res.dynamicCast<QnVirtualCameraResource>())
-    {
-        using namespace nx::vms::api;
-        const auto deviceType = camera->deviceType();
-        return deviceType == DeviceType::ioModule || deviceType == DeviceType::hornSpeaker;
-    }
-    return false;
-}
-
 } // namespace
 
 namespace nx::streaming {
@@ -81,19 +51,20 @@ nx::vms::api::RtpTransportType RtspStreamProvider::s_defaultTransportToUse =
 
 RtspStreamProvider::RtspStreamProvider(
     const nx::vms::common::SystemSettings* systemSetting,
+    nx::vms::api::StreamIndex streamIndex,
     const nx::streaming::rtp::TimeOffsetPtr& timeOffset,
     bool forceCameraTime):
     m_RtpSession(QnRtspClient::Config{}),
     m_timeOffset(timeOffset),
     m_pleaseStop(false),
     m_gotSomeFrame(false),
-    m_role(Qn::CR_Default),
     m_gotData(false),
     m_preferredAuthScheme(nx::network::http::header::AuthScheme::digest),
     m_rtpTransport(nx::vms::api::RtpTransportType::automatic),
-    m_forceCameraTime(forceCameraTime)
+    m_forceCameraTime(forceCameraTime),
+    m_streamIndex(streamIndex)
 {
-    m_rtpFrameTimeoutMs = systemSetting->rtpFrameTimeoutMs();
+    m_rtpFrameTimeoutMs = systemSetting->rtpFrameTimeoutMs().count();
     m_maxRtpRetryCount = systemSetting->maxRtpRetryCount();
 
     m_RtpSession.setTCPTimeout(std::chrono::milliseconds(m_rtpFrameTimeoutMs));
@@ -113,22 +84,9 @@ nx::network::MulticastAddressRegistry* RtspStreamProvider::multicastAddressRegis
     return nullptr;
 }
 
-QnAdvancedStreamParams RtspStreamProvider::advancedLiveStreamParams() const
-{
-    return QnAdvancedStreamParams{};
-}
-
-void RtspStreamProvider::reportNetworkIssue(
-    std::chrono::microseconds /*timestamp*/,
-    nx::vms::api::EventReason /*reasonCode*/,
-    const nx::vms::rules::NetworkIssueInfo& /*info*/)
-{
-}
-
 void RtspStreamProvider::setRequest(const QString& request)
 {
     m_request = request;
-    updateStreamUrlIfNeeded();
 }
 
 void RtspStreamProvider::clearKeyData(int channelNum)
@@ -227,45 +185,28 @@ QnAbstractMediaDataPtr RtspStreamProvider::getNextData()
         return result; // if no frame received yet do not report network issue error
     }
 
-    const auto elapsed = std::chrono::milliseconds(m_dataTimer.elapsed());
-    nx::vms::rules::NetworkIssueInfo info;
-    vms::api::EventReason reason;
-
     if (m_RtpSession.isOpened())
     {
         if (!m_lastRtpParseResult.success)
         {
-            reason = vms::api::EventReason::networkRtpStreamError;
-            info.stream = (m_role == Qn::CR_SecondaryLiveVideo)
-                ? nx::vms::api::StreamIndex::secondary
-                : nx::vms::api::StreamIndex::primary;
-            info.message = m_lastRtpParseResult.message;
+            NX_WARNING(this, "Network RTP stream error: %1", m_lastRtpParseResult.message);
         }
         else
         {
-            reason = vms::api::EventReason::networkNoFrame;
-            info.timeout = elapsed;
             NX_WARNING(
                 this,
-                "Can not read RTP frame for camera %1 during %2 ms, m_role=%3",
+                "Can not read RTP frame for camera %1 during %2 ms",
                 m_logName,
-                elapsed,
-                m_role);
+                std::chrono::milliseconds(m_dataTimer.elapsed()));
         }
     }
     else
     {
-        reason = vms::api::EventReason::networkConnectionClosed;
-        info.stream = (m_role == Qn::CR_SecondaryLiveVideo) ? nx::vms::api::StreamIndex::secondary
-                                                            : nx::vms::api::StreamIndex::primary;
-
         NX_WARNING(
             this,
             "%1: RTP connection was forcibly closed by camera. Reopen stream",
             m_logName);
     }
-
-    reportNetworkIssue(qnSyncTime->currentTimePoint(), reason, info);
 
     NX_DEBUG(this, "No video frame for URL %1", m_url);
     return result;
@@ -321,13 +262,18 @@ QnAbstractMediaDataPtr RtspStreamProvider::getNextDataInternal()
                 continue;
             if (track.timeHelper)
             {
+                // The primary lane's first track is the reference: it owns the shared clock,
+                // every other track and the secondary lane bind to it.
+                const bool isPrimaryStream = m_streamIndex == nx::vms::api::StreamIndex::primary;
+                const bool isPrimaryTrack = &track == &m_tracks.front();
                 result->timestamp =
                     track.timeHelper
                         ->getTime(
-                            qnSyncTime->currentTimePoint(),
+                            QnSyncTime::currentTimePoint(),
                             std::chrono::microseconds(result->timestamp),
                             parser->isUtcTime(),
-                            m_role == Qn::CR_LiveVideo && track.logicalChannelNum == 0,
+                            isPrimaryStream,
+                            isPrimaryTrack,
                             [this](nx::streaming::rtp::CameraTimeHelper::EventType event)
                             {
                                 processCameraTimeHelperEvent(event);
@@ -502,7 +448,15 @@ QnAbstractMediaDataPtr RtspStreamProvider::getNextDataTCP()
             bytesRead,
             trackIndexIter != m_trackIndices.end());
 
-        if (trackIndexIter != m_trackIndices.end())
+        if (m_RtpSession.isRtcp(rtpChannelNum))
+        {
+            processTcpRtcp(
+                (quint8*) m_demuxedData[rtpChannelNum]->data(),
+                bytesRead,
+                m_demuxedData[rtpChannelNum]->capacity());
+            m_demuxedData[rtpChannelNum]->clear();
+        }
+        else if (trackIndexIter != m_trackIndices.end())
         {
             auto& track = m_tracks[trackIndexIter->second];
 
@@ -526,14 +480,6 @@ QnAbstractMediaDataPtr RtspStreamProvider::getNextDataTCP()
             uint8_t* rtpPacketData = (uint8_t*) m_demuxedData[rtpChannelNum]->data();
             if (!processData(track, rtpPacketData, offset, length, rtpChannelNum, errorRetryCnt))
                 return QnAbstractMediaDataPtr(0);
-        }
-        else if (m_RtpSession.isRtcp(rtpChannelNum))
-        {
-            processTcpRtcp(
-                (quint8*) m_demuxedData[rtpChannelNum]->data(),
-                bytesRead,
-                m_demuxedData[rtpChannelNum]->capacity());
-            m_demuxedData[rtpChannelNum]->clear();
         }
         else
         {
@@ -660,18 +606,7 @@ nx::rtp::StreamParserPtr RtspStreamProvider::createParser(const QString& codecNa
         return std::make_unique<nx::rtp::HevcParser>();
 
     if (codecName == QLatin1String("JPEG"))
-    {
-        auto parser = std::make_unique<nx::rtp::MjpegParser>();
-
-        // Forward configured resolution, that can be used when resolution more than 2048, and
-        // camera not send any additional info.
-        auto params = advancedLiveStreamParams();
-        QSize& resolution =
-            (m_role == Qn::CR_LiveVideo ? params.primaryStream.resolution
-                                        : params.secondaryStream.resolution);
-        parser->setConfiguredResolution(resolution.width(), resolution.height());
-        return parser;
-    }
+        return std::make_unique<nx::rtp::MjpegParser>();
 
     if (codecName == QLatin1String("MP4V-ES"))
         return std::make_unique<nx::rtp::Mpeg4Parser>();
@@ -748,11 +683,6 @@ void RtspStreamProvider::setExtraPayloadTypes(std::vector<int> payloadTypes)
     m_extraPayloadTypes = std::move(payloadTypes);
 }
 
-void RtspStreamProvider::setCloudConnectEnabled(bool value)
-{
-    m_cloudConnectEnabled = value;
-}
-
 std::chrono::microseconds RtspStreamProvider::translateTimestampFromCameraToVmsSystem(
     std::chrono::microseconds timestamp,
     int /*channelNumber*/)
@@ -769,7 +699,7 @@ std::chrono::microseconds RtspStreamProvider::translateTimestampFromCameraToVmsS
 
     if (nx::utils::ini().checkCameraTimestamps)
     {
-        const microseconds vmsSystemTimestamp = qnSyncTime->currentTimePoint();
+        const microseconds vmsSystemTimestamp = QnSyncTime::currentTimePoint();
         const seconds threshold(nx::utils::ini().cameraTimestampThresholdS);
         NX_ASSERT(
             timestamp >= vmsSystemTimestamp - threshold,
@@ -827,16 +757,14 @@ void RtspStreamProvider::setUrl(const nx::Url& url)
 
 CameraDiagnostics::Result RtspStreamProvider::openStream()
 {
-    m_logName = m_url.toString() + " (Role: " + toString(m_role) + ")";
+    m_logName = m_url.toString();
     m_pleaseStop = false;
     if (isStreamOpened())
         return CameraDiagnostics::NoErrorResult();
     m_gotSomeFrame = false;
     m_RtpSession.setTransport(getRtpTransport());
-    m_RtpSession.setCloudConnectEnabled(m_cloudConnectEnabled);
 
     m_registeredMulticastAddresses.clear();
-    updateStreamUrlIfNeeded();
 
     m_RtpSession.setCredentials(
         credentials().value_or(nx::network::http::Credentials()),
@@ -995,7 +923,6 @@ void RtspStreamProvider::createTrackParsers()
 
         trackInfo.ioDevice = track.ioDevice.get();
         trackInfo.rtcpChannelNumber = track.interleaved.second;
-        trackInfo.ioDevice->setForceRtcpReports(isRtcpReportsForced());
         if (!m_forceCameraTime)
         {
             trackInfo.timeHelper = std::make_unique<nx::streaming::rtp::CameraTimeHelper>(
@@ -1004,11 +931,7 @@ void RtspStreamProvider::createTrackParsers()
                 m_timeOffset);
         }
 
-        // Force camera time for NVR archives
-        if (m_role == Qn::ConnectionRole::CR_Archive)
-            trackInfo.timeHelper->setTimePolicy(nx::streaming::rtp::TimePolicy::forceCameraTime);
-        else
-            trackInfo.timeHelper->setTimePolicy(getTimePolicy());
+        trackInfo.timeHelper->setTimePolicy(getTimePolicy());
 
         if (track.sdpMedia.mediaType == nx::rtp::Sdp::MediaType::Video)
             trackInfo.logicalChannelNum = logicalVideoNum++;
@@ -1070,11 +993,6 @@ void RtspStreamProvider::setDefaultTransport(nx::vms::api::RtpTransportType rtpT
 
     NX_MUTEX_LOCKER lock(&defaultTransportMutex());
     s_defaultTransportToUse = rtpTransport;
-}
-
-void RtspStreamProvider::setRole(Qn::ConnectionRole role)
-{
-    m_role = role;
 }
 
 void RtspStreamProvider::setPreferredAuthScheme(
@@ -1159,112 +1077,9 @@ std::chrono::milliseconds RtspStreamProvider::connectionTimeout() const
     return m_RtpSession.connectionTimeout();
 }
 
-// ------------------------------------- RtspResourceStreamProvider
-// -----------------------------------
-
-RtspResourceStreamProvider::RtspResourceStreamProvider(
-    const QnVirtualCameraResourcePtr& resource,
-    const nx::streaming::rtp::TimeOffsetPtr& timeOffset):
-    RtspStreamProvider(resource->systemContext()->globalSettings(), timeOffset),
-    m_resource(resource)
-{
-    const bool qopValue = resource->resourceData().value<bool>("ignoreQopInDigestAuth");
-    m_RtpSession.setIgnoreQopInDigest(qopValue);
-
-    m_ignoreRtcpReports = resource->resourceData().value<bool>(
-        ResourceDataKey::kIgnoreRtcpReports,
-        m_ignoreRtcpReports);
-}
-
-void RtspResourceStreamProvider::updateTimePolicy()
-{
-    if (m_role != Qn::ConnectionRole::CR_Archive)
-    {
-        NX_MUTEX_LOCKER lock(&m_tracksMutex);
-        for (auto& track: m_tracks)
-        {
-            if (track.timeHelper)
-                track.timeHelper->setTimePolicy(getTimePolicy());
-        }
-    }
-}
-
-nx::vms::api::RtpTransportType RtspResourceStreamProvider::getRtpTransport() const
-{
-    // Client defined settings for resource.
-    if (m_resource)
-    {
-        const auto rtpTransportString =
-            m_resource->getProperty(QnMediaResource::rtpTransportKey());
-
-        const auto transport = nx::reflect::fromString<nx::vms::api::RtpTransportType>(
-            rtpTransportString.toStdString(),
-            nx::vms::api::RtpTransportType::automatic);
-
-        if (transport != nx::vms::api::RtpTransportType::automatic)
-            return transport;
-    }
-    return base_type::getRtpTransport();
-}
-
-CameraDiagnostics::Result RtspResourceStreamProvider::openStream()
-{
-    setUrl(m_resource->getUrl());
-
-    m_RtpSession.setMediaTypeEnabled(
-        nx::rtp::Sdp::MediaType::Audio,
-        m_resource->isAudioRequired());
-    m_RtpSession.setMediaTypeEnabled(
-        nx::rtp::Sdp::MediaType::Metadata,
-        m_resource->isRtspMetatadaRequired());
-
-    auto result = base_type::openStream();
-    if (result.errorCode != CameraDiagnostics::ErrorCode::noError)
-        return result;
-
-    bool videoExist = false;
-    bool audioExist = false;
-    for (const auto& track: m_RtpSession.getTrackInfo())
-    {
-        videoExist |= track.sdpMedia.mediaType == nx::rtp::Sdp::MediaType::Video;
-        audioExist |= track.sdpMedia.mediaType == nx::rtp::Sdp::MediaType::Audio;
-    }
-
-    if (m_role == Qn::CR_LiveVideo)
-    {
-        if (audioExist)
-        {
-            if (!m_resource->isAudioSupported())
-                m_resource->forceEnableAudio();
-        }
-        else
-        {
-            m_resource->forceDisableAudio();
-        }
-    }
-
-    m_rtcpReportTimer.restart();
-    if (!audioExist && !videoExist)
-    {
-        if (isEmptyMediaAllowed(m_resource))
-        {
-            m_rtpFrameTimeoutMs = -1;
-            m_RtpSession.setTCPTimeout(m_RtpSession.keepAliveTimeOut());
-        }
-        else
-        {
-            m_RtpSession.stop();
-            m_openStreamResult = CameraDiagnostics::NoMediaTrackResult(m_url);
-            return m_openStreamResult;
-        }
-    }
-    m_openStreamResult = CameraDiagnostics::NoErrorResult();
-    return CameraDiagnostics::NoErrorResult();
-}
-
 nx::streaming::rtp::TimePolicy RtspStreamProvider::getTimePolicy() const
 {
-    return nx::streaming::rtp::TimePolicy::forceCameraTime;
+    return nx::streaming::rtp::TimePolicy::useCameraTimeIfCorrect;
 }
 
 CameraDiagnostics::Result RtspStreamProvider::registerMulticastAddressesIfNeeded()
@@ -1279,232 +1094,9 @@ int RtspStreamProvider::numberOfVideoChannels() const
     return m_RtpSession.getTrackCount(nx::rtp::Sdp::MediaType::Video);
 }
 
-bool RtspStreamProvider::isRtcpReportsForced() const
-{
-    return false;
-}
-
 std::string RtspStreamProvider::timeHelperKey() const
 {
     return m_url.toStdString();
-}
-
-// ------------------------- RtspResourceStreamProvider -------------------
-
-int RtspResourceStreamProvider::numberOfVideoChannels() const
-{
-    if (!m_resource->allowRtspVideoLayout())
-        return 1;
-    return base_type::numberOfVideoChannels();
-}
-
-void RtspResourceStreamProvider::at_numberOfVideoChannelsChanged()
-{
-    QString manualConfiguredLayout = getConfiguredVideoLayout(m_resource);
-    if (m_numberOfVideoChannels > 1 && manualConfiguredLayout.isEmpty())
-    {
-        NX_MUTEX_LOCKER lock(&m_layoutMutex);
-        QString newVideoLayout;
-        m_customVideoLayout = QnCustomResourceVideoLayoutPtr(
-            new QnCustomResourceVideoLayout(QSize(m_numberOfVideoChannels, 1)));
-        for (int i = 0; i < m_numberOfVideoChannels; ++i)
-            m_customVideoLayout->setChannel(
-                i,
-                0,
-                i); // arrange multi video layout from left to right
-
-        newVideoLayout = m_customVideoLayout->toString();
-        if (m_role == Qn::CR_LiveVideo
-            && m_resource->setProperty(
-                nx::vms::api::device_properties::kVideoLayout,
-                newVideoLayout))
-        {
-            m_resource->saveProperties();
-        }
-    }
-}
-
-bool RtspResourceStreamProvider::isRtcpReportsForced() const
-{
-    auto resData = m_resource->resourceData();
-    return resData.value<bool>(lit("forceRtcpReports"), false);
-}
-
-std::string RtspResourceStreamProvider::timeHelperKey() const
-{
-    return nx::format("%1(%2)", m_resource->getPhysicalId(), toString(toStreamIndex(m_role)))
-        .toStdString();
-}
-
-void RtspResourceStreamProvider::updateStreamUrlIfNeeded()
-{
-    // TODO: #skolesnik nx::network::url::Builder() ?
-    int mediaPort = m_resource->mediaPort();
-    if (m_request.startsWith("rtsp://") || m_request.startsWith("rtsps://"))
-    {
-        m_url = m_request;
-        if (mediaPort)
-            m_url.setPort(mediaPort); //< Override port.
-    }
-    else
-    {
-        m_url.clear();
-        m_url.setScheme("rtsp");
-        m_url.setHost(m_resource->getHostAddress().toString());
-        m_url.setPort(mediaPort ? mediaPort : nx::network::rtsp::DEFAULT_RTSP_PORT);
-
-        if (!m_request.isEmpty())
-        {
-            auto requestParts = m_request.split('?');
-            QString path = requestParts[0];
-            if (!path.startsWith('/'))
-                path.insert(0, '/');
-            m_url.setPath(path);
-            if (requestParts.size() > 1)
-                m_url.setQuery(requestParts[1]);
-        }
-    }
-}
-
-nx::streaming::rtp::TimePolicy RtspResourceStreamProvider::getTimePolicy() const
-{
-    if (m_resource->trustCameraTime())
-        return nx::streaming::rtp::TimePolicy::useCameraTimeIfCorrect;
-
-    return nx::streaming::rtp::TimePolicy::bindCameraTimeToLocalTime;
-}
-
-CameraDiagnostics::Result RtspResourceStreamProvider::registerMulticastAddressesIfNeeded()
-{
-    auto tracks = m_RtpSession.getTrackInfo();
-    if (tracks.empty())
-    {
-        NX_WARNING(this, "%1: Tracks are empty for [%2]", m_logName, m_url);
-        return CameraDiagnostics::CameraInvalidParams("The list of tracks are empty");
-    }
-
-    std::set<QnRtspIoDevice::AddressInfo> addressInfoToRegister;
-    for (const auto& track: tracks)
-    {
-        if (!track.ioDevice || !track.setupSuccess)
-            continue;
-
-        addressInfoToRegister.insert(track.ioDevice->mediaAddressInfo());
-        addressInfoToRegister.insert(track.ioDevice->rtcpAddressInfo());
-    }
-
-    for (const auto& addressInfo: addressInfoToRegister)
-    {
-        if (!registerAddressIfNeeded(addressInfo))
-        {
-            return CameraDiagnostics::CameraInvalidParams(
-                "Multicast media address conflict detected");
-        }
-    }
-
-    return CameraDiagnostics::NoErrorResult();
-}
-
-CameraDiagnostics::Result RtspResourceStreamProvider::registerAddressIfNeeded(
-    const QnRtspIoDevice::AddressInfo& addressInfo)
-{
-    if (addressInfo.transport != nx::vms::api::RtpTransportType::multicast)
-        return CameraDiagnostics::NoErrorResult();
-
-    const auto& multicastAddress = addressInfo.address;
-    if (!multicastAddress.address.isMulticast() || multicastAddress.port <= 0)
-    {
-        NX_DEBUG(this, "Invalid multicast address %1", multicastAddress);
-        reportNetworkIssue(
-            qnSyncTime->currentTimePoint(),
-            vms::api::EventReason::networkMulticastAddressIsInvalid,
-            nx::vms::rules::NetworkIssueInfo{.address = multicastAddress});
-
-        return CameraDiagnostics::CameraInvalidParams(
-            "Address %1 is not a multicast address, though multicast transport has been chosen");
-    }
-
-    auto multicastAddressRegistry = this->multicastAddressRegistry();
-    if (!multicastAddressRegistry)
-    {
-        return CameraDiagnostics::InternalServerErrorResult(
-            "Unable to access multicast address registry");
-    }
-
-    auto registeredAddress = multicastAddressRegistry->registerAddress(
-        m_resource,
-        Qn::toStreamIndex(m_role),
-        multicastAddress);
-
-    if (registeredAddress)
-    {
-        m_registeredMulticastAddresses.insert(std::move(registeredAddress));
-    }
-    else
-    {
-        const auto addressUsageInfo = multicastAddressRegistry->addressUsageInfo(multicastAddress);
-
-        const auto device = addressUsageInfo.device.toStrongRef();
-        const auto deviceName = device ? device->getUserDefinedName() : QString();
-
-        nx::vms::rules::NetworkIssueInfo info = {
-            .address = multicastAddress,
-            .deviceName = deviceName,
-            .stream = addressUsageInfo.stream,
-        };
-
-        NX_DEBUG(
-            this,
-            "Multicast address %1 is already in use by %2",
-            multicastAddress,
-            deviceName);
-        reportNetworkIssue(
-            qnSyncTime->currentTimePoint(),
-            vms::api::EventReason::networkMulticastAddressConflict,
-            info);
-
-        return CameraDiagnostics::CameraInvalidParams(
-            nx::format("Multicast address %1 is already in use by %2")
-                .args(multicastAddress, deviceName));
-    }
-
-    return CameraDiagnostics::NoErrorResult();
-}
-
-void RtspResourceStreamProvider::processCameraTimeHelperEvent(
-    nx::streaming::rtp::CameraTimeHelper::EventType event)
-{
-    using namespace nx::streaming::rtp;
-    using namespace vms::api;
-    const auto currentTime = qnSyncTime->currentTimePoint();
-
-    const nx::Url url(m_resource->getUrl());
-    nx::vms::rules::NetworkIssueInfo info;
-    info.deviceName = m_resource->getName();
-    info.address.address = url.host();
-    info.address.port = url.port();
-    info.stream = (m_role == Qn::CR_SecondaryLiveVideo) ? nx::vms::api::StreamIndex::secondary
-                                                        : nx::vms::api::StreamIndex::primary;
-
-    switch (event)
-    {
-        case CameraTimeHelper::EventType::BadCameraTime:
-            NX_DEBUG(this, "Bad camera time network issue for camera %1", url);
-            reportNetworkIssue(currentTime, EventReason::networkBadCameraTime, info);
-            return;
-        case CameraTimeHelper::EventType::CameraTimeBackToNormal:
-            NX_DEBUG(this, "Camera %1 time is back to normal", url);
-            reportNetworkIssue(currentTime, EventReason::networkCameraTimeBackToNormal, info);
-            return;
-        default:
-            return;
-    }
-}
-
-std::optional<nx::network::http::Credentials> RtspResourceStreamProvider::credentials() const
-{
-    return base_type::credentials().value_or(
-        nx::network::http::Credentials(resource()->getAuth()));
 }
 
 } // namespace nx::streaming

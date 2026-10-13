@@ -71,9 +71,7 @@ QnFfmpegVideoTranscoder::QnFfmpegVideoTranscoder(
     const Config& config,
     nx::metric::Storage* metrics):
     m_config(config),
-    m_metrics(metrics),
-    m_metadataObjectsCache(MetadataType::ObjectDetection, nx::analytics::kMetadataCacheDuration),
-    m_metadataMotionCache(MetadataType::Motion, nx::analytics::kMetadataCacheDuration)
+    m_metrics(metrics)
 {
     for (int i = 0; i < CL_MAX_CHANNELS; ++i)
     {
@@ -341,14 +339,14 @@ int QnFfmpegVideoTranscoder::transcodePacketImpl(
         *result = QnCompressedVideoDataPtr();
 
     CLVideoDecoderOutputPtr decodedFrame(new CLVideoDecoderOutput());
-    if (!decoder->decode(video, &decodedFrame))
+    if (!decoder->decode(video, decodedFrame.data()))
         return 0; // ignore decode error
 
     if (decodedFrame->pkt_dts < m_config.startTimeUs)
         return 0; // Ignore frames before start time.
 
-    if (video && video->flags.testFlag(QnAbstractMediaData::MediaFlags_Ignore))
-        return 0; // do not transcode ignored frames
+    if (video && video->flags.testFlag(QnAbstractMediaData::MediaFlags_PreRoll))
+        return 0; // do not transcode pre-roll frames
 
     decodedFrame->channel = channelNumber;
     decodedFrame->pts = decodedFrame->pkt_dts;
@@ -367,15 +365,6 @@ int QnFfmpegVideoTranscoder::transcodePacketImpl(
     {
         using namespace std::chrono;
         microseconds timestamp(decodedFrame->pkt_dts);
-
-        m_filters->setMetadata(
-            m_metadataObjectsCache.metadata(
-                duration_cast<milliseconds>(timestamp),
-                decodedFrame->channel),
-            m_metadataMotionCache.metadata(
-                duration_cast<milliseconds>(timestamp),
-                decodedFrame->channel));
-
         decodedFrame = m_filters->apply(decodedFrame);
     }
 
@@ -472,19 +461,6 @@ int QnFfmpegVideoTranscoder::transcodePacketImpl(
 
     m_droppedFrames = 0;
     return 0;
-}
-
-void QnFfmpegVideoTranscoder::processMetadata(const QnConstAbstractCompressedMetadataPtr& metadata)
-{
-    if (metadata->metadataType == MetadataType::ObjectDetection)
-    {
-        m_metadataObjectsCache.processMetadata(metadata);
-    }
-
-    if (metadata->metadataType == MetadataType::Motion)
-    {
-        m_metadataMotionCache.processMetadata(metadata);
-    }
 }
 
 AVCodecContext* QnFfmpegVideoTranscoder::getCodecContext()

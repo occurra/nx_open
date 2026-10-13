@@ -2,12 +2,12 @@
 
 #include <gtest/gtest.h>
 
-#include <core/resource/camera_media_stream_info.h>
+#include <QtCore/QFile>
+
 #include <core/resource/resource.h>
-#include <core/resource/resource_property_key.h>
-#include <nx/fusion/model_functions.h>
 #include <nx/media/ffmpeg/demuxer.h>
 #include <nx/streaming/abstract_stream_data_provider.h>
+#include <nx/utils/log/log.h>
 #include <transcoding/ffmpeg_video_transcoder.h>
 
 QnWritableCompressedVideoDataPtr getVideoData()
@@ -141,7 +141,7 @@ std::unique_ptr<QnFfmpegVideoTranscoder> createTranscoder(
     config.targetCodecId = AV_CODEC_ID_H264;
     config.useMultiThreadEncode = true;
     config.decoderConfig.mtDecodePolicy = MultiThreadDecodePolicy::enabled;
-    config.quality = Qn::StreamQuality::highest;
+    config.quality = nx::vms::api::StreamQuality::highest;
     auto transcoder = std::make_unique<QnFfmpegVideoTranscoder>(config, nullptr);
 
     if (!transcoder->open(videoData))

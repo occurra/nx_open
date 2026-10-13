@@ -6,6 +6,8 @@
 
 #include <QtCore/QTimeZone>
 
+#include <nx/reflect/instrument.h>
+
 #include "filter_params.h"
 
 namespace nx::core::transcoding {

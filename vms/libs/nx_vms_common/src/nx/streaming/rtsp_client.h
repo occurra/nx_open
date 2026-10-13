@@ -5,6 +5,7 @@
 #include <chrono>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <vector>
 
 #include <QtNetwork/QAuthenticator>
@@ -131,14 +132,14 @@ public:
         bool sleepIfEmptySocket = false;
     };
 
-    static const QByteArray kPlayCommand;
-    static const QByteArray kSetupCommand;
-    static const QByteArray kOptionsCommand;
-    static const QByteArray kDescribeCommand;
-    static const QByteArray kSetParameterCommand;
-    static const QByteArray kGetParameterCommand;
-    static const QByteArray kPauseCommand;
-    static const QByteArray kTeardownCommand;
+    static constexpr std::string_view kPlayCommand = "PLAY";
+    static constexpr std::string_view kSetupCommand = "SETUP";
+    static constexpr std::string_view kOptionsCommand = "OPTIONS";
+    static constexpr std::string_view kDescribeCommand = "DESCRIBE";
+    static constexpr std::string_view kSetParameterCommand = "SET_PARAMETER";
+    static constexpr std::string_view kGetParameterCommand = "GET_PARAMETER";
+    static constexpr std::string_view kPauseCommand = "PAUSE";
+    static constexpr std::string_view kTeardownCommand = "TEARDOWN";
 
     enum class DateTimeFormat
     {
@@ -311,7 +312,9 @@ public:
      */
     int readBinaryResponse(std::vector<nx::utils::ByteArray*>& demuxedData, int& channelNumber);
 
-    void sendBinaryResponse(const quint8* buffer, int size);
+    /** Returns whether the bytes were sent (false on a closed socket or a send failure/timeout),
+     *  so a backchannel writer can detect a camera that has silently stopped reading. */
+    bool sendBinaryResponse(const quint8* buffer, int size);
     void setPlayNowModeAllowed(bool value);
     bool isPlayNowMode() const;
     static quint8* prepareDemuxedData(
@@ -345,18 +348,23 @@ public:
     bool ignoreQopInDigest() const;
 
     bool readAndProcessTextData();
-    void setCloudConnectEnabled(bool enabled);
 
     void setDoSendOptions(bool value);
 
     void setConnectionTimeout(std::chrono::milliseconds timeout);
     std::chrono::milliseconds connectionTimeout() const;
 
+    CameraDiagnostics::Result sendOptions();
+    /** DESCRIBE for the opened URL: proves the requested path actually carries a
+     *  stream, which a successful OPTIONS alone does not. */
+    CameraDiagnostics::Result sendDescribe();
+    void setTcpSocket(
+        std::unique_ptr<nx::network::AbstractStreamSocket> socket,
+        const nx::Url& url = nx::Url());
+
 private:
     void addRangeHeader(nx::network::http::Request* const request, qint64 startPos, qint64 endPos);
     nx::network::http::Request createDescribeRequest();
-    CameraDiagnostics::Result sendOptions();
-    CameraDiagnostics::Result sendDescribe();
     bool sendKeepAlive();
 
     bool readTextResponse(QByteArray& response);
@@ -371,6 +379,7 @@ private:
     void processTextData(const QByteArray& textData);
     static std::string getGuid();
     void registerRTPChannel(int rtpNum, int rtcpNum, int trackIndex);
+    void parseRtpInfoHeader(const QString& rtpInfo, const QString& dateHeader);
     nx::network::http::Request createPlayRequest(qint64 startPos, qint64 endPos);
     bool sendRequestInternal(nx::network::http::Request&& request);
     void addCommonHeaders(nx::network::http::HttpHeaders& headers);
@@ -378,7 +387,6 @@ private:
         const QString& requestName,
         nx::network::http::HttpHeaders* outHeaders);
     QString parseContentBase(const QString& buffer);
-    void setTcpSocket(std::unique_ptr<nx::network::AbstractStreamSocket> socket);
     CameraDiagnostics::Result parseErrorResponse(const nx::network::rtsp::RtspResponse& response);
 
 private:
@@ -451,8 +459,7 @@ private:
     int m_tcpRecvBufferSize = 512 * 1024;
     int m_nonceCount = 0;
     bool m_ignoreQopInDigest = false;
-    nx::network::NatTraversalSupport m_natTraversal{nx::network::NatTraversalSupport::enabled};
-    bool m_keepAliveSupported = true;
+    bool m_useGetParameterKeepAlive = true; ///< false → use OPTIONS for keepalive instead
     std::chrono::milliseconds m_tcpConnectionTimeout{};
     Format m_format = Format::RTP;
 

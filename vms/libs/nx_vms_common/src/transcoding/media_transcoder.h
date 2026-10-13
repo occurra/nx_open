@@ -41,7 +41,7 @@ public:
      */
     bool setVideoCodec(
         AVCodecID codec,
-        Qn::StreamQuality quality,
+        nx::vms::api::StreamQuality quality,
         const QSize& sourceResolution,
         const QSize& resolution = QSize(),
         int bitrate = -1,
@@ -70,6 +70,8 @@ public:
      */
     bool openVideo(const QnConstCompressedVideoDataPtr& video);
     bool openAudio(const QnConstCompressedAudioDataPtr& audio);
+
+    bool openAudio(const CodecParametersConstPtr& audio);
 
     // This Handler is sync, it will call in the same thread.
     using OnDataHandler = std::function<void(const QnConstAbstractMediaDataPtr& packet)>;

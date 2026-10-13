@@ -7,6 +7,7 @@ extern "C" {
 }
 
 #include <media/filters/abstract_media_data_filter.h>
+#include <nx/codec/aac/aac.h>
 #include <nx/media/ffmpeg/av_packet.h>
 #include <nx/media/ffmpeg/ffmpeg_utils.h>
 #include <nx/media/utils.h>
@@ -14,6 +15,40 @@ extern "C" {
 #include <utils/common/util.h>
 
 namespace {
+
+/**
+ * Drops the ADTS header from an AAC frame bound for a moov-based container.
+ * MPEG-TS carries AAC as ADTS, a 7 or 9 byte per-frame header repeating the
+ * configuration in-band. Moov containers store that configuration once, in
+ * extradata, and reject framed payloads outright ("Malformed AAC bitstream
+ * detected"), so a direct stream copy out of the archive has to strip it. This
+ * is the packet half of what ffmpeg's `aac_adtstoasc` filter does - the
+ * extradata half is built in QnAviArchiveDelegate::fillAudioParamsFromPacket.
+ */
+void stripAdtsHeaderForMoovIfNeeded(
+    const QString& container,
+    const AVCodecParameters* audioCodecParameters,
+    const QnConstAbstractMediaDataPtr& media,
+    AVPacket* packet)
+{
+    if (media->dataType != QnAbstractMediaData::AUDIO || !audioCodecParameters
+        || audioCodecParameters->codec_id != AV_CODEC_ID_AAC
+        || !FfmpegMuxer::isMoovFormat(container))
+    {
+        return;
+    }
+
+    AdtsHeader adts;
+    if (!adts.decodeFromFrame(packet->data, packet->size))
+        return; //< Already raw AAC.
+
+    const int headerLength = adts.length();
+    if (packet->size <= headerLength)
+        return;
+
+    packet->data += headerLength;
+    packet->size -= headerLength;
+}
 
 static AVPixelFormat jpegPixelFormatToRtp(AVPixelFormat value)
 {
@@ -165,6 +200,12 @@ bool FfmpegMuxer::addVideo(const AVCodecParameters* codecParameters)
     return true;
 }
 
+bool FfmpegMuxer::isMoovFormat(const QString& container)
+{
+    return container.compare("mp4", Qt::CaseInsensitive) == 0
+        || container.compare("ismv", Qt::CaseInsensitive) == 0;
+}
+
 bool FfmpegMuxer::addAudio(const AVCodecParameters* codecParameters)
 {
     if (!m_formatCtx || !codecParameters)
@@ -181,6 +222,12 @@ bool FfmpegMuxer::addAudio(const AVCodecParameters* codecParameters)
     audioStream->id = 0;
     m_audioCodecParameters = audioStream->codecpar;
     avcodec_parameters_copy(m_audioCodecParameters, codecParameters);
+    // Zero tag, as addVideo does: a direct stream copy carries the source
+    // container's tag, which the output container rejects. MPEG-TS archive audio
+    // arrives tagged with the stream type (15 for ADTS AAC) and mp4 wants mp4a,
+    // so without this every export of a segment with audio fails to open with
+    // "Tag [15][0][0][0] incompatible with output codec id".
+    m_audioCodecParameters->codec_tag = 0;
     m_initializedAudio = true;
     return true;
 }
@@ -232,6 +279,28 @@ void FfmpegMuxer::setStartTimeOffset(int64_t value)
     m_timestampCorrector.setOffset(std::chrono::microseconds(value));
 }
 
+void FfmpegMuxer::rebaseOutputTimestamps(std::chrono::microseconds baseUs)
+{
+    // The base is client-chosen and 32-bit on the wire, so any value is legal - but ffmpeg
+    // refuses output DTS going backwards, and a base below the written timeline froze the
+    // stream until the media caught up (a player picks a low base when it saw no frames to
+    // raise it, e.g. going live on an offline camera). Lift such a base by whole 2^32
+    // periods of the 90 kHz RTP clock: the 32-bit wire value the player gates on is
+    // unchanged, and the 64-bit timeline keeps advancing.
+    constexpr auto kRtpWrapUs = std::chrono::microseconds(((int64_t(1) << 32) * 100 + 8) / 9);
+    if (baseUs.count() <= m_lastOutputTimestampUs)
+    {
+        const int64_t periods =
+            (m_lastOutputTimestampUs - baseUs.count()) / kRtpWrapUs.count() + 1;
+        baseUs += periods * kRtpWrapUs;
+    }
+
+    // After clear() the next processed packet defines the corrector base time,
+    // so its output is exactly the offset.
+    m_timestampCorrector.clear();
+    m_timestampCorrector.setOffset(baseUs);
+}
+
 bool FfmpegMuxer::muxPacket(QnConstAbstractMediaDataPtr media)
 {
     int streamIndex = 0;
@@ -267,21 +336,40 @@ bool FfmpegMuxer::muxPacket(QnConstAbstractMediaDataPtr media)
     nx::media::ffmpeg::AvPacket avPacket;
     auto packet = avPacket.get();
 
-    bool allowEqualTimestamps = media->dataType == QnAbstractMediaData::GENERIC_METADATA;
-    auto timestamp = m_config.utcTimestamps
-        ? media->timestamp
-        : m_timestampCorrector
-              .process(
-                  std::chrono::microseconds(media->timestamp),
-                  streamIndex,
-                  allowEqualTimestamps,
-                  media->flags & QnAbstractMediaData::MediaFlags_Discontinuity)
-              .count();
+    bool allowEqualTimestamps = media->dataType == QnAbstractMediaData::METADATA;
+    // Force a timestamp discontinuity for three cases:
+    //  - MediaFlags_Discontinuity: explicit upstream signal.
+    //  - MediaFlags_BOF: the first key frame after every seek (set by
+    //    QnArchiveStreamReader). Without this, small forward seeks
+    //    (< MAX_FRAME_DURATION_MS == 1.1 s) are not auto-detected by the
+    //    corrector, the output PTS keeps the forward gap, and the receiving
+    //    browser holds the last decoded frame on screen for the gap duration —
+    //    visible as a "freeze for ~500 ms" after a seek.
+    //  - MediaFlags_PreRoll: a pre-roll frame from the seek I-frame up to and
+    //    including the seek target (the last pre-roll frame). The corrector
+    //    turns each discontinuity into "lastTimestamp + 1 ms", which is exactly
+    //    what we want here: every pre-roll frame collapses to a 1 ms PTS step so
+    //    the browser decodes them at maximum rate, the user perceives the seek
+    //    as landing at the requested position, and the wall-clock label (carried
+    //    separately via abs-capture-time) stays correct. The first frame past the
+    //    pre-roll run is not forced, so it resumes natural cadence.
+    const bool forceDisc = media->flags
+        & (QnAbstractMediaData::MediaFlags_Discontinuity | QnAbstractMediaData::MediaFlags_BOF
+           | QnAbstractMediaData::MediaFlags_PreRoll);
+    auto timestamp = m_config.utcTimestamps ? media->timestamp
+                                            : m_timestampCorrector
+                                                  .process(
+                                                      std::chrono::microseconds(media->timestamp),
+                                                      streamIndex,
+                                                      allowEqualTimestamps,
+                                                      forceDisc)
+                                                  .count();
 
     packet->pts = av_rescale_q(timestamp, srcRate, stream->time_base);
 
     packet->data = (uint8_t*) media->data();
     packet->size = static_cast<int>(media->dataSize());
+    stripAdtsHeaderForMoovIfNeeded(m_container, m_audioCodecParameters, media, packet);
     if (media->dataType == QnAbstractMediaData::AUDIO
         || media->flags & QnAbstractMediaData::MediaFlags_AVKey)
         packet->flags |= AV_PKT_FLAG_KEY;
@@ -302,12 +390,13 @@ bool FfmpegMuxer::muxPacket(QnConstAbstractMediaDataPtr media)
             nx::media::ffmpeg::avErrorToString(status));
         return false;
     }
+    // The written timeline's high-water mark; rebaseOutputTimestamps() must never move the
+    // output below it.
+    m_lastOutputTimestampUs = std::max<int64_t>(m_lastOutputTimestampUs, timestamp);
 
     if (m_config.computeSignature)
     {
-        auto context = media->dataType == QnAbstractMediaData::VIDEO ? m_videoCodecParameters
-                                                                     : m_audioCodecParameters;
-        m_mediaSigner.processMedia(context, packet->data, packet->size);
+        // TODO: not implemented
     }
     return true;
 }
@@ -318,19 +407,26 @@ bool FfmpegMuxer::finalize()
     return true;
 }
 
-void FfmpegMuxer::getResult(nx::utils::ByteArray* const result)
+void FfmpegMuxer::getResult(nx::utils::ByteArray* const result, bool clearResult)
 {
     if (result)
     {
-        result->clear(); // Should a user class do this??
+        if (clearResult)
+            result->clear();
         result->write(m_internalBuffer.data(), m_internalBuffer.size());
     }
     m_internalBuffer.clear();
 }
 
-QByteArray FfmpegMuxer::getSignature(QnLicensePool* licensePool, const nx::Uuid& serverId)
+void FfmpegMuxer::getResult(nx::Buffer* result, bool clearResult)
 {
-    return m_mediaSigner.buildSignature(licensePool, serverId);
+    if (result)
+    {
+        if (clearResult)
+            result->clear();
+        result->append(m_internalBuffer.data(), static_cast<int>(m_internalBuffer.size()));
+    }
+    m_internalBuffer.clear();
 }
 
 AVCodecParameters* FfmpegMuxer::getVideoCodecParameters() const
