@@ -14,23 +14,17 @@ PasswordLookupResult PlainTextPasswordLookupResultBuilder::build(std::string pas
 PasswordLookupResult PlainTextPasswordLookupResultBuilder::build(
     PasswordLookupResult::Code errorCode)
 {
-    return PasswordLookupResult{
-        errorCode,
-        AuthToken()};
+    return PasswordLookupResult{errorCode, AuthToken()};
 }
 
 PasswordLookupResult Ha1LookupResultBuilder::build(std::string ha1)
 {
-    return PasswordLookupResult{
-        PasswordLookupResult::Code::ok,
-        Ha1AuthToken(std::move(ha1))};
+    return PasswordLookupResult{PasswordLookupResult::Code::ok, Ha1AuthToken(std::move(ha1))};
 }
 
 PasswordLookupResult Ha1LookupResultBuilder::build(PasswordLookupResult::Code errorCode)
 {
-    return PasswordLookupResult{
-        errorCode,
-        AuthToken()};
+    return PasswordLookupResult{errorCode, AuthToken()};
 }
 
 } // namespace nx::network::http::server

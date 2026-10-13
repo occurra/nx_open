@@ -5,10 +5,10 @@
 #include <nx/rtp/rtcp.h>
 #include <nx/rtp/rtcp_nack_responder.h>
 #include <nx/utils/byte_array.h>
+#include <transcoding/ffmpeg_transcoder.h>
 
 #include "rtsp/abstract_rtsp_encoder.h"
 #include "srtp_encryptor.h"
-#include <transcoding/ffmpeg_transcoder.h>
 
 class NX_VMS_COMMON_API QnUniversalRtpEncoder: public AbstractRtspEncoder
 {
@@ -38,7 +38,8 @@ public:
 
     bool open(const AVCodecParameters* codecParameters);
 
-    virtual QString getSdpMedia(bool isVideo, int trackId, int port = 0, bool ssl = false) override;
+    virtual QString getSdpMedia(bool isVideo, int trackId, int port = 0, bool ssl = false)
+        override;
 
     virtual void setDataPacket(QnConstAbstractMediaDataPtr media) override;
     virtual bool getNextPacket(nx::utils::ByteArray& sendBuffer) override;
@@ -57,6 +58,7 @@ public:
 
     void setMid(const std::string& value) { m_mid = value; }
     std::string mid() const { return m_mid; }
+
 private:
     QSize getTargetSize(QnConstAbstractMediaDataPtr media, QSize targetSize);
     void buildSdp(

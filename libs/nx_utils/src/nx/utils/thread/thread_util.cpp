@@ -13,18 +13,17 @@
 #endif
 
 #if defined(__linux__) || defined(__EMSCRIPTEN__)
-    #include <sys/types.h>
     #include <sys/syscall.h>
+    #include <sys/types.h>
     #include <unistd.h>
 #endif
-
 
 uintptr_t currentThreadSystemId()
 {
 #if defined(__linux__) || defined(__EMSCRIPTEN__)
     /* This one is purely for debugging purposes.
-    * QThread::currentThreadId is implemented via pthread_self,
-    * which is not an identifier you see in GDB. */
+     * QThread::currentThreadId is implemented via pthread_self,
+     * which is not an identifier you see in GDB. */
     return gettid();
 #elif _WIN32
     return GetCurrentThreadId();
@@ -42,7 +41,7 @@ namespace nx::utils {
 
 void setCurrentThreadName(std::string name)
 {
-    #if defined(_WIN32)
+#if defined(_WIN32)
     using SetThreadDescriptionFunction = std::add_pointer_t<HRESULT WINAPI(HANDLE, PCWSTR)>;
     const auto resolveSetThreadDescription =
         [](const char* moduleName) -> SetThreadDescriptionFunction
@@ -65,15 +64,16 @@ void setCurrentThreadName(std::string name)
     if (setThreadDescription)
     {
         const HRESULT result = setThreadDescription(
-            GetCurrentThread(), qUtf16Printable(QString::fromStdString(name)));
+            GetCurrentThread(),
+            qUtf16Printable(QString::fromStdString(name)));
         if (FAILED(result))
             NX_DEBUG(NX_SCOPE_TAG, "SetThreadDescription failed with HRESULT %1", result);
     }
-    #elif defined(__APPLE__)
-        pthread_setname_np(name.c_str());
-    #else
-        pthread_setname_np(pthread_self(), name.c_str());
-    #endif
+#elif defined(__APPLE__)
+    pthread_setname_np(name.c_str());
+#else
+    pthread_setname_np(pthread_self(), name.c_str());
+#endif
 }
 
 } // namespace nx::utils

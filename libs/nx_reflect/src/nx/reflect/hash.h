@@ -50,7 +50,10 @@ template<typename Sink>
 class FieldEnumerator
 {
 public:
-    explicit constexpr FieldEnumerator(Sink sink): m_sink(std::move(sink)) {}
+    explicit constexpr FieldEnumerator(Sink sink):
+        m_sink(std::move(sink))
+    {
+    }
 
     template<typename WrappedField, typename... Fields>
     constexpr Sink operator()(const WrappedField& field, Fields... fields) const
@@ -91,13 +94,13 @@ constexpr Sink typeName(const Sink& sink)
     {
         return sink.add("string");
     }
-    else if constexpr (!IsSetContainerV<T>
-        && !IsUnorderedSetContainerV<T>
-        && (IsAssociativeContainerV<T>
-            || IsUnorderedAssociativeContainerV<T>))
+    else if constexpr (
+        !IsSetContainerV<T> && !IsUnorderedSetContainerV<T>
+        && (IsAssociativeContainerV<T> || IsUnorderedAssociativeContainerV<T>) )
     {
         return typeName<Sink, typename T::mapped_type>(
-            typeName<Sink, typename T::key_type>(sink.add("[")).add(",")).add("]");
+                   typeName<Sink, typename T::key_type>(sink.add("[")).add(","))
+            .add("]");
     }
     else if constexpr (IsContainerV<T> || IsSetContainerV<T> || IsUnorderedSetContainerV<T>)
     {
@@ -121,8 +124,14 @@ template<typename T, T polynomial, T xorValue, T initial>
 class Crc
 {
 public:
-    constexpr Crc(): m_value(initial) {}
-    constexpr explicit Crc(T value): m_value(value) {}
+    constexpr Crc():
+        m_value(initial)
+    {
+    }
+    constexpr explicit Crc(T value):
+        m_value(value)
+    {
+    }
 
     constexpr Crc<T, polynomial, xorValue, initial> add(const char* str) const
     {
@@ -143,15 +152,12 @@ public:
         return Crc<T, polynomial, xorValue, initial>(val);
     }
 
-    constexpr T finalize() const
-    {
-        return m_value ^ xorValue;
-    }
+    constexpr T finalize() const { return m_value ^ xorValue; }
 
     static std::string toStdString(T value)
     {
         std::stringstream ss;
-        ss << std::setfill('0') <<  std::setw(sizeof(T) * 2) << std::hex << value;
+        ss << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << value;
         return ss.str();
     }
 

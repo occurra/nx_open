@@ -37,7 +37,10 @@ public:
     {
         // NOTE: uint64_t is used because it is likely biggest type available.
         static const uint64_t deviceRange = (uint64_t) (Device::max() - Device::min());
-        const auto makeNumber = [&device]() { return (Type) (device() - Device::min()); };
+        const auto makeNumber = [&device]()
+        {
+            return (Type) (device() - Device::min());
+        };
 
         Type number = makeNumber();
         uint64_t range = deviceRange;
@@ -68,7 +71,10 @@ class UniformIntDistribution<char>
     // Char specialization is not defined by standard, as it is not even clear if it is signed.
 };
 
-inline QRandomGenerator& defaultGenerator() { return *QRandomGenerator::global(); }
+inline QRandomGenerator& defaultGenerator()
+{
+    return *QRandomGenerator::global();
+}
 
 template<typename StringType = QByteArray>
 // requires String<StringType>
@@ -82,8 +88,12 @@ StringType generate(int count)
 
     StringType data(count, 0);
     std::generate(
-        data.begin(), data.end(),
-        [&device]() { return (char) device(); });
+        data.begin(),
+        data.end(),
+        [&device]()
+        {
+            return (char) device();
+        });
 
     return data;
 }
@@ -92,14 +102,14 @@ StringType generate(int count)
  * Generates uniform_int_distribution random integer in [min, max].
  */
 template<NonBoolIntegral Type, typename Generator>
-requires std::is_class_v<Generator>
+    requires std::is_class_v<Generator>
 Type number(Generator& generator, Type min, Type max)
 {
-    #ifdef NX_UTILS_USE_OWN_INT_DISTRIBUTION
-        UniformIntDistribution<Type> distribution(min, max);
-    #else
-        std::uniform_int_distribution<Type> distribution(min, max);
-    #endif
+#ifdef NX_UTILS_USE_OWN_INT_DISTRIBUTION
+    UniformIntDistribution<Type> distribution(min, max);
+#else
+    std::uniform_int_distribution<Type> distribution(min, max);
+#endif
     return distribution(generator);
 }
 
@@ -119,7 +129,7 @@ Type number()
  * Generates uniform_real_distribution random real in [min, max)
  */
 template<std::floating_point Type, typename Generator>
-requires std::is_class_v<Generator>
+    requires std::is_class_v<Generator>
 Type number(Generator& generator, Type min, Type max)
 {
     std::uniform_real_distribution<Type> distribution(min, max);
@@ -136,11 +146,14 @@ Type number(Type min, Type max)
  * Generates uniform random number in [base - delta, base + delta]
  */
 template<typename Type>
-Type numberDelta(Type base, Type delta) { return number(base - delta, base + delta); }
+Type numberDelta(Type base, Type delta)
+{
+    return number(base - delta, base + delta);
+}
 
 /** Generates random boolean value. */
 template<typename Generator>
-requires std::is_class_v<Generator>
+    requires std::is_class_v<Generator>
 bool coin(Generator& generator)
 {
     std::bernoulli_distribution bd(0.5);
@@ -155,7 +168,7 @@ inline bool coin()
 
 /** Generates random alfanumeric name starting with a letter. */
 template<typename String = std::string, typename Generator>
-requires std::is_class_v<Generator>
+    requires std::is_class_v<Generator>
 String generateName(Generator& generator, int length)
 {
     static constexpr std::string_view kAlphaAndDigits =
@@ -168,8 +181,8 @@ String generateName(Generator& generator, int length)
 
     String str;
     str.resize(length);
-    str[0] = kAlphaAndDigits[
-        number(generator, (size_t) 0, kAlphaAndDigits.size() - kDigitsCount - 1)];
+    str[0] =
+        kAlphaAndDigits[number(generator, (size_t) 0, kAlphaAndDigits.size() - kDigitsCount - 1)];
     for (int i = 1; i < length; ++i)
     {
         str[i] = kAlphaAndDigits[number(generator, (size_t) 0, kAlphaAndDigits.size() - 1)];

@@ -7,8 +7,7 @@
 
 namespace nx::utils::math::test {
 
-class RateLimiter:
-    public ::testing::Test
+class RateLimiter: public ::testing::Test
 {
 public:
     static constexpr int kSubPeriodCount = 20;
@@ -30,10 +29,7 @@ protected:
         }
     }
 
-    void assertRequestIsNotAllowed()
-    {
-        ASSERT_FALSE(m_rateLimiter.isAllowed());
-    }
+    void assertRequestIsNotAllowed() { ASSERT_FALSE(m_rateLimiter.isAllowed()); }
 
     void waitForLimitPeriod()
     {

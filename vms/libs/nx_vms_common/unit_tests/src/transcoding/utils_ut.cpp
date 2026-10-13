@@ -1,6 +1,7 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
 #include <gtest/gtest.h>
+
 #include <transcoding/transcoding_utils.h>
 
 TEST(TranscodingUtils, findEncoderCodecIdTest)
@@ -19,21 +20,43 @@ TEST(TranscodingUtils, findEncoderCodecIdTest)
 
 TEST(TranscodingUtils, adjustCodecRestrictions)
 {
-    ASSERT_EQ(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H263P, QSize(640, 480)), QSize(640, 480));
-    ASSERT_EQ(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H264, QSize(640, 480)), QSize(640, 480));
-    ASSERT_EQ(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H265, QSize(640, 480)), QSize(640, 480));
-    ASSERT_EQ(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_MPEG2VIDEO, QSize(640, 480)), QSize(640, 480));
-    ASSERT_EQ(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H264, QSize(2048, 1152)), QSize(2048, 1152));
-    ASSERT_EQ(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H265, QSize(2048, 1152)), QSize(2048, 1152));
-    ASSERT_EQ(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H263P, QSize(2048, 1152)), QSize(2048, 1152));
-    ASSERT_EQ(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_MPEG2VIDEO, QSize(2048, 1152)), QSize(2048, 1152));
+    ASSERT_EQ(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H263P, QSize(640, 480)),
+        QSize(640, 480));
+    ASSERT_EQ(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H264, QSize(640, 480)),
+        QSize(640, 480));
+    ASSERT_EQ(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H265, QSize(640, 480)),
+        QSize(640, 480));
+    ASSERT_EQ(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_MPEG2VIDEO, QSize(640, 480)),
+        QSize(640, 480));
+    ASSERT_EQ(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H264, QSize(2048, 1152)),
+        QSize(2048, 1152));
+    ASSERT_EQ(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H265, QSize(2048, 1152)),
+        QSize(2048, 1152));
+    ASSERT_EQ(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H263P, QSize(2048, 1152)),
+        QSize(2048, 1152));
+    ASSERT_EQ(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_MPEG2VIDEO, QSize(2048, 1152)),
+        QSize(2048, 1152));
 
     // Should be cropped to max allowed size
-    ASSERT_EQ(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H263P, QSize(4096, 2304)), QSize(2048, 1152));
-    ASSERT_EQ(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H263P, QSize(4096, 4096)), QSize(1152, 1152));
+    ASSERT_EQ(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H263P, QSize(4096, 2304)),
+        QSize(2048, 1152));
+    ASSERT_EQ(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_H263P, QSize(4096, 4096)),
+        QSize(1152, 1152));
 
     // Should avoid 4096 align
-    ASSERT_NE(nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_MPEG2VIDEO, QSize(4096, 2304)), QSize(4096, 2304));
+    ASSERT_NE(
+        nx::transcoding::adjustCodecRestrictions(AV_CODEC_ID_MPEG2VIDEO, QSize(4096, 2304)),
+        QSize(4096, 2304));
 }
 
 TEST(TranscodingUtils, normalizeResolution)
@@ -41,9 +64,15 @@ TEST(TranscodingUtils, normalizeResolution)
     ASSERT_EQ(nx::transcoding::normalizeResolution(QSize(-1, -1), QSize(-1, -1)), QSize(-1, -1));
 
     // Auto by height.
-    ASSERT_EQ(nx::transcoding::normalizeResolution(QSize(0, 1080), QSize(6400, 4800)), QSize(1440, 1080));
-    ASSERT_EQ(nx::transcoding::normalizeResolution(QSize(0, 480), QSize(6400, 4800)), QSize(640, 480));
+    ASSERT_EQ(
+        nx::transcoding::normalizeResolution(QSize(0, 1080), QSize(6400, 4800)),
+        QSize(1440, 1080));
+    ASSERT_EQ(
+        nx::transcoding::normalizeResolution(QSize(0, 480), QSize(6400, 4800)),
+        QSize(640, 480));
 
     // Target resolution specified.
-    ASSERT_EQ(nx::transcoding::normalizeResolution(QSize(1920, 1080), QSize(640, 480)), QSize(1920, 1080));
+    ASSERT_EQ(
+        nx::transcoding::normalizeResolution(QSize(1920, 1080), QSize(640, 480)),
+        QSize(1920, 1080));
 }

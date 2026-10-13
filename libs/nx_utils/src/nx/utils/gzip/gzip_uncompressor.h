@@ -17,6 +17,7 @@ public:
         gzip,
         deflate
     };
+
 public:
     Uncompressor(
         const std::shared_ptr<AbstractByteStreamFilter>& nextFilter = nullptr,
@@ -29,7 +30,7 @@ public:
     virtual size_t flush() override;
 
 private:
-    //Forwards decompressed data to the next filter, enforcing the max output size cap.
+    // Forwards decompressed data to the next filter, enforcing the max output size cap.
     bool writeOutput(const ConstBufferRefType& out);
 
 private:

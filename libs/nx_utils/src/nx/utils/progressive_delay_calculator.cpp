@@ -2,8 +2,8 @@
 
 #include "progressive_delay_calculator.h"
 
-#include <nx/utils/random.h>
 #include <nx/utils/log/assert.h>
+#include <nx/utils/random.h>
 
 namespace nx::utils {
 
@@ -13,18 +13,13 @@ constexpr std::chrono::milliseconds ProgressiveDelayPolicy::kDefaultMaxDelay;
 
 bool ProgressiveDelayPolicy::operator==(const ProgressiveDelayPolicy& rhs) const
 {
-    return initialDelay == rhs.initialDelay
-        && delayMultiplier == rhs.delayMultiplier
-        && maxDelay == rhs.maxDelay
-        && randomRatio == rhs.randomRatio;
+    return initialDelay == rhs.initialDelay && delayMultiplier == rhs.delayMultiplier
+        && maxDelay == rhs.maxDelay && randomRatio == rhs.randomRatio;
 }
 
 //-------------------------------------------------------------------------------------------------
 
-
-ProgressiveDelayCalculator::ProgressiveDelayCalculator(
-    const ProgressiveDelayPolicy& delayPolicy)
-    :
+ProgressiveDelayCalculator::ProgressiveDelayCalculator(const ProgressiveDelayPolicy& delayPolicy):
     m_delayPolicy(delayPolicy)
 {
     reset();
@@ -32,16 +27,15 @@ ProgressiveDelayCalculator::ProgressiveDelayCalculator(
 
 std::chrono::milliseconds ProgressiveDelayCalculator::calculateNewDelay()
 {
-    if ((m_triesMade > 0) &&
-        (m_delayPolicy.delayMultiplier > 0) &&
-        (m_currentDelay < m_effectiveMaxDelay))
+    if ((m_triesMade > 0) && (m_delayPolicy.delayMultiplier > 0)
+        && (m_currentDelay < m_effectiveMaxDelay))
     {
         auto newDelay = m_currentDelay * m_delayPolicy.delayMultiplier;
         if (newDelay == std::chrono::milliseconds::zero())
             newDelay = std::chrono::milliseconds(1);
         if (newDelay < m_currentDelay)
         {
-            //overflow
+            // overflow
             newDelay = std::chrono::milliseconds::max();
         }
         m_currentDelay = newDelay;
@@ -62,8 +56,8 @@ std::chrono::milliseconds ProgressiveDelayCalculator::currentDelay() const
     if (m_delayPolicy.randomRatio == 0)
         return m_currentDelay;
 
-    return std::chrono::milliseconds(static_cast<std::chrono::milliseconds::rep>(
-        m_currentRandomBias * m_currentDelay.count()));
+    return std::chrono::milliseconds(
+        static_cast<std::chrono::milliseconds::rep>(m_currentRandomBias * m_currentDelay.count()));
 }
 
 unsigned int ProgressiveDelayCalculator::triesMade() const
@@ -74,8 +68,7 @@ unsigned int ProgressiveDelayCalculator::triesMade() const
 void ProgressiveDelayCalculator::reset()
 {
     m_currentDelay = m_delayPolicy.initialDelay;
-    m_effectiveMaxDelay =
-        m_delayPolicy.maxDelay == ProgressiveDelayPolicy::kNoMaxDelay
+    m_effectiveMaxDelay = m_delayPolicy.maxDelay == ProgressiveDelayPolicy::kNoMaxDelay
         ? std::chrono::milliseconds::max()
         : m_delayPolicy.maxDelay;
     m_triesMade = 0;

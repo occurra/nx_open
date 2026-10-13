@@ -54,8 +54,7 @@ void MessageBodyWriter::writeEof(SystemError::ErrorCode resultCode)
 
 WritableMessageBody::WritableMessageBody(
     const std::string& mimeType,
-    std::optional<uint64_t> contentLength)
-    :
+    std::optional<uint64_t> contentLength):
     m_mimeType(mimeType),
     m_contentLength(contentLength)
 {
@@ -89,8 +88,9 @@ void WritableMessageBody::readAsync(CompletionHandler completionHandler)
     // is invoked through post.
 
     dispatch(
-        [this, completionHandler = std::move(completionHandler),
-            callerAioThread = SocketGlobals::instance().aioService().getCurrentAioThread()]() mutable
+        [this,
+         completionHandler = std::move(completionHandler),
+         callerAioThread = SocketGlobals::instance().aioService().getCurrentAioThread()]() mutable
         {
             NX_ASSERT(!m_readCompletionHandler);
 
@@ -127,8 +127,7 @@ void WritableMessageBody::cancelRead()
         });
 }
 
-void WritableMessageBody::setOnBeforeDestructionHandler(
-    nx::MoveOnlyFunc<void()> handler)
+void WritableMessageBody::setOnBeforeDestructionHandler(nx::MoveOnlyFunc<void()> handler)
 {
     m_onBeforeDestructionHandler = std::move(handler);
 }
@@ -145,7 +144,8 @@ void WritableMessageBody::writeBodyData(nx::Buffer data)
             {
                 nx::swapAndCall(
                     m_readCompletionHandler,
-                    m_eof ? *m_eof : SystemError::noError, std::move(data));
+                    m_eof ? *m_eof : SystemError::noError,
+                    std::move(data));
             }
             else
             {
@@ -185,14 +185,14 @@ void WritableMessageBody::deliverData(
     if (deliverDirectly)
     {
         // post has been implicitly executed by dispatch.
-        completionHandler(
-            std::get<0>(data), std::move(std::get<1>(data)));
+        completionHandler(std::get<0>(data), std::move(std::get<1>(data)));
     }
     else
     {
         post(
-            [this, completionHandler = std::move(completionHandler),
-                data = std::move(data)]() mutable
+            [this,
+             completionHandler = std::move(completionHandler),
+             data = std::move(data)]() mutable
             {
                 deliverData(
                     std::move(completionHandler),

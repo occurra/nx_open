@@ -11,18 +11,14 @@ using IntIntVec = std::vector<std::pair<int, int>>;
 
 namespace nx::utils::test {
 
-class LruCache:
-    public ::testing::Test
+class LruCache: public ::testing::Test
 {
 public:
     const size_t m_cacheSize = 4;
     nx::utils::LruCache<int, int> m_cache = nx::utils::LruCache<int, int>(m_cacheSize);
 
 public:
-    void whenPushElement(const std::pair<int, int>& el)
-    {
-        m_cache.put(el.first, el.second);
-    }
+    void whenPushElement(const std::pair<int, int>& el) { m_cache.put(el.first, el.second); }
 
     void thenElementsFromArrayInCache(
         const IntIntVec& testValues,
@@ -42,8 +38,7 @@ public:
 
     IntIntVec givenTestArray()
     {
-        return IntIntVec{
-            {1, 1}, {2, -1}, {3, 0}, {4, 11}, {5, 55}, {9, 2}};
+        return IntIntVec{{1, 1}, {2, -1}, {3, 0}, {4, 11}, {5, 55}, {9, 2}};
     }
 };
 

@@ -20,18 +20,13 @@ namespace nx::network::server::test {
 
 namespace {
 
-class DummyOutput:
-    public nx::utils::bstream::AbstractOutput
+class DummyOutput: public nx::utils::bstream::AbstractOutput
 {
 public:
-    virtual int write(const void* /*data*/, size_t count) override
-    {
-        return (int)count;
-    }
+    virtual int write(const void* /*data*/, size_t count) override { return (int) count; }
 };
 
-class AsyncChannelToStreamSocketAdapter:
-    public StreamSocketDelegate
+class AsyncChannelToStreamSocketAdapter: public StreamSocketDelegate
 {
     using base_type = StreamSocketDelegate;
 
@@ -50,16 +45,12 @@ public:
         m_asyncChannel->bindToAioThread(aioThread);
     }
 
-    virtual void readSomeAsync(
-        nx::Buffer* const buffer,
-        IoCompletionHandler handler) override
+    virtual void readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler) override
     {
         m_asyncChannel->readSomeAsync(buffer, std::move(handler));
     }
 
-    virtual void sendAsync(
-        const nx::Buffer* buffer,
-        IoCompletionHandler handler) override
+    virtual void sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler) override
     {
         m_asyncChannel->sendAsync(buffer, std::move(handler));
     }
@@ -132,12 +123,11 @@ static const HttpMessageWithoutBody kHttpMessageWithoutBody;
 //-------------------------------------------------------------------------------------------------
 
 // "invalid header" has no ":", so the reader reports a parse error while reading headers.
-static const nx::Buffer kMalformedHttpMessage =
-    "HTTP/1.1 200 OK\r\n"
-    "invalid header\r\n"
-    "Content-Length: 4\r\n"
-    "\r\n"
-    "test";
+static const nx::Buffer kMalformedHttpMessage = "HTTP/1.1 200 OK\r\n"
+                                                "invalid header\r\n"
+                                                "Content-Length: 4\r\n"
+                                                "\r\n"
+                                                "test";
 
 //-------------------------------------------------------------------------------------------------
 
@@ -149,8 +139,7 @@ using TestHttpConnection = nx::network::http::AsyncMessagePipeline;
  * Testing BaseStreamProtocolConnection using AsyncMessagePipeline since
  *   Http already has convenient infrastructure around it.
  */
-class BaseStreamProtocolConnection:
-    public ::testing::Test
+class BaseStreamProtocolConnection: public ::testing::Test
 {
 public:
     BaseStreamProtocolConnection():
@@ -162,11 +151,20 @@ public:
         m_connection = std::make_unique<TestHttpConnection>(
             std::make_unique<AsyncChannelToStreamSocketAdapter>(&m_asyncChannel));
         m_connection->setMessageHandler(
-            [this](auto&&... args) { saveMessage(std::move(args)...); });
+            [this](auto&&... args)
+            {
+                saveMessage(std::move(args)...);
+            });
         m_connection->setOnSomeMessageBodyAvailable(
-            [this](auto&&... args) { saveSomeBody(std::move(args)...); });
+            [this](auto&&... args)
+            {
+                saveSomeBody(std::move(args)...);
+            });
         m_closeSubscription = m_connection->registerCloseHandler(
-            [this](auto&&... args) { saveConnectionClosedEvent(std::move(args)...); });
+            [this](auto&&... args)
+            {
+                saveConnectionClosedEvent(std::move(args)...);
+            });
         m_connection->startReadingConnection();
     }
 
@@ -226,10 +224,9 @@ protected:
     // left MUST NOT be picked up as a new message with a fresh budget.
     void whenReadMessageWithBodyOverTheLimit()
     {
-        nx::Buffer data =
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Length: 1000\r\n"
-            "\r\n";
+        nx::Buffer data = "HTTP/1.1 200 OK\r\n"
+                          "Content-Length: 1000\r\n"
+                          "\r\n";
         data.append(nx::Buffer(100, 'x'));
         data.append(kHttpMessageWithoutBody.fullMessage);
 
@@ -249,18 +246,14 @@ protected:
         m_input.write(data.data(), data.size());
     }
 
-    void whenCloseConnection()
-    {
-        m_connection->closeConnection(SystemError::connectionAbort);
-    }
+    void whenCloseConnection() { m_connection->closeConnection(SystemError::connectionAbort); }
 
     template<typename Handler>
     void whenSendMessage(Handler handler)
     {
         m_connection->sendMessage(
             http::Message(http::MessageType::request),
-            [this, handler = std::move(handler)](
-                SystemError::ErrorCode sysErrorCode)
+            [this, handler = std::move(handler)](SystemError::ErrorCode sysErrorCode)
             {
                 handler();
                 m_sendResults.push(sysErrorCode);
@@ -272,10 +265,7 @@ protected:
         whenSendMessage([]() {});
     }
 
-    void thenMessageIsReported()
-    {
-        thenEveryMessageIsReceived();
-    }
+    void thenMessageIsReported() { thenEveryMessageIsReceived(); }
 
     void thenMessageBodyIsReported()
     {
@@ -300,15 +290,9 @@ protected:
         }
     }
 
-    void thenMessageHasBeenSent()
-    {
-        ASSERT_EQ(SystemError::noError, m_sendResults.pop());
-    }
+    void thenMessageHasBeenSent() { ASSERT_EQ(SystemError::noError, m_sendResults.pop()); }
 
-    void thenMessageSendFailed()
-    {
-        ASSERT_NE(SystemError::noError, m_sendResults.pop());
-    }
+    void thenMessageSendFailed() { ASSERT_NE(SystemError::noError, m_sendResults.pop()); }
 
     void andConnectionClosureIsReported()
     {
@@ -336,15 +320,9 @@ protected:
         m_connection.reset();
     }
 
-    TestHttpConnection& connection()
-    {
-        return *m_connection;
-    }
+    TestHttpConnection& connection() { return *m_connection; }
 
-    nx::Buffer expectedBody() const
-    {
-        return m_expectedBody;
-    }
+    nx::Buffer expectedBody() const { return m_expectedBody; }
 
 private:
     nx::utils::bstream::Pipe m_input;
@@ -433,7 +411,11 @@ TEST_F(BaseStreamProtocolConnection, receiving_multiple_messages_over_same_conne
 
 TEST_F(BaseStreamProtocolConnection, can_be_removed_in_send_completion_handler)
 {
-    whenSendMessage([this]() { freeConnection(); });
+    whenSendMessage(
+        [this]()
+        {
+            freeConnection();
+        });
 
     thenMessageHasBeenSent();
     // andProcessHasNotCrashed()
@@ -453,7 +435,11 @@ TEST_F(BaseStreamProtocolConnection, cancel_send_on_send_failure_is_allowed)
 {
     givenBrokenConnection();
 
-    whenSendMessage([this]() { connection().cancelWrite(); } );
+    whenSendMessage(
+        [this]()
+        {
+            connection().cancelWrite();
+        });
 
     thenMessageSendFailed();
     // andProcessHasNotCrashed()
@@ -461,7 +447,11 @@ TEST_F(BaseStreamProtocolConnection, cancel_send_on_send_failure_is_allowed)
 
 TEST_F(BaseStreamProtocolConnection, cancel_send_on_send_success_is_allowed)
 {
-    whenSendMessage([this]() { connection().cancelWrite(); });
+    whenSendMessage(
+        [this]()
+        {
+            connection().cancelWrite();
+        });
 
     thenMessageHasBeenSent();
     // andProcessHasNotCrashed()
@@ -502,8 +492,7 @@ TEST_F(BaseStreamProtocolConnection, message_body_over_the_limit_closes_the_conn
 
 //-------------------------------------------------------------------------------------------------
 
-class BaseStreamProtocolConnectionTakeSocket:
-    public BaseStreamProtocolConnection
+class BaseStreamProtocolConnectionTakeSocket: public BaseStreamProtocolConnection
 {
     using base_type = BaseStreamProtocolConnection;
 
@@ -520,7 +509,10 @@ protected:
 
         m_streamSocket->readSomeAsync(
             &m_readBuffer,
-            [this](auto&&... args) { onSomeBytesRead(std::move(args)...); });
+            [this](auto&&... args)
+            {
+                onSomeBytesRead(std::move(args)...);
+            });
 
         m_done.get_future().wait();
     }
@@ -537,8 +529,7 @@ private:
     nx::Buffer m_readBuffer;
     std::promise<void> m_done;
 
-    void onSomeBytesRead(
-        SystemError::ErrorCode sysErrorCode, std::size_t /*bytesRead*/)
+    void onSomeBytesRead(SystemError::ErrorCode sysErrorCode, std::size_t /*bytesRead*/)
     {
         ASSERT_EQ(SystemError::noError, sysErrorCode);
 
@@ -552,7 +543,10 @@ private:
 
         m_streamSocket->readSomeAsync(
             &m_readBuffer,
-            [this](auto&&... args) { onSomeBytesRead(std::move(args)...); });
+            [this](auto&&... args)
+            {
+                onSomeBytesRead(std::move(args)...);
+            });
     }
 };
 

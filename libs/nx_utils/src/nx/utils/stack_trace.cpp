@@ -2,12 +2,11 @@
 
 #ifndef __EMSCRIPTEN__
 
-#include "stack_trace.h"
+    #include "stack_trace.h"
 
-#include <cpptrace/cpptrace.hpp>
-
-#include <nx/build_info.h>
-#include <nx/utils/log/format.h>
+    #include <cpptrace/cpptrace.hpp>
+    #include <nx/build_info.h>
+    #include <nx/utils/log/format.h>
 
 namespace nx {
 

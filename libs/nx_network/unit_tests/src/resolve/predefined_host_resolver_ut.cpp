@@ -8,8 +8,7 @@
 
 namespace nx::network::test {
 
-class PredefinedHostResolver:
-    public ::testing::Test
+class PredefinedHostResolver: public ::testing::Test
 {
 protected:
     void mapMultipleEntriesUnderSingleName()
@@ -27,16 +26,13 @@ protected:
 
     void unmapRandomEntry()
     {
-        const auto indexToRemove = nx::utils::random::number<std::size_t>(
-            0, m_mappedEntries.size() - 1);
+        const auto indexToRemove =
+            nx::utils::random::number<std::size_t>(0, m_mappedEntries.size() - 1);
         m_predefinedHostResolver.removeMapping(m_hostname, m_mappedEntries[indexToRemove]);
         m_mappedEntries.erase(m_mappedEntries.begin() + indexToRemove);
     }
 
-    void unmapAllEntries()
-    {
-        m_predefinedHostResolver.removeMapping(m_hostname);
-    }
+    void unmapAllEntries() { m_predefinedHostResolver.removeMapping(m_hostname); }
 
     AddressEntry mapNameToRandomEntry(const std::string& hostname)
     {
@@ -77,9 +73,7 @@ protected:
         ASSERT_EQ(m_mappedEntries, resolved.entries);
     }
 
-    void assertNameIsResolvedTo(
-        const std::string& hostname,
-        const AddressEntry& expectedEntry)
+    void assertNameIsResolvedTo(const std::string& hostname, const AddressEntry& expectedEntry)
     {
         assertNameIsResolved(hostname);
         ASSERT_TRUE(nx::utils::contains(m_lastResolveResult.entries, expectedEntry));

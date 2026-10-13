@@ -8,7 +8,8 @@ int main(int argc, char** argv)
 {
     QCoreApplication app(argc, argv);
     return nx::network::test::runTest(
-        argc, argv,
+        argc,
+        argv,
         [](const nx::ArgumentParser& /*args*/)
         {
             return nx::utils::test::DeinitFunctions();

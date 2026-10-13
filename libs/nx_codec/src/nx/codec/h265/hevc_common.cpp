@@ -13,9 +13,9 @@ namespace {
 
 static const uint8_t kPayloadHeaderForbiddenZeroBitMask = 0x80;
 #if Q_BYTE_ORDER == Q_BIG_ENDIAN
-    static const uint16_t kPayloadHeaderLayerIdMask = 0x1f8;
+static const uint16_t kPayloadHeaderLayerIdMask = 0x1f8;
 #else
-    static const uint16_t kPayloadHeaderLayerIdMask = 0xf801;
+static const uint16_t kPayloadHeaderLayerIdMask = 0xf801;
 #endif
 static const uint8_t kPayloadHeaderTidMask = 0x07;
 static const uint8_t kStartFuPacketMask = 0x80;
@@ -31,12 +31,15 @@ bool FuHeader::decode(const uint8_t* const payload, int payloadLength)
 
     startFlag = *payload & kStartFuPacketMask;
     endFlag = *payload & kEndFuPacketMask;
-    unitType = (NalUnitType)(*payload & kFuNalUnitTypeMask);
+    unitType = (NalUnitType) (*payload & kFuNalUnitTypeMask);
 
     return true;
 }
 
-bool NalUnitHeader::decode(const uint8_t* const payload, int payloadLength, QString* outErrorString)
+bool NalUnitHeader::decode(
+    const uint8_t* const payload,
+    int payloadLength,
+    QString* outErrorString)
 {
     if (outErrorString)
         outErrorString->clear();
@@ -51,8 +54,8 @@ bool NalUnitHeader::decode(const uint8_t* const payload, int payloadLength, QStr
     if (payload[0] & kPayloadHeaderForbiddenZeroBitMask)
         NX_WARNING(this, "Incorrect hevc nal unit header, forbidden zero bit is set!");
 
-    unitType = (NalUnitType)((payload[0] & kPayloadHeaderNalUnitTypeMask) >> 1);
-    layerId = ((*((uint16_t*)payload) & kPayloadHeaderLayerIdMask) >> kTidFieldLengthBit);
+    unitType = (NalUnitType) ((payload[0] & kPayloadHeaderNalUnitTypeMask) >> 1);
+    layerId = ((*((uint16_t*) payload) & kPayloadHeaderLayerIdMask) >> kTidFieldLengthBit);
     tid = payload[1] & kPayloadHeaderTidMask;
 
     return true;
@@ -75,32 +78,27 @@ PacketType fromNalUnitTypeToPacketType(NalUnitType unitType)
 
 bool isValidUnitType(int unitType)
 {
-    return unitType >= (int)NalUnitType::trailN
-        && unitType <= (int)NalUnitType::unspec63;
+    return unitType >= (int) NalUnitType::trailN && unitType <= (int) NalUnitType::unspec63;
 }
 
 bool isRandomAccessPoint(NalUnitType unitType)
 {
-    return unitType >= NalUnitType::blaWLp
-        && unitType <= NalUnitType::craNut;
+    return unitType >= NalUnitType::blaWLp && unitType <= NalUnitType::craNut;
 }
 
 bool isLeadingPicture(NalUnitType unitType)
 {
-    return unitType >= NalUnitType::radlN
-        && unitType <= NalUnitType::raslR;
+    return unitType >= NalUnitType::radlN && unitType <= NalUnitType::raslR;
 }
 
 bool isTrailingPicture(NalUnitType unitType)
 {
-    return unitType == NalUnitType::trailN
-        || unitType == NalUnitType::trailR;
+    return unitType == NalUnitType::trailN || unitType == NalUnitType::trailR;
 }
 
 bool isParameterSet(NalUnitType unitType)
 {
-    return unitType == NalUnitType::vpsNut
-        || unitType == NalUnitType::spsNut
+    return unitType == NalUnitType::vpsNut || unitType == NalUnitType::spsNut
         || unitType == NalUnitType::ppsNut;
 }
 

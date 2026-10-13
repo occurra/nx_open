@@ -27,8 +27,8 @@ nx::network::server::ParserState MessageParser::parse(
 
         *m_message = m_httpStreamReader.takeMessage();
 
-        if (m_httpStreamReader.contentLength() &&
-            *m_httpStreamReader.contentLength() != m_httpStreamReader.messageBodyBytesRead())
+        if (m_httpStreamReader.contentLength()
+            && *m_httpStreamReader.contentLength() != m_httpStreamReader.messageBodyBytesRead())
         {
             return nx::network::server::ParserState::failed;
         }
@@ -44,8 +44,7 @@ nx::network::server::ParserState MessageParser::parse(
     if (!m_httpStreamReader.parseBytes(buffer, bytesProcessed)
         || m_httpStreamReader.state() == HttpStreamReader::ReadState::parseError)
     {
-        NX_DEBUG(this, "Failed to parse HTTP stream: state before parsing: %1",
-            stateBeforeParse);
+        NX_DEBUG(this, "Failed to parse HTTP stream: state before parsing: %1", stateBeforeParse);
         return nx::network::server::ParserState::failed;
     }
 

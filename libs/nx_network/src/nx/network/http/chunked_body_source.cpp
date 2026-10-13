@@ -6,9 +6,7 @@
 
 namespace nx::network::http {
 
-ChunkedBodySource::ChunkedBodySource(
-    std::unique_ptr<AbstractMsgBodySource> body)
-    :
+ChunkedBodySource::ChunkedBodySource(std::unique_ptr<AbstractMsgBodySource> body):
     m_body(std::move(body))
 {
     bindToAioThread(m_body->getAioThread());
@@ -35,13 +33,12 @@ std::optional<uint64_t> ChunkedBodySource::contentLength() const
 }
 
 void ChunkedBodySource::readAsync(
-    nx::MoveOnlyFunc<
-        void(SystemError::ErrorCode, nx::Buffer)
-    > completionHandler)
+    nx::MoveOnlyFunc<void(SystemError::ErrorCode, nx::Buffer)> completionHandler)
 {
     m_body->readAsync(
-        [this, completionHandler = std::move(completionHandler)](
-            SystemError::ErrorCode resultCode, nx::Buffer buffer)
+        [this,
+         completionHandler =
+             std::move(completionHandler)](SystemError::ErrorCode resultCode, nx::Buffer buffer)
         {
             if (m_eof || resultCode != SystemError::noError)
                 return completionHandler(resultCode, nx::Buffer());

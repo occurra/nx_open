@@ -33,16 +33,19 @@ std::tuple<ResultType, OutArgs...> makeSyncCall(
  * and waits for completion.
  */
 template<typename ResultType>
-std::tuple<ResultType> makeSyncCall(
-    std::function<void(std::function<void(ResultType)>)> function)
+std::tuple<ResultType> makeSyncCall(std::function<void(std::function<void(ResultType)>)> function)
 {
     std::promise<ResultType> promise;
     auto future = promise.get_future();
-    function([&promise](ResultType resCode) { promise.set_value(resCode); });
+    function(
+        [&promise](ResultType resCode)
+        {
+            promise.set_value(resCode);
+        });
     return std::make_tuple(future.get());
 }
 
-template<typename ResultType, typename OutArg1, typename FuncPtr, typename Arg1, typename ... Args>
+template<typename ResultType, typename OutArg1, typename FuncPtr, typename Arg1, typename... Args>
 std::tuple<ResultType, OutArg1> makeSyncCall(FuncPtr funcPtr, Arg1 arg1, Args... args);
 
 template<typename ResultType, typename... OutArgs, typename FuncType>
@@ -59,7 +62,7 @@ std::tuple<ResultType, OutArgs...> makeSyncCall(
     return detail::makeSyncCall<ResultType, OutArgs...>(std::move(function));
 }
 
-template<typename ResultType, typename OutArg1, typename FuncPtr, typename Arg1, typename ... Args>
+template<typename ResultType, typename OutArg1, typename FuncPtr, typename Arg1, typename... Args>
 std::tuple<ResultType, OutArg1> makeSyncCall(FuncPtr funcPtr, Arg1 arg1, Args... args)
 {
     return makeSyncCall<ResultType, OutArg1>(std::bind(funcPtr, arg1, args...));

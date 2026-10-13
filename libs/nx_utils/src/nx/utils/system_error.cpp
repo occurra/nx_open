@@ -18,7 +18,7 @@ ErrorCode getLastOSErrorCode()
 #ifdef _WIN32
     return GetLastError();
 #else
-    //EAGAIN and EWOULDBLOCK are usually same, but not always
+    // EAGAIN and EWOULDBLOCK are usually same, but not always
     return errno == EAGAIN ? EWOULDBLOCK : errno;
 #endif
 }
@@ -34,7 +34,7 @@ std::string toString(ErrorCode errorCode)
         NULL,
         errorCode,
         MAKELANGID(LANG_SYSTEM_DEFAULT, SUBLANG_SYS_DEFAULT),
-        (LPTSTR)&msgBuf,
+        (LPTSTR) &msgBuf,
         sizeof(msgBuf),
         NULL);
 
@@ -58,14 +58,15 @@ std::string toString(ErrorCode errorCode)
 
     char errorBuffer[1024]; //< 1024 is taken from glibc perror implementation.
     #if defined(__APPLE__) || defined(ANDROID) || defined(__ANDROID__) || defined(__EMSCRIPTEN__)
-        // POSIX strerror_r implementation returns error code, not the error message. If the
-        // function fails, return an empty string.
-        if (!strerror_r(errorCode, errorBuffer, sizeof(errorBuffer)))
-            std::string();
-        return errorBuffer;
+                            // POSIX strerror_r implementation returns error code, not the error
+                            // message. If the
+    // function fails, return an empty string.
+    if (!strerror_r(errorCode, errorBuffer, sizeof(errorBuffer)))
+        std::string();
+    return errorBuffer;
     #else
-        // Linux strerror_r implementation returns error message.
-        return strerror_r(errorCode, errorBuffer, sizeof(errorBuffer));
+                            // Linux strerror_r implementation returns error message.
+    return strerror_r(errorCode, errorBuffer, sizeof(errorBuffer));
     #endif
 #endif
 }
@@ -85,6 +86,7 @@ void setLastErrorCode(ErrorCode errorCode)
 }
 
 namespace {
+
 static constexpr std::array<std::pair<SystemError::ErrorCode, std::string_view>, 30>
     kKnownErrorCodes = {{
         {noError, "noError"},
@@ -118,6 +120,7 @@ static constexpr std::array<std::pair<SystemError::ErrorCode, std::string_view>,
         {addressNotAvailable, "addressNotAvailable"},
         {unknownProtocolOption, "unknownProtocolOption"},
     }};
+
 } // namespace
 
 std::string toShortString(ErrorCode errorCode)
@@ -125,7 +128,10 @@ std::string toShortString(ErrorCode errorCode)
     const auto it = std::find_if(
         kKnownErrorCodes.begin(),
         kKnownErrorCodes.end(),
-        [&errorCode](auto& errorPair) { return errorPair.first == errorCode; });
+        [&errorCode](auto& errorPair)
+        {
+            return errorPair.first == errorCode;
+        });
 
     if (it != kKnownErrorCodes.end())
         return std::string{it->second};

@@ -20,7 +20,8 @@ static void givenCorrectHeaders(Message* message)
 }
 
 static void givenCorrectRequestHeaders(
-    nx::network::http::Request* request, CompressionType compressionType = CompressionType::none)
+    nx::network::http::Request* request,
+    CompressionType compressionType = CompressionType::none)
 {
     givenCorrectHeaders(request);
 
@@ -79,19 +80,27 @@ TEST(WebsocketHandshake, validateRequest_headers)
 
     givenCorrectRequestHeaders(&request);
     request.headers.erase("Host");
-    ASSERT_EQ(validateRequest(request, (nx::network::http::Response*) nullptr), Error::handshakeError);
+    ASSERT_EQ(
+        validateRequest(request, (nx::network::http::Response*) nullptr),
+        Error::handshakeError);
 
     givenCorrectRequestHeaders(&request);
     request.headers.erase("Sec-WebSocket-Key");
-    ASSERT_EQ(validateRequest(request, (nx::network::http::Response*) nullptr), Error::handshakeError);
+    ASSERT_EQ(
+        validateRequest(request, (nx::network::http::Response*) nullptr),
+        Error::handshakeError);
 
     givenCorrectRequestHeaders(&request);
     request.headers.erase("Sec-WebSocket-Version");
-    ASSERT_EQ(validateRequest(request, (nx::network::http::Response*) nullptr), Error::handshakeError);
+    ASSERT_EQ(
+        validateRequest(request, (nx::network::http::Response*) nullptr),
+        Error::handshakeError);
 
     givenCorrectRequestHeaders(&request);
     request.headers.find("Sec-WebSocket-Version")->second = "78";
-    ASSERT_EQ(validateRequest(request, (nx::network::http::Response*) nullptr), Error::handshakeError);
+    ASSERT_EQ(
+        validateRequest(request, (nx::network::http::Response*) nullptr),
+        Error::handshakeError);
 }
 
 TEST(WebsocketHandshake, validateRequest_response)
@@ -104,7 +113,8 @@ TEST(WebsocketHandshake, validateRequest_response)
     ASSERT_EQ(validateRequest(request, &response.headers), Error::noError);
 
     ASSERT_EQ(response.headers.find("Sec-WebSocket-Protocol")->second, "test");
-    ASSERT_EQ(response.headers.find("Sec-WebSocket-Accept")->second,
+    ASSERT_EQ(
+        response.headers.find("Sec-WebSocket-Accept")->second,
         detail::makeAcceptKey(request.headers.find("Sec-WebSocket-Key")->second));
 
     ASSERT_EQ(response.headers.find("Sec-WebSocket-Extensions"), response.headers.cend());
@@ -119,7 +129,8 @@ TEST(WebsocketHandshake, validateRequest_response_Compression)
     ASSERT_EQ(validateRequest(request, &response.headers), Error::noError);
 
     ASSERT_EQ(response.headers.find("Sec-WebSocket-Protocol")->second, "test");
-    ASSERT_EQ(response.headers.find("Sec-WebSocket-Accept")->second,
+    ASSERT_EQ(
+        response.headers.find("Sec-WebSocket-Accept")->second,
         detail::makeAcceptKey(request.headers.find("Sec-WebSocket-Key")->second));
 
     ASSERT_EQ(response.headers.find("Sec-WebSocket-Extensions")->second, "permessage-deflate");
@@ -146,7 +157,6 @@ TEST(WebsocketHandshake, addClientHeaders_Compression)
 
     ASSERT_EQ(request.headers.find("Sec-WebSocket-Extensions")->second, "permessage-deflate");
 }
-
 
 TEST(WebsocketHandshake, validateResponse)
 {

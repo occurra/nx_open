@@ -8,8 +8,7 @@
 
 namespace nx::utils::algorithm::test {
 
-class ItemSelector:
-    public ::testing::Test
+class ItemSelector: public ::testing::Test
 {
 public:
     ItemSelector():
@@ -37,9 +36,8 @@ protected:
         m_items.resize(itemCount);
         for (int i = 0; i < itemCount; ++i)
         {
-            const auto weight = itemOrder == ItemOrder::ascendingWeight
-                ? 3 * (i + 1)
-                : 3 * (itemCount - i);
+            const auto weight =
+                itemOrder == ItemOrder::ascendingWeight ? 3 * (i + 1) : 3 * (itemCount - i);
 
             m_items[i].key = i;
             m_items[i].weight = weight;
@@ -47,15 +45,9 @@ protected:
         }
     }
 
-    void givenGroupOfItems()
-    {
-        addItems(7, ItemOrder::ascendingWeight);
-    }
+    void givenGroupOfItems() { addItems(7, ItemOrder::ascendingWeight); }
 
-    void givenTwoItemsOfDifferentWeight()
-    {
-        addItems(2, ItemOrder::descendingWeight);
-    }
+    void givenTwoItemsOfDifferentWeight() { addItems(2, ItemOrder::descendingWeight); }
 
     void sinkItem(int key, int depth)
     {
@@ -69,35 +61,20 @@ protected:
             sinkItem(i, random::number<int>(0, 37));
     }
 
-    void sinkFirstItem()
-    {
-        sinkItem(0, 10);
-    }
+    void sinkFirstItem() { sinkItem(0, 10); }
 
-    Item frontItem()
-    {
-        return m_items.front();
-    }
+    Item frontItem() { return m_items.front(); }
 
-    void assertTheFirstItemIsSelected()
-    {
-        ASSERT_EQ(0, m_selector.topItem());
-    }
+    void assertTheFirstItemIsSelected() { ASSERT_EQ(0, m_selector.topItem()); }
 
     void assertTheClosestToTheSurfaceItemIsSelected()
     {
         ASSERT_EQ(closestToTheSurfaceItem().key, m_selector.topItem());
     }
 
-    void assertTopItemIs(int key)
-    {
-        ASSERT_EQ(key, m_selector.topItem());
-    }
+    void assertTopItemIs(int key) { ASSERT_EQ(key, m_selector.topItem()); }
 
-    void assertTopItemIsNot(int key)
-    {
-        ASSERT_NE(key, m_selector.topItem());
-    }
+    void assertTopItemIsNot(int key) { ASSERT_NE(key, m_selector.topItem()); }
 
     void waitForTopItemToBe(int key)
     {
@@ -105,30 +82,39 @@ protected:
             m_timeShift.applyRelativeShift(std::chrono::milliseconds(1));
     }
 
-    void waitFor(std::chrono::milliseconds timeout)
-    {
-        m_timeShift.applyRelativeShift(timeout);
-    }
+    void waitFor(std::chrono::milliseconds timeout) { m_timeShift.applyRelativeShift(timeout); }
 
     Item heaviestItem() const
     {
         return *std::max_element(
-            m_items.begin(), m_items.end(),
-            [](auto& left, auto& right) { return left.weight < right.weight; });
+            m_items.begin(),
+            m_items.end(),
+            [](auto& left, auto& right)
+            {
+                return left.weight < right.weight;
+            });
     }
 
     Item lightestItem() const
     {
         return *std::min_element(
-            m_items.begin(), m_items.end(),
-            [](auto& left, auto& right) { return left.weight < right.weight; });
+            m_items.begin(),
+            m_items.end(),
+            [](auto& left, auto& right)
+            {
+                return left.weight < right.weight;
+            });
     }
 
     Item closestToTheSurfaceItem() const
     {
         return *std::min_element(
-            m_items.begin(), m_items.end(),
-            [](auto& left, auto& right) { return left.currentDepth < right.currentDepth; });
+            m_items.begin(),
+            m_items.end(),
+            [](auto& left, auto& right)
+            {
+                return left.currentDepth < right.currentDepth;
+            });
     }
 
     std::chrono::milliseconds popupTimePerWeightUnit() const

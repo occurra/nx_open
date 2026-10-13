@@ -6,8 +6,7 @@ namespace nx::sql::detail {
 
 BaseQueryExecutor::BaseQueryExecutor(
     const ConnectionOptions& connectionOptions,
-    QueryExecutorQueue* const queryExecutorQueue)
-    :
+    QueryExecutorQueue* const queryExecutorQueue):
     m_connectionOptions(connectionOptions),
     m_queryExecutorQueue(queryExecutorQueue)
 {

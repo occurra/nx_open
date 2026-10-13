@@ -8,16 +8,13 @@ namespace nx::network::aio {
 
 BufferedAsyncChannel::BufferedAsyncChannel(
     std::unique_ptr<AbstractAsyncChannel> source,
-    nx::Buffer buffer)
-    :
+    nx::Buffer buffer):
     base_type(std::move(source)),
     m_internalRecvBuffer(std::move(buffer))
 {
 }
 
-void BufferedAsyncChannel::readSomeAsync(
-    nx::Buffer* const buf,
-    IoCompletionHandler handler)
+void BufferedAsyncChannel::readSomeAsync(nx::Buffer* const buf, IoCompletionHandler handler)
 {
     if (m_internalRecvBuffer.empty())
         return base_type::readSomeAsync(buf, std::move(handler));
@@ -34,7 +31,7 @@ void BufferedAsyncChannel::readSomeAsync(
             std::memcpy(buf->data() + oldSize, m_internalRecvBuffer.data(), recvSize);
             m_internalRecvBuffer = m_internalRecvBuffer.substr(recvSize);
 
-            handler(SystemError::noError, (size_t)recvSize);
+            handler(SystemError::noError, (size_t) recvSize);
         });
 }
 

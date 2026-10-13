@@ -27,5 +27,8 @@ public:
         TODO #akolesnikov does not look appropriate here
     */
     virtual AudioLayoutConstPtr getAudioLayout() const { return AudioLayoutConstPtr(); };
-    virtual QnConstResourceVideoLayoutPtr getVideoLayout() const { return QnConstResourceVideoLayoutPtr(); }
+    virtual QnConstResourceVideoLayoutPtr getVideoLayout() const
+    {
+        return QnConstResourceVideoLayoutPtr();
+    }
 };

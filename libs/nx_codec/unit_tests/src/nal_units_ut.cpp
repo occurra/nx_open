@@ -37,8 +37,10 @@ TEST(NalUnits, decodeNal)
         destination.resize(result.size());
 
         nx::media::nal::decodeEpb(
-            (const quint8*) source.constData(), (const quint8*) source.constData() + source.size(),
-            (quint8*) destination.data(), (size_t) destination.size());
+            (const quint8*) source.constData(),
+            (const quint8*) source.constData() + source.size(),
+            (quint8*) destination.data(),
+            (size_t) destination.size());
 
         ASSERT_EQ(result, destination);
     }
@@ -91,9 +93,17 @@ TEST(NalUnits, seiExtractUserData)
 {
     {
         // Two user_data_unregistered (type 5) messages in one NALU.
-        const uint8_t data[] = {0x05, 0x03, 0xaa, 0xbb, 0xcc, //< Type 5, size 3.
-                                0x05, 0x02, 0x11, 0x22, //< Type 5, size 2.
-                                0x80}; //< rbsp_trailing_bits.
+        const uint8_t data[] = {
+            0x05,
+            0x03,
+            0xaa,
+            0xbb,
+            0xcc, //< Type 5, size 3.
+            0x05,
+            0x02,
+            0x11,
+            0x22, //< Type 5, size 2.
+            0x80}; //< rbsp_trailing_bits.
         const auto result = nx::media::sei::extractUserData(data);
         ASSERT_TRUE(result.has_value());
         const auto& payloads = result->payloads;
@@ -103,10 +113,19 @@ TEST(NalUnits, seiExtractUserData)
     }
     {
         // Mix of message types; only type 5 is collected.
-        const uint8_t data[] = {0x00, 0x01, 0x77, //< Type 0 (buffering_period), size 1.
-                                0x05, 0x02, 0xde, 0xad, //< Type 5, size 2.
-                                0x01, 0x02, 0x33, 0x44, //< Type 1 (pic_timing), size 2.
-                                0x80};
+        const uint8_t data[] = {
+            0x00,
+            0x01,
+            0x77, //< Type 0 (buffering_period), size 1.
+            0x05,
+            0x02,
+            0xde,
+            0xad, //< Type 5, size 2.
+            0x01,
+            0x02,
+            0x33,
+            0x44, //< Type 1 (pic_timing), size 2.
+            0x80};
         const auto result = nx::media::sei::extractUserData(data);
         ASSERT_TRUE(result.has_value());
         const auto& payloads = result->payloads;
@@ -117,9 +136,16 @@ TEST(NalUnits, seiExtractUserData)
     }
     {
         // 0xff-extended message type (255 + 6 == 261) is skipped, type 5 is collected.
-        const uint8_t data[] = {0xff, 0x06, 0x02, 0xaa, 0xbb, //< Type 261, size 2.
-                                0x05, 0x01, 0x99, //< Type 5, size 1.
-                                0x80};
+        const uint8_t data[] = {
+            0xff,
+            0x06,
+            0x02,
+            0xaa,
+            0xbb, //< Type 261, size 2.
+            0x05,
+            0x01,
+            0x99, //< Type 5, size 1.
+            0x80};
         const auto result = nx::media::sei::extractUserData(data);
         ASSERT_TRUE(result.has_value());
         const auto& payloads = result->payloads;
@@ -130,8 +156,14 @@ TEST(NalUnits, seiExtractUserData)
     }
     {
         // Type 5 with wrong size at the end of a mix: declared 5, only 2 bytes left.
-        const uint8_t data[] = {0x00, 0x01, 0x00, //< Type 0, size 1.
-                                0x05, 0x05, 0x12, 0x34}; //< Type 5, size 5, truncated.
+        const uint8_t data[] = {
+            0x00,
+            0x01,
+            0x00, //< Type 0, size 1.
+            0x05,
+            0x05,
+            0x12,
+            0x34}; //< Type 5, size 5, truncated.
         const auto result = nx::media::sei::extractUserData(data);
         ASSERT_TRUE(result.has_value());
         const auto& payloads = result->payloads;
@@ -143,7 +175,8 @@ TEST(NalUnits, seiExtractUserData)
     {
         // Empty type 5 payload.
         const uint8_t data[] = {
-            0x05, 0x00, //< Type 5, size 0.
+            0x05,
+            0x00, //< Type 5, size 0.
             0x80};
         const auto result = nx::media::sei::extractUserData(data);
         ASSERT_TRUE(result.has_value());
@@ -160,9 +193,18 @@ TEST(NalUnits, seiExtractUserData)
     }
     {
         // Long 0xff-extended message type (4 * 255 + 0 == 1020) is skipped, type 5 is collected.
-        const uint8_t data[] = {0xff, 0xff, 0xff, 0xff, 0x00, 0x01, 0xaa, //< Type 1020, size 1.
-                                0x05, 0x01, 0x99, //< Type 5, size 1.
-                                0x80};
+        const uint8_t data[] = {
+            0xff,
+            0xff,
+            0xff,
+            0xff,
+            0x00,
+            0x01,
+            0xaa, //< Type 1020, size 1.
+            0x05,
+            0x01,
+            0x99, //< Type 5, size 1.
+            0x80};
         const auto result = nx::media::sei::extractUserData(data);
         ASSERT_TRUE(result.has_value());
         const auto& payloads = result->payloads;
@@ -173,8 +215,8 @@ TEST(NalUnits, seiExtractUserData)
     }
     {
         // Long 0xff-extended message size (2 * 255 + 2 == 512) far beyond the buffer.
-        const uint8_t data[] = {0x05, 0xff, 0xff,
-                                0x02, 0x12, 0x34}; //< Type 5, size 512, truncated.
+        const uint8_t data[] =
+            {0x05, 0xff, 0xff, 0x02, 0x12, 0x34}; //< Type 5, size 512, truncated.
         const auto result = nx::media::sei::extractUserData(data);
         ASSERT_TRUE(result.has_value());
         const auto& payloads = result->payloads;
@@ -212,14 +254,20 @@ TEST(NalUnits, seiExtractUserData)
         const auto& payloads = result->payloads;
         ASSERT_EQ(payloads.size(), 1);
         const auto& payload = payloads.front();
-        ASSERT_EQ(payload.size(), 2); //< Declared size vastly exceeds the buffer; truncated to what remains.
+        ASSERT_EQ(
+            payload.size(),
+            2); //< Declared size vastly exceeds the buffer; truncated to what remains.
         ASSERT_EQ(memcmp(payload.data(), "\xaa\xbb", 2), 0);
     }
     {
         // A single leftover trailing byte other than the rbsp_trailing_bits 0x80 (e.g. vendor
         // padding) does not fail the parsing of the preceding messages.
-        const uint8_t data[] = {0x05, 0x02, 0x11, 0x22, //< Type 5, size 2.
-                                0x00}; //< Leftover padding byte.
+        const uint8_t data[] = {
+            0x05,
+            0x02,
+            0x11,
+            0x22, //< Type 5, size 2.
+            0x00}; //< Leftover padding byte.
         const auto result = nx::media::sei::extractUserData(data);
         ASSERT_TRUE(result.has_value());
         const auto& payloads = result->payloads;
@@ -231,10 +279,16 @@ TEST(NalUnits, seiExtractUserData)
 TEST(NalUnits, h265SEIDeserialize)
 {
     // Prefix SEI NALU: 2-byte NAL header, EPB in the payload (00 00 03 01 decodes to 00 00 01).
-    const uint8_t data[] = {0x4e, 0x01, //< NAL header: prefixSeiNut (39).
-                            0x05, 0x03, 0x00,
-                            0x00, 0x03, 0x01, //< Type 5, size 3 (4 bytes with EPB).
-                            0x80};
+    const uint8_t data[] = {
+        0x4e,
+        0x01, //< NAL header: prefixSeiNut (39).
+        0x05,
+        0x03,
+        0x00,
+        0x00,
+        0x03,
+        0x01, //< Type 5, size 3 (4 bytes with EPB).
+        0x80};
     const auto sei = nx::media::h265::parseSeiUserData(std::span(data));
     ASSERT_TRUE(sei.has_value());
     ASSERT_EQ(sei->payloads.size(), 1);
@@ -267,10 +321,12 @@ TEST(NalUnits, h265SEIDeserializeIndependentCalls)
 // come out truncated - which is exactly what the parser must survive.
 
 static void checkVendorSei(
-    auto parseSeiUserData, const QByteArray& nalu, const QByteArray& expectedUserData)
+    auto parseSeiUserData,
+    const QByteArray& nalu,
+    const QByteArray& expectedUserData)
 {
-    const auto sei = parseSeiUserData(
-        std::span((const uint8_t*) nalu.constData(), (size_t) nalu.size()));
+    const auto sei =
+        parseSeiUserData(std::span((const uint8_t*) nalu.constData(), (size_t) nalu.size()));
     ASSERT_TRUE(sei.has_value());
     ASSERT_EQ(sei->payloads.size(), 1);
     const auto& payload = sei->payloads.front();
@@ -344,8 +400,8 @@ TEST(H26xVendorSei, h265UniviewCameraInfo)
 TEST(NalUnits, h264SPSWrongResolution)
 {
     nx::media::h264::SequenceParameterSet sps;
-    uint8_t data[] = {0x27, 0xf4, 0x00, 0x34, 0xac, 0x56, 0x80, 0x50,
-                      0x05, 0xba, 0x6e, 0x04, 0x04, 0x04, 0x04};
+    uint8_t data[] =
+        {0x27, 0xf4, 0x00, 0x34, 0xac, 0x56, 0x80, 0x50, 0x05, 0xba, 0x6e, 0x04, 0x04, 0x04, 0x04};
     sps.decodeBuffer(data, data + sizeof(data));
     ASSERT_EQ(sps.deserialize(), 0);
     ASSERT_EQ(sps.getWidth(), 1280);
@@ -381,8 +437,22 @@ TEST(NalUnits, find4BytesStartcodes)
         ASSERT_EQ(sizes[0].size, 2);
     }
     {
-        uint8_t data[] = {0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8, 0x00, 0x00,
-                          0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1};
+        uint8_t data[] = {
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x1c,
+            0xe8,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0xe5,
+            0xaf,
+            0xfc,
+            0x69,
+            0xb1};
 
         auto sizes = nx::media::nal::findNalUnitsAnnexB(data, sizeof(data));
         ASSERT_EQ(sizes.size(), 2);
@@ -400,8 +470,25 @@ TEST(NalUnits, find4BytesStartcodes)
 
     // Trailing zeros
     {
-        uint8_t data[] = {0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8, 0x00, 0x00, 0x00,
-                          0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1, 0x00, 0x00};
+        uint8_t data[] = {
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x1c,
+            0xe8,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0xe5,
+            0xaf,
+            0xfc,
+            0x69,
+            0xb1,
+            0x00,
+            0x00};
 
         auto sizes = nx::media::nal::findNalUnitsAnnexB(data, sizeof(data));
         ASSERT_EQ(sizes.size(), 2);
@@ -449,8 +536,22 @@ TEST(NalUnits, convertStartCodesToSizes)
         ASSERT_EQ(0, memcmp(converted.data(), data, sizeof(data)));
     }
     {
-        uint8_t data[] = {0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8, 0x00, 0x00,
-                          0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1};
+        uint8_t data[] = {
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x1c,
+            0xe8,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0xe5,
+            0xaf,
+            0xfc,
+            0x69,
+            0xb1};
 
         auto converted = nx::media::nal::convertStartCodesToSizes(data, sizeof(data));
         ASSERT_EQ(converted.size(), sizeof(data));
@@ -471,8 +572,22 @@ TEST(NalUnits, convertStartCodesToSizes)
     }
     // Padding.
     {
-        uint8_t data[] = {0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8, 0x00, 0x00,
-                          0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1};
+        uint8_t data[] = {
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x1c,
+            0xe8,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0xe5,
+            0xaf,
+            0xfc,
+            0x69,
+            0xb1};
 
         auto converted = nx::media::nal::convertStartCodesToSizes(data, sizeof(data), 32);
         ASSERT_EQ(converted.size(), sizeof(data) + 32);
@@ -499,8 +614,25 @@ TEST(NalUnits, convertStartCodesToSizes)
     }
     // Trailing zeros.
     {
-        uint8_t data[] = {0x00, 0x00, 0x00, 0x01, 0x1c, 0xe8, 0x00, 0x00, 0x00,
-                          0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1, 0x00, 0x00};
+        uint8_t data[] = {
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x1c,
+            0xe8,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0xe5,
+            0xaf,
+            0xfc,
+            0x69,
+            0xb1,
+            0x00,
+            0x00};
 
         auto converted = nx::media::nal::convertStartCodesToSizes(data, sizeof(data));
         ASSERT_EQ(converted.size(), sizeof(data) - 3);
@@ -518,8 +650,8 @@ TEST(NalUnits, convertStartCodesToSizes)
     }
     // 3 bytes startcode
     {
-        uint8_t data[] = {0x00, 0x00, 0x01, 0x1c, 0xe8, 0x00, 0x00,
-                          0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1};
+        uint8_t data[] =
+            {0x00, 0x00, 0x01, 0x1c, 0xe8, 0x00, 0x00, 0x01, 0xe5, 0xaf, 0xfc, 0x69, 0xb1};
 
         auto converted = nx::media::nal::convertStartCodesToSizes(data, sizeof(data));
         ASSERT_EQ(converted.size(), sizeof(data) + 2);

@@ -52,7 +52,8 @@ void OpusParser::setSdpInfo(const Sdp::Media& sdp)
     {
         if (sdp.rtpmap.clockRate != kClockRate)
         {
-            NX_DEBUG(this,
+            NX_DEBUG(
+                this,
                 "Opus clock rate is %1 instead of the %2 required by RFC 7587",
                 sdp.rtpmap.clockRate,
                 kClockRate);
@@ -74,7 +75,8 @@ void OpusParser::setSdpInfo(const Sdp::Media& sdp)
     m_context = context;
 }
 
-Result OpusParser::processData(const RtpHeader& rtpHeader,
+Result OpusParser::processData(
+    const RtpHeader& rtpHeader,
     uint8_t* rtpBufferBase,
     int bufferOffset,
     int bufferSize,
@@ -92,7 +94,8 @@ Result OpusParser::processData(const RtpHeader& rtpHeader,
     audioData->context = m_context;
     audioData->timestamp = rtpHeader.getTimestamp();
     audioData->m_data.write(
-        reinterpret_cast<const char*>(rtpBufferBase + bufferOffset), bufferSize);
+        reinterpret_cast<const char*>(rtpBufferBase + bufferOffset),
+        bufferSize);
     m_audioData.push_back(audioData);
     gotData = true;
     return {true};

@@ -25,7 +25,10 @@ public:
     constexpr SoftwareVersion() {}
 
     constexpr SoftwareVersion(int major, int minor, int bugfix = 0, int build = 0):
-        major(major), minor(minor), bugfix(bugfix), build(build)
+        major(major),
+        minor(minor),
+        bugfix(bugfix),
+        build(build)
     {
     }
 
@@ -40,7 +43,12 @@ public:
     explicit SoftwareVersion(const QByteArray& versionString);
     explicit SoftwareVersion(std::string_view versionString);
 
-    enum class Format { minor, bugfix, full };
+    enum class Format
+    {
+        minor,
+        bugfix,
+        full
+    };
     Q_INVOKABLE QString toString(Format format = Format::full) const;
 
     Q_INVOKABLE bool isNull() const;

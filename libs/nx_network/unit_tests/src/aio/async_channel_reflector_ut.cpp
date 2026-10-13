@@ -11,8 +11,7 @@
 
 namespace nx::network::aio::test {
 
-class AsyncChannelReflector:
-    public ::testing::Test
+class AsyncChannelReflector: public ::testing::Test
 {
 public:
     AsyncChannelReflector():
@@ -59,10 +58,7 @@ protected:
         m_input.write(m_testData.data(), m_testData.size());
     }
 
-    void whenEmulateIoErrorOnInput()
-    {
-        m_channelToReflect->setErrorState();
-    }
+    void whenEmulateIoErrorOnInput() { m_channelToReflect->setErrorState(); }
 
     void whenUnderlyingChannelIsFullyFunctionalAgain()
     {
@@ -70,10 +66,7 @@ protected:
         m_channelToReflect->setReadErrorState(std::nullopt);
     }
 
-    void thenSameDataHasBeenReflected()
-    {
-        m_output.waitForReceivedDataToMatch(m_testData);
-    }
+    void thenSameDataHasBeenReflected() { m_output.waitForReceivedDataToMatch(m_testData); }
 
     void thenReflectorReportsError()
     {

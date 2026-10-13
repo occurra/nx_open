@@ -10,8 +10,6 @@
 #include <type_traits>
 #include <variant>
 
-#include <rapidjson/document.h>
-
 #include <nx/reflect/enum_string_conversion.h>
 #include <nx/reflect/field_enumerator.h>
 #include <nx/reflect/from_string.h>
@@ -19,6 +17,7 @@
 #include <nx/reflect/instrument.h>
 #include <nx/reflect/tags.h>
 #include <nx/reflect/type_utils.h>
+#include <rapidjson/document.h>
 
 #include "utils.h"
 
@@ -40,8 +39,8 @@ enum class DeserializationFlag
  */
 namespace json_detail {
 
-// NOTE: This class is introduced to simplify forward-declaring custom JSON deserialization functions.
-// Subject to change since it is not a real deserialization context currently.
+// NOTE: This class is introduced to simplify forward-declaring custom JSON deserialization
+// functions. Subject to change since it is not a real deserialization context currently.
 struct DeserializationContext
 {
     rapidjson::Value& value;
@@ -50,23 +49,20 @@ struct DeserializationContext
 
 //-------------------------------------------------------------------------------------------------
 
-template<typename Data> class Deserializer;
+template<typename Data>
+class Deserializer;
 
-template<typename T> DeserializationResult deserializeValue(
-    const DeserializationContext& ctx, T* data);
+template<typename T>
+DeserializationResult deserializeValue(const DeserializationContext& ctx, T* data);
 
 template<
     typename Data,
-    typename = std::enable_if_t<IsInstrumentedV<Data> && !IsStringAlikeV<Data>>
->
+    typename = std::enable_if_t<IsInstrumentedV<Data> && !IsStringAlikeV<Data>>>
 DeserializationResult deserialize(const DeserializationContext& ctx, Data* data)
 {
     if (!ctx.value.IsObject())
     {
-        return {
-            false,
-            "Object value expected",
-            getStringRepresentation(ctx.value)};
+        return {false, "Object value expected", getStringRepresentation(ctx.value)};
     }
 
     Deserializer deserializer(ctx, data);
@@ -109,7 +105,8 @@ DeserializationResult deserialize(
 
 template<typename T, typename... Args>
 DeserializationResult deserializeVariantType(
-    const DeserializationContext& ctx, std::variant<Args...>* data)
+    const DeserializationContext& ctx,
+    std::variant<Args...>* data)
 {
     using namespace std::string_literals;
 
@@ -123,7 +120,12 @@ DeserializationResult deserializeVariantType(
             for (auto it = ctx.value.MemberBegin(); it != ctx.value.MemberEnd(); ++it)
             {
                 const char* name = it->name.GetString();
-                if (std::ranges::none_of(names, [&name](const auto& n) { return n == name; }))
+                if (std::ranges::none_of(
+                        names,
+                        [&name](const auto& n)
+                        {
+                            return n == name;
+                        }))
                 {
                     r.success = false;
                     r.errorDescription = "`"s + std::string{name} + "` is unexpected"s;
@@ -158,8 +160,8 @@ DeserializationResult deserialize(
     }
     else if (ctx.value.IsString())
     {
-        *data = std::chrono::duration<Args...>(std::stoll(
-            std::string(ctx.value.GetString(), ctx.value.GetStringLength())));
+        *data = std::chrono::duration<Args...>(
+            std::stoll(std::string(ctx.value.GetString(), ctx.value.GetStringLength())));
     }
     else
     {
@@ -192,11 +194,9 @@ template<typename C>
 DeserializationResult deserialize(
     const DeserializationContext& ctx,
     C* data,
-    std::enable_if_t<IsArrayV<C>
-        || IsSequenceContainerV<C>
-        || IsSetContainerV<C>
-        || IsUnorderedSetContainerV<C>
-    >* = nullptr)
+    std::enable_if_t<
+        IsArrayV<C> || IsSequenceContainerV<C> || IsSetContainerV<C>
+        || IsUnorderedSetContainerV<C>>* = nullptr)
 {
     *data = C();
     if (!ctx.value.IsArray())
@@ -220,14 +220,15 @@ DeserializationResult deserialize(
 }
 
 template<typename C, typename Key, typename = std::void_t<>>
-struct HasSquareBracketOperator: std::false_type {};
+struct HasSquareBracketOperator: std::false_type
+{
+};
 
 template<typename C, typename Key>
 struct HasSquareBracketOperator<
     C,
     Key,
-    std::void_t<decltype(std::declval<C>()[std::declval<Key>()])>
->: std::true_type
+    std::void_t<decltype(std::declval<C>()[std::declval<Key>()])>>: std::true_type
 {
 };
 
@@ -240,8 +241,7 @@ DeserializationResult deserialize(
     C* data,
     std::enable_if_t<
         (IsAssociativeContainerV<C> && !IsSetContainerV<C>)
-            || (IsUnorderedAssociativeContainerV<C> && !IsUnorderedSetContainerV<C>)
-    >* = nullptr)
+        || (IsUnorderedAssociativeContainerV<C> && !IsUnorderedSetContainerV<C>)>* = nullptr)
 {
     if (!ctx.value.IsObject())
     {
@@ -282,7 +282,8 @@ DeserializationResult deserialize(
         if (ctx.flags & (int) json::DeserializationFlag::fields)
         {
             result.addField(
-                std::string{std::move(keyStd)}, std::move(deserializationResult.fields));
+                std::string{std::move(keyStd)},
+                std::move(deserializationResult.fields));
         }
         if constexpr (HasSquareBracketOperatorV<C, decltype(key)>)
             data->insert_or_assign(std::move(key), std::move(element)); //< E.g., std::map
@@ -294,17 +295,20 @@ DeserializationResult deserialize(
 }
 
 template<typename T, typename = std::void_t<>>
-struct IsDeserializable: std::false_type {};
+struct IsDeserializable: std::false_type
+{
+};
 
 template<typename T>
 struct IsDeserializable<
     T,
-    std::void_t<decltype(deserialize(std::declval<DeserializationContext>(), (T*) nullptr))>>
-:
-    std::true_type {};
+    std::void_t<decltype(deserialize(std::declval<DeserializationContext>(), (T*) nullptr))>>:
+    std::true_type
+{
+};
 
-template<typename... U> inline constexpr bool IsDeserializableV =
-    IsDeserializable<U...>::value;
+template<typename... U>
+inline constexpr bool IsDeserializableV = IsDeserializable<U...>::value;
 
 //-------------------------------------------------------------------------------------------------
 
@@ -339,7 +343,8 @@ DeserializationResult deserializeValue(const DeserializationContext& ctx, T* dat
             if (!nx::reflect::fromString(ctx.value.GetString(), data))
             {
                 *data = T();
-                return {false,
+                return {
+                    false,
                     "Can't parse the string (custom parser failed)",
                     getStringRepresentation(ctx.value)};
             }
@@ -386,33 +391,28 @@ DeserializationResult deserializeValue(const DeserializationContext& ctx, T* dat
         {
             const auto setIfFit =
                 [data, &ctx]<typename U>(U origin, const char* error) -> DeserializationResult
+            {
+                auto converted = static_cast<T>(origin);
+                if constexpr (std::is_signed_v<T> && std::is_unsigned_v<U>)
                 {
-                    auto converted = static_cast<T>(origin);
-                    if constexpr (std::is_signed_v<T> && std::is_unsigned_v<U>)
-                    {
-                        if (converted < T(0))
-                            return {false, error, getStringRepresentation(ctx.value)};
-                    }
-                    if (static_cast<U>(converted) != origin)
+                    if (converted < T(0))
                         return {false, error, getStringRepresentation(ctx.value)};
-                    *data = converted;
-                    return {};
-                };
-            return
-                ctx.value.IsInt64()
-                    ? setIfFit(ctx.value.GetInt64(), "Too big integral")
-                    : ctx.value.IsUint64()
-                        ? setIfFit(ctx.value.GetUint64(), "Too big integral")
-                        : ctx.value.IsInt()
-                            ? setIfFit(ctx.value.GetInt(), "Too big integral")
-                            : ctx.value.IsUint()
-                                ? setIfFit(ctx.value.GetUint(), "Too big integral")
-                                : setIfFit(ctx.value.GetDouble(), "Must be integral");
+                }
+                if (static_cast<U>(converted) != origin)
+                    return {false, error, getStringRepresentation(ctx.value)};
+                *data = converted;
+                return {};
+            };
+            return ctx.value.IsInt64() ? setIfFit(ctx.value.GetInt64(), "Too big integral")
+                : ctx.value.IsUint64() ? setIfFit(ctx.value.GetUint64(), "Too big integral")
+                : ctx.value.IsInt()    ? setIfFit(ctx.value.GetInt(), "Too big integral")
+                : ctx.value.IsUint()   ? setIfFit(ctx.value.GetUint(), "Too big integral")
+                                       : setIfFit(ctx.value.GetDouble(), "Must be integral");
         }
         if (ctx.value.IsString())
         {
-            *data = static_cast<T>(std::stoll(
-                std::string(ctx.value.GetString(), ctx.value.GetStringLength())));
+            *data = static_cast<T>(
+                std::stoll(std::string(ctx.value.GetString(), ctx.value.GetStringLength())));
             return DeserializationResult(true);
         }
         return {
@@ -425,10 +425,7 @@ DeserializationResult deserializeValue(const DeserializationContext& ctx, T* dat
         *data = std::nullptr_t();
         if (ctx.value.IsNull())
             return DeserializationResult(true);
-        return {
-            false,
-            "A null value is expected",
-            getStringRepresentation(ctx.value)};
+        return {false, "A null value is expected", getStringRepresentation(ctx.value)};
     }
     else if constexpr (IsInstrumentedEnumV<T>)
     {
@@ -436,7 +433,8 @@ DeserializationResult deserializeValue(const DeserializationContext& ctx, T* dat
         if (ctx.value.IsString())
         {
             bool ok = enumeration::fromString<T>(
-                std::string(ctx.value.GetString(), ctx.value.GetStringLength()), data);
+                std::string(ctx.value.GetString(), ctx.value.GetStringLength()),
+                data);
             return DeserializationResult(ok);
         }
         if (ctx.value.IsNumber())
@@ -480,8 +478,7 @@ DeserializationResult deserializeValue(const DeserializationContext& ctx, std::o
 }
 
 template<typename Data>
-class Deserializer:
-    public nx::reflect::GenericVisitor<Deserializer<Data>>
+class Deserializer: public nx::reflect::GenericVisitor<Deserializer<Data>>
 {
 public:
     Deserializer(const DeserializationContext& ctx, Data* data):
@@ -505,10 +502,7 @@ public:
         }
     }
 
-    DeserializationResult finish() const
-    {
-        return m_deserializationResult;
-    }
+    DeserializationResult finish() const { return m_deserializationResult; }
 
 private:
     template<typename WrappedField, typename T>
@@ -539,14 +533,15 @@ private:
                 data.emplace(createDefault<T>());
             }
             auto& dataRef = *data;
-            auto curDeserializationResult = deserializeValue(
-                DeserializationContext{valueIter->value, ctx.flags}, &dataRef);
+            auto curDeserializationResult =
+                deserializeValue(DeserializationContext{valueIter->value, ctx.flags}, &dataRef);
             if (curDeserializationResult.success)
             {
                 if (ctx.flags & ((int) json::DeserializationFlag::fields))
                 {
                     m_deserializationResult.addField(
-                        field, std::move(curDeserializationResult.fields));
+                        field,
+                        std::move(curDeserializationResult.fields));
                 }
                 field.set(m_data, std::move(data));
             }
@@ -598,7 +593,8 @@ private:
                 if (ctx.flags & ((int) json::DeserializationFlag::fields))
                 {
                     m_deserializationResult.addField(
-                        field, std::move(deserializationResult.fields));
+                        field,
+                        std::move(deserializationResult.fields));
                 }
                 return DeserializationResult(true);
             }
@@ -612,10 +608,16 @@ private:
 
 private:
     template<typename F, typename = void>
-    struct HasGet { static constexpr bool value = false; };
+    struct HasGet
+    {
+        static constexpr bool value = false;
+    };
 
     template<typename F>
-    struct HasGet<F, detail::void_t<decltype(&F::get)>> { static constexpr bool value = true; };
+    struct HasGet<F, detail::void_t<decltype(&F::get)>>
+    {
+        static constexpr bool value = true;
+    };
 
     template<typename T, typename WrappedField>
     T defaultField(const WrappedField& field)
@@ -664,9 +666,9 @@ DeserializationResult deserialize(const DeserializationContext& ctx, T* data)
  * Deserializes JSON text into an object of supported type Data.
  * @param data Can be any instrumented type or a container with instrumented types.
  * @return true if deserialized successfully.
- * NOTE: All JSON fields are considered optional. So, missing field in the JSON text is not an error.
- * Member-fields that are not of instrumented types and not of built-in (int, double, std::string) types
- * must be ConvertibleFromString for the deserialization to work.
+ * NOTE: All JSON fields are considered optional. So, missing field in the JSON text is not an
+ * error. Member-fields that are not of instrumented types and not of built-in (int, double,
+ * std::string) types must be ConvertibleFromString for the deserialization to work.
  * ConvertibleFromString type supports at least one of the following methods:
  * - static T T::fromStdString(const std::string&)
  * - static T T::fromString(const std::string&)
@@ -683,10 +685,15 @@ DeserializationResult deserialize(
     Document document;
     document.Parse(json.data(), json.size());
     if (document.HasParseError())
-        return DeserializationResult(false, json_detail::parseErrorToString(document), std::string(json));
+        return DeserializationResult(
+            false,
+            json_detail::parseErrorToString(document),
+            std::string(json));
 
     // Using fully qualified function name to disable ADL.
-    return ::nx::reflect::json::deserialize(DeserializationContext{document, (int) skipErrors}, data);
+    return ::nx::reflect::json::deserialize(
+        DeserializationContext{document, (int) skipErrors},
+        data);
 }
 
 /**
@@ -705,7 +712,8 @@ std::tuple<Data, DeserializationResult> deserialize(
 }
 
 template<typename Data>
-std::expected<Data, DeserializationResult> deserializeOrError(const std::string_view& json,
+std::expected<Data, DeserializationResult> deserializeOrError(
+    const std::string_view& json,
     json::DeserializationFlag skipErrors = json::DeserializationFlag::none)
 {
     std::expected<Data, DeserializationResult> data = createDefault<Data>();

@@ -4,9 +4,7 @@
 
 namespace nx::network::http::server {
 
-AuthenticationDispatcher::AuthenticationDispatcher(
-    AbstractRequestHandler* defaultHandler)
-    :
+AuthenticationDispatcher::AuthenticationDispatcher(AbstractRequestHandler* defaultHandler):
     base_type(defaultHandler)
 {
 }
@@ -47,8 +45,7 @@ void AuthenticationDispatcher::serve(
 
     for (const auto& ctx: m_authenticators)
     {
-        if (std::regex_match(path, ctx->pathPattern) &&
-            (!ctx->cond || ctx->cond(reqCtx)))
+        if (std::regex_match(path, ctx->pathPattern) && (!ctx->cond || ctx->cond(reqCtx)))
         {
             manager = ctx->authenticator;
             break;

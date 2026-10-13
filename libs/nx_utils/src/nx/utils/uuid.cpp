@@ -8,8 +8,8 @@
 #include <QtCore/QCryptographicHash>
 
 #include <nx/reflect/json/deserializer.h>
-#include <nx/utils/log/log_main.h>
 #include <nx/utils/log/assert.h>
+#include <nx/utils/log/log_main.h>
 
 namespace {
 
@@ -49,12 +49,14 @@ Uuid::Uuid(const char* text)
     m_uuid = QUuid(qByteArrayText);
 }
 
-Uuid::Uuid(const QString& text): m_uuid(text)
+Uuid::Uuid(const QString& text):
+    m_uuid(text)
 {
     NX_ASSERT(isUuidString(text), text);
 }
 
-Uuid::Uuid(const QByteArray& text): m_uuid(text)
+Uuid::Uuid(const QByteArray& text):
+    m_uuid(text)
 {
     NX_ASSERT(isUuidString(text), text);
 }
@@ -65,43 +67,40 @@ Uuid::Uuid(const std::string& text):
     NX_ASSERT(isUuidString(text), text);
 }
 
-Uuid::Uuid(const QUuid& uuid): m_uuid(uuid)
+Uuid::Uuid(const QUuid& uuid):
+    m_uuid(uuid)
 {
 }
 
 bool Uuid::isUuidString(const QByteArray& data)
 {
-    return data.isEmpty()
-        || data.size() == 36 //< xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    return data.isEmpty() || data.size() == 36 //< xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
         || data.size() == 38; //< {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
 }
 
 bool Uuid::isUuidString(const QString& data)
 {
-    return data.isEmpty()
-        || data.size() == 36 //< xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    return data.isEmpty() || data.size() == 36 //< xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
         || data.size() == 38; //< {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
 }
 
 bool Uuid::isUuidString(const std::string& data)
 {
-    return data.empty()
-        || data.size() == 36 //< xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    return data.empty() || data.size() == 36 //< xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
         || data.size() == 38; //< {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
 }
 
 bool Uuid::isUuidString(std::string_view data)
 {
-    return data.empty()
-        || data.size() == 36 //< xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    return data.empty() || data.size() == 36 //< xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
         || data.size() == 38; //< {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
 }
 
-inline bool validateUuid(const std::string& s) {
+inline bool validateUuid(const std::string& s)
+{
     static const std::regex uuid_regex(
         "^\\{?[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}\\}?$",
-        std::regex_constants::icase
-    );
+        std::regex_constants::icase);
     return std::regex_match(s, uuid_regex);
 }
 
@@ -187,22 +186,22 @@ std::optional<std::chrono::milliseconds> Uuid::timeSinceEpoch() const
 std::strong_ordering Uuid::operator<=>(const Uuid& other) const
 {
     const Qt::strong_ordering ord = compare(m_uuid, other.m_uuid);
-    #if defined(ANDROID) || defined(__ANDROID__)
-        // Android does not support conversions between Qt and std orderings.
-        std::strong_ordering result = std::strong_ordering::equivalent;
-        if (ord == Qt::strong_ordering::less)
-            result = std::strong_ordering::less;
-        else if (ord == Qt::strong_ordering::equivalent)
-            result = std::strong_ordering::equivalent;
-        else if (ord == Qt::strong_ordering::equal)
-            result = std::strong_ordering::equal;
-        else if (ord == Qt::strong_ordering::greater)
-            result = std::strong_ordering::greater;
-        else
-            NX_ERROR(this, "Impossible Qt::strong_ordering value");
-    #else
-        std::strong_ordering result = static_cast<std::strong_ordering>(ord);
-    #endif
+#if defined(ANDROID) || defined(__ANDROID__)
+    // Android does not support conversions between Qt and std orderings.
+    std::strong_ordering result = std::strong_ordering::equivalent;
+    if (ord == Qt::strong_ordering::less)
+        result = std::strong_ordering::less;
+    else if (ord == Qt::strong_ordering::equivalent)
+        result = std::strong_ordering::equivalent;
+    else if (ord == Qt::strong_ordering::equal)
+        result = std::strong_ordering::equal;
+    else if (ord == Qt::strong_ordering::greater)
+        result = std::strong_ordering::greater;
+    else
+        NX_ERROR(this, "Impossible Qt::strong_ordering value");
+#else
+    std::strong_ordering result = static_cast<std::strong_ordering>(ord);
+#endif
     return result;
 }
 
@@ -218,9 +217,13 @@ Uuid Uuid::fromHardwareId(const QString& hwid)
     if (hwid.length() != 34)
         return Uuid();
 
-    return Uuid(QString::fromLatin1("%1-%2-%3-%4-%5")
-        .arg(hwid.mid(2, 8)).arg(hwid.mid(10, 4)).arg(hwid.mid(14, 4))
-        .arg(hwid.mid(18, 4)).arg(hwid.mid(22, 12)));
+    return Uuid(
+        QString::fromLatin1("%1-%2-%3-%4-%5")
+            .arg(hwid.mid(2, 8))
+            .arg(hwid.mid(10, 4))
+            .arg(hwid.mid(14, 4))
+            .arg(hwid.mid(18, 4))
+            .arg(hwid.mid(22, 12)));
 }
 
 Uuid Uuid::createUuid()
@@ -268,7 +271,7 @@ Uuid Uuid::fromArbitraryData(std::string_view data)
     return fromArbitraryData(QByteArray::fromRawData(data.data(), (int) data.size()));
 }
 
-Uuid Uuid::createUuidFromPool(const QUuid &baseId, uint offset)
+Uuid Uuid::createUuidFromPool(const QUuid& baseId, uint offset)
 {
     static_assert(
         sizeof(uint) <= sizeof(decltype(QUuid::data1)),
@@ -311,7 +314,7 @@ QString changedGuidByteOrder(const QString& guid)
 
     QString result(guid);
 
-    int replace[] = { 6, 7, 4, 5, 2, 3, 0, 1, 8, 11, 12, 9, 10, 13, 16, 17, 14, 15 };
+    int replace[] = {6, 7, 4, 5, 2, 3, 0, 1, 8, 11, 12, 9, 10, 13, 16, 17, 14, 15};
     int max = sizeof(replace) / sizeof(replace[0]);
     for (int i = 0; i < max; i++)
         result[i] = guid[replace[i]];
@@ -335,11 +338,13 @@ QDataStream& operator>>(QDataStream& s, Uuid& id)
 }
 
 nx::reflect::DeserializationResult deserialize(
-    const nx::reflect::json::DeserializationContext& context, Uuid* data)
+    const nx::reflect::json::DeserializationContext& context,
+    Uuid* data)
 {
     if (!context.value.IsString())
     {
-        return {false,
+        return {
+            false,
             "String value is expected",
             nx::reflect::json_detail::getStringRepresentation(context.value)};
     }
@@ -348,7 +353,9 @@ nx::reflect::DeserializationResult deserialize(
             std::string_view{context.value.GetString(), (size_t) context.value.GetStringLength()}))
     {
         return {
-            false, "Not a UUID", nx::reflect::json_detail::getStringRepresentation(context.value)};
+            false,
+            "Not a UUID",
+            nx::reflect::json_detail::getStringRepresentation(context.value)};
     }
 
     *data = Uuid::fromStringSafe(

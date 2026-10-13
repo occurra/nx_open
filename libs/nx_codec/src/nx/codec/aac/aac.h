@@ -57,7 +57,7 @@ class NX_CODEC_API AACCodec
 {
 public:
     // Convert AAC profile to mpeg4 object type.
-    //static const int object_type[9];
+    // static const int object_type[9];
     const static int OBJECT_AAC_MAIN = 1;
     const static int OBJECT_AAC_LC = 2;
     const static int OBJECT_AAC_SSR = 3;
@@ -70,9 +70,10 @@ public:
 
     static const int aac_sample_rates[16];
     static const int aac_channels[8];
-    AACCodec() {
-            m_sample_rate = 48000;
-            m_channels = 0;
+    AACCodec()
+    {
+        m_sample_rate = 48000;
+        m_channels = 0;
     }
     quint8* findAacFrame(quint8* buffer, quint8* end);
     int getFrameSize(quint8* buffer);

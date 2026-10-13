@@ -4,14 +4,16 @@
 
 #ifdef Q_OS_WIN
 
-#include <QtCore/QDebug>
-#include <QtCore/QDir>
+    #include <sstream>
 
-#include <sstream>
-#include <io.h>
-#include <windows.h>
-#include <sys/stat.h>
-#include <nx/utils/log/log.h>
+    #include <io.h>
+    #include <sys/stat.h>
+    #include <windows.h>
+
+    #include <QtCore/QDebug>
+    #include <QtCore/QDir>
+
+    #include <nx/utils/log/log.h>
 
 QnFile::QnFile():
     m_fd(INVALID_HANDLE_VALUE)
@@ -24,14 +26,15 @@ QnFile::QnFile(const QString& fName):
 {
 }
 
-QnFile::QnFile(int /*fd*/): m_eof(false)
+QnFile::QnFile(int /*fd*/):
+    m_eof(false)
 {
     NX_ASSERT(false, "Windows is not supported");
 }
 
 QnFile::~QnFile()
 {
-    if( isOpen() )
+    if (isOpen())
         close();
 }
 
@@ -46,7 +49,7 @@ struct OpenAttrs
     OpenAttrs(const QIODevice::OpenMode& openMode, unsigned int systemDependentFlags):
         shareMode(FILE_SHARE_READ | FILE_SHARE_WRITE),
         createDisp((openMode & QIODevice::WriteOnly) ? OPEN_ALWAYS : OPEN_EXISTING),
-        securityAttrs{ sizeof(SECURITY_ATTRIBUTES), NULL, FALSE },
+        securityAttrs{sizeof(SECURITY_ATTRIBUTES), NULL, FALSE},
         userFlags(systemDependentFlags)
     {
         if (openMode & QIODevice::ReadOnly)
@@ -67,12 +70,12 @@ static HANDLE sysOpen(
     const QString& fileName)
 {
     return CreateFileW(
-        (const wchar_t*)fileName.constData(),
+        (const wchar_t*) fileName.constData(),
         attrs.accessRights,
         attrs.shareMode,
         &attrs.securityAttrs,
         attrs.createDisp,
-        (DWORD)attrs.userFlags,
+        (DWORD) attrs.userFlags,
         NULL);
 }
 
@@ -82,8 +85,7 @@ static HANDLE openImpl(
     const QString& fileName)
 {
     HANDLE result = sysOpen(attrs, fileName);
-    if (result == INVALID_HANDLE_VALUE
-        && (openMode & QIODevice::WriteOnly)
+    if (result == INVALID_HANDLE_VALUE && (openMode & QIODevice::WriteOnly)
         && GetLastError() == ERROR_PATH_NOT_FOUND)
     {
         if (QDir().mkpath(QnFile::absolutePath(fileName)))
@@ -93,8 +95,11 @@ static HANDLE openImpl(
     if (result == INVALID_HANDLE_VALUE)
     {
         NX_WARNING(
-            typeid(QnFile), "Failed to open file %1, mode is %2, error is %3",
-            fileName, openMode, qt_error_string());
+            typeid(QnFile),
+            "Failed to open file %1, mode is %2, error is %3",
+            fileName,
+            openMode,
+            qt_error_string());
     }
 
     return result;
@@ -128,39 +133,39 @@ bool QnFile::eof() const
 
 void QnFile::close()
 {
-    //sync();
-    CloseHandle( m_fd );
+    // sync();
+    CloseHandle(m_fd);
     m_fd = INVALID_HANDLE_VALUE;
 }
 
-qint64 QnFile::read(char* buffer, qint64 count )
+qint64 QnFile::read(char* buffer, qint64 count)
 {
-    if( !isOpen() )
+    if (!isOpen())
         return -1;
 
     DWORD bytesRead = 0;
-    BOOL res = ReadFile( m_fd, buffer, count, &bytesRead, NULL );
+    BOOL res = ReadFile(m_fd, buffer, count, &bytesRead, NULL);
     m_eof = res && !bytesRead;
-    if( !res )
+    if (!res)
         return -1;
     return bytesRead;
 }
 
-qint64 QnFile::write( const char* buffer, qint64 count )
+qint64 QnFile::write(const char* buffer, qint64 count)
 {
-    if( !isOpen() )
+    if (!isOpen())
         return -1;
 
     DWORD bytesWritten = 0;
-    BOOL res = WriteFile( m_fd, buffer, count, &bytesWritten, NULL );
-    if( !res )
+    BOOL res = WriteFile(m_fd, buffer, count, &bytesWritten, NULL);
+    if (!res)
         return -1;
     return bytesWritten;
 }
 
 void QnFile::sync()
 {
-    FlushFileBuffers( m_fd );
+    FlushFileBuffers(m_fd);
 }
 
 bool QnFile::isOpen() const
@@ -173,48 +178,44 @@ qint64 QnFile::size() const
     QnFile* nonConstThis = const_cast<QnFile*>(this);
     nonConstThis->sync();
     DWORD highDw;
-    DWORD lowDw = GetFileSize( m_fd, &highDw );
-    if( (lowDw == INVALID_FILE_SIZE) && (GetLastError() != NO_ERROR) )
+    DWORD lowDw = GetFileSize(m_fd, &highDw);
+    if ((lowDw == INVALID_FILE_SIZE) && (GetLastError() != NO_ERROR))
         return -1;
-    return ((qint64)highDw << 32) + lowDw;
+    return ((qint64) highDw << 32) + lowDw;
 }
 
-bool QnFile::seek( qint64 offset)
+bool QnFile::seek(qint64 offset)
 {
-    if( !isOpen() )
+    if (!isOpen())
         return false;
 
-    LONG distanceToMoveLow = (quint32)(offset & 0xffffffff);
-    LONG distanceToMoveHigh = (quint32)((offset & 0xffffffff00000000ull) >> 32);
+    LONG distanceToMoveLow = (quint32) (offset & 0xffffffff);
+    LONG distanceToMoveHigh = (quint32) ((offset & 0xffffffff00000000ull) >> 32);
 
-    DWORD newPointerLow = SetFilePointer( m_fd, distanceToMoveLow, &distanceToMoveHigh, FILE_BEGIN );
-    if( newPointerLow == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR )
+    DWORD newPointerLow = SetFilePointer(m_fd, distanceToMoveLow, &distanceToMoveHigh, FILE_BEGIN);
+    if (newPointerLow == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR)
         return false;
     return true;
 }
 
-bool QnFile::truncate( qint64 newFileSize)
+bool QnFile::truncate(qint64 newFileSize)
 {
-    LONG distanceToMoveLow = (quint32)(newFileSize & 0xffffffff);
-    LONG distanceToMoveHigh = (quint32)(newFileSize >> 32);
-    DWORD newPointerLow = SetFilePointer(
-        m_fd,
-        distanceToMoveLow,
-        &distanceToMoveHigh,
-        FILE_BEGIN );
+    LONG distanceToMoveLow = (quint32) (newFileSize & 0xffffffff);
+    LONG distanceToMoveHigh = (quint32) (newFileSize >> 32);
+    DWORD newPointerLow = SetFilePointer(m_fd, distanceToMoveLow, &distanceToMoveHigh, FILE_BEGIN);
     int errCode = GetLastError();
-    if( (newPointerLow == INVALID_SET_FILE_POINTER) && (errCode != NO_ERROR) )
+    if ((newPointerLow == INVALID_SET_FILE_POINTER) && (errCode != NO_ERROR))
     {
         qWarning() << "Can't truncate file " << m_fileName << "to size" << newFileSize;
         return false;
     }
-    return SetEndOfFile( m_fd ) > 0;
+    return SetEndOfFile(m_fd) > 0;
 }
 
-bool QnFile::fileExists( const QString& fileName )
+bool QnFile::fileExists(const QString& fileName)
 {
     struct _stat64 fstat;
-    int retCode = _wstat64( (wchar_t*)fileName.utf16(), &fstat );
+    int retCode = _wstat64((wchar_t*) fileName.utf16(), &fstat);
     return retCode == 0;
 }
 

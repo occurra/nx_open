@@ -12,7 +12,8 @@
 
 namespace nx::webrtc {
 
-Receiver::Receiver(Session* session): m_session(session)
+Receiver::Receiver(Session* session):
+    m_session(session)
 {
 }
 

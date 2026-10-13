@@ -8,8 +8,7 @@ namespace nx {
 namespace utils {
 namespace test {
 
-class TopQueue2:
-    public ::testing::Test
+class TopQueue2: public ::testing::Test
 {
 protected:
     template<
@@ -47,35 +46,51 @@ protected:
 
 TEST_F(TopQueue2, random_data)
 {
-    testTopQueue([]() { return rand(); });
+    testTopQueue(
+        []()
+        {
+            return rand();
+        });
 }
 
 TEST_F(TopQueue2, max_queue_random_data)
 {
-    auto generateFunc = []() { return rand(); };
-    testTopQueue<decltype(generateFunc),
-        std::max<int>,
-        std::numeric_limits<int>::min()>(generateFunc);
+    auto generateFunc = []()
+    {
+        return rand();
+    };
+    testTopQueue<decltype(generateFunc), std::max<int>, std::numeric_limits<int>::min()>(
+        generateFunc);
 }
 
 TEST_F(TopQueue2, min_queue_random_data)
 {
-    auto generateFunc = []() { return rand(); };
-    testTopQueue<decltype(generateFunc),
-        std::min<int>,
-        std::numeric_limits<int>::max()>(generateFunc);
+    auto generateFunc = []()
+    {
+        return rand();
+    };
+    testTopQueue<decltype(generateFunc), std::min<int>, std::numeric_limits<int>::max()>(
+        generateFunc);
 }
 
 TEST_F(TopQueue2, ascending_data)
 {
     int prevValue = 0;
-    testTopQueue([&prevValue]() { return prevValue++; });
+    testTopQueue(
+        [&prevValue]()
+        {
+            return prevValue++;
+        });
 }
 
 TEST_F(TopQueue2, descending_data)
 {
     int prevValue = 100000000;
-    testTopQueue([&prevValue]() { return prevValue--; });
+    testTopQueue(
+        [&prevValue]()
+        {
+            return prevValue--;
+        });
 }
 
 TEST_F(TopQueue2, updateData)

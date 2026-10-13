@@ -9,13 +9,13 @@
 namespace nx::network::http::StatusCode {
 
 /**
- * enum has name "Value" for unification purpose only. Real enumeration name is StatusCode (name of namespace).
- * Enum is referred to as StatusCode::Value, if assign real name to enum it will be StatusCode::StatusCode.
- * Namespace is used to associate enum with corresponding functions like toString() and fromString().
- * Namespace is required, since not all such functions can be put to global namespace.
- * E.g. this namespace has convenience function toString(int httpStatusCode).
+ * enum has name "Value" for unification purpose only. Real enumeration name is StatusCode (name of
+ * namespace). Enum is referred to as StatusCode::Value, if assign real name to enum it will be
+ * StatusCode::StatusCode. Namespace is used to associate enum with corresponding functions like
+ * toString() and fromString(). Namespace is required, since not all such functions can be put to
+ * global namespace. E.g. this namespace has convenience function toString(int httpStatusCode).
  */
-enum Value: int
+enum Value : int
 {
     undefined = 0,
     _continue = 100,

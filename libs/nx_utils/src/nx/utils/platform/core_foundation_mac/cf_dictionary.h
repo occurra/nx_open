@@ -13,6 +13,7 @@ namespace cf {
 class NX_UTILS_API QnCFDictionary: public QnCFRefHolder<CFDictionaryRef>
 {
     using base_type = QnCFRefHolder<CFDictionaryRef>;
+
 public:
     QnCFDictionary(CFDictionaryRef ref);
 

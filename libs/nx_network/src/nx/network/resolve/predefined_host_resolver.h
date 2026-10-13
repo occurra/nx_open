@@ -25,8 +25,7 @@ namespace nx::network {
  *   resolve("y");      // Resolved to y_entry.
  * </code></pre>
  */
-class NX_NETWORK_API PredefinedHostResolver:
-    public AbstractResolver
+class NX_NETWORK_API PredefinedHostResolver: public AbstractResolver
 {
 public:
     virtual SystemError::ErrorCode resolve(

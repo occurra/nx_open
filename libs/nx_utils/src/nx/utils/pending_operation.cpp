@@ -11,7 +11,10 @@ PendingOperation::PendingOperation(QObject* parent):
     QObject(parent),
     m_timer(new QTimer(this))
 {
-    connect(m_timer, &QTimer::timeout, this,
+    connect(
+        m_timer,
+        &QTimer::timeout,
+        this,
         [this]()
         {
             if (m_requested)
@@ -29,8 +32,9 @@ PendingOperation::PendingOperation(const Callback& callback, int intervalMs, QOb
 }
 
 PendingOperation::PendingOperation(
-    const Callback& callback, std::chrono::milliseconds interval, QObject* parent)
-    :
+    const Callback& callback,
+    std::chrono::milliseconds interval,
+    QObject* parent):
     PendingOperation(callback, (int) interval.count(), parent)
 {
 }

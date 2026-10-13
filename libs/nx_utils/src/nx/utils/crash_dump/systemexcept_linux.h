@@ -6,7 +6,7 @@
 
 #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
 
-#include <string>
+    #include <string>
 
 //! Used to dump unhandled structured exception call stack to file ~/{application_name}_{pid}.crash
 /*!

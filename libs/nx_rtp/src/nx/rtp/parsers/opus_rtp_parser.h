@@ -29,7 +29,8 @@ public:
     OpusParser() { StreamParser::setFrequency(kClockRate); }
 
     virtual void setSdpInfo(const Sdp::Media& sdp) override;
-    virtual Result processData(const RtpHeader& rtpHeader,
+    virtual Result processData(
+        const RtpHeader& rtpHeader,
         // `uint8_t` is the same type as the base class's `quint8`, spelled without Qt.
         uint8_t* rtpBufferBase,
         int bufferOffset,

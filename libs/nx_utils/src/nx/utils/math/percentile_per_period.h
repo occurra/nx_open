@@ -45,15 +45,17 @@ private:
         time_point collectionStartTime;
         time_point collectionEndTime;
 
-        Context(double percentile) : percentile(percentile) {}
+        Context(double percentile):
+            percentile(percentile)
+        {
+        }
     };
 
 public:
     PercentilePerPeriod(
         double percentile,
         std::chrono::milliseconds period,
-        std::size_t percentileCount = 2)
-        :
+        std::size_t percentileCount = 2):
         m_period(period)
     {
         using namespace std::chrono;
@@ -66,9 +68,11 @@ public:
         if (percentileCount < 2)
             percentileCount = 2;
 
-        NX_ASSERT(m_period / percentileCount > milliseconds::zero(),
+        NX_ASSERT(
+            m_period / percentileCount > milliseconds::zero(),
             "collection period overlap is too small! period: %1, percentileCount: %2",
-            m_period, percentileCount);
+            m_period,
+            percentileCount);
         if (m_period / percentileCount == milliseconds::zero())
             percentileCount = 2;
 
@@ -130,9 +134,8 @@ private:
             if (context.collectionEndTime <= now)
             {
                 m_earliest = i == m_percentiles.size() - 1 ? 0 : i + 1;
-                m_cachedValue = !context.percentile.empty()
-                    ? context.percentile.get()
-                    : ValueType{};
+                m_cachedValue =
+                    !context.percentile.empty() ? context.percentile.get() : ValueType{};
                 context.percentile.clear();
                 context.collectionStartTime = context.collectionEndTime;
                 context.collectionEndTime = context.collectionStartTime + m_period;

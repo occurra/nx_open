@@ -56,9 +56,9 @@ ObjectInstanceCounter<T>::ObjectInstanceCounter(const ObjectInstanceCounter&)
 // We mark it with explicit `noexcept(false)` and suppress the warning.
 template<class T>
 ObjectInstanceCounter<T>::ObjectInstanceCounter(ObjectInstanceCounter&&)
-    #if defined(_MSC_VER)
-        #pragma warning(suppress: 26439)
-    #endif
+#if defined(_MSC_VER)
+    #pragma warning(suppress : 26439)
+#endif
     noexcept(false)
 {
     SocketGlobals::instance().allocationAnalyzer().recordObjectCreation(this);

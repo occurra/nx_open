@@ -26,40 +26,35 @@ namespace nx::utils {
 template<typename Callback>
 auto guarded(const QObject* guard, Callback&& callback)
 {
-    return
-        [guard = QPointer<const QObject>(guard),
+    return [guard = QPointer<const QObject>(guard),
             callback = std::forward<Callback>(callback)](auto&&... args)
-        {
-            if (guard)
-                callback(std::forward<decltype(args)>(args)...);
-        };
+    {
+        if (guard)
+            callback(std::forward<decltype(args)>(args)...);
+    };
 }
 
 template<typename Callback>
 auto mutableGuarded(const QObject* guard, Callback&& callback)
 {
-    return
-        [guard = QPointer<const QObject>(guard),
+    return [guard = QPointer<const QObject>(guard),
             callback = std::forward<Callback>(callback)](auto&&... args) mutable
-        {
-            if (guard)
-                callback(std::forward<decltype(args)>(args)...);
-        };
+    {
+        if (guard)
+            callback(std::forward<decltype(args)>(args)...);
+    };
 }
 
 // For callbacks returning a value.
 template<typename Callback, typename ResultType>
 auto guarded(const QObject* guard, const ResultType& defaultReturnValue, Callback&& callback)
 {
-    return
-        [guard = QPointer<const QObject>(guard),
+    return [guard = QPointer<const QObject>(guard),
             defaultReturnValue,
             callback = std::forward<Callback>(callback)](auto&&... args)
-        {
-            return guard
-                ? callback(std::forward<decltype(args)>(args)...)
-                : defaultReturnValue;
-        };
+    {
+        return guard ? callback(std::forward<decltype(args)>(args)...) : defaultReturnValue;
+    };
 }
 
 } // namespace nx::utils

@@ -20,14 +20,14 @@ class LruCacheBase;
  * NOTE: The complexity of get/put/erase operations is the same as that of the Dict type:
  * O(1) if using std::unordered_map, O(logN) when using std::map.
  */
-template<
-    class Key, class Value,
-    template<typename...> class Dict = std::unordered_map
->
+template<class Key, class Value, template<typename...> class Dict = std::unordered_map>
 class LruCache
 {
 public:
-    LruCache(size_t size): m_impl(size) {}
+    LruCache(size_t size):
+        m_impl(size)
+    {
+    }
 
     /**
      * Returns value with the given key and makes it the most recently used one.
@@ -48,20 +48,11 @@ public:
         m_impl.put(std::forward<K>(key), std::forward<V>(value));
     }
 
-    bool contains(const Key& key) const
-    {
-        return m_impl.contains(key);
-    }
+    bool contains(const Key& key) const { return m_impl.contains(key); }
 
-    bool empty() const
-    {
-        return m_impl.empty();
-    }
+    bool empty() const { return m_impl.empty(); }
 
-    void erase(const Key& key)
-    {
-        m_impl.erase(key);
-    }
+    void erase(const Key& key) { m_impl.erase(key); }
 
 private:
     detail::LruCacheBase<Key, Value, Dict> m_impl;
@@ -78,7 +69,10 @@ public:
     using iterator = typename std::list<std::pair<Key, Value>>::iterator;
     using const_iterator = typename std::list<std::pair<Key, Value>>::const_iterator;
 
-    LruCacheBase(size_t size): m_maxCacheSize(size) {}
+    LruCacheBase(size_t size):
+        m_maxCacheSize(size)
+    {
+    }
 
     std::optional<std::reference_wrapper<Value>> getValue(const Key& key)
     {
@@ -101,24 +95,15 @@ public:
         return it->second->second;
     }
 
-    bool empty() const
-    {
-        return m_cacheMap.empty();
-    }
+    bool empty() const { return m_cacheMap.empty(); }
 
-    int size() const
-    {
-        return m_cacheMap.size();
-    }
+    int size() const { return m_cacheMap.size(); }
 
     /**
      * Returns the LRU element without making it the most recently used one.
      * Warning: behavior is undefined if the cache is empty.
      */
-    std::pair<Key, Value>& peekLru()
-    {
-        return m_cacheList.back();
-    }
+    std::pair<Key, Value>& peekLru() { return m_cacheList.back(); }
 
     template<class K, class V>
     void put(K&& key, V&& value)
@@ -134,7 +119,9 @@ public:
             // is fully available here.
             std::allocator<Value> alloc;
             std::allocator_traits<std::allocator<Value>>::construct(
-                alloc, &m_cacheList.begin()->second, std::forward<V>(value));
+                alloc,
+                &m_cacheList.begin()->second,
+                std::forward<V>(value));
             m_cacheMap[key] = m_cacheList.begin();
         }
         else
@@ -151,10 +138,7 @@ public:
         }
     }
 
-    bool contains(const Key& key) const
-    {
-        return m_cacheMap.count(key);
-    }
+    bool contains(const Key& key) const { return m_cacheMap.count(key); }
 
     void erase(const Key& key)
     {
@@ -174,15 +158,9 @@ public:
     }
 
     // @return a non invasive iterator (does not update the keys access time).
-    const_iterator begin() const
-    {
-        return m_cacheList.begin();
-    }
+    const_iterator begin() const { return m_cacheList.begin(); }
 
-    const const_iterator end() const
-    {
-        return m_cacheList.end();
-    }
+    const const_iterator end() const { return m_cacheList.end(); }
 
 private:
     std::list<std::pair<Key, Value>> m_cacheList;

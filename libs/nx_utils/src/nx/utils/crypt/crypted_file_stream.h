@@ -24,7 +24,10 @@ class NX_UTILS_API CryptedFileStream: public QIODevice
 
 public:
     CryptedFileStream(const QString& fileName, const QString& password = QString());
-    CryptedFileStream(const QString& fileName, qint64 position, qint64 size,
+    CryptedFileStream(
+        const QString& fileName,
+        qint64 position,
+        qint64 size,
         const QString& password = QString());
     virtual ~CryptedFileStream();
 
@@ -54,18 +57,21 @@ protected:
         qint64 size = 0;
         qint64 originalSize = 0; //< This one is only to make open() reentrant on error.
 
-        bool isNull() const { return (position == 0) && (size == 0);}
+        bool isNull() const { return (position == 0) && (size == 0); }
     } m_enclosure;
 
     struct Position
     {
         qint64 blockIndex = 0;
-        qint64 positionInBlock  = 0;
+        qint64 positionInBlock = 0;
 
         bool dirty = false; //< Data in decrypted block is not flashed.
 
-        void setPosition(qint64 position) { blockIndex = position / kCryptoBlockSize;
-        positionInBlock = position % kCryptoBlockSize; }
+        void setPosition(qint64 position)
+        {
+            blockIndex = position / kCryptoBlockSize;
+            positionInBlock = position % kCryptoBlockSize;
+        }
         qint64 position() const { return blockIndex * kCryptoBlockSize + positionInBlock; }
     } m_position;
 
@@ -78,7 +84,8 @@ private:
     struct Header
     {
         qint64 version = kCryptoStreamVersion;
-        qint64 minReadVersion = kCryptoStreamVersion; //< Minimal reader version to access the stream.
+        qint64 minReadVersion =
+            kCryptoStreamVersion; //< Minimal reader version to access the stream.
         qint64 dataSize = 0;
         Key salt = {};
         Key keyHash = {};

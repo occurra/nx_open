@@ -8,13 +8,13 @@
 #include <unordered_map>
 
 #include <nx/network/socket.h>
+#include <nx/utils/move_only_func.h>
 #include <nx/utils/thread/mutex.h>
 #include <nx/utils/timer_manager.h>
-#include <nx/utils/move_only_func.h>
 #include <nx/vms/common/system_context_aware.h>
 
-#include "webrtc_turn_info_fetcher.h"
 #include "abstract_camera_data_provider.h"
+#include "webrtc_turn_info_fetcher.h"
 
 namespace nx::webrtc {
 
@@ -22,14 +22,12 @@ class IceTcp;
 
 /**
  * - Owns Session objects.
- * - Removes session if no one uses it during specified timeout. Session cannot be removed while its id is locked.
- * NOTE: It is recommended to lock session id before performing any operations with session.
- * NOTE: Specifying session timeout and working with no id lock can result in undefined behavior.
- * NOTE: Class methods are thread-safe.
+ * - Removes session if no one uses it during specified timeout. Session cannot be removed while
+ * its id is locked. NOTE: It is recommended to lock session id before performing any operations
+ * with session. NOTE: Specifying session timeout and working with no id lock can result in
+ * undefined behavior. NOTE: Class methods are thread-safe.
  */
-class NX_WEBRTC_API SessionPool:
-    public QObject,
-    public nx::vms::common::SystemContextAware
+class NX_WEBRTC_API SessionPool: public QObject, public nx::vms::common::SystemContextAware
 {
     Q_OBJECT
 

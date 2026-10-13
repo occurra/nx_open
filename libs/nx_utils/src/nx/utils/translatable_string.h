@@ -52,34 +52,33 @@ public:
         return value() == other.value();
     }
 
-    inline bool operator==(const QString& other) const
-    {
-        return value() == other;
-    }
+    inline bool operator==(const QString& other) const { return value() == other; }
 
     inline bool operator<(const TranslatableString& other) const
     {
         return value() < other.value();
     }
 
-    inline bool operator<(const QString& other) const
-    {
-        return value() < other;
-    }
+    inline bool operator<(const QString& other) const { return value() < other; }
 
 private:
     std::variant<QString, ValueByLocale, Provider> m_value;
     QString m_defaultValue;
 };
 
-#define NX_DYNAMIC_TRANSLATABLE(func) nx::TranslatableString([] { return func;})
+#define NX_DYNAMIC_TRANSLATABLE(func) \
+    nx::TranslatableString( \
+        [] \
+        { \
+            return func; \
+        })
 
 NX_UTILS_API nx::reflect::DeserializationResult deserialize(
     const nx::reflect::json::DeserializationContext& ctx,
     TranslatableString* data);
 
 template<typename SerializationContext>
-requires std::is_member_object_pointer_v<decltype(&SerializationContext::composer)>
+    requires std::is_member_object_pointer_v<decltype(&SerializationContext::composer)>
 void serialize(SerializationContext* context, const TranslatableString& value)
 {
     context->composer.writeString(value.value().toStdString());

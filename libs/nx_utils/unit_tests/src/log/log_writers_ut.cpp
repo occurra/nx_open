@@ -22,12 +22,16 @@ class LogFile: public ::testing::Test
 public:
     // TODO: Use temp directory from TestOptions when available.
     LogFile():
-        m_basePath(nx::format("%1/log%2").args(
-            TestOptions::temporaryDirectoryPath(), nx::utils::random::number()))
+        m_basePath(
+            nx::format("%1/log%2")
+                .args(TestOptions::temporaryDirectoryPath(), nx::utils::random::number()))
     {
     }
 
-    std::unique_ptr<AbstractWriter> makeWriter(size_t file, size_t volume = kDefaultMaxLogVolumeSizeB, bool archivingEnabled = true)
+    std::unique_ptr<AbstractWriter> makeWriter(
+        size_t file,
+        size_t volume = kDefaultMaxLogVolumeSizeB,
+        bool archivingEnabled = true)
     {
         File::Settings settings;
         settings.name = m_basePath;
@@ -79,11 +83,10 @@ public:
     {
         auto dir = QFileInfo(m_basePath).dir();
         const auto logs = dir.entryList(
-            {
-                QString("*") + toQString(File::Extension::log),
-                QString("*") + toQString(File::Extension::zip)
-            },
-            QDir::Files, QDir::Name);
+            {QString("*") + toQString(File::Extension::log),
+             QString("*") + toQString(File::Extension::zip)},
+            QDir::Files,
+            QDir::Name);
         for (const auto& log: logs)
             dir.remove(log);
 
@@ -95,11 +98,10 @@ public:
         qint64 total = 0;
         auto dir = QFileInfo(m_basePath).dir();
         const auto logs = dir.entryInfoList(
-            {
-                QString("*") + toQString(File::Extension::log),
-                QString("*") + toQString(File::Extension::zip)
-            },
-            QDir::Files, QDir::Name);
+            {QString("*") + toQString(File::Extension::log),
+             QString("*") + toQString(File::Extension::zip)},
+            QDir::Files,
+            QDir::Name);
         for (const auto& log: logs)
             total += log.size();
 
@@ -274,8 +276,7 @@ TEST_F(LogFile, RotationByFreeSpace)
         [&](auto /*path*/) -> std::optional<nx::log::detail::VolumeInfo>
         {
             return std::make_tuple(kTotalVolumeSize, kReservedFreeSpace + 500 - bytesWritten());
-        }
-    );
+        });
 
     {
         auto w = makeWriter(kLogSize, kVolumeSize);
@@ -344,8 +345,7 @@ TEST_F(LogFile, RotationByFreeSpace)
         [&](auto /*path*/) -> std::optional<nx::log::detail::VolumeInfo>
         {
             return std::make_tuple(kTotalVolumeSize, 0);
-        }
-    );
+        });
     {
         auto w = makeWriter(kLogSize, kVolumeSize);
         w->write(Level::undefined, "6666666666");

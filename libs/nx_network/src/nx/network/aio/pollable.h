@@ -26,9 +26,7 @@ public:
      * @param fd File descriptor (optional, can be INVALID_SOCKET).
      * It is not closed on object destruction!
      */
-    Pollable(
-        aio::AbstractAioThread* aioThread,
-        AbstractSocket::SOCKET_HANDLE fd);
+    Pollable(aio::AbstractAioThread* aioThread, AbstractSocket::SOCKET_HANDLE fd);
 
     /**
      * @param aioThread to bind to. Null is allowed here.

@@ -7,8 +7,7 @@
 namespace nx::network::aio::test {
 
 template<typename T>
-class PollSetPerformance:
-    public ::testing::Test
+class PollSetPerformance: public ::testing::Test
 {
 protected:
     struct TestResult
@@ -34,9 +33,8 @@ protected:
 
         const auto startTime = std::chrono::steady_clock::now();
         TestResult testResult;
-        for (;
-            std::chrono::steady_clock::now() < startTime + testDurationLimit;
-            ++testResult.iterationsDone)
+        for (; std::chrono::steady_clock::now() < startTime + testDurationLimit;
+             ++testResult.iterationsDone)
         {
             NX_GTEST_ASSERT_TRUE(pollset.add(&tcpSocket, aio::etRead));
             pollset.remove(&tcpSocket, aio::etRead);
@@ -50,11 +48,11 @@ protected:
     void printResult(const TestResult& testResult)
     {
         std::cout << "add/remove performance. "
-            "Total " << testResult.iterationsDone << " calls made in "
-            << testResult.runDuration.count() << " ms. That gives "
-            << (testResult.iterationsDone * 1000 / testResult.runDuration.count())
-            << " calls per second"
-            << std::endl;
+                     "Total "
+                  << testResult.iterationsDone << " calls made in "
+                  << testResult.runDuration.count() << " ms. That gives "
+                  << (testResult.iterationsDone * 1000 / testResult.runDuration.count())
+                  << " calls per second" << std::endl;
     }
 };
 

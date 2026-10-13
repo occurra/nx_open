@@ -14,9 +14,9 @@ void FfmpegAudioBuffer::init(const Config& config)
 {
     m_config = config;
     bool planar = av_sample_fmt_is_planar(m_config.sampleFormat);
-    m_planeCount =  planar ? m_config.channelCount : 1;
-    m_sampleSize = av_get_bytes_per_sample(m_config.sampleFormat)
-        * (planar ? 1 : m_config.channelCount);
+    m_planeCount = planar ? m_config.channelCount : 1;
+    m_sampleSize =
+        av_get_bytes_per_sample(m_config.sampleFormat) * (planar ? 1 : m_config.channelCount);
     m_temporaryBufferPointers.resize(m_planeCount);
 }
 
@@ -67,11 +67,13 @@ bool FfmpegAudioBuffer::allocBuffers(uint64_t sampleCount)
         m_config.channelCount,
         sampleCount,
         m_config.sampleFormat,
-        0/*align*/);
+        0 /*align*/);
 
     if (result < 0)
     {
-        NX_ERROR(this, "Failed to allocate resample buffer, error: %1",
+        NX_ERROR(
+            this,
+            "Failed to allocate resample buffer, error: %1",
             nx::media::ffmpeg::avErrorToString(result));
         return false;
     }

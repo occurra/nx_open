@@ -5,40 +5,37 @@
 #include <string>
 #include <thread>
 
+#include <sys/stat.h>
+
 #include <QtCore/QIODevice>
 
 #include <nx/utils/buffer.h>
 #include <nx/utils/move_only_func.h>
 #include <nx/utils/system_error.h>
 #include <nx/utils/thread/sync_queue.h>
-#include <sys/stat.h>
 
 class IQnFile;
 
 namespace nx::utils::fs {
 
 #if defined(_WIN32)
-    using FileStat = struct ::_stat64;
+using FileStat = struct ::_stat64;
 #elif defined(__APPLE__)
-    using FileStat = struct stat;
+using FileStat = struct stat;
 #else
-    using FileStat = struct stat64;
+using FileStat = struct stat64;
 #endif
 
-using StatHandler =
-    nx::MoveOnlyFunc<void(SystemError::ErrorCode, FileStat fileStat)>;
+using StatHandler = nx::MoveOnlyFunc<void(SystemError::ErrorCode, FileStat fileStat)>;
 
-using OpenHandler =
-    nx::MoveOnlyFunc<void(SystemError::ErrorCode)>;
+using OpenHandler = nx::MoveOnlyFunc<void(SystemError::ErrorCode)>;
 
-using CloseHandler =
-    nx::MoveOnlyFunc<void(SystemError::ErrorCode)>;
+using CloseHandler = nx::MoveOnlyFunc<void(SystemError::ErrorCode)>;
 
-using ReadAllHandler =
-    nx::MoveOnlyFunc<void(SystemError::ErrorCode, nx::Buffer)>;
+using ReadAllHandler = nx::MoveOnlyFunc<void(SystemError::ErrorCode, nx::Buffer)>;
 
-using IoCompletionHandler = nx::MoveOnlyFunc<
-    void(SystemError::ErrorCode /*errorCode*/, std::size_t /*bytesTransferred*/)>;
+using IoCompletionHandler =
+    nx::MoveOnlyFunc<void(SystemError::ErrorCode /*errorCode*/, std::size_t /*bytesTransferred*/)>;
 
 class AbstractTask;
 
@@ -64,20 +61,14 @@ public:
     /**
      * Asynchronously reads opened file.
      */
-    void read(
-        IQnFile* file,
-        nx::Buffer* buf,
-        IoCompletionHandler handler);
+    void read(IQnFile* file, nx::Buffer* buf, IoCompletionHandler handler);
 
     /**
      * Asynchronously reads opened file to the end.
      */
     void readAll(IQnFile* file, ReadAllHandler handler);
 
-    void write(
-        IQnFile* file,
-        const nx::Buffer& buffer,
-        IoCompletionHandler handler);
+    void write(IQnFile* file, const nx::Buffer& buffer, IoCompletionHandler handler);
 
     void close(IQnFile* file, CloseHandler handler);
 

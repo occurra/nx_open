@@ -14,8 +14,7 @@ namespace bstream {
  * - n bytes of data.
  * Next filter receives one block per SizedDataDecodingFilter::processData call.
  */
-class NX_UTILS_API SizedDataDecodingFilter:
-    public AbstractByteStreamFilter
+class NX_UTILS_API SizedDataDecodingFilter: public AbstractByteStreamFilter
 {
 public:
     virtual bool processData(const ConstBufferRefType& data) override;

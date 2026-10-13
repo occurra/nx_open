@@ -20,10 +20,7 @@ public:
     {
     }
 
-    bool empty() const
-    {
-        return m_buffers.empty();
-    }
+    bool empty() const { return m_buffers.empty(); }
 
     template<typename BufferRef>
     void push_back(BufferRef&& buffer)
@@ -32,20 +29,11 @@ public:
         m_sizeBytes += m_buffers.back().size();
     }
 
-    std::size_t size() const
-    {
-        return m_buffers.size();
-    }
+    std::size_t size() const { return m_buffers.size(); }
 
-    std::size_t sizeBytes() const
-    {
-        return m_sizeBytes;
-    }
+    std::size_t sizeBytes() const { return m_sizeBytes; }
 
-    const nx::Buffer& front() const
-    {
-        return m_buffers.front();
-    }
+    const nx::Buffer& front() const { return m_buffers.front(); }
 
     void pop_front()
     {
@@ -65,8 +53,7 @@ private:
  * NOTE: Intermediate buffer that allows concurrent read/writes can be adjusted
  *   with AsyncChannelUnidirectionalBridge::setMaxSendQueueSizeBytes.
  */
-class AsyncChannelUnidirectionalBridge:
-    public BasicPollable
+class AsyncChannelUnidirectionalBridge: public BasicPollable
 {
 public:
     virtual ~AsyncChannelUnidirectionalBridge() = default;
@@ -82,25 +69,21 @@ public:
  * SourcePtr and DestinationPtr are either smart or raw pointers.
  */
 template<typename SourcePtr, typename DestinationPtr>
-class AsyncChannelUnidirectionalBridgeImpl:
-    public AsyncChannelUnidirectionalBridge
+class AsyncChannelUnidirectionalBridgeImpl: public AsyncChannelUnidirectionalBridge
 {
     using base_type = AsyncChannelUnidirectionalBridge;
 
 public:
-    AsyncChannelUnidirectionalBridgeImpl(
-        SourcePtr source,
-        DestinationPtr destination)
-        :
+    AsyncChannelUnidirectionalBridgeImpl(SourcePtr source, DestinationPtr destination):
         m_source(std::move(source)),
         m_destination(std::move(destination)),
-        m_readBufferSize(16*1024),
-        m_maxSendQueueSizeBytes(128*1024),
+        m_readBufferSize(16 * 1024),
+        m_maxSendQueueSizeBytes(128 * 1024),
         m_isReading(false),
         m_isSourceOpened(true),
         m_sourceClosureReason(SystemError::noError)
     {
-        m_readBuffer.reserve((int)m_readBufferSize);
+        m_readBuffer.reserve((int) m_readBufferSize);
     }
 
     virtual void bindToAioThread(AbstractAioThread* aioThread) override
@@ -117,7 +100,7 @@ public:
     virtual void setReadBufferSize(std::size_t readBufferSize) override
     {
         m_readBufferSize = readBufferSize;
-        m_readBuffer.reserve((int)m_readBufferSize);
+        m_readBuffer.reserve((int) m_readBufferSize);
     }
 
     virtual void setMaxSendQueueSizeBytes(std::size_t maxSendQueueSizeBytes) override
@@ -138,10 +121,7 @@ public:
         m_onSomeActivityHander = std::move(handler);
     }
 
-    virtual bool isSendQueueEmpty() const override
-    {
-        return m_sendQueue.empty();
-    }
+    virtual bool isSendQueueEmpty() const override { return m_sendQueue.empty(); }
 
 protected:
     virtual void stopWhileInAioThread() override
@@ -177,13 +157,14 @@ private:
 
         m_source->readSomeAsync(
             &m_readBuffer,
-            [this](auto&&... args) { onDataRead(std::move(args)...); });
+            [this](auto&&... args)
+            {
+                onDataRead(std::move(args)...);
+            });
         m_isReading = true;
     }
 
-    void onDataRead(
-        SystemError::ErrorCode sysErrorCode,
-        std::size_t bytesRead)
+    void onDataRead(SystemError::ErrorCode sysErrorCode, std::size_t bytesRead)
     {
         if (m_onSomeActivityHander)
             m_onSomeActivityHander();
@@ -208,7 +189,7 @@ private:
         nx::Buffer tmp;
         m_readBuffer.swap(tmp);
         scheduleSend(std::move(tmp));
-        m_readBuffer.reserve((int)m_readBufferSize);
+        m_readBuffer.reserve((int) m_readBufferSize);
         if (!readyToAcceptMoreData())
             return;
         scheduleRead();
@@ -222,21 +203,19 @@ private:
         sendNextDataChunk();
     }
 
-    bool readyToAcceptMoreData()
-    {
-        return m_sendQueue.sizeBytes() < m_maxSendQueueSizeBytes;
-    }
+    bool readyToAcceptMoreData() { return m_sendQueue.sizeBytes() < m_maxSendQueueSizeBytes; }
 
     void sendNextDataChunk()
     {
         m_destination->sendAsync(
             &m_sendQueue.front(),
-            [this](auto&&... args) { onDataSent(std::move(args)...); });
+            [this](auto&&... args)
+            {
+                onDataSent(std::move(args)...);
+            });
     }
 
-    void onDataSent(
-        SystemError::ErrorCode sysErrorCode,
-        std::size_t /*bytesRead*/)
+    void onDataSent(SystemError::ErrorCode sysErrorCode, std::size_t /*bytesRead*/)
     {
         if (m_onSomeActivityHander)
             m_onSomeActivityHander();

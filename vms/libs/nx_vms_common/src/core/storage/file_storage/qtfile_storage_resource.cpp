@@ -21,7 +21,9 @@ QString removeProtocolPrefix(QStringView url)
 
 } // namespace
 
-QIODevice* QnQtFileStorageResource::openInternal(const QString& fileName, QIODevice::OpenMode openMode)
+QIODevice* QnQtFileStorageResource::openInternal(
+    const QString& fileName,
+    QIODevice::OpenMode openMode)
 {
     const QString cleanFileName = removeProtocolPrefix(fileName);
 
@@ -104,9 +106,8 @@ qint64 QnQtFileStorageResource::getFileSize(const QString& /*url*/) const
 
 nx::vms::api::StorageInitResult QnQtFileStorageResource::initOrUpdate()
 {
-    const QString tmpDir = closeDirPath(getUrl())
-        + "tmp"
-        + QString::number(nx::utils::random::number<uint>());
+    const QString tmpDir =
+        closeDirPath(getUrl()) + "tmp" + QString::number(nx::utils::random::number<uint>());
 
     QDir dir(tmpDir);
     if (dir.exists() && dir.removeRecursively())

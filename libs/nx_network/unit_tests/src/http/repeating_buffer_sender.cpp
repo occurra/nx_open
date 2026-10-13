@@ -2,15 +2,11 @@
 
 #include "repeating_buffer_sender.h"
 
-
 #include "repeating_buffer_msg_body_source.h"
 
 namespace nx::network::http {
 
-RepeatingBufferSender::RepeatingBufferSender(
-    const std::string& mimeType,
-    nx::Buffer buffer)
-    :
+RepeatingBufferSender::RepeatingBufferSender(const std::string& mimeType, nx::Buffer buffer):
     m_mimeType(mimeType),
     m_buffer(std::move(buffer))
 {

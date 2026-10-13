@@ -22,14 +22,17 @@ void RepetitiveTimer::pleaseStopSync()
     m_cancelled.store(true, std::memory_order_relaxed);
 }
 
-void RepetitiveTimer::start(
-    std::chrono::milliseconds timeout,
-    TimerEventHandler timerFunc)
+void RepetitiveTimer::start(std::chrono::milliseconds timeout, TimerEventHandler timerFunc)
 {
     m_timeout = timeout;
     m_timerFunc = std::exchange(timerFunc, nullptr);
 
-    m_timer.start(m_timeout, [this]() { onTimerEvent(); });
+    m_timer.start(
+        m_timeout,
+        [this]()
+        {
+            onTimerEvent();
+        });
 }
 
 void RepetitiveTimer::cancelSync()
@@ -51,13 +54,17 @@ void RepetitiveTimer::onTimerEvent()
 
     m_timerFunc();
 
-    if (watcher.interrupted() ||
-        m_cancelled.exchange(false, std::memory_order_relaxed))
+    if (watcher.interrupted() || m_cancelled.exchange(false, std::memory_order_relaxed))
     {
         return;
     }
 
-    m_timer.start(m_timeout, [this]() { onTimerEvent(); });
+    m_timer.start(
+        m_timeout,
+        [this]()
+        {
+            onTimerEvent();
+        });
 }
 
 } // namespace nx::network::aio

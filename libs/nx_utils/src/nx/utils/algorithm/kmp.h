@@ -27,7 +27,8 @@ public:
 
     /**
      * @return E.g., if string to find is "bcd" and text "198nrabc" has been provided, then 2 is
-     * returned. It means that string can potentially be found 2 positions prior to the last position.
+     * returned. It means that string can potentially be found 2 positions prior to the last
+     * position.
      */
     std::size_t potentialOccurrenceLag() const;
 
@@ -44,9 +45,7 @@ private:
 class NX_UTILS_API KmpReplacer
 {
 public:
-    KmpReplacer(
-        std::string before,
-        std::string after);
+    KmpReplacer(std::string before, std::string after);
 
     /**
      * To dump the internal buffer invoke KmpReplacer::process with an empty string.

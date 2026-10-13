@@ -1,8 +1,9 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
+#include "qmetaobject_helper_ut.h"
+
 #include <gtest/gtest.h>
 
-#include "qmetaobject_helper_ut.h"
 #include <nx/utils/qmetaobject_helper.h>
 
 namespace nx::utils::test {
@@ -14,7 +15,9 @@ TestObjectWithSignal::TestObjectWithSignal(QObject* parent):
     m_testRect(QRect(1, 2, 3, 4))
 {
     moveToThread(this);
-    connect(this, &QThread::started,
+    connect(
+        this,
+        &QThread::started,
         [this]()
         {
             emitAsync(this, &TestObjectWithSignal::signal1, m_testInt);
@@ -60,8 +63,13 @@ TEST(EmitAsyncTest, basic)
     std::promise<void> promise;
 
     // This receiver hasn't event loop.
-    QObject::connect(object.get(), &TestObjectWithSignal::done,
-        [&promise, object = object.get()]() { promise.set_value(); });
+    QObject::connect(
+        object.get(),
+        &TestObjectWithSignal::done,
+        [&promise, object = object.get()]()
+        {
+            promise.set_value();
+        });
 
     object->start();
     promise.get_future().wait();

@@ -26,18 +26,16 @@ public:
     ResumableThread(nx::MoveOnlyFunc<void()> func):
         m_func(std::move(func))
     {
-        m_thread = std::thread([this]() { threadFunc(); });
+        m_thread = std::thread(
+            [this]()
+            {
+                threadFunc();
+            });
     }
 
-    void join()
-    {
-        m_thread.join();
-    }
+    void join() { m_thread.join(); }
 
-    void resume()
-    {
-        m_resumed.set_value();
-    }
+    void resume() { m_resumed.set_value(); }
 
 private:
     nx::MoveOnlyFunc<void()> m_func;
@@ -54,10 +52,7 @@ private:
 class ThreadStorage
 {
 public:
-    ~ThreadStorage()
-    {
-        clear();
-    }
+    ~ThreadStorage() { clear(); }
 
     void add(std::unique_ptr<ResumableThread> thread)
     {
@@ -100,8 +95,7 @@ private:
     std::vector<std::unique_ptr<ResumableThread>> m_threads;
 };
 
-class TakingSocketRestHandler:
-    public nx::network::http::RequestHandlerWithContext
+class TakingSocketRestHandler: public nx::network::http::RequestHandlerWithContext
 {
 public:
     TakingSocketRestHandler(ThreadStorage* threadStorage):
@@ -116,8 +110,9 @@ public:
         nx::network::http::ConnectionEvents events;
         events.onResponseHasBeenSent =
             [threadStorage = m_threadStorage](nx::network::http::HttpServerConnection* connection)
-            {
-                threadStorage->add(std::make_unique<ResumableThread>(
+        {
+            threadStorage->add(
+                std::make_unique<ResumableThread>(
                     [sock = connection->takeSocket()]() mutable
                     {
                         ASSERT_TRUE(sock->setNonBlockingMode(false));
@@ -125,7 +120,7 @@ public:
                         ASSERT_GT(sock->send(kTeardownMessage), 0);
                         sock.reset();
                     }));
-            };
+        };
 
         completionHandler(
             nx::network::http::RequestResult(
@@ -138,14 +133,10 @@ private:
     ThreadStorage* m_threadStorage;
 };
 
-class TakingHttpSocketTest:
-    public ::testing::Test
+class TakingHttpSocketTest: public ::testing::Test
 {
 protected:
-    std::unique_ptr<TestHttpServer> testHttpServer()
-    {
-        return std::make_unique<TestHttpServer>();
-    }
+    std::unique_ptr<TestHttpServer> testHttpServer() { return std::make_unique<TestHttpServer>(); }
 
     std::unique_ptr<nx::network::BufferedStreamSocket> takeSocketFromHttpClient(
         std::unique_ptr<nx::network::http::HttpClient>& httpClient)
@@ -206,17 +197,18 @@ protected:
             [this]()
             {
                 return std::make_unique<TakingSocketRestHandler>(&m_threadStorage);
-            })) << "Failed to register request processor";
+            }))
+            << "Failed to register request processor";
 
-        ASSERT_TRUE(httpServer->bindAndListen())
-            << "Failed to start test http server";
+        ASSERT_TRUE(httpServer->bindAndListen()) << "Failed to start test http server";
 
         auto httpClient = std::make_unique<HttpClient>(ssl::kAcceptAnyCertificate);
 
-        const nx::Url url(nx::format("%1://%2%3")
-            .arg(scheme)
-            .arg(httpServer->serverAddress().toString())
-            .arg(kRestHandlerPath));
+        const nx::Url url(
+            nx::format("%1://%2%3")
+                .arg(scheme)
+                .arg(httpServer->serverAddress().toString())
+                .arg(kRestHandlerPath));
 
         ASSERT_TRUE(httpClient->doGet(url)) << "Failed to perform GET request";
 
@@ -232,8 +224,7 @@ protected:
 
         m_threadStorage.back().resume();
 
-        ASSERT_TRUE(tcpSocket->isConnected())
-            << "Socket taken from HTTP client is not connected";
+        ASSERT_TRUE(tcpSocket->isConnected()) << "Socket taken from HTTP client is not connected";
 
         int bytesRead = 0;
         int messageNumber = 1;
@@ -277,15 +268,14 @@ protected:
         }
 
         ASSERT_EQ(messageNumber, kAwaitedMessageNumber)
-            << "Got wrong number of messages. Expected: "
-            << kAwaitedMessageNumber - 1
+            << "Got wrong number of messages. Expected: " << kAwaitedMessageNumber - 1
             << ", got: " << messageNumber - 1;
 
-        ASSERT_TRUE(gotPlayMessage)
-            << "Have not got '" << kPlayMessage.data() << "' message";
+        ASSERT_TRUE(gotPlayMessage) << "Have not got '" << kPlayMessage.data() << "' message";
 
         ASSERT_TRUE(gotTeardownMessage)
-            << "Have not got '" << kTeardownMessage.data() << "' message";;
+            << "Have not got '" << kTeardownMessage.data() << "' message";
+        ;
 
         httpServer.reset();
         tcpSocket.reset();

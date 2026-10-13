@@ -2,18 +2,19 @@
 
 #include "crypted_file_stream.h"
 
-#include <stdexcept>
 #include <algorithm>
+#include <stdexcept>
 #include <vector>
 
 #include <openssl/evp.h>
 
 namespace nx::crypt {
 
-static const Key IV { //< Actually makes little sense because first 8 bytes of IV are overwritten with block index.
-    0xf1, 0x8a, 0xdb, 0x71, 0x8b, 0x86, 0xb, 0x7c, 0xf1, 0xa6, 0xb8, 0xff, 0x81, 0x81, 0x64, 0x66,
-    0x48, 0xb6, 0x30, 0xfb, 0x3, 0xbc, 0xa2, 0xd, 0x3d, 0xf1, 0xa1, 0xf4, 0xfd, 0xf1, 0xe7, 0xb4
-};
+static const Key IV{
+    //< Actually makes little sense because first 8 bytes of IV are overwritten with block index.
+    0xf1, 0x8a, 0xdb, 0x71, 0x8b, 0x86, 0xb,  0x7c, 0xf1, 0xa6, 0xb8,
+    0xff, 0x81, 0x81, 0x64, 0x66, 0x48, 0xb6, 0x30, 0xfb, 0x3,  0xbc,
+    0xa2, 0xd,  0x3d, 0xf1, 0xa1, 0xf4, 0xfd, 0xf1, 0xe7, 0xb4};
 
 CryptedFileStream::CryptedFileStream(const QString& fileName, const QString& password):
     m_mutex(nx::Mutex::Recursive),
@@ -32,9 +33,12 @@ CryptedFileStream::CryptedFileStream(const QString& fileName, const QString& pas
     setPassword(password);
 }
 
-CryptedFileStream::CryptedFileStream(const QString& fileName, qint64 position, qint64 size,
-    const QString& password)
-    : CryptedFileStream(fileName, password)
+CryptedFileStream::CryptedFileStream(
+    const QString& fileName,
+    qint64 position,
+    qint64 size,
+    const QString& password):
+    CryptedFileStream(fileName, password)
 {
     setEnclosure(position, size);
 }
@@ -76,10 +80,10 @@ bool CryptedFileStream::open(QIODevice::OpenMode openMode)
     // Ask Misha S. and Sergey I. about why not to use exceptions here - I just don't know.
     auto handleError =
         [this](const QString& str) //< Expanded to several strings for setting breakpoints.
-        {
-            setErrorString(str);
-            return false;
-        };
+    {
+        setErrorString(str);
+        return false;
+    };
 
     if (!m_file.open(fileOpenMode))
         return handleError(m_file.errorString());
@@ -253,7 +257,7 @@ void CryptedFileStream::writeToBlock(const char* data, qint64 count)
 void CryptedFileStream::advanceBlock()
 {
     dumpCurrentBlock();
-    m_position.blockIndex ++;
+    m_position.blockIndex++;
     m_position.positionInBlock = 0;
     loadCurrentBlock();
 }
@@ -302,7 +306,7 @@ bool CryptedFileStream::readHeader()
         return false;
 
     m_file.seek(m_enclosure.position);
-    if (m_file.read((char *)&m_header, sizeof(m_header)) != sizeof(m_header))
+    if (m_file.read((char*) &m_header, sizeof(m_header)) != sizeof(m_header))
         return false;
 
     if (m_header.minReadVersion > kCryptoStreamVersion) //< The file is too new.
@@ -316,7 +320,7 @@ bool CryptedFileStream::readHeader()
 void CryptedFileStream::writeHeader()
 {
     m_file.seek(m_enclosure.position);
-    m_file.write((char *)&m_header, sizeof(m_header));
+    m_file.write((char*) &m_header, sizeof(m_header));
     // Fill rest with zeros.
     static char zeroes[kHeaderSize - sizeof(m_header)];
     memset(zeroes, 0, kHeaderSize - sizeof(m_header));
@@ -336,14 +340,22 @@ void CryptedFileStream::cryptBlock()
     NX_ASSERT(result && mdLen <= m_IV.size());
 
     // Encrypt block.
-    result = EVP_EncryptInit_ex((EVP_CIPHER_CTX*) m_context , EVP_aes_256_cbc(),
-        nullptr, m_key.data(), m_IV.data());
+    result = EVP_EncryptInit_ex(
+        (EVP_CIPHER_CTX*) m_context,
+        EVP_aes_256_cbc(),
+        nullptr,
+        m_key.data(),
+        m_IV.data());
     EVP_CIPHER_CTX_set_padding((EVP_CIPHER_CTX*) m_context, 0);
     NX_ASSERT(result);
 
     int cryptlen;
-    result = EVP_EncryptUpdate((EVP_CIPHER_CTX*) m_context, (unsigned char *) m_currentCryptedBlock, &cryptlen,
-        (unsigned char *) m_currentPlainBlock, kCryptoBlockSize);
+    result = EVP_EncryptUpdate(
+        (EVP_CIPHER_CTX*) m_context,
+        (unsigned char*) m_currentCryptedBlock,
+        &cryptlen,
+        (unsigned char*) m_currentPlainBlock,
+        kCryptoBlockSize);
     NX_ASSERT(result);
 
     unsigned char dummy[32]; //< Actually 16 is enough for AES.
@@ -363,14 +375,22 @@ void CryptedFileStream::decryptBlock()
     NX_ASSERT(result && mdLen <= m_IV.size());
 
     // Decrypt block.
-    result = EVP_DecryptInit_ex((EVP_CIPHER_CTX*) m_context , EVP_aes_256_cbc(),
-        nullptr, m_key.data(), m_IV.data());
+    result = EVP_DecryptInit_ex(
+        (EVP_CIPHER_CTX*) m_context,
+        EVP_aes_256_cbc(),
+        nullptr,
+        m_key.data(),
+        m_IV.data());
     EVP_CIPHER_CTX_set_padding((EVP_CIPHER_CTX*) m_context, 0);
     NX_ASSERT(result);
 
     int cryptLen;
-    result = EVP_DecryptUpdate((EVP_CIPHER_CTX*) m_context, (unsigned char *) m_currentPlainBlock, &cryptLen,
-        (unsigned char *) m_currentCryptedBlock, kCryptoBlockSize);
+    result = EVP_DecryptUpdate(
+        (EVP_CIPHER_CTX*) m_context,
+        (unsigned char*) m_currentPlainBlock,
+        &cryptLen,
+        (unsigned char*) m_currentCryptedBlock,
+        kCryptoBlockSize);
     NX_ASSERT(result);
 
     unsigned char dummy[32];

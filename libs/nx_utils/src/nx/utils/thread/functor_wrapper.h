@@ -16,10 +16,7 @@ public:
     {
     }
 
-    virtual void run() override
-    {
-        m_functor();
-    }
+    virtual void run() override { m_functor(); }
 
 private:
     Functor m_functor;

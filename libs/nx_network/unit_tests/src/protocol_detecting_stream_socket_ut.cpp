@@ -12,8 +12,7 @@
 
 namespace nx::network::test {
 
-class ProtocolDetectingStreamSocket:
-    public ::testing::Test
+class ProtocolDetectingStreamSocket: public ::testing::Test
 {
 public:
     ProtocolDetectingStreamSocket()
@@ -62,8 +61,8 @@ private:
         constexpr int protocolCount = 3;
         for (int i = 0; i < protocolCount; ++i)
         {
-            auto protocolHeader = nx::utils::generateRandomName(
-                nx::utils::random::number<int>(7, 13));
+            auto protocolHeader =
+                nx::utils::generateRandomName(nx::utils::random::number<int>(7, 13));
             m_protocols.emplace(++m_prevAssignedProtocolNumber, protocolHeader);
         }
     }
@@ -88,8 +87,11 @@ private:
         {
             m_detector->registerProtocol(
                 std::make_unique<FixedProtocolPrefixRule>(protocol.second),
-                std::bind(&ProtocolDetectingStreamSocket::createProtocolHandler, this,
-                    protocol.first, _1));
+                std::bind(
+                    &ProtocolDetectingStreamSocket::createProtocolHandler,
+                    this,
+                    protocol.first,
+                    _1));
         }
     }
 
@@ -110,9 +112,7 @@ TEST_F(ProtocolDetectingStreamSocket, sync_recv)
     assertProperProtocolIsDetected();
 }
 
-TEST_F(
-    ProtocolDetectingStreamSocket,
-    sync_send_invoked_before_protocol_detection_results_in_error)
+TEST_F(ProtocolDetectingStreamSocket, sync_send_invoked_before_protocol_detection_results_in_error)
 {
     assertSendFailsWith(SystemError::invalidData);
 }

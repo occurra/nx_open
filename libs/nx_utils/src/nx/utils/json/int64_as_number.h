@@ -21,7 +21,10 @@ struct Int64AsNumber
     Int64AsNumber& operator=(const Int64AsNumber&) = default;
     Int64AsNumber& operator=(Int64AsNumber&&) = default;
 
-    Int64AsNumber(int64_t other = 0): value(other) {}
+    Int64AsNumber(int64_t other = 0):
+        value(other)
+    {
+    }
     Int64AsNumber& operator=(int64_t other)
     {
         value = other;
@@ -47,7 +50,8 @@ struct Int64AsNumber
 };
 
 inline nx::reflect::DeserializationResult deserialize(
-    const nx::reflect::json::DeserializationContext& context, Int64AsNumber* data)
+    const nx::reflect::json::DeserializationContext& context,
+    Int64AsNumber* data)
 {
     if (context.value.IsInt64())
     {
@@ -70,7 +74,9 @@ inline nx::reflect::DeserializationResult deserialize(
         }
     }
 
-    return {false, "Signed 64 bit integer expected",
+    return {
+        false,
+        "Signed 64 bit integer expected",
         nx::reflect::json_detail::getStringRepresentation(context.value)};
 }
 

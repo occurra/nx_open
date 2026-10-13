@@ -17,20 +17,23 @@ public:
     NX_REFLECTION_ENUM_CLASS_IN_CLASS(Compression, gzip, deflate)
 
     static std::optional<Compression> defaultCompression(
-        CompressionType compressionType, FrameType frameType)
+        CompressionType compressionType,
+        FrameType frameType)
     {
-        return
-            compressionType == CompressionType::none
-                ? std::nullopt
-                : frameType == FrameType::text
-                    ? std::optional<Compression>{Compression::deflate}
-                    : std::optional<Compression>{Compression::gzip};
+        return compressionType == CompressionType::none ? std::nullopt
+            : frameType == FrameType::text ? std::optional<Compression>{Compression::deflate}
+                                           : std::optional<Compression>{Compression::gzip};
     }
 
     nx::Buffer prepareMessage(
-        const nx::Buffer& payload, FrameType type, std::optional<Compression> compression = {});
+        const nx::Buffer& payload,
+        FrameType type,
+        std::optional<Compression> compression = {});
     nx::Buffer prepareFrame(
-        nx::Buffer payload, FrameType type, bool fin, std::optional<Compression> compression);
+        nx::Buffer payload,
+        FrameType type,
+        bool fin,
+        std::optional<Compression> compression);
 
     Statistics statistics() const { return m_statistics; }
 
@@ -51,5 +54,4 @@ private:
         bool compression);
 };
 
-
-} // nx::network::websocket
+} // namespace nx::network::websocket

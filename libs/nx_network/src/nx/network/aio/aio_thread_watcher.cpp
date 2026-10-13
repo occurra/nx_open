@@ -12,8 +12,7 @@ AioThreadWatcher::AioThreadWatcher(
     int pollRatePerSecond,
     int averageTimeMultiplier,
     std::chrono::milliseconds absoluteThreshold,
-    StuckThreadHandler handler)
-    :
+    StuckThreadHandler handler):
     m_absoluteThreshold(absoluteThreshold),
     m_stuckThreadHandler(std::move(handler))
 {
@@ -38,7 +37,8 @@ AioThreadWatcher::~AioThreadWatcher()
     wait();
 }
 
-void AioThreadWatcher::startWatcherThread(const std::vector<const AbstractAioThread*>& threadsToWatch)
+void AioThreadWatcher::startWatcherThread(
+    const std::vector<const AbstractAioThread*>& threadsToWatch)
 {
     m_threadsToWatch.reserve(threadsToWatch.size());
     for (const auto& t: threadsToWatch)
@@ -84,8 +84,11 @@ void AioThreadWatcher::doneInvoking(
     ctx.averageExecutionTime = averageExecutionTime;
     if (const auto wasStuck = ctx.stuck.exchange(false); wasStuck)
     {
-        NX_DEBUG(this, "Thread is unstuck: %1, id: %2",
-            ctx.aioThread, ctx.aioThread->systemThreadId());
+        NX_DEBUG(
+            this,
+            "Thread is unstuck: %1, id: %2",
+            ctx.aioThread,
+            ctx.aioThread->systemThreadId());
     }
 }
 
@@ -111,7 +114,10 @@ void AioThreadWatcher::run()
             m_waitCondition.waitFor(
                 &m_mutex,
                 m_threadSleep,
-                [this](){ return needToStop() || !m_newlyStuckThreads.empty(); });
+                [this]()
+                {
+                    return needToStop() || !m_newlyStuckThreads.empty();
+                });
             if (needToStop())
                 break;
 
@@ -141,13 +147,15 @@ AioThreadWatcher::WatchContext& AioThreadWatcher::find(const AbstractAioThread* 
     auto it = std::find_if(
         m_threadsToWatch.begin(),
         m_threadsToWatch.end(),
-        [&aioThread](const auto& ctx){ return ctx.aioThread == aioThread; });
+        [&aioThread](const auto& ctx)
+        {
+            return ctx.aioThread == aioThread;
+        });
     NX_CRITICAL(it != m_threadsToWatch.end());
     return *it;
 }
 
-std::optional<AioThreadWatcher::StuckThread>
-    AioThreadWatcher::detectStuckThread(WatchContext* ctx)
+std::optional<AioThreadWatcher::StuckThread> AioThreadWatcher::detectStuckThread(WatchContext* ctx)
 {
     const auto watchStart = ctx->watchStart.load();
     const auto averageExecutionTime = ctx->averageExecutionTime.load();
@@ -156,9 +164,8 @@ std::optional<AioThreadWatcher::StuckThread>
     if (watchStart == steady_clock::time_point{})
         return std::nullopt;
 
-    if ((averageExecutionTime != 0us
-            && m_averageTimeMultiplier.load() > 0
-            && currentExecutionTime >= averageExecutionTime * m_averageTimeMultiplier.load())
+    if ((averageExecutionTime != 0us && m_averageTimeMultiplier.load() > 0
+         && currentExecutionTime >= averageExecutionTime * m_averageTimeMultiplier.load())
         || currentExecutionTime >= m_absoluteThreshold.load())
     {
         StuckThread t{

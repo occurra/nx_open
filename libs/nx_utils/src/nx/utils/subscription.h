@@ -24,7 +24,7 @@ constexpr static const SubscriptionId kInvalidSubscriptionId = 0;
  * Subscription-notification model event.
  * NOTE: All methods are thread-safe.
  */
-template <typename... Data>
+template<typename... Data>
 class Subscription
 {
     typedef Subscription<Data...> SelfType;
@@ -44,9 +44,7 @@ public:
      * @param subscriptionId This value can be used to unsubscribe
      * NOTE: do not use blocking operations inside @param handler.
      */
-    void subscribe(
-        NotificationCallback handler,
-        SubscriptionId* const subscriptionId)
+    void subscribe(NotificationCallback handler, SubscriptionId* const subscriptionId)
     {
         NX_MUTEX_LOCKER lk(&m_mutex);
         if (m_previousSubscriptionId == kInvalidSubscriptionId)
@@ -64,9 +62,10 @@ public:
     {
         NX_MUTEX_LOCKER lk(&m_mutex);
 
-        while (m_eventReportingThread != 0 &&                    //< Event handler is running.
-            m_eventReportingThread != currentThreadSystemId() && //< Running not in current thread.
-            nx::utils::contains(m_runningSubscriptionIds, subscriptionId))
+        while (m_eventReportingThread != 0 && //< Event handler is running.
+               m_eventReportingThread != currentThreadSystemId()
+               && //< Running not in current thread.
+               nx::utils::contains(m_runningSubscriptionIds, subscriptionId))
         {
             // Waiting for handler to complete.
             m_cond.wait(lk.mutex());
@@ -84,26 +83,28 @@ public:
 
         m_eventReportingThread = currentThreadSystemId();
         ++m_recursionDepth;
-        auto guard = makeScopeGuard([this, &lock]()
-        {
-            if ((--m_recursionDepth) == 0)
-                m_eventReportingThread = 0;
+        auto guard = makeScopeGuard(
+            [this, &lock]()
+            {
+                if ((--m_recursionDepth) == 0)
+                    m_eventReportingThread = 0;
 
-            lock.unlock();
-            m_cond.wakeAll();
-        });
+                lock.unlock();
+                m_cond.wakeAll();
+            });
 
         for (auto currentSubscriptionIter = m_handlers.begin();
-             currentSubscriptionIter != m_handlers.end();
-             )
+             currentSubscriptionIter != m_handlers.end();)
         {
             m_runningSubscriptionIds.push_back(currentSubscriptionIter->first);
-            auto anotherGuard = makeScopeGuard([this, &currentSubscriptionIter, &lock]()
-            {
-                lock.relock();
-                currentSubscriptionIter = m_handlers.upper_bound(m_runningSubscriptionIds.back());
-                m_runningSubscriptionIds.pop_back();
-            });
+            auto anotherGuard = makeScopeGuard(
+                [this, &currentSubscriptionIter, &lock]()
+                {
+                    lock.relock();
+                    currentSubscriptionIter =
+                        m_handlers.upper_bound(m_runningSubscriptionIds.back());
+                    m_runningSubscriptionIds.pop_back();
+                });
 
             lock.unlock();
             m_cond.wakeAll();

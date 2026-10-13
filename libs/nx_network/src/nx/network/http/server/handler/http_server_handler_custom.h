@@ -7,8 +7,7 @@
 namespace nx::network::http::server::handler {
 
 template<typename Func>
-class CustomRequestHandler:
-    public RequestHandlerWithContext
+class CustomRequestHandler: public RequestHandlerWithContext
 {
 public:
     CustomRequestHandler(Func func):
@@ -20,9 +19,7 @@ public:
         RequestContext requestContext,
         nx::network::http::RequestProcessedHandler completionHandler) override
     {
-        m_func(
-            std::move(requestContext),
-            std::move(completionHandler));
+        m_func(std::move(requestContext), std::move(completionHandler));
     }
 
 private:

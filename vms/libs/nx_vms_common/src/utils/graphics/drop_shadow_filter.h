@@ -6,15 +6,15 @@
 
 class QImage;
 
-/** QWidgets-free Drop Shadow Filter. If you can use QWidgets, use QPixmapDropShadowFilter instead. */
+/** QWidgets-free Drop Shadow Filter. If you can use QWidgets, use QPixmapDropShadowFilter instead.
+ */
 
-namespace nx::utils::graphics
-{
+namespace nx::utils::graphics {
 
 class DropShadowFilter
 {
 public:
-    DropShadowFilter(int dx = 0 , int dy = 2, int blurWidth = 8);
+    DropShadowFilter(int dx = 0, int dy = 2, int blurWidth = 8);
 
     /**  Blurs image. Image edges (of blurWidth) are not processed. */
     void filterImage(QImage& image);

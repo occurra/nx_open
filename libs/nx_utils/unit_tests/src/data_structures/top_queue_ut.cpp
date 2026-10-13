@@ -8,14 +8,10 @@ namespace nx {
 namespace utils {
 namespace test {
 
-class TopQueue:
-    public ::testing::Test
+class TopQueue: public ::testing::Test
 {
 protected:
-    template<
-        typename GenerateValueFunc,
-        typename Comp = std::less<int>
-    >
+    template<typename GenerateValueFunc, typename Comp = std::less<int>>
     void testTopQueue(GenerateValueFunc func)
     {
         constexpr int elementCount = 1000;
@@ -45,25 +41,40 @@ protected:
 
 TEST_F(TopQueue, random_data)
 {
-    testTopQueue([]() { return rand(); });
+    testTopQueue(
+        []()
+        {
+            return rand();
+        });
 }
 
 TEST_F(TopQueue, max_queue_random_data)
 {
-    auto generateFunc = []() { return rand(); };
+    auto generateFunc = []()
+    {
+        return rand();
+    };
     testTopQueue<decltype(generateFunc), std::greater<int>>(generateFunc);
 }
 
 TEST_F(TopQueue, ascending_data)
 {
     int prevValue = 0;
-    testTopQueue([&prevValue]() { return prevValue++; });
+    testTopQueue(
+        [&prevValue]()
+        {
+            return prevValue++;
+        });
 }
 
 TEST_F(TopQueue, descending_data)
 {
     int prevValue = 100000000;
-    testTopQueue([&prevValue]() { return prevValue--; });
+    testTopQueue(
+        [&prevValue]()
+        {
+            return prevValue--;
+        });
 }
 
 } // namespace test

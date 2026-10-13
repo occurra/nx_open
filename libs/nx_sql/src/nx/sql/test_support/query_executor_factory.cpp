@@ -5,9 +5,11 @@
 namespace nx::sql {
 
 QueryExecutorProviderFactory::QueryExecutorProviderFactory():
-    base_type([](const nx::sql::ConnectionOptions& dbConnectionOptions) {
-        return std::make_unique<AsyncSqlQueryExecutor>(dbConnectionOptions);
-    })
+    base_type(
+        [](const nx::sql::ConnectionOptions& dbConnectionOptions)
+        {
+            return std::make_unique<AsyncSqlQueryExecutor>(dbConnectionOptions);
+        })
 {
 }
 

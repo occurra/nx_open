@@ -3,22 +3,22 @@
 #include "dns_resolver.h"
 
 #ifdef Q_OS_UNIX
-    #include <stdlib.h>
-    #include <sys/types.h>
-    #include <sys/socket.h>
     #include <netdb.h>
+    #include <stdlib.h>
+    #include <sys/socket.h>
+    #include <sys/types.h>
 #else
+    #include <stdio.h>
     #include <winsock2.h>
     #include <ws2tcpip.h>
-    #include <stdio.h>
 #endif
 
 #include <algorithm>
 #include <atomic>
 
 #include <nx/utils/log/log.h>
-#include <nx/utils/time.h>
 #include <nx/utils/scope_guard.h>
+#include <nx/utils/time.h>
 
 #include "resolve/predefined_host_resolver.h"
 #include "resolve/system_resolver.h"
@@ -29,9 +29,11 @@ namespace nx::network {
 // class DnsResolver::ResolveTask
 
 DnsResolver::ResolveTask::ResolveTask(
-    std::string hostAddress, Handler handler, RequestId requestId,
-    size_t sequence, int ipVersion)
-:
+    std::string hostAddress,
+    Handler handler,
+    RequestId requestId,
+    size_t sequence,
+    int ipVersion):
     hostAddress(std::move(hostAddress)),
     completionHandler(std::move(handler)),
     requestId(requestId),
@@ -62,11 +64,21 @@ DnsResolver::DnsResolver(int resolveThreadCount):
         resolveThreadCount = kDefaultResolveThreadCount;
 
     for (int i = 0; i < resolveThreadCount; ++i)
-        m_resolveThreads.push_back(std::thread([this]() { resolveThreadMain(); }));
+        m_resolveThreads.push_back(
+            std::thread(
+                [this]()
+                {
+                    resolveThreadMain();
+                }));
 
     // This thread reports the results of queries fulfilled by the cache only.
-    // A separate thread is needed so that such reports are not blocked by potentially long DNS resolve.
-    m_reportCachedResultThread = std::thread([this]() { reportCachedResultThreadMain(); });
+    // A separate thread is needed so that such reports are not blocked by potentially long DNS
+    // resolve.
+    m_reportCachedResultThread = std::thread(
+        [this]()
+        {
+            reportCachedResultThreadMain();
+        });
 }
 
 DnsResolver::~DnsResolver()
@@ -104,7 +116,10 @@ void DnsResolver::setResolveTimeout(std::chrono::milliseconds value)
 }
 
 void DnsResolver::resolveAsync(
-    const std::string& hostname, Handler handler, int ipVersion, RequestId requestId)
+    const std::string& hostname,
+    Handler handler,
+    int ipVersion,
+    RequestId requestId)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
 
@@ -115,8 +130,7 @@ void DnsResolver::resolveAsync(
     }
 
     const auto seq = ++m_currentSequence;
-    m_tasks.emplace(seq, ResolveTask(
-        hostname, std::move(handler), requestId, seq, ipVersion));
+    m_tasks.emplace(seq, ResolveTask(hostname, std::move(handler), requestId, seq, ipVersion));
     m_taskQueue.push_back(seq);
 
     m_cond.wakeAll();
@@ -133,8 +147,7 @@ SystemError::ErrorCode DnsResolver::resolveSync(
     for (const auto& resolver: m_resolversByPriority)
     {
         ResolveResult localResolveResult;
-        const auto resultCode = resolver.second->resolve(
-            hostname, ipVersion, &localResolveResult);
+        const auto resultCode = resolver.second->resolve(hostname, ipVersion, &localResolveResult);
         if (resultCode == SystemError::noError)
         {
             NX_ASSERT(!localResolveResult.entries.empty());
@@ -150,7 +163,7 @@ void DnsResolver::addEtcHost(const std::string& name, std::vector<HostAddress> a
 {
     std::deque<AddressEntry> entries;
     for (auto& address: addresses)
-        entries.push_back({ AddressType::direct, address });
+        entries.push_back({AddressType::direct, address});
 
     m_predefinedHostResolver->replaceMapping(name, std::move(entries));
 }

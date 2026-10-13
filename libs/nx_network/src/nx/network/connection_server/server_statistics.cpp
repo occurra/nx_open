@@ -7,25 +7,25 @@ namespace nx::network::server {
 void Statistics::add(const Statistics& right)
 {
     // To sum up averages we need to calculate each value's weight first.
-    const double thisWeight = connectionCount /
-        double(std::max(connectionCount + right.connectionCount, 1));
+    const double thisWeight =
+        connectionCount / double(std::max(connectionCount + right.connectionCount, 1));
 
-    const double rightWeight = right.connectionCount /
-        double(std::max(connectionCount + right.connectionCount, 1));
+    const double rightWeight =
+        right.connectionCount / double(std::max(connectionCount + right.connectionCount, 1));
 
     connectionCount += right.connectionCount;
     connectionsAcceptedPerMinute += right.connectionsAcceptedPerMinute;
     requestsReceivedPerMinute += right.requestsReceivedPerMinute;
 
-    requestsAveragePerConnection = static_cast<int>(thisWeight * requestsAveragePerConnection
+    requestsAveragePerConnection = static_cast<int>(
+        thisWeight * requestsAveragePerConnection
         + rightWeight * right.requestsAveragePerConnection);
 }
 
 //-------------------------------------------------------------------------------------------------
 
 AggregateStatisticsProvider::AggregateStatisticsProvider(
-    const std::vector<const AbstractStatisticsProvider*>& providers)
-    :
+    const std::vector<const AbstractStatisticsProvider*>& providers):
     m_providers(providers)
 {
 }

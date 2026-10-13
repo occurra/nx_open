@@ -10,8 +10,7 @@
 
 namespace nx::network::http::test {
 
-class HttpChunkedStreamParser:
-    public ::testing::Test
+class HttpChunkedStreamParser: public ::testing::Test
 {
 protected:
     void generateRandomChunkedBody(bool addExtensions = false)
@@ -58,7 +57,8 @@ protected:
 
     void assertBodyIsParsedSuccessfully()
     {
-        for (std::size_t fragmentSize = 1; fragmentSize < m_encodedBody.size() / 2; fragmentSize <<= 1)
+        for (std::size_t fragmentSize = 1; fragmentSize < m_encodedBody.size() / 2;
+             fragmentSize <<= 1)
         {
             parseFragmentedBody(fragmentSize);
             assertParsingSucceeded();
@@ -87,8 +87,11 @@ private:
             const auto bytesParsed = m_parser.parse(
                 ConstBufferRefType(
                     m_encodedBody.data() + offset,
-                    std::min<std::size_t>(fragmentSize, m_encodedBody.size()-offset)),
-                [this](auto bodyBuf) { m_parsedBody += bodyBuf; });
+                    std::min<std::size_t>(fragmentSize, m_encodedBody.size() - offset)),
+                [this](auto bodyBuf)
+                {
+                    m_parsedBody += bodyBuf;
+                });
 
             offset += bytesParsed;
             m_bytesParsedCount += bytesParsed;

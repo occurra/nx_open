@@ -2,8 +2,8 @@
 
 #include "time_helper.h"
 
-#include <nx/utils/log/log_main.h>
 #include <nx/kit/debug.h>
+#include <nx/utils/log/log_main.h>
 
 namespace {
 
@@ -83,9 +83,11 @@ qint64 TimeHelper::cameraTimeToLocalTime(qint64 cameraTimeUs, qint64 currentTime
 bool TimeHelper::isLocalTimeChanged()
 {
     const std::chrono::microseconds currentTimeUs = m_getTime();
-    const std::chrono::microseconds expectedLocalTimeUs =
-        m_timer.isValid() ? std::chrono::milliseconds(m_timer.elapsed()) + m_localStartTimeUs : currentTimeUs;
-    const std::chrono::microseconds jitterUs(qAbs(expectedLocalTimeUs.count() - currentTimeUs.count()));
+    const std::chrono::microseconds expectedLocalTimeUs = m_timer.isValid()
+        ? std::chrono::milliseconds(m_timer.elapsed()) + m_localStartTimeUs
+        : currentTimeUs;
+    const std::chrono::microseconds jitterUs(
+        qAbs(expectedLocalTimeUs.count() - currentTimeUs.count()));
     const bool isTimeChanged = jitterUs > kLocalTimeResyncThreshold;
     if (!m_timer.isValid() || isTimeChanged)
     {
@@ -129,14 +131,17 @@ qint64 TimeHelper::getTimeUsInternal(const qint64 cameraTimeUs, bool recursionAl
     const bool gotInvalidTime = jitterUs > kTimeResyncThreshold;
     const bool localTimeChanged = isLocalTimeChanged();
 
-    NX_VERBOSE(this, nx::format("BEGIN: "
-        "Camera time %1 (%2), nowMs %3, camera_from_nowMs %5, result_from_nowMs %6")
-        .args(
-            cameraTimeUs,
-            deltaMs(m_prevCameraTimeUs, cameraTimeUs),
-            deltaMs(m_prevCurrentUs, currentUs),
-            deltaMs(currentUs, cameraTimeUs),
-            deltaMs(currentUs, resultUs)));
+    NX_VERBOSE(
+        this,
+        nx::format(
+            "BEGIN: "
+            "Camera time %1 (%2), nowMs %3, camera_from_nowMs %5, result_from_nowMs %6")
+            .args(
+                cameraTimeUs,
+                deltaMs(m_prevCameraTimeUs, cameraTimeUs),
+                deltaMs(m_prevCurrentUs, currentUs),
+                deltaMs(currentUs, cameraTimeUs),
+                deltaMs(currentUs, resultUs)));
     m_prevCameraTimeUs = cameraTimeUs;
     m_prevCurrentUs = currentUs;
 
@@ -147,15 +152,17 @@ qint64 TimeHelper::getTimeUsInternal(const qint64 cameraTimeUs, bool recursionAl
     {
         if (localTimeChanged)
         {
-            NX_VERBOSE(this, nx::format(
-                "Local time has been changed. Resync time for camera %1")
-                .arg(m_resourceId));
+            NX_VERBOSE(
+                this,
+                nx::format("Local time has been changed. Resync time for camera %1")
+                    .arg(m_resourceId));
         }
         else
         {
-            NX_VERBOSE(this, nx::format(
-                "Device time drift has reached %1 ms. Resync time for device %2")
-                .args(jitterUs/1000, m_resourceId));
+            NX_VERBOSE(
+                this,
+                nx::format("Device time drift has reached %1 ms. Resync time for device %2")
+                    .args(jitterUs / 1000, m_resourceId));
         }
 
         reset();

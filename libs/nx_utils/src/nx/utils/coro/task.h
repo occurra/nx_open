@@ -14,10 +14,7 @@ namespace nx::coro {
 class NX_UTILS_API TaskCancelException: public std::exception
 {
 public:
-    const char* what() const noexcept override
-    {
-        return "Task cancel exception";
-    }
+    const char* what() const noexcept override { return "Task cancel exception"; }
 };
 
 // Base class for coroutine composition. Resumes the awaiting coroutine when current coroutine
@@ -25,8 +22,7 @@ public:
 template<
     typename T = void,
     typename InitialSuspend = std::suspend_always,
-    bool destroyOnReturn = false
->
+    bool destroyOnReturn = false>
 class TaskBase
 {
 public:
@@ -98,10 +94,8 @@ public:
 
         InitialSuspend initial_suspend() noexcept { return {}; }
 
-        using FinalAwaiterType = std::conditional_t<
-            destroyOnReturn,
-            FinalAwaiterDestroyOnReturn,
-            FinalAwaiter>;
+        using FinalAwaiterType =
+            std::conditional_t<destroyOnReturn, FinalAwaiterDestroyOnReturn, FinalAwaiter>;
 
         FinalAwaiterType final_suspend() noexcept { return {}; }
 
@@ -117,10 +111,10 @@ public:
 
             auto prevCancelOnResume = std::move(m_cancelOnResume);
             m_cancelOnResume = [prevCancelOnResume = std::move(prevCancelOnResume),
-                cancelOnResume = std::move(cancelOnResume)]() mutable
-                {
-                    return prevCancelOnResume() || cancelOnResume();
-                };
+                                cancelOnResume = std::move(cancelOnResume)]() mutable
+            {
+                return prevCancelOnResume() || cancelOnResume();
+            };
         }
 
         std::coroutine_handle<> m_continuation;
@@ -159,7 +153,10 @@ protected:
     {
         coroutine_handle_t m_coroutine;
 
-        Awaiter(coroutine_handle_t coroutine) noexcept: m_coroutine(coroutine) {}
+        Awaiter(coroutine_handle_t coroutine) noexcept:
+            m_coroutine(coroutine)
+        {
+        }
 
         bool await_ready() const noexcept { return false; }
 
@@ -169,8 +166,9 @@ protected:
 
             if (!m_coroutine.promise().m_cancelOnResume)
             {
-                auto& promise = std::coroutine_handle<PromiseBase>::from_address(
-                    awaitingCoroutine.address()).promise();
+                auto& promise =
+                    std::coroutine_handle<PromiseBase>::from_address(awaitingCoroutine.address())
+                        .promise();
 
                 // Inherit cancel condition from the awaiting coroutine.
                 m_coroutine.promise().addCancelCondition(promise.m_cancelOnResume);
@@ -185,7 +183,8 @@ protected:
                 std::rethrow_exception(std::exchange(m_coroutine.promise().m_exception, {}));
 
             auto& continuationPromise = std::coroutine_handle<PromiseBase>::from_address(
-                m_coroutine.promise().m_continuation.address()).promise();
+                                            m_coroutine.promise().m_continuation.address())
+                                            .promise();
 
             if (const auto r = continuationPromise.m_cancelOnResume; r && r())
                 throw TaskCancelException();
@@ -204,7 +203,10 @@ class [[nodiscard]] Task: public TaskBase<T, std::suspend_always>
 public:
     using result_t = T;
 
-    Task(typename base_type::coroutine_handle_t coroutine): m_coroutine(coroutine) {}
+    Task(typename base_type::coroutine_handle_t coroutine):
+        m_coroutine(coroutine)
+    {
+    }
 
     Task() {}
 
@@ -275,8 +277,9 @@ public:
 
 static inline bool isCancelRequested(std::coroutine_handle<> h)
 {
-    const auto request = std::coroutine_handle<TaskBase<>::PromiseBase>::from_address(
-        h.address()).promise().m_cancelOnResume;
+    const auto request = std::coroutine_handle<TaskBase<>::PromiseBase>::from_address(h.address())
+                             .promise()
+                             .m_cancelOnResume;
     return request && request();
 }
 
@@ -284,7 +287,8 @@ static inline bool isCancelRequested(std::coroutine_handle<> h)
 {
     struct AddConditionAwaiter
     {
-        AddConditionAwaiter(std::function<bool()> condition): m_condition(std::move(condition))
+        AddConditionAwaiter(std::function<bool()> condition):
+            m_condition(std::move(condition))
         {
         }
 
@@ -292,8 +296,9 @@ static inline bool isCancelRequested(std::coroutine_handle<> h)
 
         std::coroutine_handle<> await_suspend(std::coroutine_handle<> h)
         {
-            auto& promise = std::coroutine_handle<TaskBase<>::PromiseBase>::from_address(
-                h.address()).promise();
+            auto& promise =
+                std::coroutine_handle<TaskBase<>::PromiseBase>::from_address(h.address())
+                    .promise();
             promise.addCancelCondition(m_condition);
             return h;
         }

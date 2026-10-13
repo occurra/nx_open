@@ -31,12 +31,12 @@ constexpr double kFuzzyEqualRatio = 1.02;
 
 // Predefined watermark image sizes for typical aspect ratios, pair<aspect ratio, image size>.
 // These values are arbitrary, but reasonable.
-const std::array<std::pair<double, QSize>, 5> predefinedSizes = {{
-    {16.0 / 9.0, QSize(1920, 1080)},
-    {4.0 / 3.0,  QSize(1600, 1200)},
-    {1.0,        QSize(1200, 1200)},
-    {3.0 / 4.0,  QSize(1200, 1600)},
-    {9.0 / 16.0, QSize(1080, 1920)}}};
+const std::array<std::pair<double, QSize>, 5> predefinedSizes = {
+    {{16.0 / 9.0, QSize(1920, 1080)},
+     {4.0 / 3.0, QSize(1600, 1200)},
+     {1.0, QSize(1200, 1200)},
+     {3.0 / 4.0, QSize(1200, 1600)},
+     {9.0 / 16.0, QSize(1080, 1920)}}};
 
 // Guards cachedWatermark and watermarkImages, which can be accessed concurrently from
 // several Qt Quick image loader threads via WatermarkImageProvider::requestImage().
@@ -152,7 +152,8 @@ QImage createWatermarkTile(const Watermark& watermark, const QSize& size, const 
     QImage finalTile(tile.size(), QImage::Format_ARGB32_Premultiplied);
     finalTile.fill(Qt::transparent);
     QPainter painter1(&finalTile);
-    painter1.setOpacity(watermark.settings.opacity); //< Use opacity to make watermark semi-transparent.
+    painter1.setOpacity(
+        watermark.settings.opacity); //< Use opacity to make watermark semi-transparent.
     painter1.drawImage(QPoint(0, 0), tile);
 
     return finalTile;
@@ -185,8 +186,10 @@ QImage nx::core::createWatermarkImage(const Watermark& watermark, const QSize& s
     }
 
     QSize inscriptionSize = getTextSize(font, watermark.text);
-    const int minTileWidth = (3 * inscriptionSize.width()) / 2; //< Inscription takes max 2/3 tile width.
-    const int minTileHeight = 2 * inscriptionSize.height(); //< Inscription takes max 1/2 tile height.
+    const int minTileWidth =
+        (3 * inscriptionSize.width()) / 2; //< Inscription takes max 2/3 tile width.
+    const int minTileHeight =
+        2 * inscriptionSize.height(); //< Inscription takes max 1/2 tile height.
 
     int xCount = (int) (1 + watermark.settings.frequency * 9.99); //< xCount = 1..10 .
     int yCount = xCount;
@@ -203,8 +206,10 @@ QImage nx::core::createWatermarkImage(const Watermark& watermark, const QSize& s
     {
         for (int y = 0; y < yCount; y++)
         {
-            painter.drawImage((int)((x * image.width()) / xCount),
-                (int)((y * image.height()) / yCount), tile);
+            painter.drawImage(
+                (int) ((x * image.width()) / xCount),
+                (int) ((y * image.height()) / yCount),
+                tile);
         }
     }
 

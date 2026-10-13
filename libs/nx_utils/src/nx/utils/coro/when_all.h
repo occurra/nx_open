@@ -16,13 +16,21 @@ template<typename Callback>
 class OnScopeExit
 {
 public:
-    OnScopeExit(Callback callback): m_callback(std::move(callback)) {}
-    virtual ~OnScopeExit() { if (m_callback) (*m_callback)(); }
+    OnScopeExit(Callback callback):
+        m_callback(std::move(callback))
+    {
+    }
+    virtual ~OnScopeExit()
+    {
+        if (m_callback)
+            (*m_callback)();
+    }
     void disarm() { m_callback = std::nullopt; }
     OnScopeExit(const OnScopeExit&) = delete;
     OnScopeExit& operator=(const OnScopeExit&) = delete;
     OnScopeExit(OnScopeExit&& rhs) = delete;
     OnScopeExit& operator=(OnScopeExit&& rhs) = delete;
+
 private:
     std::optional<Callback> m_callback;
 };
@@ -55,8 +63,8 @@ struct AllTasksAwaiter
 
             using AwaitingPromise =
                 std::tuple_element<I, decltype(self->m_tasks)>::type::PromiseBase;
-            auto& promise = std::coroutine_handle<AwaitingPromise>::from_address(
-                h.address()).promise();
+            auto& promise =
+                std::coroutine_handle<AwaitingPromise>::from_address(h.address()).promise();
 
             // Inherit cancel condition from the awaiting coroutine.
             if (promise.m_cancelOnResume)
@@ -71,7 +79,7 @@ struct AllTasksAwaiter
     void startAll(std::coroutine_handle<> h)
     {
         startAt<I>(h);
-        if constexpr(I + 1 != std::tuple_size_v<decltype(m_tasks)>)
+        if constexpr (I + 1 != std::tuple_size_v<decltype(m_tasks)>)
             startAll<I + 1>(h);
     }
 
@@ -84,11 +92,23 @@ struct AllTasksAwaiter
     auto await_resume()
     {
         // Throw cancel exception if any of the results are empty.
-        auto cancelIfEmpty = [](const auto& arg) { if (!arg) throw TaskCancelException(); };
-        std::apply([cancelIfEmpty](const auto&... args) {(cancelIfEmpty(args), ...);}, m_results);
+        auto cancelIfEmpty = [](const auto& arg)
+        {
+            if (!arg)
+                throw TaskCancelException();
+        };
+        std::apply(
+            [cancelIfEmpty](const auto&... args)
+            {
+                (cancelIfEmpty(args), ...);
+            },
+            m_results);
 
         return std::apply(
-            [](auto&&... args) { return std::make_tuple(std::move(*args)...); },
+            [](auto&&... args)
+            {
+                return std::make_tuple(std::move(*args)...);
+            },
             std::move(m_results));
     }
 
@@ -128,7 +148,7 @@ struct TaskListAwaiter
             if (next == std::numeric_limits<size_t>::max() || next >= m_tasks.size())
                 return {};
             newNext = next + 1;
-        } while(!m_next.compare_exchange_weak(next, newNext));
+        } while (!m_next.compare_exchange_weak(next, newNext));
 
         return next;
     }
@@ -146,8 +166,9 @@ struct TaskListAwaiter
                     h();
             });
 
-        auto& promise = std::coroutine_handle<typename Task<T>::PromiseBase>::from_address(
-            h.address()).promise();
+        auto& promise =
+            std::coroutine_handle<typename Task<T>::PromiseBase>::from_address(h.address())
+                .promise();
 
         // Inherit cancel condition from the awaiting coroutine.
         if (promise.m_cancelOnResume)

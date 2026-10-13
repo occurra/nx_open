@@ -35,34 +35,34 @@ bool DBResult::operator==(DBResultCode right) const
     return code == right;
 }
 
-//const char* toString(DBResult result)
+// const char* toString(DBResult result)
 //{
-//    switch (result)
-//    {
-//        case DBResultCode::ok:
-//            return "ok";
-//        case DBResultCode::statementError:
-//            return "statementError";
-//        case DBResultCode::ioError:
-//            return "ioError";
-//        case DBResult::notFound:
-//            return "notFound";
-//        case DBResultCode::cancelled:
-//            return "cancelled";
-//        case DBResult::retryLater:
-//            return "retryLater";
-//        case DBResult::uniqueConstraintViolation:
-//            return "uniqueConstraintViolation";
-//        case DBResult::connectionError:
-//            return "connectionError";
-//        case DBResult::logicError:
-//            return "logicError";
-//        case DBResult::endOfData:
-//            return "endOfData";
-//        default:
-//            return "unknown";
-//    }
-//}
+//     switch (result)
+//     {
+//         case DBResultCode::ok:
+//             return "ok";
+//         case DBResultCode::statementError:
+//             return "statementError";
+//         case DBResultCode::ioError:
+//             return "ioError";
+//         case DBResult::notFound:
+//             return "notFound";
+//         case DBResultCode::cancelled:
+//             return "cancelled";
+//         case DBResult::retryLater:
+//             return "retryLater";
+//         case DBResult::uniqueConstraintViolation:
+//             return "uniqueConstraintViolation";
+//         case DBResult::connectionError:
+//             return "connectionError";
+//         case DBResult::logicError:
+//             return "logicError";
+//         case DBResult::endOfData:
+//             return "endOfData";
+//         default:
+//             return "unknown";
+//     }
+// }
 
 const char* toString(RdbmsDriverType value)
 {
@@ -175,8 +175,7 @@ void ConnectionOptions::loadFromSettings(const QnSettings& settings, const QStri
     if (settingsReader.contains(kDbInactivityTimeout))
     {
         inactivityTimeout = duration_cast<seconds>(
-            nx::utils::parseTimerDuration(
-                settingsReader.value(kDbInactivityTimeout).toString()));
+            nx::utils::parseTimerDuration(settingsReader.value(kDbInactivityTimeout).toString()));
     }
 
     if (settingsReader.contains(kDbMaxPeriodQueryWaitsForAvailableConnection))
@@ -189,7 +188,8 @@ void ConnectionOptions::loadFromSettings(const QnSettings& settings, const QStri
         failOnDbTuneError = settingsReader.value(kDbFailOnDbTuneError).toBool();
 
     if (settingsReader.contains(kDbConcurrentModificationQueryLimit))
-        concurrentModificationQueryLimit = settingsReader.value(kDbConcurrentModificationQueryLimit).toInt();
+        concurrentModificationQueryLimit =
+            settingsReader.value(kDbConcurrentModificationQueryLimit).toInt();
 
     if (settingsReader.contains(kDbReconnectAfterFailureDelay))
     {
@@ -212,9 +212,7 @@ Exception::Exception(DBResult dbResult):
 {
 }
 
-Exception::Exception(
-    DBResultCode code, const std::string& text)
-    :
+Exception::Exception(DBResultCode code, const std::string& text):
     Exception(DBResult(code, text))
 {
 }

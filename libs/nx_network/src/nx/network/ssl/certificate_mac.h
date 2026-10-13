@@ -3,14 +3,16 @@
 #pragma once
 #if defined(ENABLE_SSL)
 
-#include <string>
+    #include <string>
 
-#include <openssl/ssl.h>
+    #include <openssl/ssl.h>
 
 namespace nx::network::ssl::detail {
 
 bool verifyBySystemCertificatesMac(
-    STACK_OF(X509)* chain, const std::string& hostName, std::string* outErrorMessage);
+    STACK_OF(X509) * chain,
+    const std::string& hostName,
+    std::string* outErrorMessage);
 
 } // namespace nx::network::ssl::detail
 

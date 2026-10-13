@@ -17,10 +17,7 @@ BasicPollable::BasicPollable(aio::AbstractAioThread* aioThread):
 {
 }
 
-BasicPollable::BasicPollable(
-    aio::AIOService* aioService,
-    aio::AbstractAioThread* aioThread)
-    :
+BasicPollable::BasicPollable(aio::AIOService* aioService, aio::AbstractAioThread* aioThread):
     m_pollable(
         [aioService, aioThread]() mutable
         {
@@ -47,7 +44,8 @@ BasicPollable::~BasicPollable()
     }
     else
     {
-        NX_CRITICAL(!m_pollable.getAioThread()->isSocketBeingMonitored(&m_pollable),
+        NX_CRITICAL(
+            !m_pollable.getAioThread()->isSocketBeingMonitored(&m_pollable),
             "You MUST cancel running async operation before deleting pollable "
             "if you delete it from non-aio thread");
     }
@@ -124,7 +122,10 @@ void BasicPollable::cancelPostedCalls(nx::MoveOnlyFunc<void()> completionHandler
 void BasicPollable::cancelPostedCallsSync()
 {
     executeInAioThreadSync(
-        [this]() { m_pollable.getAioThread()->cancelPostedCalls(&m_pollable); });
+        [this]()
+        {
+            m_pollable.getAioThread()->cancelPostedCalls(&m_pollable);
+        });
 }
 
 Pollable& BasicPollable::pollable()

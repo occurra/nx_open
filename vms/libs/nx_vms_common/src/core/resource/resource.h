@@ -68,8 +68,8 @@ class NX_VMS_COMMON_API QnResource: public QObject, public QnFromThisToShared<Qn
     Q_PROPERTY(nx::Uuid id READ getId CONSTANT)
     Q_PROPERTY(QString name READ getName WRITE setName NOTIFY nameChanged)
     Q_PROPERTY(Qn::ResourceFlags flags READ flags WRITE setFlags NOTIFY flagsChanged)
-    Q_PROPERTY(nx::vms::api::ResourceStatus status READ getStatus WRITE setStatus
-        NOTIFY statusChanged)
+    Q_PROPERTY(
+        nx::vms::api::ResourceStatus status READ getStatus WRITE setStatus NOTIFY statusChanged)
 
 protected:
     using ResourceStatus = nx::vms::api::ResourceStatus;
@@ -319,17 +319,16 @@ public:
      * Properties are stored in a separate dictionary. If the Resource for some reason has no id
      * set, the properties are stored locally instead.
      *
-     * @return Whether the stored property value has been modified by this call. Return `true` if property is modified.
+     * @return Whether the stored property value has been modified by this call. Return `true` if
+     * property is modified.
      */
-    virtual bool setProperty(
-        const QString& key,
-        const QString& value,
-        bool markDirty = true);
+    virtual bool setProperty(const QString& key, const QString& value, bool markDirty = true);
 
     /**
-    * Updates the property value using provided functor.
-    * @return Whether the stored property value has been modified by this call. Return `true` if property is modified.
-    */
+     * Updates the property value using provided functor.
+     * @return Whether the stored property value has been modified by this call. Return `true` if
+     * property is modified.
+     */
     virtual bool updateProperty(
         const QString& key,
         std::function<QString(QString)> updater,

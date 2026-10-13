@@ -10,8 +10,7 @@
 
 namespace nx::sql::test {
 
-class NX_SQL_API TestWithDbHelper:
-    public utils::test::TestWithTemporaryDirectory
+class NX_SQL_API TestWithDbHelper: public utils::test::TestWithTemporaryDirectory
 {
 public:
     TestWithDbHelper(QString tmpDir);
@@ -20,8 +19,7 @@ public:
     const nx::sql::ConnectionOptions& dbConnectionOptions() const;
     nx::sql::ConnectionOptions& dbConnectionOptions();
 
-    static void setDbConnectionOptions(
-        const nx::sql::ConnectionOptions& connectionOptions);
+    static void setDbConnectionOptions(const nx::sql::ConnectionOptions& connectionOptions);
 
 private:
     nx::sql::ConnectionOptions m_dbConnectionOptions;

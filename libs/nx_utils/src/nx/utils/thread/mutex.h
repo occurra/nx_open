@@ -12,7 +12,6 @@ namespace nx {
 class NX_UTILS_API MutexDelegate
 {
 public:
-
     virtual ~MutexDelegate() = default;
 
     virtual void lock(const char* sourceFile, int sourceLine, int lockId) = 0;
@@ -25,7 +24,11 @@ public:
 class NX_UTILS_API Mutex
 {
 public:
-    enum RecursionMode { Recursive, NonRecursive };
+    enum RecursionMode
+    {
+        Recursive,
+        NonRecursive
+    };
     Mutex(RecursionMode mode = NonRecursive);
 
     void lock(const char* sourceFile = 0, int sourceLine = 0, int lockId = 0);
@@ -47,10 +50,13 @@ public:
 };
 
 #define NX_MUTEX_LOCKER \
-    struct NX_CONCATENATE(NxUtilsMutexLocker, __LINE__): public ::nx::MutexLocker \
+    struct NX_CONCATENATE(NxUtilsMutexLocker, __LINE__): \
+        public ::nx::MutexLocker \
     { \
-        explicit NX_CONCATENATE(NxUtilsMutexLocker, __LINE__)(::nx::Mutex* mutex): \
-            ::nx::MutexLocker(mutex, __FILE__, __LINE__) {}  \
+        explicit NX_CONCATENATE(NxUtilsMutexLocker, __LINE__)(::nx::Mutex * mutex): \
+            ::nx::MutexLocker(mutex, __FILE__, __LINE__) \
+        { \
+        } \
     }
 
 //-------------------------------------------------------------------------------------------------
@@ -72,7 +78,11 @@ public:
 class NX_UTILS_API ReadWriteLock
 {
 public:
-    enum RecursionMode { Recursive, NonRecursive };
+    enum RecursionMode
+    {
+        Recursive,
+        NonRecursive
+    };
     ReadWriteLock(RecursionMode mode = NonRecursive);
 
     void lockForRead(const char* sourceFile = 0, int sourceLine = 0, int lockId = 0);
@@ -95,10 +105,13 @@ public:
 };
 
 #define NX_READ_LOCKER \
-    struct NX_CONCATENATE(NxUtilsReadLocker, __LINE__): public ::nx::ReadLocker \
+    struct NX_CONCATENATE(NxUtilsReadLocker, __LINE__): \
+        public ::nx::ReadLocker \
     { \
-        NX_CONCATENATE(NxUtilsReadLocker, __LINE__)(::nx::ReadWriteLock* mutex): \
-            ::nx::ReadLocker(mutex, __FILE__, __LINE__) {} \
+        NX_CONCATENATE(NxUtilsReadLocker, __LINE__)(::nx::ReadWriteLock * mutex): \
+            ::nx::ReadLocker(mutex, __FILE__, __LINE__) \
+        { \
+        } \
     }
 
 class NX_UTILS_API WriteLocker: public Locker<ReadWriteLock>
@@ -108,10 +121,13 @@ public:
 };
 
 #define NX_WRITE_LOCKER \
-    struct NX_CONCATENATE(NxUtilsWriteLocker, __LINE__): public ::nx::WriteLocker \
+    struct NX_CONCATENATE(NxUtilsWriteLocker, __LINE__): \
+        public ::nx::WriteLocker \
     { \
-        NX_CONCATENATE(NxUtilsWriteLocker, __LINE__)(::nx::ReadWriteLock* mutex): \
-            ::nx::WriteLocker(mutex, __FILE__, __LINE__) {} \
+        NX_CONCATENATE(NxUtilsWriteLocker, __LINE__)(::nx::ReadWriteLock * mutex): \
+            ::nx::WriteLocker(mutex, __FILE__, __LINE__) \
+        { \
+        } \
     }
 
 //-------------------------------------------------------------------------------------------------
@@ -139,10 +155,7 @@ public:
      * @return true if pred() returned true. false if timeout has passed.
      */
     template<typename Pred>
-    bool waitFor(
-        Mutex* mutex,
-        std::chrono::milliseconds timeout,
-        Pred pred)
+    bool waitFor(Mutex* mutex, std::chrono::milliseconds timeout, Pred pred)
     {
         using namespace std::chrono;
 

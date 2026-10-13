@@ -17,9 +17,8 @@ public:
     virtual bool contains(const QString& key) const = 0;
     virtual bool containsGroup(const QString& groupName) const = 0;
 
-    virtual QVariant value(
-        const QString& key,
-        const QVariant& defaultValue = QVariant()) const = 0;
+    virtual QVariant value(const QString& key, const QVariant& defaultValue = QVariant())
+        const = 0;
 
     virtual std::multimap<QString, QString> allArgs() const = 0;
 };
@@ -40,8 +39,7 @@ public:
  *
  * arguments: --section/item=value
  */
-class NX_UTILS_API QnSettings:
-    public SettingsReader
+class NX_UTILS_API QnSettings: public SettingsReader
 {
 public:
     QnSettings(
@@ -62,19 +60,14 @@ public:
     virtual bool contains(const QString& key) const override;
     virtual bool containsGroup(const QString& groupName) const override;
 
-    virtual QVariant value(
-        const QString& key,
-        const QVariant& defaultValue = QVariant()) const override;
+    virtual QVariant value(const QString& key, const QVariant& defaultValue = QVariant())
+        const override;
 
     virtual std::multimap<QString, QString> allArgs() const override;
 
-    QVariant value(
-        std::string_view key,
-        const QVariant& defaultValue = QVariant()) const;
+    QVariant value(std::string_view key, const QVariant& defaultValue = QVariant()) const;
 
-    QVariant value(
-        const char* key,
-        const QVariant& defaultValue = QVariant()) const;
+    QVariant value(const char* key, const QVariant& defaultValue = QVariant()) const;
 
     const QString getApplicationName() const { return m_applicationName; }
     const QString getModuleName() const { return m_moduleName; }
@@ -97,20 +90,16 @@ private:
 /**
  * Useful for reading from a specific group.
  */
-class NX_UTILS_API QnSettingsGroupReader:
-    public SettingsReader
+class NX_UTILS_API QnSettingsGroupReader: public SettingsReader
 {
 public:
-    QnSettingsGroupReader(
-        const SettingsReader& settings,
-        const QString& name);
+    QnSettingsGroupReader(const SettingsReader& settings, const QString& name);
 
     virtual bool contains(const QString& key) const override;
     virtual bool containsGroup(const QString& groupName) const override;
 
-    virtual QVariant value(
-        const QString& key,
-        const QVariant& defaultValue = QVariant()) const override;
+    virtual QVariant value(const QString& key, const QVariant& defaultValue = QVariant())
+        const override;
 
     virtual std::multimap<QString, QString> allArgs() const override;
 

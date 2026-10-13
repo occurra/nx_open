@@ -61,7 +61,8 @@ Formatter Formatter::arg(ushort value, int width, int base, const QChar& fill) c
     return m_str.arg(value, width, base, fill);
 }
 
-Formatter Formatter::arg(double value, int width, char format, int precision, const QChar& fill) const
+Formatter Formatter::arg(double value, int width, char format, int precision, const QChar& fill)
+    const
 {
     return m_str.arg(value, width, format, precision, fill);
 }

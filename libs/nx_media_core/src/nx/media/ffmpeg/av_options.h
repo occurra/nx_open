@@ -19,7 +19,6 @@ public:
     AVDictionary* get() { return m_options; }
     operator AVDictionary**() { return &m_options; }
 
-
 private:
     AVDictionary* m_options = nullptr;
 };

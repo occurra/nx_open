@@ -8,7 +8,7 @@
 namespace cf {
 
 template<typename CFArrayRefType>
-class QnCFBaseArray : public QnCFRefHolder<CFArrayRefType>
+class QnCFBaseArray: public QnCFRefHolder<CFArrayRefType>
 {
     typedef QnCFRefHolder<CFArrayRefType> base_type;
 
@@ -30,18 +30,21 @@ public:
 };
 
 template<typename CFArrayRefType>
-QnCFBaseArray<CFArrayRefType>::QnCFBaseArray() :
+QnCFBaseArray<CFArrayRefType>::QnCFBaseArray():
     base_type()
-{}
+{
+}
 
 template<typename CFArrayRefType>
-QnCFBaseArray<CFArrayRefType>::QnCFBaseArray(CFArrayRefType ref) :
+QnCFBaseArray<CFArrayRefType>::QnCFBaseArray(CFArrayRefType ref):
     base_type(ref)
-{}
+{
+}
 
 template<typename CFArrayRefType>
 QnCFBaseArray<CFArrayRefType>::~QnCFBaseArray()
-{}
+{
+}
 
 template<typename CFArrayRefType>
 int QnCFBaseArray<CFArrayRefType>::size() const
@@ -59,14 +62,14 @@ template<typename CFArrayRefType>
 template<typename ReturnType>
 ReturnType QnCFBaseArray<CFArrayRefType>::at(int index) const
 {
-    return (!base_type::ref() || index < 0 || index >= size()
-        ? nullptr
-        : reinterpret_cast<ReturnType>(CFArrayGetValueAtIndex(base_type::ref(), index)));
+    return (
+        !base_type::ref() || index < 0 || index >= size()
+            ? nullptr
+            : reinterpret_cast<ReturnType>(CFArrayGetValueAtIndex(base_type::ref(), index)));
 }
 
 template<typename CFArrayRefType>
-QnCFBaseArray<CFArrayRefType>
-    QnCFBaseArray<CFArrayRefType>::makeOwned(CFArrayRefType arrayRef)
+QnCFBaseArray<CFArrayRefType> QnCFBaseArray<CFArrayRefType>::makeOwned(CFArrayRefType arrayRef)
 {
     QnCFBaseArray result;
     result.setRef(arrayRef);
@@ -74,4 +77,5 @@ QnCFBaseArray<CFArrayRefType>
 }
 
 typedef QnCFBaseArray<CFArrayRef> QnCFArray;
-}
+
+} // namespace cf

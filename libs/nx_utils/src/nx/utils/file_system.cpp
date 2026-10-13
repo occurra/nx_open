@@ -1,27 +1,28 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <nx/utils/log/log.h>
-
 #include "file_system.h"
 
+#include <nx/utils/log/log.h>
+
 #if defined(Q_OS_UNIX)
-    #include <unistd.h>
     #include <fcntl.h>
+    #include <unistd.h>
 #endif
 
 #if defined(Q_OS_MAC)
     #include <sys/syslimits.h>
+
     #include <CoreFoundation/CoreFoundation.h>
 #endif
 
 #if defined(Q_OS_WIN)
-    #include <windows.h>
     #include <io.h>
+    #include <windows.h>
 #endif
 
-#include <QtCore/QFileInfo>
-#include <QtCore/QFile>
 #include <QtCore/QDir>
+#include <QtCore/QFile>
+#include <QtCore/QFileInfo>
 #include <QtCore/QStandardPaths>
 
 #include <nx/utils/log/log.h>
@@ -36,26 +37,33 @@ nx::log::Tag kLogTag{QString{"FileSystemUtils"}};
  * QDir::rename might fail if the target path is on a different volume, especially on Windows.
  * In such cases this function will copy the source pathto the target path and then remove source.
  */
-static Result moveWithFallback(const QString& sourcePath, const QString& targetPath, bool replaceExisting)
+static Result moveWithFallback(
+    const QString& sourcePath,
+    const QString& targetPath,
+    bool replaceExisting)
 {
     const auto result = QDir().rename(sourcePath, targetPath);
     if (result)
     {
         NX_VERBOSE(
-            kLogTag, "%1: Qt successfully renamed %2 to %3",
-            __func__, sourcePath, targetPath);
+            kLogTag,
+            "%1: Qt successfully renamed %2 to %3",
+            __func__,
+            sourcePath,
+            targetPath);
         return Result::ok;
     }
 
     NX_DEBUG(
-        kLogTag, "%1: Qt failed to rename %2 to %3. Trying to copy and remove",
-        __func__, sourcePath, targetPath);
+        kLogTag,
+        "%1: Qt failed to rename %2 to %3. Trying to copy and remove",
+        __func__,
+        sourcePath,
+        targetPath);
     const auto copyOptions = CreateTargetPath | (replaceExisting ? OverwriteExisting : NoOption);
     if (!file_system::copy(sourcePath, targetPath, copyOptions))
     {
-        NX_DEBUG(
-            kLogTag, "%1: Failed to copy %2 to %3",
-            __func__, sourcePath, targetPath);
+        NX_DEBUG(kLogTag, "%1: Failed to copy %2 to %3", __func__, sourcePath, targetPath);
         return Result::cannotMove;
     }
 
@@ -68,14 +76,20 @@ static Result moveWithFallback(const QString& sourcePath, const QString& targetP
 }
 
 static Result moveToExisting(
-    const QString& sourcePath, const QString& targetPath, bool replaceExisting)
+    const QString& sourcePath,
+    const QString& targetPath,
+    bool replaceExisting)
 {
     QFileInfo tgtFileInfo(targetPath);
     QFileInfo srcFileInfo(sourcePath);
     const auto targetFilePath = tgtFileInfo.absoluteFilePath() + "/" + srcFileInfo.fileName();
     NX_VERBOSE(
-        kLogTag, "%1: src: %2, tgt: %3, tgt file path: %4",
-        __func__, sourcePath, targetPath, targetFilePath);
+        kLogTag,
+        "%1: src: %2, tgt: %3, tgt file path: %4",
+        __func__,
+        sourcePath,
+        targetPath,
+        targetFilePath);
     if (QFileInfo(targetFilePath).exists())
     {
         NX_VERBOSE(kLogTag, "%1: tgt file path %2 exists", __func__, targetFilePath);
@@ -84,42 +98,58 @@ static Result moveToExisting(
             if (!QDir().remove(targetFilePath))
             {
                 NX_VERBOSE(
-                    kLogTag, "%1: ReplaceExisting is true but removing %2 failed",
-                    __func__, targetFilePath);
+                    kLogTag,
+                    "%1: ReplaceExisting is true but removing %2 failed",
+                    __func__,
+                    targetFilePath);
                 return Result::cannotMove;
             }
 
             if (moveWithFallback(sourcePath, targetFilePath, replaceExisting))
             {
                 NX_VERBOSE(
-                    kLogTag, "%1: Successfully renamed %2 to %3",
-                    __func__, sourcePath, targetFilePath);
+                    kLogTag,
+                    "%1: Successfully renamed %2 to %3",
+                    __func__,
+                    sourcePath,
+                    targetFilePath);
                 return Result::ok;
             }
 
             NX_DEBUG(
-                kLogTag, "%1: Failed to rename %2 to %3",
-                __func__, sourcePath, targetFilePath);
+                kLogTag,
+                "%1: Failed to rename %2 to %3",
+                __func__,
+                sourcePath,
+                targetFilePath);
             return Result::cannotMove;
         }
 
         NX_VERBOSE(
-            kLogTag, "%1: ReplaceExisting is false but tgt %2 exists",
-            __func__, targetFilePath);
+            kLogTag,
+            "%1: ReplaceExisting is false but tgt %2 exists",
+            __func__,
+            targetFilePath);
         return Result::alreadyExists;
     }
 
     if (moveWithFallback(sourcePath, targetFilePath, replaceExisting))
     {
         NX_VERBOSE(
-            kLogTag, "%1: Target path does not exists. Successfully renamed %2 to %3",
-            __func__, sourcePath, targetFilePath);
+            kLogTag,
+            "%1: Target path does not exists. Successfully renamed %2 to %3",
+            __func__,
+            sourcePath,
+            targetFilePath);
         return Result::ok;
     }
 
     NX_DEBUG(
-        kLogTag, "%1: Target path does not exist. Failed to rename %2 to %3",
-        __func__, sourcePath, targetFilePath);
+        kLogTag,
+        "%1: Target path does not exist. Failed to rename %2 to %3",
+        __func__,
+        sourcePath,
+        targetFilePath);
     return Result::cannotMove;
 }
 
@@ -129,27 +159,30 @@ static Result moveIfTargetDoesNotExist(const QString& sourcePath, const QString&
     QFileInfo srcFileInfo(sourcePath);
     const auto targetParentDir = tgtFileInfo.absoluteDir();
     NX_VERBOSE(
-        kLogTag, "%1: src: %2, tgt: %3, parent %4",
-        __func__, sourcePath, targetPath, targetParentDir);
+        kLogTag,
+        "%1: src: %2, tgt: %3, parent %4",
+        __func__,
+        sourcePath,
+        targetPath,
+        targetParentDir);
     if (targetParentDir.exists())
     {
         if (moveWithFallback(sourcePath, targetPath, true))
         {
-            NX_VERBOSE(
-                kLogTag, "%1: Rename %2 to %3 succeeded",
-                __func__, sourcePath, targetPath);
+            NX_VERBOSE(kLogTag, "%1: Rename %2 to %3 succeeded", __func__, sourcePath, targetPath);
             return Result::ok;
         }
 
-        NX_DEBUG(
-            kLogTag, "%1: Failed to rename %2 to %3",
-            __func__, sourcePath, targetPath);
+        NX_DEBUG(kLogTag, "%1: Failed to rename %2 to %3", __func__, sourcePath, targetPath);
         return Result::cannotMove;
     }
 
     NX_DEBUG(
-        kLogTag, "%1: tgt %2 parent dir %3 does not exist",
-        __func__, targetPath, targetParentDir);
+        kLogTag,
+        "%1: tgt %2 parent dir %3 does not exist",
+        __func__,
+        targetPath,
+        targetParentDir);
     return Result::targetFolderDoesNotExist;
 }
 
@@ -180,28 +213,38 @@ Result move(const QString& sourcePath, const QString& targetPath, bool replaceEx
                 if (!QDir().remove(tgtFileInfo.absoluteFilePath()))
                 {
                     NX_DEBUG(
-                        kLogTag, "%1: ReplaceExisting is true but removing of %2 failed",
-                        __func__, targetPath);
+                        kLogTag,
+                        "%1: ReplaceExisting is true but removing of %2 failed",
+                        __func__,
+                        targetPath);
                     return Result::cannotMove;
                 }
 
                 if (moveWithFallback(sourcePath, targetPath, replaceExisting))
                 {
                     NX_VERBOSE(
-                        kLogTag, "%1: Successfully renamed %2 to %3",
-                        __func__, sourcePath, targetPath);
+                        kLogTag,
+                        "%1: Successfully renamed %2 to %3",
+                        __func__,
+                        sourcePath,
+                        targetPath);
                     return Result::ok;
                 }
 
                 NX_DEBUG(
-                    kLogTag, "%1: Failed to rename %2 to %3",
-                    __func__, sourcePath, targetPath);
+                    kLogTag,
+                    "%1: Failed to rename %2 to %3",
+                    __func__,
+                    sourcePath,
+                    targetPath);
                 return Result::cannotMove;
             }
 
             NX_DEBUG(
-                kLogTag, "%1: ReplaceExisting is false but target %2 exists",
-                __func__, targetPath);
+                kLogTag,
+                "%1: ReplaceExisting is false but target %2 exists",
+                __func__,
+                targetPath);
             return Result::alreadyExists;
         }
 
@@ -213,16 +256,22 @@ Result move(const QString& sourcePath, const QString& targetPath, bool replaceEx
     if (!tgtFileInfo.exists())
     {
         NX_VERBOSE(
-            kLogTag, "%1: Src %2 is dir and tgt %3 does not exist",
-            __func__, sourcePath, targetPath);
+            kLogTag,
+            "%1: Src %2 is dir and tgt %3 does not exist",
+            __func__,
+            sourcePath,
+            targetPath);
         return moveIfTargetDoesNotExist(sourcePath, targetPath);
     }
 
     if (tgtFileInfo.isFile())
     {
         NX_DEBUG(
-            kLogTag, "%1: Src %2 is dir but tgt %3 is file",
-            __func__, sourcePath, targetPath);
+            kLogTag,
+            "%1: Src %2 is dir but tgt %3 is file",
+            __func__,
+            sourcePath,
+            targetPath);
         return Result::cannotMove;
     }
 
@@ -231,33 +280,45 @@ Result move(const QString& sourcePath, const QString& targetPath, bool replaceEx
 }
 
 Result moveFolderContents(
-    const QString& sourcePath, const QString& targetPath, bool replaceExisting)
+    const QString& sourcePath,
+    const QString& targetPath,
+    bool replaceExisting)
 {
     const QFileInfo srcFileInfo(sourcePath);
     const QFileInfo tgtFileInfo(targetPath);
-    if (!srcFileInfo.exists() || !tgtFileInfo.exists() || !srcFileInfo.isDir() || !tgtFileInfo.isDir())
+    if (!srcFileInfo.exists() || !tgtFileInfo.exists() || !srcFileInfo.isDir()
+        || !tgtFileInfo.isDir())
     {
-        NX_DEBUG(kLogTag,
+        NX_DEBUG(
+            kLogTag,
             "Failed. src %1 exists: %2, tgt %3 exists %4, src is Dir: %5, tgt is Dir: %6",
-            sourcePath, srcFileInfo.exists(), targetPath, tgtFileInfo.exists(),
-            srcFileInfo.isDir(), tgtFileInfo.isDir());
+            sourcePath,
+            srcFileInfo.exists(),
+            targetPath,
+            tgtFileInfo.exists(),
+            srcFileInfo.isDir(),
+            tgtFileInfo.isDir());
         return Result::cannotMove;
     }
 
-    const auto contents = QDir(sourcePath).entryInfoList(
-        QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+    const auto contents =
+        QDir(sourcePath)
+            .entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
     for (const auto& fi: contents)
     {
-        NX_VERBOSE(kLogTag,
+        NX_VERBOSE(
+            kLogTag,
             "Moving %1 to %2",
-            fi.absoluteFilePath(), QDir(targetPath).absoluteFilePath(fi.fileName()));
+            fi.absoluteFilePath(),
+            QDir(targetPath).absoluteFilePath(fi.fileName()));
         Result::ResultCode moveResult = Result::cannotMove;
         if (fi.isFile())
         {
             moveResult = move(
-                fi.absoluteFilePath(),
-                QDir(targetPath).absoluteFilePath(fi.fileName()),
-                replaceExisting).code;
+                             fi.absoluteFilePath(),
+                             QDir(targetPath).absoluteFilePath(fi.fileName()),
+                             replaceExisting)
+                             .code;
 
             NX_VERBOSE(kLogTag, "%1 is File. Move result: %2", fi.absoluteFilePath(), moveResult);
         }
@@ -265,19 +326,25 @@ Result moveFolderContents(
         {
             const auto targetDirPath = QDir(targetPath).absoluteFilePath(fi.fileName());
             auto targetDir = QDir(targetDirPath);
-            NX_VERBOSE(kLogTag, "%1 is Dir. Exists: %2", fi.absoluteFilePath(), targetDir.exists());
+            NX_VERBOSE(
+                kLogTag,
+                "%1 is Dir. Exists: %2",
+                fi.absoluteFilePath(),
+                targetDir.exists());
             if (targetDir.exists())
             {
                 const auto srcDirPath = fi.absoluteFilePath();
-                moveResult = moveFolderContents(
-                    srcDirPath, targetDirPath, replaceExisting).code;
+                moveResult = moveFolderContents(srcDirPath, targetDirPath, replaceExisting).code;
                 NX_VERBOSE(
-                    kLogTag, "%1 is existing Dir. Recursive move result: %2",
-                    fi.absoluteFilePath(), moveResult);
+                    kLogTag,
+                    "%1 is existing Dir. Recursive move result: %2",
+                    fi.absoluteFilePath(),
+                    moveResult);
                 if (moveResult == Result::ok)
                 {
-                    const auto srcDirContents = QDir(srcDirPath).entryInfoList(
-                        QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+                    const auto srcDirContents =
+                        QDir(srcDirPath)
+                            .entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
                     if (srcDirContents.empty())
                         QDir(srcDirPath).removeRecursively();
                 }
@@ -286,8 +353,10 @@ Result moveFolderContents(
             {
                 moveResult = move(fi.absoluteFilePath(), targetDirPath, replaceExisting).code;
                 NX_VERBOSE(
-                    kLogTag, "%1 is NOT existing Dir. Move result: %2",
-                    fi.absoluteFilePath(), moveResult);
+                    kLogTag,
+                    "%1 is NOT existing Dir. Move result: %2",
+                    fi.absoluteFilePath(),
+                    moveResult);
             }
         }
         else
@@ -342,8 +411,7 @@ Result copy(const QString& sourcePath, const QString& targetPath, Options option
         }
     }
 
-    if (srcFileInfo.isSymLink()
-        && srcFileInfo.symLinkTarget() == tgtFileInfo.absoluteFilePath())
+    if (srcFileInfo.isSymLink() && srcFileInfo.symLinkTarget() == tgtFileInfo.absoluteFilePath())
     {
         return Result(Result::sourceAndTargetAreSame, sourcePath);
     }
@@ -408,17 +476,17 @@ QString symLinkTarget(const QString& linkPath)
     if (!linkInfo.isSymLink())
         return QString();
 
-    #if defined(Q_OS_UNIX)
-        char target[PATH_MAX + 1];
-        const auto path = QFile::encodeName(linkPath);
-        auto len = readlink(path, target, PATH_MAX);
-        if (len <= 0)
-            return QString();
-        target[len] = '\0';
-        return QFile::decodeName(QByteArray(target));
-    #else
-        return linkInfo.symLinkTarget();
-    #endif
+#if defined(Q_OS_UNIX)
+    char target[PATH_MAX + 1];
+    const auto path = QFile::encodeName(linkPath);
+    auto len = readlink(path, target, PATH_MAX);
+    if (len <= 0)
+        return QString();
+    target[len] = '\0';
+    return QFile::decodeName(QByteArray(target));
+#else
+    return linkInfo.symLinkTarget();
+#endif
 }
 
 bool ensureDir(const QDir& dir)
@@ -470,14 +538,14 @@ bool reserveSpace(QFile& file, qint64 size)
     if (size <= 0)
         return true;
 
-    #if defined(Q_OS_WIN)
-        return _chsize_s(file.handle(), size) == 0;
-    #elif defined(Q_OS_MAC)
-        fstore_t store = {F_ALLOCATEALL, F_PEOFPOSMODE, 0, size, 0};
-        return fcntl(file.handle(), F_PREALLOCATE, &store) == 0;
-    #else
-        return posix_fallocate(file.handle(), 0, size) == 0;
-    #endif
+#if defined(Q_OS_WIN)
+    return _chsize_s(file.handle(), size) == 0;
+#elif defined(Q_OS_MAC)
+    fstore_t store = {F_ALLOCATEALL, F_PEOFPOSMODE, 0, size, 0};
+    return fcntl(file.handle(), F_PREALLOCATE, &store) == 0;
+#else
+    return posix_fallocate(file.handle(), 0, size) == 0;
+#endif
 }
 
 bool reserveSpace(const QString& fileName, qint64 size)

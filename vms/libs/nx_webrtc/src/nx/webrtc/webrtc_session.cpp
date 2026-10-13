@@ -11,26 +11,27 @@
 #include "webrtc_ice_tcp.h"
 #include "webrtc_ice_udp.h"
 #include "webrtc_receiver.h"
-#include "webrtc_streamer.h"
-#include "webrtc_tracker.h"
 #include "webrtc_session_pool.h"
 #include "webrtc_srflx.h"
+#include "webrtc_streamer.h"
 #include "webrtc_tracker.h"
 
 /* RFC list:
  * https://webrtcforthecurious.com/docs/03-connecting/ - Overview of connecting process
  * http://rtcweb-wg.github.io/jsep/ - JavaScript Session Establishment Protocol
- * https://datatracker.ietf.org/doc/html/rfc3264 - An Offer/Answer Model with the Session Description Protocol (SDP)
- * https://datatracker.ietf.org/doc/html/rfc5245 - Interactive Connectivity Establishment (ICE) - old.
- * https://datatracker.ietf.org/doc/html/rfc8445 - Interactive Connectivity Establishment (ICE)
- * https://datatracker.ietf.org/doc/html/rfc6544 - TCP Candidates with Interactive Connectivity Establishment (ICE)
- * https://datatracker.ietf.org/doc/html/rfc4145 - TCP-Based Media Transport in the Session Description Protocol (SDP)
- * https://datatracker.ietf.org/doc/html/rfc4571 - Framing RTP and RTCP over Connection-Oriented Transport
- * https://datatracker.ietf.org/doc/html/rfc8489 - Session Traversal Utilities for NAT (STUN)
- * https://datatracker.ietf.org/doc/html/rfc8656 - Traversal Using Relays around NAT (TURN)
- * https://datatracker.ietf.org/doc/html/rfc5764 - DTLS Extension to Establish Keys for the SRTP
- * https://datatracker.ietf.org/doc/html/rfc3711 - The Secure Real-time Transport Protocol (SRTP)
- * https://datatracker.ietf.org/doc/html/rfc4585 - Extended RTP Profile for RTCP-Based Feedback (RTP/AVPF)
+ * https://datatracker.ietf.org/doc/html/rfc3264 - An Offer/Answer Model with the Session
+ * Description Protocol (SDP) https://datatracker.ietf.org/doc/html/rfc5245 - Interactive
+ * Connectivity Establishment (ICE) - old. https://datatracker.ietf.org/doc/html/rfc8445 -
+ * Interactive Connectivity Establishment (ICE) https://datatracker.ietf.org/doc/html/rfc6544 - TCP
+ * Candidates with Interactive Connectivity Establishment (ICE)
+ * https://datatracker.ietf.org/doc/html/rfc4145 - TCP-Based Media Transport in the Session
+ * Description Protocol (SDP) https://datatracker.ietf.org/doc/html/rfc4571 - Framing RTP and RTCP
+ * over Connection-Oriented Transport https://datatracker.ietf.org/doc/html/rfc8489 - Session
+ * Traversal Utilities for NAT (STUN) https://datatracker.ietf.org/doc/html/rfc8656 - Traversal
+ * Using Relays around NAT (TURN) https://datatracker.ietf.org/doc/html/rfc5764 - DTLS Extension to
+ * Establish Keys for the SRTP https://datatracker.ietf.org/doc/html/rfc3711 - The Secure Real-time
+ * Transport Protocol (SRTP) https://datatracker.ietf.org/doc/html/rfc4585 - Extended RTP Profile
+ * for RTCP-Based Feedback (RTP/AVPF)
  * */
 
 namespace {
@@ -38,11 +39,13 @@ namespace {
 std::string generatePwd(int size)
 {
     auto result = nx::crypt::generateSalt(size).toStdString();
-    std::for_each(result.begin(), result.end(),
+    std::for_each(
+        result.begin(),
+        result.end(),
         [](char& c)
         {
             if (c == '.')
-            c = '+';
+                c = '+';
         });
     return result;
 }
@@ -63,7 +66,7 @@ AVCodecParameters* avCodecParameters(const CodecParametersConstPtr& parameters)
     return parameters ? parameters->getAvCodecParameters() : nullptr;
 }
 
-}
+} // namespace
 
 namespace nx::webrtc {
 
@@ -82,8 +85,7 @@ Session::Session(
     const nx::network::SocketAddress& address,
     const SessionConfig& config,
     const std::vector<nx::network::SocketAddress>& stunServers,
-    Purpose purpose)
-    :
+    Purpose purpose):
     m_SystemContext(context),
     m_localUfrag(localUfrag),
     m_purpose(purpose),
@@ -142,8 +144,7 @@ void Session::start(const QList<nx::network::SocketAddress>& addresses)
     // TCP host candidates.
     for (const auto& address: addresses)
     {
-        m_iceCandidates.push_back(
-            IceCandidate::constructTcpHost(index++, priority--, address));
+        m_iceCandidates.push_back(IceCandidate::constructTcpHost(index++, priority--, address));
     }
 
     // UDP host candidates.
@@ -154,21 +155,23 @@ void Session::start(const QList<nx::network::SocketAddress>& addresses)
         if (iceLocalAddress)
         {
             m_iceCandidates.push_back(
-                IceCandidate::constructUdpHost(
-                    index++,
-                    priority--,
-                    *iceLocalAddress));
+                IceCandidate::constructUdpHost(index++, priority--, *iceLocalAddress));
             m_udpIces.push_back(std::move(udpIce));
         }
     }
 
     // Srflx candidate.
     // Use first 2 accessible STUN servers from list.
-    m_srflx = std::make_unique<Srflx>(m_localUfrag, m_stunServers,
-        [this](const nx::network::SocketAddress& mappedAddress,
+    m_srflx = std::make_unique<Srflx>(
+        m_localUfrag,
+        m_stunServers,
+        [this](
+            const nx::network::SocketAddress& mappedAddress,
             std::unique_ptr<nx::network::AbstractDatagramSocket>&& socket)
         {
-            NX_DEBUG(this, "Got Srflx remote addres: %1, local address: %2",
+            NX_DEBUG(
+                this,
+                "Got Srflx remote addres: %1, local address: %2",
                 mappedAddress.toString(),
                 socket ? socket->getLocalAddress().toString() : "null");
             // 1. Create IceUdp with given socket.
@@ -196,7 +199,10 @@ void Session::start(const QList<nx::network::SocketAddress>& addresses)
             }
         });
 
-    m_relayIce = std::make_unique<IceRelay>(m_sessionPool, m_config, id(),
+    m_relayIce = std::make_unique<IceRelay>(
+        m_sessionPool,
+        m_config,
+        id(),
         [this](const IceCandidate& candidate)
         {
             addIceCandidate(candidate);
@@ -204,7 +210,8 @@ void Session::start(const QList<nx::network::SocketAddress>& addresses)
 
     m_sessionPool->turnInfoFetcher().fetchTurnInfo(
         id(),
-        [this](const TurnServerInfo& info) {
+        [this](const TurnServerInfo& info)
+        {
             m_relayIce->startRelay(info);
         });
 }
@@ -273,7 +280,9 @@ bool Session::removeProvider(nx::Uuid deviceId)
 }
 
 RenegotiationResult Session::renegotiateProvider(
-    nx::Uuid deviceId, QnAbstractMediaData::DataType dataType, int64_t resumePositionUs)
+    nx::Uuid deviceId,
+    QnAbstractMediaData::DataType dataType,
+    int64_t resumePositionUs)
 {
     auto provider = this->provider(deviceId);
     if (!provider)
@@ -284,7 +293,8 @@ RenegotiationResult Session::renegotiateProvider(
 
     // MSE reports EOF permanently and can only be re-created with the session, see
     // Transcoder::checkForMseEof().
-    if (!NX_ASSERT(m_method == nx::vms::api::WebRtcMethod::srtp,
+    if (!NX_ASSERT(
+            m_method == nx::vms::api::WebRtcMethod::srtp,
             "Renegotiation is not applicable to MSE"))
     {
         return RenegotiationResult::failed;
@@ -335,7 +345,10 @@ RenegotiationResult Session::renegotiateProvider(
     if (!initializeMuxersInternal(dataType) || encoderForTrack(track) == oldEncoder)
     {
         NX_DEBUG(
-            this, "No encoder for the new codec of track %1, device %2", track->mid, deviceId);
+            this,
+            "No encoder for the new codec of track %1, device %2",
+            track->mid,
+            deviceId);
         track->pendingAnswer = false;
         NX_ASSERT(m_tracks->updateSsrc(track, oldSsrc), "Can't roll the ssrc back");
         return RenegotiationResult::failed;
@@ -381,7 +394,7 @@ void Session::addProvider(std::shared_ptr<AbstractCameraDataProvider> provider)
         auto video = std::make_unique<Track>(Track{
             .deviceId = deviceId,
             .trackType = TrackType::video,
-            });
+        });
         m_tracks->addTrack(std::move(video));
     }
 
@@ -390,7 +403,7 @@ void Session::addProvider(std::shared_ptr<AbstractCameraDataProvider> provider)
         auto audio = std::make_unique<Track>(Track{
             .deviceId = deviceId,
             .trackType = TrackType::audio,
-            });
+        });
         m_tracks->addTrack(std::move(audio));
     }
 
@@ -445,7 +458,8 @@ bool Session::initializeMuxersInternal(QnAbstractMediaData::DataType videoOrAudi
             const auto transcodePolicy = m_sessionPool->transcodePolicy();
             if (transcodePolicy.disableTranscoding && videoTranscodingRequired)
             {
-                NX_DEBUG(this,
+                NX_DEBUG(
+                    this,
                     "Video transcoding is disabled(source codec: %1) in the server settings. "
                     "Feature unavailable",
                     videoCodecParamaters->getCodecId());
@@ -455,8 +469,9 @@ bool Session::initializeMuxersInternal(QnAbstractMediaData::DataType videoOrAudi
             if (videoTranscodingRequired)
             {
                 QnFfmpegVideoTranscoder::Config config(transcodePolicy);
-                config.targetCodecId = m_method == nx::vms::api::WebRtcMethod::srtp ?
-                    kFallbackSrtpVideoCodec : kFallbackMseVideoCodec;
+                config.targetCodecId = m_method == nx::vms::api::WebRtcMethod::srtp
+                    ? kFallbackSrtpVideoCodec
+                    : kFallbackMseVideoCodec;
                 config.quality = Qn::StreamQuality::normal;
                 if (m_method == nx::vms::api::WebRtcMethod::srtp)
                     config.rtpContatiner = true;
@@ -466,10 +481,10 @@ bool Session::initializeMuxersInternal(QnAbstractMediaData::DataType videoOrAudi
                 else if (m_resolutionWhenTranscoding)
                     config.outputResolutionLimit = m_resolutionWhenTranscoding->size;
                 config.useMultiThreadEncode = nx::transcoding::useMultiThreadEncode(
-                    config.targetCodecId, config.outputResolutionLimit);
+                    config.targetCodecId,
+                    config.outputResolutionLimit);
 
-                config.params =
-                    suggestMediaStreamParams(config.targetCodecId, config.quality);
+                config.params = suggestMediaStreamParams(config.targetCodecId, config.quality);
                 if (m_method == nx::vms::api::WebRtcMethod::mse)
                 {
                     // Gop size should be less then MAX_FRAME_DURATION (5s) for correct delay
@@ -483,7 +498,9 @@ bool Session::initializeMuxersInternal(QnAbstractMediaData::DataType videoOrAudi
                 // The encoder is created for the transcoder output, not for the source.
                 videoCodecParamaters = provider->getVideoCodecParameters();
 
-                NX_DEBUG(this, "Video transcoding started, target codec: %1",
+                NX_DEBUG(
+                    this,
+                    "Video transcoding started, target codec: %1",
                     config.targetCodecId);
             }
         }
@@ -496,7 +513,8 @@ bool Session::initializeMuxersInternal(QnAbstractMediaData::DataType videoOrAudi
             if (audioTranscodingRequired)
             {
                 auto audioCodecId = m_method == nx::vms::api::WebRtcMethod::srtp
-                    ? kFallbackSrtpAudioCodec : kFallbackMseAudioCodec;
+                    ? kFallbackSrtpAudioCodec
+                    : kFallbackMseAudioCodec;
                 if (!provider->addAudioTranscoder(audioCodecId))
                     return false;
 
@@ -506,7 +524,8 @@ bool Session::initializeMuxersInternal(QnAbstractMediaData::DataType videoOrAudi
             }
         }
 
-        if (!m_muxer->createEncoders(provider->resource()->getId(),
+        if (!m_muxer->createEncoders(
+                provider->resource()->getId(),
                 avCodecParameters(videoCodecParamaters),
                 avCodecParameters(audioCodecParamaters)))
         {
@@ -543,13 +562,11 @@ std::optional<SessionDescription> Session::describe() const
 
 SessionDescription Session::describeUnsafe() const
 {
-    return SessionDescription
-    {
+    return SessionDescription{
         .id = m_localUfrag,
         .remoteUfrag = m_sdpParseResult.iceUfrag,
         .localPwd = m_localPwd,
-        .dtls = m_dtls
-    };
+        .dtls = m_dtls};
 }
 
 std::string Session::dataChannelSdp() const
@@ -569,8 +586,8 @@ std::string Session::dataChannelSdp() const
      * MUST mark the stream as sendonly with the "a=sendonly" attribute.
      * */
     sdp += "a=sendrecv" ENDL;
-    /* 'actpass' due to bug in old Chromium. Actually, for incoming connection, should be 'passive':
-     * https://datatracker.ietf.org/doc/html/rfc4145#section-4 */
+    /* 'actpass' due to bug in old Chromium. Actually, for incoming connection, should be
+     * 'passive': https://datatracker.ietf.org/doc/html/rfc4145#section-4 */
     sdp += "a=setup:actpass" ENDL;
     return sdp;
 }
@@ -596,8 +613,7 @@ std::string Session::constructSdp()
     const auto tracks = m_tracks->allTracks();
 
     std::string sdp;
-    std::string localAddress =
-        (m_localAddress.address.isPureIpV6() ? "IP6 " : "IP4 ")
+    std::string localAddress = (m_localAddress.address.isPureIpV6() ? "IP6 " : "IP4 ")
         + m_localAddress.address.toString();
 #define ENDL "\r\n";
     sdp += "v=0" ENDL;
@@ -636,7 +652,11 @@ std::string Session::constructSdp()
 AnswerResult Session::processSdpAnswer(const std::string& sdp)
 {
     m_sdpParseResult = SdpParseResult::parse(sdp);
-    NX_DEBUG(this, "Sdp parsed, got remote: %1/%2", m_sdpParseResult.iceUfrag, m_sdpParseResult.icePwd);
+    NX_DEBUG(
+        this,
+        "Sdp parsed, got remote: %1/%2",
+        m_sdpParseResult.iceUfrag,
+        m_sdpParseResult.icePwd);
 
     if (m_sdpParseResult.fingerprint.type == Fingerprint::Type::none)
     {
@@ -648,7 +668,8 @@ AnswerResult Session::processSdpAnswer(const std::string& sdp)
     if (m_sdpParseResult.tracksState[kDataChannelMid] != TrackState::active)
     {
         NX_DEBUG(
-            this, "Tracks in offer and answer does not match (application track doesn't exists)");
+            this,
+            "Tracks in offer and answer does not match (application track doesn't exists)");
         return AnswerResult::failed;
     }
 
@@ -698,7 +719,9 @@ AnswerResult Session::processSdpAnswer(const std::string& sdp)
             for (const auto& [deviceId, resumePositionUs]: resumePositionsUs)
             {
                 m_consumer->seek(
-                    deviceId, resumePositionUs, [](nx::Uuid, Consumer::StreamStatus) {});
+                    deviceId,
+                    resumePositionUs,
+                    [](nx::Uuid, Consumer::StreamStatus) {});
             }
         }
     }

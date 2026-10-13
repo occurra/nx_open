@@ -42,20 +42,22 @@ void ArgumentParser::parse(int argc, const char* argv[])
 
         if (arg[0] == '-')
         {
-            //param
-            if (argLen > 1 && arg[1] == '-')    //long param
+            // param
+            if (argLen > 1 && arg[1] == '-') // long param
             {
-                //parsing long param
+                // parsing long param
                 const char* sepPos = strchr(arg, '=');
                 if (sepPos == nullptr)
-                    m_args.emplace(QString::fromUtf8(arg+2), QString()); //no value
+                    m_args.emplace(QString::fromUtf8(arg + 2), QString()); // no value
                 else
-                    m_args.emplace(QString::fromUtf8(arg+2, (int) (sepPos-(arg+2))), QString::fromUtf8(sepPos+1));
+                    m_args.emplace(
+                        QString::fromUtf8(arg + 2, (int) (sepPos - (arg + 2))),
+                        QString::fromUtf8(sepPos + 1));
             }
             else
             {
-                //short param value
-                curParamIter = m_args.emplace(QString::fromUtf8(arg+1), QString());
+                // short param value
+                curParamIter = m_args.emplace(QString::fromUtf8(arg + 1), QString());
             }
         }
         else

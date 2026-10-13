@@ -7,8 +7,7 @@
 
 namespace nx::network::aio::test {
 
-class RepetitiveTimer:
-    public ::testing::Test
+class RepetitiveTimer: public ::testing::Test
 {
 public:
     RepetitiveTimer():
@@ -16,10 +15,7 @@ public:
     {
     }
 
-    ~RepetitiveTimer()
-    {
-        m_timer.pleaseStopSync();
-    }
+    ~RepetitiveTimer() { m_timer.pleaseStopSync(); }
 
 protected:
     void registerEventHandler(TimerEventHandler timerEventHandler)
@@ -27,10 +23,7 @@ protected:
         m_timerEventHandler = std::move(timerEventHandler);
     }
 
-    void startTimer()
-    {
-        startTimer(m_timeout);
-    }
+    void startTimer() { startTimer(m_timeout); }
 
     void startTimer(std::chrono::milliseconds timeout)
     {
@@ -44,15 +37,9 @@ protected:
             });
     }
 
-    void cancelTimer()
-    {
-        m_timer.cancelSync();
-    }
+    void cancelTimer() { m_timer.cancelSync(); }
 
-    void waitForOneEvent()
-    {
-        m_timerEvents.pop();
-    }
+    void waitForOneEvent() { m_timerEvents.pop(); }
 
     void waitForMultipleEvents()
     {
@@ -60,15 +47,9 @@ protected:
             m_timerEvents.pop();
     }
 
-    void assertNoMoreEventsAreReported()
-    {
-        ASSERT_FALSE(m_timerEvents.pop(m_timeout * 7));
-    }
+    void assertNoMoreEventsAreReported() { ASSERT_FALSE(m_timerEvents.pop(m_timeout * 7)); }
 
-    std::chrono::milliseconds timeout() const
-    {
-        return m_timeout;
-    }
+    std::chrono::milliseconds timeout() const { return m_timeout; }
 
 private:
     aio::RepetitiveTimer m_timer;
@@ -86,7 +67,11 @@ TEST_F(RepetitiveTimer, invokes_the_handler_repeatedly)
 
 TEST_F(RepetitiveTimer, can_be_cancelled_in_event_handler)
 {
-    registerEventHandler([this]() { cancelTimer(); });
+    registerEventHandler(
+        [this]()
+        {
+            cancelTimer();
+        });
 
     startTimer();
     waitForOneEvent();

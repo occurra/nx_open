@@ -40,10 +40,9 @@ QString NX_UTILS_API timestampToRfc2822(std::chrono::milliseconds timestamp);
 QString NX_UTILS_API timestampToRfc2822(std::chrono::system_clock::time_point timestamp);
 QString NX_UTILS_API timestampToISO8601(std::chrono::microseconds timestamp);
 
-QString NX_UTILS_API timestampToDebugString(qint64 timestampMs,
-    const QString& format = QString());
-QString NX_UTILS_API timestampToDebugString(std::chrono::milliseconds timestamp,
-    const QString& format = QString());
+QString NX_UTILS_API timestampToDebugString(qint64 timestampMs, const QString& format = QString());
+QString NX_UTILS_API
+    timestampToDebugString(std::chrono::milliseconds timestamp, const QString& format = QString());
 
 /**
  * Convert QDateTime to HTTP header date format according to RFC 1123#5.2.14.
@@ -60,8 +59,8 @@ std::string formatDateTimeLockFree(const std::chrono::duration<Rep, Period>& dur
     // Starts with Monday to correspond to QDate::dayOfWeek() return value: 1 for Monday, 7 for
     // Sunday
     static constexpr const char* kWeekDays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-    static constexpr const char* kMonths[] = {
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    static constexpr const char* kMonths[] =
+        {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
     // Convert to seconds since epoch
     const auto secondsSinceEpoch =
@@ -74,7 +73,8 @@ std::string formatDateTimeLockFree(const std::chrono::duration<Rep, Period>& dur
         return std::string(); // Invalid time
 
     char strDateBuf[256];
-    snprintf(strDateBuf,
+    snprintf(
+        strDateBuf,
         sizeof(strDateBuf),
         "%s, %02d %s %d %02d:%02d:%02d GMT",
         kWeekDays[utcTime.tm_wday],
@@ -125,7 +125,7 @@ NX_UTILS_API std::string formatDateTime(std::chrono::steady_clock::time_point tp
  * - special value "now". In this case DATETIME_NOW is returned
  * - negative value. In this case value returned "as is"
  * @return msec since epoch
-*/
+ */
 NX_UTILS_API std::chrono::milliseconds parseDateTimeMsec(const QString& dateTimeStr);
 
 /** Same as parseDateTimeMsec(), but return usec. */

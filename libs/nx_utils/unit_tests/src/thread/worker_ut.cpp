@@ -1,13 +1,13 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
+#include <atomic>
+#include <chrono>
+#include <thread>
+#include <vector>
+
 #include <gtest/gtest.h>
 
 #include <nx/utils/thread/worker.h>
-
-#include <vector>
-#include <thread>
-#include <chrono>
-#include <atomic>
 
 namespace nx::utils::test {
 
@@ -20,15 +20,9 @@ protected:
         shouldNotGrow,
     };
 
-    void givenWorkerWithoutMaxTaskLimit()
-    {
-        m_worker.reset(new nx::utils::Worker(std::nullopt));
-    }
+    void givenWorkerWithoutMaxTaskLimit() { m_worker.reset(new nx::utils::Worker(std::nullopt)); }
 
-    void givenWorkerWithMaxTaskLimit()
-    {
-        m_worker.reset(new nx::utils::Worker(kMaxCount));
-    }
+    void givenWorkerWithMaxTaskLimit() { m_worker.reset(new nx::utils::Worker(kMaxCount)); }
 
     void whenMultipleTasksPosted(QueueSize sizePolicy, bool shouldPostFromSelf = false)
     {
@@ -42,7 +36,11 @@ protected:
         m_worker->post(
             [this]()
             {
-                m_worker->post([this]() { m_taskCount--; });
+                m_worker->post(
+                    [this]()
+                    {
+                        m_taskCount--;
+                    });
                 m_taskCount--;
             });
     }
@@ -67,30 +65,29 @@ private:
     MoveOnlyFunc<void()> createCb(QueueSize sizePolicy, bool shouldPostFromSelf)
     {
         m_taskCount++;
-        return
-            [this, shouldPostFromSelf, sizePolicy]()
+        return [this, shouldPostFromSelf, sizePolicy]()
+        {
+            switch (sizePolicy)
             {
-                switch (sizePolicy)
-                {
-                    case QueueSize::shouldGrow:
-                        while (!m_maxSizeSurspassed && m_worker->size() <= kMaxCount + 1)
-                            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                case QueueSize::shouldGrow:
+                    while (!m_maxSizeSurspassed && m_worker->size() <= kMaxCount + 1)
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    m_maxSizeSurspassed = true;
+                    break;
+                case QueueSize::shouldNotGrow:
+                    if (m_worker->size() > kMaxCount + 1)
                         m_maxSizeSurspassed = true;
-                        break;
-                    case QueueSize::shouldNotGrow:
-                        if (m_worker->size() > kMaxCount + 1)
-                            m_maxSizeSurspassed = true;
-                        std::this_thread::sleep_for(std::chrono::milliseconds(3));
-                        break;
-                }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(3));
+                    break;
+            }
 
-                if (shouldPostFromSelf)
-                {
-                    for (int i = 0; i < 3; i++)
-                        m_worker->post(createCb(sizePolicy, false));
-                }
-                m_taskCount--;
-            };
+            if (shouldPostFromSelf)
+            {
+                for (int i = 0; i < 3; i++)
+                    m_worker->post(createCb(sizePolicy, false));
+            }
+            m_taskCount--;
+        };
     }
 };
 

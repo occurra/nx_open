@@ -4,8 +4,8 @@
 
 #include <QtCore/QFile>
 
-#include <nx/utils/random.h>
 #include <nx/utils/log/assert.h>
+#include <nx/utils/random.h>
 
 namespace nx {
 namespace utils {

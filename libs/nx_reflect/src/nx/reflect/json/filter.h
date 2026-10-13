@@ -19,13 +19,18 @@ struct Matcher
     {
         if constexpr (requires(std::string_view s) { T::fromStringSafe(s); })
         {
-            return std::ranges::any_of(possibleValues,
-                [&data](const auto& v) { return data == T::fromStringSafe(v); });
+            return std::ranges::any_of(
+                possibleValues,
+                [&data](const auto& v)
+                {
+                    return data == T::fromStringSafe(v);
+                });
         }
         else
         {
             const auto json{serialize(data)};
-            return std::ranges::any_of(possibleValues,
+            return std::ranges::any_of(
+                possibleValues,
                 [&json, isDataJsonString = isJsonString(json)](const auto& v)
                 {
                     return isDataJsonString && !isJsonString(v)
@@ -39,7 +44,10 @@ struct Matcher
     {
         return std::ranges::any_of(
             possibleValues,
-            [&value](const auto& v) { return value == v; });
+            [&value](const auto& v)
+            {
+                return value == v;
+            });
     }
 };
 

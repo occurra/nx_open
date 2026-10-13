@@ -4,9 +4,7 @@
 
 namespace nx::log {
 
-AggregateLogger::AggregateLogger(
-    std::vector<std::unique_ptr<AbstractLogger>> loggers)
-    :
+AggregateLogger::AggregateLogger(std::vector<std::unique_ptr<AbstractLogger>> loggers):
     m_loggers(std::move(loggers))
 {
 }

@@ -5,7 +5,9 @@
 namespace nx::network::rest {
 
 Response::Response(
-    http::StatusCode::Value statusCode, http::HttpHeaders httpHeaders, Subscription subscription):
+    http::StatusCode::Value statusCode,
+    http::HttpHeaders httpHeaders,
+    Subscription subscription):
     statusCode(statusCode),
     httpHeaders(std::move(httpHeaders)),
     subscription(std::move(subscription))
@@ -36,7 +38,8 @@ void Response::insertOrReplaceCorsHeaders(
     bool supportedOriginCredentials,
     std::string_view methods)
 {
-    nx::network::http::insertOrReplaceCorsHeaders(&httpHeaders,
+    nx::network::http::insertOrReplaceCorsHeaders(
+        &httpHeaders,
         request.requestLine.method,
         request.headers,
         supportedOrigins.toStdString(),
@@ -48,9 +51,7 @@ Response Response::result(const JsonResult& jsonResult)
 {
     Response response;
     response.statusCode = Result::toHttpStatus(jsonResult.errorId);
-    response.content = Content{
-        http::header::ContentType::kJson,
-        QJson::serialized(jsonResult)};
+    response.content = Content{http::header::ContentType::kJson, QJson::serialized(jsonResult)};
     return response;
 }
 
@@ -58,9 +59,8 @@ Response Response::result(const UbjsonResult& ubjsonResult)
 {
     Response response;
     response.statusCode = Result::toHttpStatus(ubjsonResult.errorId);
-    response.content = Content{
-        http::header::ContentType::kUbjson,
-        QnUbjson::serialized(ubjsonResult)};
+    response.content =
+        Content{http::header::ContentType::kUbjson, QnUbjson::serialized(ubjsonResult)};
 
     return response;
 }

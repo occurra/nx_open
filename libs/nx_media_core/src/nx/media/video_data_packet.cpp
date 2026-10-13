@@ -7,16 +7,15 @@
 #include <nx/media/ffmpeg/shared_memory_frame_allocator.h>
 #include <nx/utils/log/log.h>
 
-QnCompressedVideoData::QnCompressedVideoData( CodecParametersConstPtr ctx )
-:
-    QnAbstractMediaData( VIDEO ),
-    width( -1 ),
-    height( -1 ),
-    pts( AV_NOPTS_VALUE )
+QnCompressedVideoData::QnCompressedVideoData(CodecParametersConstPtr ctx):
+    QnAbstractMediaData(VIDEO),
+    width(-1),
+    height(-1),
+    pts(AV_NOPTS_VALUE)
 {
-    //useTwice = false;
+    // useTwice = false;
     context = ctx;
-    //ignore = false;
+    // ignore = false;
     flags = {};
 }
 
@@ -30,13 +29,14 @@ void QnCompressedVideoData::assign(const QnCompressedVideoData* other)
 }
 
 QnWritableCompressedVideoData::QnWritableCompressedVideoData(
-    size_t capacity, CodecParametersConstPtr ctx):
+    size_t capacity,
+    CodecParametersConstPtr ctx):
     QnCompressedVideoData(ctx),
     m_data(capacity, CL_MEDIA_ALIGNMENT, AV_INPUT_BUFFER_PADDING_SIZE)
 {
 }
 
-//!Implementation of QnAbstractMediaData::clone
+//! Implementation of QnAbstractMediaData::clone
 QnWritableCompressedVideoData* QnWritableCompressedVideoData::clone() const
 {
     auto rez = new QnWritableCompressedVideoData();
@@ -44,13 +44,13 @@ QnWritableCompressedVideoData* QnWritableCompressedVideoData::clone() const
     return rez;
 }
 
-//!Implementation of QnAbstractMediaData::data
+//! Implementation of QnAbstractMediaData::data
 const char* QnWritableCompressedVideoData::data() const
 {
     return m_data.data();
 }
 
-//!Implementation of QnAbstractMediaData::dataSize
+//! Implementation of QnAbstractMediaData::dataSize
 size_t QnWritableCompressedVideoData::dataSize() const
 {
     return m_data.size();
@@ -126,7 +126,9 @@ QnSharedMemoryCompressedVideoDataPtr createSharedMemoryCompressedVideoData(
     if (!shmData)
         return {};
 
-    return std::make_shared<QnSharedMemoryCompressedVideoData>(std::move(*shmData), std::move(ctx));
+    return std::make_shared<QnSharedMemoryCompressedVideoData>(
+        std::move(*shmData),
+        std::move(ctx));
 }
 
 bool isCompressedFrameInSharedMemory(const QnCompressedVideoData* frame)
@@ -134,8 +136,8 @@ bool isCompressedFrameInSharedMemory(const QnCompressedVideoData* frame)
     return dynamic_cast<const QnSharedMemoryCompressedVideoData*>(frame) != nullptr;
 }
 
-std::optional<SharedMemoryCompressedVideoDataDescriptor> getSharedMemoryCompressedVideoDataDescriptor(
-    const QnCompressedVideoData* frame)
+std::optional<SharedMemoryCompressedVideoDataDescriptor>
+    getSharedMemoryCompressedVideoDataDescriptor(const QnCompressedVideoData* frame)
 {
     const auto* shmFrame = dynamic_cast<const QnSharedMemoryCompressedVideoData*>(frame);
     if (!shmFrame)

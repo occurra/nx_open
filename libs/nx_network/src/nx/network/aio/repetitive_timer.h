@@ -10,8 +10,7 @@
 
 namespace nx::network::aio {
 
-class NX_NETWORK_API RepetitiveTimer:
-    public BasicPollable
+class NX_NETWORK_API RepetitiveTimer: public BasicPollable
 {
     using base_type = BasicPollable;
 
@@ -26,9 +25,7 @@ public:
      * Starts timer.
      * timerFunc will be invoked every timeout until cancelled.
      */
-    void start(
-        std::chrono::milliseconds timeout,
-        TimerEventHandler timerFunc);
+    void start(std::chrono::milliseconds timeout, TimerEventHandler timerFunc);
 
     /**
      * Cancels timer waiting for timerFunc to complete.

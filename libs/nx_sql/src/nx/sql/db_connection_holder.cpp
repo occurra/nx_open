@@ -8,15 +8,14 @@
 #include <nx/utils/log/log.h>
 #include <nx/utils/uuid.h>
 
-#include "db_statistics_collector.h"
 #include "db_connection_factory.h"
+#include "db_statistics_collector.h"
 
 namespace nx::sql {
 
 DbConnectionHolder::DbConnectionHolder(
     const ConnectionOptions& connectionOptions,
-    std::unique_ptr<AbstractDbConnection> connection)
-    :
+    std::unique_ptr<AbstractDbConnection> connection):
     m_connectionOptions(connectionOptions),
     m_connection(std::move(connection))
 {
@@ -43,9 +42,14 @@ bool DbConnectionHolder::open()
 {
     if (!m_connection->open())
     {
-        NX_WARNING(this, "Failed to establish connection to %1 DB %2 at %3:%4. %5",
-            connectionOptions().driverType, connectionOptions().dbName, connectionOptions().hostName,
-            connectionOptions().port, m_connection->lastError());
+        NX_WARNING(
+            this,
+            "Failed to establish connection to %1 DB %2 at %3:%4. %5",
+            connectionOptions().driverType,
+            connectionOptions().dbName,
+            connectionOptions().hostName,
+            connectionOptions().port,
+            m_connection->lastError());
         return false;
     }
 
@@ -94,15 +98,19 @@ bool DbConnectionHolder::tuneMySqlConnection()
     if (!connectionOptions().encoding.isEmpty())
     {
         auto query = m_connection->createQuery();
-        query->prepare(nx::format("SET NAMES '%1'").args(connectionOptions().encoding).toStdString());
+        query->prepare(
+            nx::format("SET NAMES '%1'").args(connectionOptions().encoding).toStdString());
         try
         {
             query->exec();
         }
         catch (const Exception& e)
         {
-            NX_WARNING(this,"Failed to set connection character set to \"%1\". %2",
-                connectionOptions().encoding, e.what());
+            NX_WARNING(
+                this,
+                "Failed to set connection character set to \"%1\". %2",
+                connectionOptions().encoding,
+                e.what());
             return false;
         }
     }
@@ -112,14 +120,13 @@ bool DbConnectionHolder::tuneMySqlConnection()
 
 std::shared_ptr<nx::sql::QueryContext> DbConnectionHolder::createNewTran()
 {
-    auto deleter =
-        [](nx::sql::QueryContext* queryContext)
-        {
-            if (queryContext->transaction()->isActive())
-                queryContext->transaction()->rollback();
-            delete queryContext->transaction();
-            delete queryContext;
-        };
+    auto deleter = [](nx::sql::QueryContext* queryContext)
+    {
+        if (queryContext->transaction()->isActive())
+            queryContext->transaction()->rollback();
+        delete queryContext->transaction();
+        delete queryContext;
+    };
 
     auto transaction = std::make_unique<nx::sql::Transaction>(dbConnection());
     if (transaction->begin() != nx::sql::DBResultCode::ok)

@@ -12,7 +12,8 @@ struct accessor_traits: accessor_traits<decltype(&T::operator())>
 };
 
 template<typename T, typename R>
-struct accessor_traits<R T::*> {
+struct accessor_traits<R T::*>
+{
     using result = R;
     using args = std::tuple<T>;
     using arg1 = typename std::tuple_element<0, args>;

@@ -23,7 +23,7 @@ public:
 
     float toFloat() const;
     QString toString() const;
-    QString toString(const QString &format) const;
+    QString toString(const QString& format) const;
 
     static QList<QnAspectRatio> standardRatios();
     static QnAspectRatio closestStandardRatio(float aspectRatio);

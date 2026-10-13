@@ -18,16 +18,14 @@ std::unique_ptr<AbstractLogger> LoggerBuilder::buildLogger(
     const std::set<Filter>& filters,
     std::unique_ptr<AbstractWriter> writer)
 {
-    NX_ASSERT(!writer || settings.loggers.size() == 1,
+    NX_ASSERT(
+        !writer || settings.loggers.size() == 1,
         "Method semantics allows writer setup for the single logger only.");
 
     std::vector<std::unique_ptr<AbstractLogger>> loggers;
     for (const auto& loggerSettings: settings.loggers)
     {
-        auto logger = buildLogger(
-            loggerSettings,
-            filters,
-            std::exchange(writer, nullptr));
+        auto logger = buildLogger(loggerSettings, filters, std::exchange(writer, nullptr));
 
         if (!logger)
         {
@@ -55,7 +53,10 @@ std::unique_ptr<Logger> LoggerBuilder::buildLogger(
     if (settings.level.primary == Level::undefined
         || settings.level.primary == Level::notConfigured)
     {
-        NX_WARNING(NX_SCOPE_TAG, "Attempt to create an unconfigured logger %1", settings.logBaseName);
+        NX_WARNING(
+            NX_SCOPE_TAG,
+            "Attempt to create an unconfigured logger %1",
+            settings.logBaseName);
         return nullptr;
     }
 
@@ -82,9 +83,8 @@ std::unique_ptr<Logger> LoggerBuilder::buildLogger(
 
     if (!writer)
     {
-        const QString baseName = settings.logBaseName.isEmpty()
-            ? kDefaultLogBaseName
-            : settings.logBaseName;
+        const QString baseName =
+            settings.logBaseName.isEmpty() ? kDefaultLogBaseName : settings.logBaseName;
         if (baseName != QLatin1String("-"))
         {
             File::Settings fileSettings;
@@ -92,9 +92,8 @@ std::unique_ptr<Logger> LoggerBuilder::buildLogger(
             fileSettings.maxFileSizeB = settings.maxFileSizeB;
             fileSettings.maxFileTimePeriodS = settings.maxFileTimePeriodS;
             fileSettings.archivingEnabled = settings.archivingEnabled;
-            fileSettings.name = settings.directory.isEmpty()
-                ? baseName
-                : (settings.directory + "/" + baseName);
+            fileSettings.name =
+                settings.directory.isEmpty() ? baseName : (settings.directory + "/" + baseName);
 
             writer = std::make_unique<File>(fileSettings);
         }
@@ -105,7 +104,9 @@ std::unique_ptr<Logger> LoggerBuilder::buildLogger(
     }
 
     for (const auto& expression: invalidFilters)
-        writer->write(Level::error, nx::format("Regular expression %1 is invalid").arg(expression));
+        writer->write(
+            Level::error,
+            nx::format("Regular expression %1 is invalid").arg(expression));
 
     logger->setWriter(std::move(writer));
     return logger;

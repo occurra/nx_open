@@ -14,7 +14,10 @@ template<typename T>
 static constexpr auto listFieldNames()
 {
     return nx::reflect::visitAllFields<T>(
-        [](auto&&... fields) { return std::array{std::string_view{fields.name()}...}; });
+        [](auto&&... fields)
+        {
+            return std::array{std::string_view{fields.name()}...};
+        });
 }
 
 } // namespace nx::reflect

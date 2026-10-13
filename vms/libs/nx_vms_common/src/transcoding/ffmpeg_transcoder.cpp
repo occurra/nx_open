@@ -69,7 +69,8 @@ bool QnFfmpegTranscoder::setVideoCodec(
             m_mediaTranscoder.resetVideo();
             break;
         case TM_FfmpegTranscode:
-            m_mediaTranscoder.setVideoCodec(codec, quality, sourceResolition, resolution, bitrate, params);
+            m_mediaTranscoder
+                .setVideoCodec(codec, quality, sourceResolition, resolution, bitrate, params);
             break;
         default:
             NX_ERROR(this, "Unknown transcoding method.");
@@ -97,10 +98,10 @@ bool QnFfmpegTranscoder::setAudioCodec(AVCodecID codec, TranscodeMethod method)
 
 int QnFfmpegTranscoder::openAndTranscodeDelayedData()
 {
-    const auto& video = m_delayedVideoQueue.isEmpty() ?
-        QnConstCompressedVideoDataPtr() : m_delayedVideoQueue.first();
-    const auto& audio = m_delayedAudioQueue.isEmpty() ?
-        QnConstCompressedAudioDataPtr() : m_delayedAudioQueue.first();
+    const auto& video = m_delayedVideoQueue.isEmpty() ? QnConstCompressedVideoDataPtr()
+                                                      : m_delayedVideoQueue.first();
+    const auto& audio = m_delayedAudioQueue.isEmpty() ? QnConstCompressedAudioDataPtr()
+                                                      : m_delayedAudioQueue.first();
 
     if (m_beforeOpenCallback)
         m_beforeOpenCallback(this, video, audio);
@@ -130,7 +131,9 @@ int QnFfmpegTranscoder::openAndTranscodeDelayedData()
     return 0;
 }
 
-int QnFfmpegTranscoder::transcodePacket(const QnConstAbstractMediaDataPtr& media, nx::utils::ByteArray* const result)
+int QnFfmpegTranscoder::transcodePacket(
+    const QnConstAbstractMediaDataPtr& media,
+    nx::utils::ByteArray* const result)
 {
     if (result)
         result->clear();
@@ -145,7 +148,8 @@ int QnFfmpegTranscoder::transcodePacket(const QnConstAbstractMediaDataPtr& media
         return 0;
     }
 
-    if (media->dataType != QnAbstractMediaData::VIDEO && media->dataType != QnAbstractMediaData::AUDIO)
+    if (media->dataType != QnAbstractMediaData::VIDEO
+        && media->dataType != QnAbstractMediaData::AUDIO)
         return 0; // transcode only audio and video, skip packet
 
     m_eofCounter = 0;
@@ -161,13 +165,14 @@ int QnFfmpegTranscoder::transcodePacket(const QnConstAbstractMediaDataPtr& media
         else
             m_delayedAudioQueue << std::dynamic_pointer_cast<const QnCompressedAudioData>(media);
         doTranscoding = false;
-        if ((m_videoCodec != AV_CODEC_ID_NONE || m_beforeOpenCallback) && m_delayedVideoQueue.isEmpty()
-            && m_delayedAudioQueue.size() < (int)kMaxDelayedQueueSize)
+        if ((m_videoCodec != AV_CODEC_ID_NONE || m_beforeOpenCallback)
+            && m_delayedVideoQueue.isEmpty()
+            && m_delayedAudioQueue.size() < (int) kMaxDelayedQueueSize)
         {
             return 0; // not ready to init
         }
         if (m_audioCodec != AV_CODEC_ID_NONE && m_delayedAudioQueue.isEmpty()
-            && m_delayedVideoQueue.size() < (int)kMaxDelayedQueueSize)
+            && m_delayedVideoQueue.size() < (int) kMaxDelayedQueueSize)
         {
             return 0; // not ready to initQnFfmpegTranscoder
         }
@@ -197,7 +202,9 @@ int QnFfmpegTranscoder::finalize(nx::utils::ByteArray* const result)
         int errCode = openAndTranscodeDelayedData();
         if (errCode != 0)
         {
-            NX_WARNING(this, "Failed to transcode delayed data on finalize, error code: %1",
+            NX_WARNING(
+                this,
+                "Failed to transcode delayed data on finalize, error code: %1",
                 errCode);
             return errCode;
         }
@@ -206,11 +213,10 @@ int QnFfmpegTranscoder::finalize(nx::utils::ByteArray* const result)
     if (!m_initialized)
         return 0;
 
-    auto handler =
-        [this](const QnConstAbstractMediaDataPtr& media)
-        {
-            m_muxer.process(media);
-        };
+    auto handler = [this](const QnConstAbstractMediaDataPtr& media)
+    {
+        m_muxer.process(media);
+    };
 
     if (!m_mediaTranscoder.finalize(handler))
     {
@@ -245,13 +251,17 @@ QnFfmpegTranscoder::QnFfmpegTranscoder(const Config& config, nx::metric::Storage
     m_muxer(config.muxerConfig),
     m_config(config)
 {
-    NX_DEBUG(this, "Created new ffmpeg transcoder. Total transcoder count %1",
+    NX_DEBUG(
+        this,
+        "Created new ffmpeg transcoder. Total transcoder count %1",
         QnFfmpegTranscoder_count.fetchAndAddOrdered(1) + 1);
 }
 
 QnFfmpegTranscoder::~QnFfmpegTranscoder()
 {
-    NX_DEBUG(this, "Destroying ffmpeg transcoder. Total transcoder count %1",
+    NX_DEBUG(
+        this,
+        "Destroying ffmpeg transcoder. Total transcoder count %1",
         QnFfmpegTranscoder_count.fetchAndAddOrdered(-1) - 1);
 }
 
@@ -276,7 +286,9 @@ bool QnFfmpegTranscoder::open(const AVCodecParameters* codecParameters)
     return true;
 }
 
-bool QnFfmpegTranscoder::open(const QnConstCompressedVideoDataPtr& video, const QnConstCompressedAudioDataPtr& audio)
+bool QnFfmpegTranscoder::open(
+    const QnConstCompressedVideoDataPtr& video,
+    const QnConstCompressedAudioDataPtr& audio)
 {
     if (!video)
         m_mediaTranscoder.resetVideo();
@@ -287,7 +299,6 @@ bool QnFfmpegTranscoder::open(const QnConstCompressedVideoDataPtr& video, const 
         m_mediaTranscoder.resetAudio();
     else if (!NX_ASSERT(audio->context))
         return false;
-
 
     if (video && m_videoCodec != AV_CODEC_ID_NONE)
     {
@@ -306,7 +317,8 @@ bool QnFfmpegTranscoder::open(const QnConstCompressedVideoDataPtr& video, const 
             if (m_mediaTranscoder.videoTranscoder()->getCodecContext())
             {
                 avcodec_parameters_from_context(
-                    codecpar, m_mediaTranscoder.videoTranscoder()->getCodecContext());
+                    codecpar,
+                    m_mediaTranscoder.videoTranscoder()->getCodecContext());
             }
         }
         else
@@ -317,9 +329,9 @@ bool QnFfmpegTranscoder::open(const QnConstCompressedVideoDataPtr& video, const 
             if (isMoovFormat(m_muxer.container()))
             {
                 if (!nx::media::fillExtraDataAnnexB(
-                    video.get(),
-                    &codecpar->extradata,
-                    &codecpar->extradata_size))
+                        video.get(),
+                        &codecpar->extradata,
+                        &codecpar->extradata_size))
                 {
                     NX_WARNING(this, "Failed to build extra data");
                 }
@@ -340,13 +352,13 @@ bool QnFfmpegTranscoder::open(const QnConstCompressedVideoDataPtr& video, const 
         // regardless of the current m_muxer state.
         if (AV_CODEC_ID_PROBE == m_audioCodec)
         {
-            const auto isCodecSupported =
-                [this](const AVCodecID c)
-                {
-                    return m_muxer.isCodecSupported(c);
-                };
+            const auto isCodecSupported = [this](const AVCodecID c)
+            {
+                return m_muxer.isCodecSupported(c);
+            };
 
-            if (const auto sourceCodec = audio->context->getCodecId(); isCodecSupported(sourceCodec))
+            if (const auto sourceCodec = audio->context->getCodecId();
+                isCodecSupported(sourceCodec))
             {
                 // This check itself is not sufficient for direct stream copy.
                 // Additional container/bitstream compatibility checks should be performed here
@@ -356,31 +368,32 @@ bool QnFfmpegTranscoder::open(const QnConstCompressedVideoDataPtr& video, const 
             else
             {
                 const auto container = m_muxer.container().toLower();
-                const std::vector supportedCodecs =
-                    kAudioFallbacksByContainer.contains(container)
-                        ? kAudioFallbacksByContainer.at(container)
-                        : kAudioFallbacks
-                    | std::views::filter(isCodecSupported)
-                    | nx::ranges::to<std::vector>();
+                const std::vector supportedCodecs = kAudioFallbacksByContainer.contains(container)
+                    ? kAudioFallbacksByContainer.at(container)
+                    : kAudioFallbacks | std::views::filter(isCodecSupported)
+                        | nx::ranges::to<std::vector>();
 
                 if (supportedCodecs.empty())
                 {
                     m_audioCodec = AV_CODEC_ID_NONE;
                     m_mediaTranscoder.resetAudio();
                     NX_WARNING(
-                        this, "No supported audio codecs for container %1", m_muxer.container());
+                        this,
+                        "No supported audio codecs for container %1",
+                        m_muxer.container());
                 }
                 else
                 {
-                    NX_DEBUG(this,
+                    NX_DEBUG(
+                        this,
                         "Supported audio codecs for container %1: %2",
                         m_muxer.container(),
-                        supportedCodecs
-                            | std::views::transform(codecNameForId)
+                        supportedCodecs | std::views::transform(codecNameForId)
                             | nx::ranges::to<std::vector>());
 
                     const auto fallback = supportedCodecs.front();
-                    NX_DEBUG(this,
+                    NX_DEBUG(
+                        this,
                         "Selecting fallback audio codec %1 instead of %2 for container %3",
                         codecNameForId(fallback),
                         codecNameForId(sourceCodec),
@@ -400,7 +413,10 @@ bool QnFfmpegTranscoder::open(const QnConstCompressedVideoDataPtr& video, const 
 
         if (m_mediaTranscoder.audioTranscoder() && !m_mediaTranscoder.openAudio(audio))
         {
-            NX_WARNING(this, "Failed to open audio codec %1: stream disabled.", codecNameForId(m_audioCodec));
+            NX_WARNING(
+                this,
+                "Failed to open audio codec %1: stream disabled.",
+                codecNameForId(m_audioCodec));
             m_mediaTranscoder.resetAudio();
             m_audioCodec = AV_CODEC_ID_NONE;
         }
@@ -460,10 +476,10 @@ void QnFfmpegTranscoder::setTimeZone(const nx::vms::api::ServerTimeZoneInformati
     m_timeZone = value;
 }
 
-bool QnFfmpegTranscoder::transcodePacketInternal(
-    const QnConstAbstractMediaDataPtr& media)
+bool QnFfmpegTranscoder::transcodePacketInternal(const QnConstAbstractMediaDataPtr& media)
 {
-    return m_mediaTranscoder.transcodePacket(media,
+    return m_mediaTranscoder.transcodePacket(
+        media,
         [this](const QnConstAbstractMediaDataPtr& media)
         {
             m_muxer.process(media);

@@ -25,6 +25,7 @@ public:
     virtual QSize updatedResolution(const QSize& srcSize) override;
 
     int angle() const { return m_angle; }
+
 private:
     int m_angle;
 };

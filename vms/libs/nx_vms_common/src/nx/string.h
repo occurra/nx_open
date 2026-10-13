@@ -81,19 +81,13 @@ public:
         return base_type::number((qulonglong) n, base);
     }
 
-    template<
-        typename Number,
-        typename = std::enable_if_t<std::is_integral_v<Number>>
-    >
+    template<typename Number, typename = std::enable_if_t<std::is_integral_v<Number>>>
     static nx::String number(Number n, int base = 10)
     {
         return nx::String(base_type::number(n, base));
     }
 
-    template<
-        typename Number,
-        typename = std::enable_if_t<std::is_floating_point_v<Number>>
-    >
+    template<typename Number, typename = std::enable_if_t<std::is_floating_point_v<Number>>>
     static nx::String number(Number n, char f = 'g', int prec = 6)
     {
         return nx::String(base_type::number(n, f, prec));
@@ -130,6 +124,9 @@ inline nx::String operator+(const nx::String& left, const char* right)
 // Fusion serialization helpers.
 
 NX_VMS_COMMON_API void serialize(QnJsonContext* ctx, const nx::String& value, QJsonValue* target);
-NX_VMS_COMMON_API bool deserialize(QnJsonContext* ctx, const QJsonValue& value, nx::String* target);
+NX_VMS_COMMON_API bool deserialize(
+    QnJsonContext* ctx,
+    const QJsonValue& value,
+    nx::String* target);
 
 } // namespace nx

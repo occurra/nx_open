@@ -17,12 +17,11 @@ extern const NX_UTILS_API nx::log::Tag kMainTag;
 extern const NX_UTILS_API nx::log::Tag kHttpTag;
 extern const NX_UTILS_API nx::log::Tag kSystemTag;
 
-constexpr size_t kLogNamesCount =
-    nx::reflect::enumeration::visitAllItems<LogName>(
-        []([[maybe_unused]] auto&&... items)
-        {
-            return sizeof...(items);
-        });
+constexpr size_t kLogNamesCount = nx::reflect::enumeration::visitAllItems<LogName>(
+    []([[maybe_unused]] auto&&... items)
+    {
+        return sizeof...(items);
+    });
 
 NX_UTILS_API std::array<QString, kLogNamesCount> getCompatLoggerNames();
 NX_UTILS_API std::shared_ptr<nx::log::AbstractLogger> getLogger(const LogName id);

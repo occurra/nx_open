@@ -65,10 +65,7 @@ public:
     {
     }
 
-    ~SynchronousReflector()
-    {
-        stop();
-    }
+    ~SynchronousReflector() { stop(); }
 
     void stop()
     {
@@ -81,8 +78,7 @@ public:
 
     void start()
     {
-        m_ioThread = std::thread(
-            std::bind(&SynchronousReflector::ioThreadMain, this));
+        m_ioThread = std::thread(std::bind(&SynchronousReflector::ioThreadMain, this));
     }
 
     std::unique_ptr<AbstractStreamSocket> takeSocket()
@@ -101,8 +97,8 @@ private:
 
     void ioThreadMain()
     {
-        if (!m_streamSocket->setRecvTimeout(std::chrono::milliseconds(1)) ||
-            !m_streamSocket->setSendTimeout(std::chrono::milliseconds(1)))
+        if (!m_streamSocket->setRecvTimeout(std::chrono::milliseconds(1))
+            || !m_streamSocket->setSendTimeout(std::chrono::milliseconds(1)))
         {
             return;
         }
@@ -111,7 +107,7 @@ private:
         {
             std::array<char, 4 * 1024> readBuf;
 
-            int bytesRead = m_streamSocket->recv(readBuf.data(), (int)readBuf.size());
+            int bytesRead = m_streamSocket->recv(readBuf.data(), (int) readBuf.size());
             if (bytesRead <= 0)
             {
                 if (SystemError::getLastOSErrorCode() == SystemError::timedOut)
@@ -132,8 +128,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class SynchronousReflectorPool:
-    public AbstractReflectorPool
+class SynchronousReflectorPool: public AbstractReflectorPool
 {
 public:
     virtual ~SynchronousReflectorPool()
@@ -177,8 +172,7 @@ private:
 
 using AbstractStreamSocketAsyncReflector = aio::AsyncChannelReflector<AbstractStreamSocket>;
 
-class AsynchronousReflectorPool:
-    public AbstractReflectorPool
+class AsynchronousReflectorPool: public AbstractReflectorPool
 {
 public:
     AsynchronousReflectorPool():
@@ -188,7 +182,7 @@ public:
 
     virtual ~AsynchronousReflectorPool()
     {
-        decltype (m_reflectors) acceptedConnections;
+        decltype(m_reflectors) acceptedConnections;
         {
             NX_MUTEX_LOCKER lock(&m_mutex);
             m_terminated = true;
@@ -209,11 +203,13 @@ public:
 
         m_reflectors.push_back(nullptr);
         auto asyncReflector =
-            std::make_unique<AbstractStreamSocketAsyncReflector>(
-                std::move(streamSocket));
+            std::make_unique<AbstractStreamSocketAsyncReflector>(std::move(streamSocket));
         asyncReflector->start(
-            std::bind(&AsynchronousReflectorPool::onReflectorDone, this,
-                --m_reflectors.end(), _1));
+            std::bind(
+                &AsynchronousReflectorPool::onReflectorDone,
+                this,
+                --m_reflectors.end(),
+                _1));
         m_reflectors.back() = std::move(asyncReflector);
     }
 
@@ -255,8 +251,7 @@ private:
 /**
  * These tests use SyncSslSocket on one side to guarantee that ssl is actually implied in test.
  */
-class SslSocketVerifySslIsActuallyUsed:
-    public ::testing::Test
+class SslSocketVerifySslIsActuallyUsed: public ::testing::Test
 {
 public:
     SslSocketVerifySslIsActuallyUsed():
@@ -268,34 +263,24 @@ public:
         startAcceptor();
     }
 
-    ~SslSocketVerifySslIsActuallyUsed()
-    {
-        stopAcceptor();
-    }
+    ~SslSocketVerifySslIsActuallyUsed() { stopAcceptor(); }
 
-    void switchToSynchronousMode()
-    {
-        m_reflectorPoolInUse = &m_synchronousReflectorPool;
-    }
+    void switchToSynchronousMode() { m_reflectorPoolInUse = &m_synchronousReflectorPool; }
 
-    void switchToAsynchronousMode()
-    {
-        m_reflectorPoolInUse = &m_asynchronousReflectorPool;
-    }
+    void switchToAsynchronousMode() { m_reflectorPoolInUse = &m_asynchronousReflectorPool; }
 
 protected:
     void givenEstablishedConnection()
     {
-        ASSERT_TRUE(m_clientSocket.connect(m_acceptor->getLocalAddress(), nx::network::kNoTimeout));
+        ASSERT_TRUE(
+            m_clientSocket.connect(m_acceptor->getLocalAddress(), nx::network::kNoTimeout));
     }
 
     void whenSentRandomData()
     {
         prepareTestData();
 
-        ASSERT_EQ(
-            m_testData.size(),
-            m_clientSocket.send(m_testData.data(), m_testData.size()));
+        ASSERT_EQ(m_testData.size(), m_clientSocket.send(m_testData.data(), m_testData.size()));
     }
 
     void thenSameDataHasBeenReceivedInResponse()
@@ -315,10 +300,7 @@ protected:
             m_acceptor->pleaseStopSync();
     }
 
-    AbstractReflectorPool* reflectorPoolInUse()
-    {
-        return m_reflectorPoolInUse;
-    }
+    AbstractReflectorPool* reflectorPoolInUse() { return m_reflectorPoolInUse; }
 
     AbstractReflectorPool* unusedReflectorPool()
     {
@@ -429,11 +411,10 @@ protected:
         givenConnectedSocket();
         setClientSocketSendTimeout(std::chrono::milliseconds(1));
 
-        const auto randomData = nx::utils::generateRandomName(64*1024);
+        const auto randomData = nx::utils::generateRandomName(64 * 1024);
         for (;;)
         {
-            int bytesSent =
-                connection()->send(randomData.data(), randomData.size());
+            int bytesSent = connection()->send(randomData.data(), randomData.size());
             if (bytesSent >= 0)
             {
                 m_dataSent += randomData;
@@ -497,10 +478,7 @@ protected:
         ASSERT_EQ(expected, m_prevConnectResult);
     }
 
-    void assertServerReceivedAllDataSent()
-    {
-        assertServerReceivedData(m_dataSent);
-    }
+    void assertServerReceivedAllDataSent() { assertServerReceivedData(m_dataSent); }
 
     void assertServerReceivedData(const nx::Buffer& expected)
     {
@@ -518,10 +496,7 @@ protected:
         ASSERT_EQ(expected, dataReceived);
     }
 
-    void assertServerReceivedPing()
-    {
-        assertServerReceivedData(clientMessage());
-    }
+    void assertServerReceivedPing() { assertServerReceivedData(clientMessage()); }
 
     void assertClientConnectionReportsEncryptionEnabled()
     {
@@ -672,7 +647,9 @@ protected:
     void whenDoHandshake()
     {
         m_encryptedConnection = std::make_unique<ssl::ClientStreamSocket>(
-            Context::instance(), takeConnection(), kAcceptAnyCertificateCallback);
+            Context::instance(),
+            takeConnection(),
+            kAcceptAnyCertificateCallback);
         ASSERT_TRUE(m_encryptedConnection->setNonBlockingMode(true));
         m_encryptedConnection->handshakeAsync(
             [this](SystemError::ErrorCode errorCode)
@@ -711,8 +688,8 @@ class SslSocketCertificateVerification:
     using base_type = network::test::StreamSocketAcceptance<SslSocketBothEndsEncryptedTypeSet>;
 
 public:
-    SslSocketCertificateVerification()
-        : m_useAsyncCallback(Param::kUseAsyncCallback)
+    SslSocketCertificateVerification():
+        m_useAsyncCallback(Param::kUseAsyncCallback)
     {
     }
 
@@ -732,10 +709,7 @@ protected:
         givenAcceptingServerSocket();
     }
 
-    const Certificate& installedCertificate() const
-    {
-        return m_certificate;
-    }
+    const Certificate& installedCertificate() const { return m_certificate; }
 
     void installApprovingCertificateVerifier()
     {
@@ -753,8 +727,11 @@ protected:
                     VerifyCertificateCallbackAsyncCompletionHandler completionHandler)
                 {
                     CertificateView certificate = chain.front();
-                    NX_VERBOSE(this, "Received certificate (%1; %2)",
-                        certificate.serialNumber(), certificate.issuer());
+                    NX_VERBOSE(
+                        this,
+                        "Received certificate (%1; %2)",
+                        certificate.serialNumber(),
+                        certificate.issuer());
                     m_receivedCertificates.push(Certificate(certificate));
                     m_timerManager.addTimer(
                         [completionHandler = std::move(completionHandler)](utils::TimerId)
@@ -770,8 +747,11 @@ protected:
                 [this](CertificateChainView chain, StreamSocket* /*socket*/)
                 {
                     CertificateView certificate = chain.front();
-                    NX_VERBOSE(this, "Received certificate (%1; %2)",
-                        certificate.serialNumber(), certificate.issuer());
+                    NX_VERBOSE(
+                        this,
+                        "Received certificate (%1; %2)",
+                        certificate.serialNumber(),
+                        certificate.issuer());
                     m_receivedCertificates.push(Certificate(certificate));
                     return true;
                 });
@@ -798,28 +778,26 @@ protected:
         }
         else
         {
-            connection()->setSyncVerifyCertificateChainCallback([](auto&&...) { return false; });
+            connection()->setSyncVerifyCertificateChainCallback(
+                [](auto&&...)
+                {
+                    return false;
+                });
         }
     }
 
-    void thenCertificateIsReceived()
-    {
-        m_lastReceivedCertificate = m_receivedCertificates.pop();
-    }
+    void thenCertificateIsReceived() { m_lastReceivedCertificate = m_receivedCertificates.pop(); }
 
     void andCertificateAttributesAreExpected()
     {
+        ASSERT_EQ(installedCertificate().issuer(), m_lastReceivedCertificate->issuer());
+
         ASSERT_EQ(
-            installedCertificate().issuer(),
-            m_lastReceivedCertificate->issuer());
-
-        ASSERT_EQ(installedCertificate().serialNumber(), m_lastReceivedCertificate->serialNumber());
+            installedCertificate().serialNumber(),
+            m_lastReceivedCertificate->serialNumber());
     }
 
-    const Certificate& lastReceivedCertificate() const
-    {
-        return *m_lastReceivedCertificate;
-    }
+    const Certificate& lastReceivedCertificate() const { return *m_lastReceivedCertificate; }
 
 private:
     bool m_useAsyncCallback;
@@ -862,24 +840,27 @@ TYPED_TEST_P(SslSocketCertificateVerification, the_callback_receives_certificate
     this->andCertificateAttributesAreExpected();
 }
 
-REGISTER_TYPED_TEST_SUITE_P(SslSocketCertificateVerification,
+REGISTER_TYPED_TEST_SUITE_P(
+    SslSocketCertificateVerification,
     connect_succeeds_if_server_certificate_is_verified,
     connect_fails_if_server_certificate_is_not_verified,
     the_callback_receives_certificate_information);
 
-struct VerificationTypeAsync { static constexpr bool kUseAsyncCallback = true; };
-struct VerificationTypeSync { static constexpr bool kUseAsyncCallback = false; };
+struct VerificationTypeAsync
+{
+    static constexpr bool kUseAsyncCallback = true;
+};
+struct VerificationTypeSync
+{
+    static constexpr bool kUseAsyncCallback = false;
+};
 using CallbackTypes = ::testing::Types<VerificationTypeAsync, VerificationTypeSync>;
 
-INSTANTIATE_TYPED_TEST_SUITE_P(
-    CallbackType,
-    SslSocketCertificateVerification,
-    CallbackTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(CallbackType, SslSocketCertificateVerification, CallbackTypes);
 
 //-------------------------------------------------------------------------------------------------
 
-class SslSocketCertificateSelection:
-    public SslSocketCertificateVerification<VerificationTypeAsync>
+class SslSocketCertificateSelection: public SslSocketCertificateVerification<VerificationTypeAsync>
 {
     using base_type = SslSocketCertificateVerification<VerificationTypeAsync>;
 
@@ -900,10 +881,7 @@ protected:
         setRandomCertificateAsDefault();
     }
 
-    void replaceDefaultCertificate()
-    {
-        setRandomCertificateAsDefault();
-    }
+    void replaceDefaultCertificate() { setRandomCertificateAsDefault(); }
 
     void registerMultipleCertificatesOnDifferentVirtualHosts(int count = 3)
     {
@@ -912,10 +890,7 @@ protected:
         setRandomCertificatesForVirtualHosts();
     }
 
-    void replaceAllVirtualHostsCertificates()
-    {
-        setRandomCertificatesForVirtualHosts();
-    }
+    void replaceAllVirtualHostsCertificates() { setRandomCertificatesForVirtualHosts(); }
 
     void setRandomCertificatesForVirtualHost(const std::string& hostname)
     {
@@ -933,10 +908,7 @@ protected:
         whenConnectToVirtualHost(nx::utils::random::choice(m_virtualHosts));
     }
 
-    void whenConnectToLocalHost()
-    {
-        whenConnectToVirtualHost("127.0.0.1");
-    }
+    void whenConnectToLocalHost() { whenConnectToVirtualHost("127.0.0.1"); }
 
     void whenConnectToVirtualHost(const std::string& targetHostname)
     {
@@ -957,14 +929,9 @@ protected:
         m_hostToCertificate.erase(hostname);
     }
 
-    std::string chooseRandomVirtualHostname()
-    {
-        return nx::utils::random::choice(m_virtualHosts);
-    }
+    std::string chooseRandomVirtualHostname() { return nx::utils::random::choice(m_virtualHosts); }
 
-    void startConcurrentConnections(
-        const std::string& hostname,
-        int concurrentConnectionCount)
+    void startConcurrentConnections(const std::string& hostname, int concurrentConnectionCount)
     {
         m_lastConnectionHostname = hostname;
 
@@ -991,8 +958,7 @@ protected:
         m_connectionsGenerator->start();
     }
 
-    void waitUntilCorrespondingCertificateIsReceivedFromServer(
-        const std::string& hostname)
+    void waitUntilCorrespondingCertificateIsReceivedFromServer(const std::string& hostname)
     {
         const auto it = m_hostToCertificate.find(hostname);
         const auto expected = it != m_hostToCertificate.end() ? it->second : m_defaultCertificate;
@@ -1015,10 +981,7 @@ protected:
             lastReceivedCertificate());
     }
 
-    void thenServerChoosesDefaultCertificate()
-    {
-        thenServerChoosesProperCertificate();
-    }
+    void thenServerChoosesDefaultCertificate() { thenServerChoosesProperCertificate(); }
 
 private:
     void setRandomCertificateAsDefault()
@@ -1030,8 +993,11 @@ private:
         ASSERT_TRUE(x509.parsePem(pem));
         m_defaultCertificate = x509.certificates().front();
 
-        NX_VERBOSE(this, "Set default certificate to (%1; %2)",
-            m_defaultCertificate.serialNumber(), m_defaultCertificate.issuer());
+        NX_VERBOSE(
+            this,
+            "Set default certificate to (%1; %2)",
+            m_defaultCertificate.serialNumber(),
+            m_defaultCertificate.issuer());
     }
 
     std::vector<std::string> registerVirtualDnsNames(int count)
@@ -1043,7 +1009,8 @@ private:
             hostname = nx::utils::random::generateName(11);
 
             SocketGlobals::addressResolver().dnsResolver().addEtcHost(
-                hostname, {HostAddress::localhost});
+                hostname,
+                {HostAddress::localhost});
         }
 
         return hostnames;
@@ -1145,8 +1112,7 @@ TEST_F(
 
 //-------------------------------------------------------------------------------------------------
 
-class SslSocketCustomSslContext:
-    public ::testing::Test
+class SslSocketCustomSslContext: public ::testing::Test
 {
 protected:
     void givenSslServers(int count)
@@ -1155,10 +1121,7 @@ protected:
             addSslServer(/*add certificate*/ true);
     }
 
-    void givenSslServerWithoutCertificate()
-    {
-        addSslServer(/*no certificate*/ false);
-    }
+    void givenSslServerWithoutCertificate() { addSslServer(/*no certificate*/ false); }
 
     void assertEachServerReportsItsOwnCertificate()
     {
@@ -1171,9 +1134,7 @@ protected:
 
             nx::utils::SyncQueue<Certificate> received;
             client.setSyncVerifyCertificateChainCallback(
-                [&received](
-                    CertificateChainView chain,
-                    StreamSocket* /*socket*/)
+                [&received](CertificateChainView chain, StreamSocket* /*socket*/)
                 {
                     received.push(Certificate(chain.front()));
                     return true;
@@ -1270,8 +1231,7 @@ TEST_F(SslSocketCustomSslContext, connect_to_server_without_certificate_fails)
 
 //-------------------------------------------------------------------------------------------------
 
-class SslSocketProtocolSet:
-    public SslSocketCertificateSelection
+class SslSocketProtocolSet: public SslSocketCertificateSelection
 {
 protected:
     void setServerProtocolList(const std::string& protocols)
@@ -1318,8 +1278,7 @@ TEST_F(SslSocketProtocolSet, protocol_list_can_be_modified_in_runtime)
 //-------------------------------------------------------------------------------------------------
 // Mixing sync & async mode.
 
-class SslSocketSwitchIoMode:
-    public SslSocketVerifySslIsActuallyUsed
+class SslSocketSwitchIoMode: public SslSocketVerifySslIsActuallyUsed
 {
 protected:
     void exchangeDataInSyncMode()
@@ -1374,9 +1333,7 @@ class SslSocketCertificateAsyncVerification:
     using base_type = network::test::StreamSocketAcceptance<SslSocketBothEndsEncryptedTypeSet>;
 
 public:
-    SslSocketCertificateAsyncVerification()
-    {
-    }
+    SslSocketCertificateAsyncVerification() {}
 
     ~SslSocketCertificateAsyncVerification()
     {
@@ -1398,10 +1355,7 @@ protected:
         givenAcceptingServerSocket();
     }
 
-    void thenInstallAsyncCertificateVerifier()
-    {
-        installAsyncCertificateVerifier(connection());
-    }
+    void thenInstallAsyncCertificateVerifier() { installAsyncCertificateVerifier(connection()); }
 
     void installAsyncCertificateVerifier(ssl::StreamSocket* socket)
     {
@@ -1417,26 +1371,18 @@ protected:
             });
     }
 
-    void whenVerificationCallbackTriggered()
-    {
-        m_callback.wait();
-    }
+    void whenVerificationCallbackTriggered() { m_callback.wait(); }
 
-    void thenInvokeVerificationCompleteHandler()
-    {
-        m_callback.get()(true);
-    }
+    void thenInvokeVerificationCompleteHandler() { m_callback.get()(true); }
 
-    void thenDestroyClientSocket()
-    {
-        takeConnection()->pleaseStopSync();
-    }
+    void thenDestroyClientSocket() { takeConnection()->pleaseStopSync(); }
 
 private:
     std::future<VerifyCertificateCallbackAsyncCompletionHandler> m_callback;
 };
 
-TEST_F(SslSocketCertificateAsyncVerification,
+TEST_F(
+    SslSocketCertificateAsyncVerification,
     program_not_fail_if_verification_complete_handler_is_invoked_after_socket_deletion)
 {
     givenClientSocket();
@@ -1451,7 +1397,8 @@ TEST_F(SslSocketCertificateAsyncVerification,
 // Common socket tests. These are not enough since they do not even check ssl is actually used.
 
 NX_NETWORK_BOTH_SOCKET_TEST_CASE(
-    TEST, SslSocketEncryptedConnection,
+    TEST,
+    SslSocketEncryptedConnection,
     []()
     {
         return std::make_unique<ssl::StreamServerSocket>(
@@ -1468,7 +1415,8 @@ NX_NETWORK_BOTH_SOCKET_TEST_CASE(
     });
 
 NX_NETWORK_BOTH_SOCKET_TEST_CASE(
-    TEST, SslSocketEncryptedConnectionAutoDetected,
+    TEST,
+    SslSocketEncryptedConnectionAutoDetected,
     []()
     {
         return std::make_unique<ssl::StreamServerSocket>(

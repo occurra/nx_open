@@ -52,17 +52,17 @@ TEST(TimestampCorrector, dualStream_keepGapsOnDependentStream)
     TimestampCorrector m_corrector(kMaxFrameDuration, kDefaultFrameDuration);
 
     // Normal workflow.
-    ASSERT_EQ(0ms    , m_corrector.process(1000ms, /*stream*/ 0, /*Equal allowed*/ false));
-    ASSERT_EQ(100ms  , m_corrector.process(1100ms, /*stream*/ 1, /*Equal allowed*/ false));
+    ASSERT_EQ(0ms, m_corrector.process(1000ms, /*stream*/ 0, /*Equal allowed*/ false));
+    ASSERT_EQ(100ms, m_corrector.process(1100ms, /*stream*/ 1, /*Equal allowed*/ false));
 
-    ASSERT_EQ(30ms   , m_corrector.process(1030ms, /*stream*/ 0, /*Equal allowed*/ false));
-    ASSERT_EQ(130ms  , m_corrector.process(1130ms, /*stream*/ 1, /*Equal allowed*/ false));
+    ASSERT_EQ(30ms, m_corrector.process(1030ms, /*stream*/ 0, /*Equal allowed*/ false));
+    ASSERT_EQ(130ms, m_corrector.process(1130ms, /*stream*/ 1, /*Equal allowed*/ false));
 
     // Gap to the future by video -> should remove gap
-    ASSERT_EQ(60ms   , m_corrector.process(3060ms, /*stream*/ 0, /*Equal allowed*/ false));
-    ASSERT_EQ(160ms  , m_corrector.process(3160ms, /*stream*/ 1, /*Equal allowed*/ false));
+    ASSERT_EQ(60ms, m_corrector.process(3060ms, /*stream*/ 0, /*Equal allowed*/ false));
+    ASSERT_EQ(160ms, m_corrector.process(3160ms, /*stream*/ 1, /*Equal allowed*/ false));
 
     // Gap to the future by audio -> should keep gap
-    ASSERT_EQ(90ms   , m_corrector.process(3090ms, /*stream*/ 0, /*Equal allowed*/ false));
-    ASSERT_EQ(1160ms , m_corrector.process(4160ms, /*stream*/ 1, /*Equal allowed*/ false));
+    ASSERT_EQ(90ms, m_corrector.process(3090ms, /*stream*/ 0, /*Equal allowed*/ false));
+    ASSERT_EQ(1160ms, m_corrector.process(4160ms, /*stream*/ 1, /*Equal allowed*/ false));
 }

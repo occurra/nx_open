@@ -11,16 +11,13 @@ namespace nx::network {
 /**
  * Stream socket wrapper that reads data from a given buffer first, then switches to regular I/O.
  */
-class NX_NETWORK_API BufferedStreamSocket:
-    public StreamSocketDelegate
+class NX_NETWORK_API BufferedStreamSocket: public StreamSocketDelegate
 {
 public:
     /**
      * After the preReadData is depleted, all I/O is delegated to socket.
      */
-    BufferedStreamSocket(
-        std::unique_ptr<AbstractStreamSocket> socket,
-        nx::Buffer preReadData);
+    BufferedStreamSocket(std::unique_ptr<AbstractStreamSocket> socket, nx::Buffer preReadData);
 
     /**
      * Handler will be called as soon as there is some data ready to be read from the socket.
@@ -30,9 +27,7 @@ public:
 
     int recv(void* buffer, std::size_t bufferLen, int flags = 0) override;
 
-    void readSomeAsync(
-        nx::Buffer* const buf,
-        IoCompletionHandler handler) override;
+    void readSomeAsync(nx::Buffer* const buf, IoCompletionHandler handler) override;
 
 private:
     std::unique_ptr<AbstractStreamSocket> m_socket;

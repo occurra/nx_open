@@ -2,10 +2,11 @@
 
 #pragma once
 
+#include <nx/utils/type_traits.h>
+
 #include "average_per_period.h"
 #include "max_per_period.h"
 #include "sum_per_period.h"
-#include <nx/utils/type_traits.h>
 
 namespace nx::utils::math {
 
@@ -17,8 +18,7 @@ struct SummaryStatistics
     Value max{};
     Value average{};
 
-    SummaryStatistics()
-        :
+    SummaryStatistics():
         sum(Value{}),
         min(std::numeric_limits<Value>::max()),
         max(std::numeric_limits<Value>::min()),
@@ -36,13 +36,13 @@ template<typename Value>
 class SummaryStatisticsPerPeriod
 {
 public:
-    SummaryStatisticsPerPeriod(std::chrono::milliseconds period)
-        :
+    SummaryStatisticsPerPeriod(std::chrono::milliseconds period):
         m_sum(period),
         m_min(period),
         m_max(period),
         m_average(period)
-    {}
+    {
+    }
 
     SummaryStatistics<Value> summaryStatisticsPerLastPeriod() const
     {

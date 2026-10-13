@@ -4,28 +4,26 @@
 
 #include <functional>
 
+#include <nx/utils/lockable.h>
 #include <nx/utils/thread/mutex.h>
 
-#include <nx/utils/lockable.h>
 #include "storage_resource.h"
 
 class NX_VMS_COMMON_API QnStoragePluginFactory: public QObject
 {
 public:
-    typedef std::function<QnStorageResource *(const QString&)> StorageFactory;
+    typedef std::function<QnStorageResource*(const QString&)> StorageFactory;
 
     QnStoragePluginFactory(QObject* parent = nullptr);
     virtual ~QnStoragePluginFactory();
 
-    bool existsFactoryForProtocol(const QString &protocol);
+    bool existsFactoryForProtocol(const QString& protocol);
     void registerStoragePlugin(
-        const QString &protocol,
-        const StorageFactory &factory,
+        const QString& protocol,
+        const StorageFactory& factory,
         bool isDefaultProtocol = false);
 
-    QnStorageResource *createStorage(
-        const QString &url,
-        bool useDefaultForUnknownPrefix = true);
+    QnStorageResource* createStorage(const QString& url, bool useDefaultForUnknownPrefix = true);
 
     static void setDefault(StorageFactory factory);
 

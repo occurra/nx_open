@@ -19,17 +19,13 @@ namespace nx::network::aio::test {
 //-------------------------------------------------------------------------------------------------
 // Test fixture
 
-class AioAsyncChannelBridge:
-    public ::testing::Test
+class AioAsyncChannelBridge: public ::testing::Test
 {
 public:
     AioAsyncChannelBridge()
     {
-        m_originalData.resize(nx::utils::random::number<int>(1, 1024*1024));
-        std::generate(
-            m_originalData.data(),
-            m_originalData.data() + m_originalData.size(),
-            rand);
+        m_originalData.resize(nx::utils::random::number<int>(1, 1024 * 1024));
+        std::generate(m_originalData.data(), m_originalData.data() + m_originalData.size(), rand);
     }
 
     ~AioAsyncChannelBridge()
@@ -46,8 +42,7 @@ protected:
             m_bridge->setInactivityTimeout(*m_inactivityTimeout);
     }
 
-    void setAdditionalOnBridgeDoneHandler(
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
+    void setAdditionalOnBridgeDoneHandler(nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
     {
         m_additionalOnBridgeDoneHandler = std::move(handler);
     }
@@ -56,43 +51,34 @@ protected:
     {
         initializeFixedDataInput();
         createChannel(AsyncChannel::InputDepletionPolicy::ignore);
-        m_bridge->start(std::bind(&AioAsyncChannelBridge::onBridgeDone, this, std::placeholders::_1));
+        m_bridge->start(
+            std::bind(&AioAsyncChannelBridge::onBridgeDone, this, std::placeholders::_1));
     }
 
     void startExchangingInfiniteData()
     {
         initializeInfiniteDataInput();
         createChannel(AsyncChannel::InputDepletionPolicy::ignore);
-        m_bridge->start(std::bind(&AioAsyncChannelBridge::onBridgeDone, this, std::placeholders::_1));
+        m_bridge->start(
+            std::bind(&AioAsyncChannelBridge::onBridgeDone, this, std::placeholders::_1));
     }
 
     void givenIdleBridge()
     {
         initializeFixedDataInput();
         createChannel(AsyncChannel::InputDepletionPolicy::retry);
-        m_bridge->start(std::bind(&AioAsyncChannelBridge::onBridgeDone, this, std::placeholders::_1));
+        m_bridge->start(
+            std::bind(&AioAsyncChannelBridge::onBridgeDone, this, std::placeholders::_1));
         assertDataExchangeWasSuccessful();
     }
 
-    void pauseRightDestination()
-    {
-        m_rightFile->pauseSendingData();
-    }
+    void pauseRightDestination() { m_rightFile->pauseSendingData(); }
 
-    void resumeRightDestination()
-    {
-        m_rightFile->resumeSendingData();
-    }
+    void resumeRightDestination() { m_rightFile->resumeSendingData(); }
 
-    void waitForSomeDataToBeReadFromLeftSource()
-    {
-        m_leftFile->waitForSomeDataToBeRead();
-    }
+    void waitForSomeDataToBeReadFromLeftSource() { m_leftFile->waitForSomeDataToBeRead(); }
 
-    void waitForChannelToStopReadingLeftSource()
-    {
-        m_leftFile->waitForReadSequenceToBreak();
-    }
+    void waitForChannelToStopReadingLeftSource() { m_leftFile->waitForReadSequenceToBreak(); }
 
     void waitForSomeExchangeToHappen()
     {
@@ -106,20 +92,11 @@ protected:
         m_rightFile->pauseReadingData();
     }
 
-    void stopChannel()
-    {
-        m_bridge->pleaseStopSync();
-    }
+    void stopChannel() { m_bridge->pleaseStopSync(); }
 
-    void closeLeftSource()
-    {
-        m_leftFile->setErrorState();
-    }
+    void closeLeftSource() { m_leftFile->setErrorState(); }
 
-    void emulateErrorOnAnySource()
-    {
-        m_leftFile->setErrorState();
-    }
+    void emulateErrorOnAnySource() { m_leftFile->setErrorState(); }
 
     void assertBridgeIsDoneDueToError()
     {
@@ -142,10 +119,7 @@ protected:
         ASSERT_EQ(SystemError::timedOut, m_bridgeDone.get_future().get());
     }
 
-    void deleteBridge()
-    {
-        m_bridge.reset();
-    }
+    void deleteBridge() { m_bridge.reset(); }
 
 private:
     nx::Buffer m_originalData;
@@ -162,10 +136,12 @@ private:
 
     void createChannel(AsyncChannel::InputDepletionPolicy inputDepletionPolicy)
     {
-        m_leftFile = std::make_unique<AsyncChannel>(
-            m_leftSource.get(), &m_leftDest, inputDepletionPolicy);
+        m_leftFile =
+            std::make_unique<AsyncChannel>(m_leftSource.get(), &m_leftDest, inputDepletionPolicy);
         m_rightFile = std::make_unique<AsyncChannel>(
-            m_rightSource.get(), &m_rightDest, inputDepletionPolicy);
+            m_rightSource.get(),
+            &m_rightDest,
+            inputDepletionPolicy);
 
         m_bridge = makeAsyncChannelBridge(m_leftFile.get(), m_rightFile.get());
         if (m_inactivityTimeout)
@@ -259,53 +235,41 @@ TEST_F(AioAsyncChannelBridge, inactivity_timeout)
 TEST_F(AioAsyncChannelBridge, deleting_object_within_done_handler)
 {
     setAdditionalOnBridgeDoneHandler(
-        [this](SystemError::ErrorCode) { deleteBridge(); });
+        [this](SystemError::ErrorCode)
+        {
+            deleteBridge();
+        });
     startExchangingFiniteData();
     assertDataExchangeWasSuccessful();
 }
 
 //-------------------------------------------------------------------------------------------------
 
-class DummyAsyncChannel:
-    public AbstractAsyncChannel
+class DummyAsyncChannel: public AbstractAsyncChannel
 {
 public:
-    DummyAsyncChannel(
-        int* dummyChannelCount,
-        int* pleaseStopCallCount)
-        :
+    DummyAsyncChannel(int* dummyChannelCount, int* pleaseStopCallCount):
         m_dummyChannelCount(dummyChannelCount),
         m_pleaseStopCallCount(pleaseStopCallCount)
     {
         ++(*m_dummyChannelCount);
     }
 
-    virtual ~DummyAsyncChannel() override
-    {
-        --(*m_dummyChannelCount);
-    }
+    virtual ~DummyAsyncChannel() override { --(*m_dummyChannelCount); }
 
-    virtual void pleaseStopSync() override
-    {
-        ++(*m_pleaseStopCallCount);
-    }
+    virtual void pleaseStopSync() override { ++(*m_pleaseStopCallCount); }
 
-    virtual void readSomeAsync(
-        nx::Buffer* const /*buffer*/,
-        IoCompletionHandler /*handler*/) override
+    virtual void readSomeAsync(nx::Buffer* const /*buffer*/, IoCompletionHandler /*handler*/)
+        override
     {
     }
 
-    virtual void sendAsync(
-        const nx::Buffer* /*buffer*/,
-        IoCompletionHandler /*handler*/) override
+    virtual void sendAsync(const nx::Buffer* /*buffer*/, IoCompletionHandler /*handler*/) override
     {
     }
 
 protected:
-    virtual void cancelIoInAioThread(EventType /*eventType*/) override
-    {
-    }
+    virtual void cancelIoInAioThread(EventType /*eventType*/) override {}
 
 private:
     int* m_dummyChannelCount;

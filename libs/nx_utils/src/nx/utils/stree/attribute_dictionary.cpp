@@ -20,8 +20,7 @@ AttributeDictionary::AttributeDictionary():
 }
 
 AttributeDictionary::AttributeDictionary(
-    std::initializer_list<std::pair<std::string_view, std::string>> l)
-    :
+    std::initializer_list<std::pair<std::string_view, std::string>> l):
     base_type(&m_attrs)
 {
     m_attrs.reserve(l.size());

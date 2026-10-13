@@ -4,18 +4,20 @@
 
 #include <string>
 
-//!Used to dump unhandled structured exception call stack to file ({application_name}_{pid}.except near application binary)
+//! Used to dump unhandled structured exception call stack to file ({application_name}_{pid}.except
+//! near application binary)
 /*!
-    NOTE: This does not work if structured exception handling is not used and application is being debugged
-        (debugger handles unhandled exceptions by itself)
-    NOTE: This handling works on per-thread basis. win32_exception::translate has to be called in thread to enable unhandled structured exception handling
-    NOTE: QnLongRunnable instance calls win32_exception::translate after thread creation
+    NOTE: This does not work if structured exception handling is not used and application is being
+   debugged (debugger handles unhandled exceptions by itself) NOTE: This handling works on
+   per-thread basis. win32_exception::translate has to be called in thread to enable unhandled
+   structured exception handling NOTE: QnLongRunnable instance calls win32_exception::translate
+   after thread creation
     \todo some refactoring is required
 */
 class NX_UTILS_API win32_exception
 {
 public:
-    //!Registers handler to intercept system exceptions (e.g., Access violation)
+    //! Registers handler to intercept system exceptions (e.g., Access violation)
     static void installGlobalUnhandledExceptionHandler();
     //!
     /*!
@@ -23,9 +25,9 @@ public:
             If false, only call stack for each thread is dumped.
             By default, false
     */
-    static void setCreateFullCrashDump( bool isFull );
+    static void setCreateFullCrashDump(bool isFull);
 
-    //!How to find created dumps
+    //! How to find created dumps
     static std::string getCrashDirectory();
     static std::string getCrashPattern();
 };

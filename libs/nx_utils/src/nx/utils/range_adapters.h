@@ -14,7 +14,11 @@ class RangeAdapter
 public:
     using value_type = std::decay_t<decltype(*BeginType())>;
 
-    RangeAdapter(BeginType begin, EndType end): m_begin(begin), m_end(end) {}
+    RangeAdapter(BeginType begin, EndType end):
+        m_begin(begin),
+        m_end(end)
+    {
+    }
 
     BeginType begin() const { return m_begin; }
     EndType end() const { return m_end; }
@@ -37,37 +41,35 @@ auto rangeAdapter(const PairType& pair)
 }
 
 #if __cpp_concepts >= 201907L
-    template<typename T>
-    concept HasKeyValueBeginEnd = requires(T&& t)
-    {
-        t.keyValueBegin();
-        t.keyValueEnd();
-    };
+template<typename T>
+concept HasKeyValueBeginEnd = requires(T&& t) {
+    t.keyValueBegin();
+    t.keyValueEnd();
+};
 
-    template<typename T>
-    concept HasBeginEnd = requires(T&& t)
-    {
-        t.begin();
-        t.end();
-    };
+template<typename T>
+concept HasBeginEnd = requires(T&& t) {
+    t.begin();
+    t.end();
+};
 #else
-    template<typename, typename = void>
-    constexpr bool HasKeyValueBeginEnd = false;
+template<typename, typename = void>
+constexpr bool HasKeyValueBeginEnd = false;
 
-    template<typename T>
-    constexpr bool HasKeyValueBeginEnd<T,
-        std::void_t<
-            decltype(std::declval<T>().keyValueBegin()),
-            decltype(std::declval<T>().keyValueEnd())>> = true;
+template<typename T>
+constexpr bool HasKeyValueBeginEnd<
+    T,
+    std::void_t<
+        decltype(std::declval<T>().keyValueBegin()),
+        decltype(std::declval<T>().keyValueEnd())>> = true;
 
-    template<typename, typename = void>
-    constexpr bool HasBeginEnd = false;
+template<typename, typename = void>
+constexpr bool HasBeginEnd = false;
 
-    template<typename T>
-    constexpr bool HasBeginEnd<T,
-        std::void_t<
-            decltype(std::declval<T>().begin()),
-            decltype(std::declval<T>().end())>> = true;
+template<typename T>
+constexpr bool HasBeginEnd<
+    T,
+    std::void_t<decltype(std::declval<T>().begin()), decltype(std::declval<T>().end())>> = true;
 #endif
 
 template<typename Container>
@@ -75,9 +77,9 @@ auto keyValueRange(Container& container)
 {
     constexpr bool hasKVbe = HasKeyValueBeginEnd<Container>;
     constexpr bool hasBe = HasBeginEnd<Container>;
-    if constexpr(hasKVbe)
+    if constexpr (hasKVbe)
         return rangeAdapter(container.keyValueBegin(), container.keyValueEnd());
-    else if constexpr(hasBe)
+    else if constexpr (hasBe)
         return rangeAdapter(container.begin(), container.end());
     else
         static_assert(hasKVbe || hasBe, "Container not supported");
@@ -123,7 +125,8 @@ template<typename Range>
 auto reverseRange(const Range& range)
 {
     return rangeAdapter(
-        std::make_reverse_iterator(range.end()), std::make_reverse_iterator(range.begin()));
+        std::make_reverse_iterator(range.end()),
+        std::make_reverse_iterator(range.begin()));
 }
 
 } // namespace nx::utils

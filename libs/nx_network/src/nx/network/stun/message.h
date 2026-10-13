@@ -31,18 +31,14 @@ class MessageSerializerBuffer;
 static const std::uint32_t MAGIC_COOKIE = 0x2112A442;
 
 // Four components for MAGIC_COOKIE which is used for parsing/serialization of XorMappedAddress
-static const std::uint16_t MAGIC_COOKIE_HIGH = static_cast<std::uint16_t>( MAGIC_COOKIE >> 16 );
-static const std::uint16_t MAGIC_COOKIE_LOW  = static_cast<std::uint16_t>( MAGIC_COOKIE & 0x0000ffff );
+static const std::uint16_t MAGIC_COOKIE_HIGH = static_cast<std::uint16_t>(MAGIC_COOKIE >> 16);
+static const std::uint16_t MAGIC_COOKIE_LOW =
+    static_cast<std::uint16_t>(MAGIC_COOKIE & 0x0000ffff);
 
 // For STUN crc32 calculation
 // 0x5354554e;
 static const std::uint32_t STUN_FINGERPRINT_XORMASK[4] =
-{
-    0x0000004e,
-    0x00005500,
-    0x00540000,
-    0x53000000
-};
+    {0x0000004e, 0x00005500, 0x00540000, 0x53000000};
 
 enum class MessageClass
 {
@@ -55,7 +51,7 @@ enum class MessageClass
 
 NX_NETWORK_API const char* toString(MessageClass);
 
-//!Contains STUN method types defined in RFC
+//! Contains STUN method types defined in RFC
 enum MethodType
 {
     // STUN RFC 5389.
@@ -93,7 +89,7 @@ public:
     Header(MessageClass messageClass_, int method_);
     Header(MessageClass messageClass_, int method_, Buffer transactionId_);
 
-    Header& operator=(Header&& rhs);    //TODO #akolesnikov #msvc2015 =default
+    Header& operator=(Header&& rhs); // TODO #akolesnikov #msvc2015 =default
 
     std::string toString() const;
 
@@ -117,7 +113,7 @@ class NX_NETWORK_API Message
 {
 public:
     // TODO: #akolesnikov is std::shared_ptr really needed here?
-    using AttributePtr = std::shared_ptr< attrs::Attribute >;
+    using AttributePtr = std::shared_ptr<attrs::Attribute>;
 
     TransportHeader transportHeader;
     Header header;
@@ -160,7 +156,7 @@ public:
         addAttribute(std::make_shared<T>(std::move(args)...));
     }
 
-    template< typename T >
+    template<typename T>
     const T* getAttribute(int type) const
     {
         auto it = findAttr(type);
@@ -170,7 +166,7 @@ public:
         return static_cast<const T*>(it->get());
     }
 
-    template< typename T >
+    template<typename T>
     const T* getAttribute() const
     {
         return getAttribute<T>(T::TYPE);
@@ -186,8 +182,12 @@ public:
     void forEachAttribute(Func func) const
     {
         std::for_each(
-            m_attributes.begin(), m_attributes.end(),
-            [&func](const auto& attr) { func(attr.get()); });
+            m_attributes.begin(),
+            m_attributes.end(),
+            [&func](const auto& attr)
+            {
+                func(attr.get());
+            });
     }
 
     void insertIntegrity(const std::string& userName, const std::string& key);

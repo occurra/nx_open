@@ -31,7 +31,6 @@ QnAbstractMediaDataPtr VideoStreamParser::nextData()
     }
 }
 
-
 QnAbstractMediaDataPtr AudioStreamParser::nextData()
 {
     if (m_audioData.empty())

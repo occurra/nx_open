@@ -2,12 +2,11 @@
 
 #include <gtest/gtest.h>
 
+#include <nx/network/jose/jws.h>
+#include <nx/network/jose/jwt.h>
 #include <nx/reflect/json/raw_json_text.h>
 #include <nx/utils/random.h>
 #include <nx/utils/time.h>
-
-#include <nx/network/jose/jws.h>
-#include <nx/network/jose/jwt.h>
 
 namespace nx::network::jws::test {
 
@@ -20,8 +19,7 @@ struct Payload
 
 NX_REFLECTION_INSTRUMENT(Payload, (foo))
 
-class JoseJws:
-    public ::testing::Test
+class JoseJws: public ::testing::Test
 {
 protected:
     jwk::KeyPair givenKeyPair()
@@ -35,12 +33,15 @@ protected:
     {
         const Payload payload{.foo = "bar"};
         const Token<Payload> token{
-            .header = Header{.typ = "JWT", .alg = key.alg(), .kid = key.kid()}, .payload = payload};
+            .header = Header{.typ = "JWT", .alg = key.alg(), .kid = key.kid()},
+            .payload = payload};
         return token;
     }
 
     TokenEncodeResult<Payload> whenEncodeAndSignToken(
-        const std::string& typ, const Payload& payload, const jwk::Key& key)
+        const std::string& typ,
+        const Payload& payload,
+        const jwk::Key& key)
     {
         auto result = encodeAndSign(typ, payload, key);
         EXPECT_TRUE(result);
@@ -59,9 +60,9 @@ static constexpr char kRfc7515AppendixA11_signedToken[] =
 // Uses values from https://datatracker.ietf.org/doc/html/rfc7515#appendix-A.1.1.
 TEST_F(JoseJws, sign_token_rfc7515_example)
 {
-    // Note: I cannot reproduce the example using jws functions since rfc example inserts additional
-    // line breaks into JSON which cannot be replicated using nx::reflect::json.
-    // So, reproducing the example using jwk API.
+    // Note: I cannot reproduce the example using jws functions since rfc example inserts
+    // additional line breaks into JSON which cannot be replicated using nx::reflect::json. So,
+    // reproducing the example using jwk API.
 
     const std::string jsonHeader = "{\"typ\":\"JWT\",\r\n \"alg\":\"HS256\"}";
     const std::string jsonPayload =
@@ -69,7 +70,9 @@ TEST_F(JoseJws, sign_token_rfc7515_example)
 
     jwk::Key key;
     key.setKty("oct");
-    key.set("k", "AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow");
+    key.set(
+        "k",
+        "AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow");
     key.setKeyOps({jwk::KeyOp::sign, jwk::KeyOp::verify});
     key.setAlg("HS256");
     const auto base64EncodedToken =
@@ -105,8 +108,8 @@ TEST_F(JoseJws, altered_token_cannot_be_verified)
     const auto kp = givenKeyPair();
     const auto expectedToken = givenRandomToken(kp.priv);
 
-    TokenEncodeResult signResult = whenEncodeAndSignToken(
-        expectedToken.header.typ, expectedToken.payload, kp.priv);
+    TokenEncodeResult signResult =
+        whenEncodeAndSignToken(expectedToken.header.typ, expectedToken.payload, kp.priv);
 
     std::string tmp(signResult.encodedAndSignedToken);
 
@@ -124,8 +127,13 @@ TEST_F(JoseJws, decoding_trash_does_not_crash)
     const auto kp = givenKeyPair();
 
     std::string trash(nx::utils::random::number<int>(1, 1000), '\0');
-    std::generate(trash.begin(), trash.end(),
-        []() { return rand() % std::numeric_limits<char>::max(); });
+    std::generate(
+        trash.begin(),
+        trash.end(),
+        []()
+        {
+            return rand() % std::numeric_limits<char>::max();
+        });
 
     auto decodedToken = decodeToken<Payload>(trash);
     // If decoding still completes somehow, the verification MUST never pass.
@@ -134,35 +142,36 @@ TEST_F(JoseJws, decoding_trash_does_not_crash)
 
 //-------------------------------------------------------------------------------------------------
 
-class JoseJwsLoadTest:
-    public JoseJws
+class JoseJwsLoadTest: public JoseJws
 {
 protected:
     template<typename Key>
-    std::expected<nx::network::jws::TokenEncodeResult<jwt::ClaimSet>, std::string>
-        generateToken(const Key& key)
+    std::expected<nx::network::jws::TokenEncodeResult<jwt::ClaimSet>, std::string> generateToken(
+        const Key& key)
     {
         jwt::ClaimSet claimSet;
         claimSet.setIss("cdb");
         claimSet.setSub("test@example.com");
         claimSet.setIat(
-            std::chrono::duration_cast<std::chrono::seconds>(nx::utils::utcTime().time_since_epoch()));
+            std::chrono::duration_cast<std::chrono::seconds>(
+                nx::utils::utcTime().time_since_epoch()));
         claimSet.setAud("/ cloudSystemId=*");
-        claimSet.setIat(std::chrono::duration_cast<std::chrono::seconds>(nx::utils::utcTime().time_since_epoch()));
-        claimSet.setExp(std::chrono::duration_cast<std::chrono::seconds>(
-            nx::utils::utcTime().time_since_epoch() + std::chrono::minutes(10)));
+        claimSet.setIat(
+            std::chrono::duration_cast<std::chrono::seconds>(
+                nx::utils::utcTime().time_since_epoch()));
+        claimSet.setExp(
+            std::chrono::duration_cast<std::chrono::seconds>(
+                nx::utils::utcTime().time_since_epoch() + std::chrono::minutes(10)));
 
         std::expected<nx::network::jws::TokenEncodeResult<jwt::ClaimSet>, std::string>
-            tokenEncodeResult = nx::network::jws::encodeAndSign(
-                nx::network::jwt::kJwtTokenType, claimSet, key);
+            tokenEncodeResult =
+                nx::network::jws::encodeAndSign(nx::network::jwt::kJwtTokenType, claimSet, key);
 
         return tokenEncodeResult;
     }
 
     template<typename Func>
-    void measurePerformance(
-        const std::string& testName,
-        Func f)
+    void measurePerformance(const std::string& testName, Func f)
     {
         static constexpr auto testDuration = std::chrono::seconds(3);
 
@@ -175,15 +184,17 @@ protected:
             cnt++;
         }
 
-        const int rps = (cnt * 1000) / std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+        const int rps =
+            (cnt * 1000) / std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
 
-        std::cout<<testName<<" rate is "<< rps << " tokens per second" <<std::endl;
+        std::cout << testName << " rate is " << rps << " tokens per second" << std::endl;
     }
 };
 
 TEST_F(JoseJwsLoadTest, DISABLED_token_preparation_and_signing)
 {
-    const auto jwk = nx::network::jwk::generateKeyPairForSigning(nx::network::jwk::Algorithm::RS256);
+    const auto jwk =
+        nx::network::jwk::generateKeyPairForSigning(nx::network::jwk::Algorithm::RS256);
     ASSERT_TRUE(jwk);
 
     const auto parsedKey = nx::network::jwk::parseKey(jwk->priv);
@@ -200,7 +211,8 @@ TEST_F(JoseJwsLoadTest, DISABLED_token_preparation_and_signing)
 
 TEST_F(JoseJwsLoadTest, DISABLED_verifying)
 {
-    const auto jwk = nx::network::jwk::generateKeyPairForSigning(nx::network::jwk::Algorithm::RS256);
+    const auto jwk =
+        nx::network::jwk::generateKeyPairForSigning(nx::network::jwk::Algorithm::RS256);
     ASSERT_TRUE(jwk);
 
     const auto parsedPubKey = nx::network::jwk::parseKey(jwk->pub);

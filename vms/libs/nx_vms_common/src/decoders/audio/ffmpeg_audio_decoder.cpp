@@ -65,13 +65,16 @@ bool QnFfmpegAudioDecoder::decode(QnCompressedAudioDataPtr& data, nx::utils::Byt
 
     const unsigned char* inbuf_ptr = (const unsigned char*) data->data();
     int size = static_cast<int>(data->dataSize());
-    unsigned char* outbuf = (unsigned char*)result.data();
+    unsigned char* outbuf = (unsigned char*) result.data();
 
     nx::media::ffmpeg::AvPacket avpkt((quint8*) inbuf_ptr, size);
     int error = avcodec_send_packet(m_audioDecoderCtx, avpkt.get());
     if (error < 0)
     {
-        NX_WARNING(this, "Failed to decode audio packet: %1, error: %2", data,
+        NX_WARNING(
+            this,
+            "Failed to decode audio packet: %1, error: %2",
+            data,
             nx::media::ffmpeg::avErrorToString(error));
         return false;
     }
@@ -85,7 +88,9 @@ bool QnFfmpegAudioDecoder::decode(QnCompressedAudioDataPtr& data, nx::utils::Byt
 
         if (error < 0)
         {
-            NX_WARNING(this, "Failed to decode(receive) audio packet timestamp: %1, error: %2",
+            NX_WARNING(
+                this,
+                "Failed to decode(receive) audio packet timestamp: %1, error: %2",
                 data->timestamp,
                 nx::media::ffmpeg::avErrorToString(error));
             return false;
@@ -93,10 +98,10 @@ bool QnFfmpegAudioDecoder::decode(QnCompressedAudioDataPtr& data, nx::utils::Byt
 
         int decodedBytes =
             m_outFrame->nb_samples * QnFfmpegHelper::audioSampleSize(m_audioDecoderCtx);
-        if (outbuf_len + decodedBytes > (int)result.capacity())
+        if (outbuf_len + decodedBytes > (int) result.capacity())
         {
             result.reserve((size_t) outbuf_len + decodedBytes);
-            outbuf = (quint8*)result.data() + outbuf_len;
+            outbuf = (quint8*) result.data() + outbuf_len;
         }
 
         if (!m_audioHelper || !m_audioHelper->isCompatible(m_audioDecoderCtx))

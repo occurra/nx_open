@@ -44,10 +44,7 @@ public:
     bool handleSrtp(std::vector<uint8_t> buffer);
     void seek(nx::Uuid deviceId, int64_t timestampUs, StatusHandler handler);
     void startProvidersIfNeeded();
-    void changeQuality(
-        nx::Uuid deviceId,
-        nx::vms::api::StreamIndex stream,
-        StatusHandler handler);
+    void changeQuality(nx::Uuid deviceId, nx::vms::api::StreamIndex stream, StatusHandler handler);
     void pause(nx::Uuid deviceId, StatusHandler handler);
     void resume(nx::Uuid deviceId, StatusHandler handler);
     void nextFrame(nx::Uuid deviceId, StatusHandler handler);
@@ -81,7 +78,7 @@ private:
     Session* m_session = nullptr;
     Streamer* m_streamer = nullptr;
     int64_t m_lastReportedTimestampUs = AV_NOPTS_VALUE;
-    std::chrono::milliseconds m_sendTimestampInterval {1000};
+    std::chrono::milliseconds m_sendTimestampInterval{1000};
     bool m_sendInProgress = false;
     const std::string m_sessionId;
 };

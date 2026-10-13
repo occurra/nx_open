@@ -13,8 +13,7 @@
 
 namespace test {
 
-class QtContainersNxReflectSupport:
-    public ::testing::Test
+class QtContainersNxReflectSupport: public ::testing::Test
 {
 protected:
     template<typename T>
@@ -45,9 +44,7 @@ NX_REFLECTION_INSTRUMENT_TEMPLATE(Foo, (v))
 
 //-------------------------------------------------------------------------------------------------
 
-namespace {
-using FooVector = Foo<QVector<std::string>>;
-} // namespace
+namespace { using FooVector = Foo<QVector<std::string>>; } // namespace
 
 TEST_F(QtContainersNxReflectSupport, QVector)
 {
@@ -61,9 +58,7 @@ TEST_F(QtContainersNxReflectSupport, QVector)
 
 //-------------------------------------------------------------------------------------------------
 
-namespace {
-using FooList = Foo<QList<std::string>>;
-} // namespace
+namespace { using FooList = Foo<QList<std::string>>; } // namespace
 
 TEST_F(QtContainersNxReflectSupport, QList)
 {
@@ -77,9 +72,7 @@ TEST_F(QtContainersNxReflectSupport, QList)
 
 //-------------------------------------------------------------------------------------------------
 
-namespace {
-using FooSet = Foo<QSet<QString>>;
-} // namespace
+namespace { using FooSet = Foo<QSet<QString>>; } // namespace
 
 TEST_F(QtContainersNxReflectSupport, QSet)
 {
@@ -107,13 +100,11 @@ TEST_F(QtContainersNxReflectSupport, QSet)
 
 //-------------------------------------------------------------------------------------------------
 
-namespace {
-using FooMap = Foo<QMap<QString, QList<int>>>;
-} // namespace
+namespace { using FooMap = Foo<QMap<QString, QList<int>>>; } // namespace
 
 TEST_F(QtContainersNxReflectSupport, QMap)
 {
-    FooMap foo{ {{"1", {11,12,13}}, {"2", {21,22,23}}, {"3",{31,32,33}}} };
+    FooMap foo{{{"1", {11, 12, 13}}, {"2", {21, 22, 23}}, {"3", {31, 32, 33}}}};
 
     assertWorks(foo, R"({"v":{"1":[11,12,13],"2":[21,22,23],"3":[31,32,33]}})");
     assertWorks(foo.v, R"({"1":[11,12,13],"2":[21,22,23],"3":[31,32,33]})");
@@ -121,9 +112,7 @@ TEST_F(QtContainersNxReflectSupport, QMap)
 
 //-------------------------------------------------------------------------------------------------
 
-namespace {
-using FooHash = Foo<QHash<QString, QString>>;
-} // namespace
+namespace { using FooHash = Foo<QHash<QString, QString>>; } // namespace
 
 TEST_F(QtContainersNxReflectSupport, QHash)
 {

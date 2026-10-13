@@ -102,14 +102,8 @@ void SrtpSessionDeleter::operator()(srtp_t session) const noexcept
 class SrtpInit
 {
 public:
-    SrtpInit()
-    {
-        srtp_init();
-    }
-    ~SrtpInit()
-    {
-        srtp_shutdown();
-    }
+    SrtpInit() { srtp_init(); }
+    ~SrtpInit() { srtp_shutdown(); }
 };
 static SrtpInit init;
 
@@ -127,7 +121,8 @@ SrtpDecryptor::~SrtpDecryptor() = default;
 
 namespace {
 
-bool addSrtpStream(srtp_t session,
+bool addSrtpStream(
+    srtp_t session,
     const SrtpCryptoContext& context,
     srtp_ssrc_type_t ssrcType,
     std::uint32_t ssrc = 0)
@@ -214,20 +209,20 @@ bool SrtpEncryptor::encryptPacket(nx::utils::ByteArray* data, int offset)
             packet->padding = true;
             if (padding > 1)
                 data->write("\x00\x00\x00", padding - 1);
-            data->write((const char*)&padding, 1);
+            data->write((const char*) &padding, 1);
         }
     }
 
     data->reserve(data->size() + SRTP_MAX_TRAILER_LEN + m_context.mki.size());
     int size = data->size() - offset;
-    bool result = encryptPacket((uint8_t*)data->data() + offset, &size);
+    bool result = encryptPacket((uint8_t*) data->data() + offset, &size);
     data->resize(size + offset);
     return result;
 }
 
 bool SrtpEncryptor::encryptPacket(uint8_t* data, int* inOutSize)
 {
-    nx::rtp::RtpHeader* packet = (nx::rtp::RtpHeader*)(data);
+    nx::rtp::RtpHeader* packet = (nx::rtp::RtpHeader*) (data);
     srtp_err_status_t error = packet->isRtcp() ? srtp_protect_rtcp(m_srtp.get(), data, inOutSize)
                                                : srtp_protect(m_srtp.get(), data, inOutSize);
     if (error == srtp_err_status_replay_fail)
@@ -291,7 +286,8 @@ SrtpDecryptor::Result SrtpDecryptor::decryptPacket(uint8_t* data, int* inOutSize
             mkiOffset = trailingMki ? *inOutSize - mkiSize : *inOutSize - tagSize - mkiSize;
             if (memcmp(data + mkiOffset, m_context.mki.data(), mkiSize) != 0)
             {
-                NX_VERBOSE(this,
+                NX_VERBOSE(
+                    this,
                     "Unexpected SRTP MKI: %1",
                     QByteArray(reinterpret_cast<const char*>(data + mkiOffset), mkiSize).toHex());
                 return Result::packetRejected;

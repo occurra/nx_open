@@ -17,19 +17,23 @@ namespace nx::reflect {
  * how they want their type to be serialized to JSON.
  */
 template<typename T>
-static constexpr bool useStringConversionForSerialization(const T*) { return false; }
+static constexpr bool useStringConversionForSerialization(const T*)
+{
+    return false;
+}
 
 } // namespace nx::reflect
 
 #define NX_REFLECTION_TAG_TYPE_useStringConversionForSerialization(TAG, TYPE) \
     static constexpr bool TAG(const TYPE*) \
     { \
-        static_assert(nx::reflect::detail::HasFromStringV<TYPE> \
+        static_assert( \
+            nx::reflect::detail::HasFromStringV<TYPE> \
                 || nx::reflect::detail::HasFromStdStringV<TYPE> \
                 || nx::reflect::detail::HasFreeStandFromStringV<TYPE>, \
             "Provide any fromString method"); \
-        static_assert(nx::reflect::detail::HasToStringV<TYPE> \
-                || nx::reflect::detail::HasToStdStringV<TYPE> \
+        static_assert( \
+            nx::reflect::detail::HasToStringV<TYPE> || nx::reflect::detail::HasToStdStringV<TYPE> \
                 || nx::reflect::detail::HasFreeStandToStringV<TYPE>, \
             "Provide any toString method"); \
         return true; \

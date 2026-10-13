@@ -48,11 +48,16 @@ public:
 
     /**
      * @param handler MUST not block
-     * @param requestId Used to cancel request. Multiple requests can be started using same request id.
+     * @param requestId Used to cancel request. Multiple requests can be started using same request
+     * id.
      * @return false if failed to start asynchronous resolve operation
      * NOTE: It is guaranteed that reqID is set before completionHandler is called.
      */
-    void resolveAsync(const std::string& hostname, Handler handler, int ipVersion, RequestId requestId);
+    void resolveAsync(
+        const std::string& hostname,
+        Handler handler,
+        int ipVersion,
+        RequestId requestId);
 
     SystemError::ErrorCode resolveSync(
         const std::string& hostname,
@@ -93,8 +98,11 @@ private:
         std::chrono::steady_clock::time_point creationTime;
 
         ResolveTask(
-            std::string hostAddress, Handler handler, RequestId requestId,
-            size_t sequence, int ipVersion);
+            std::string hostAddress,
+            Handler handler,
+            RequestId requestId,
+            size_t sequence,
+            int ipVersion);
     };
 
     std::atomic<bool> m_terminated = false;
@@ -116,8 +124,8 @@ private:
     nx::utils::TimeOutCache<
         std::tuple<int /*ipVersion*/, std::string /*hostname*/>,
         std::deque<HostAddress>,
-        std::map
-    > m_resolveCache;
+        std::map>
+        m_resolveCache;
 
     bool isExpired(const ResolveTask& task) const;
 };

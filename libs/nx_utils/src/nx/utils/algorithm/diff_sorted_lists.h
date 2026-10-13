@@ -10,17 +10,21 @@ namespace nx::utils::algorithm {
  * Finds difference between two sorted lists: left and right.
  * Elements present in left but not right are passed to leftOnlyFunc.
  * Elements present in right but not left are passed to rightOnlyFunc.
- * Equal elements (i.e., intersection of two lists) are passed to equalFunc as equalFunc(left, right).
+ * Equal elements (i.e., intersection of two lists) are passed to equalFunc as equalFunc(left,
+ * right).
  */
 template<
-    typename It1, typename It2,
-    typename LeftOnlyFunc, typename RightOnlyFunc,
+    typename It1,
+    typename It2,
+    typename LeftOnlyFunc,
+    typename RightOnlyFunc,
     typename EqualFunc,
-    typename Compare
->
+    typename Compare>
 void full_difference(
-    const It1& leftBegin, const It1& leftEnd,
-    const It2& rightBegin, const It2& rightEnd,
+    const It1& leftBegin,
+    const It1& leftEnd,
+    const It2& rightBegin,
+    const It2& rightEnd,
     LeftOnlyFunc leftOnlyFunc,
     RightOnlyFunc rightOnlyFunc,
     EqualFunc equalFunc,
@@ -66,21 +70,32 @@ void full_difference(
  * Same as above but uses operator< as a comparator.
  */
 template<
-    typename It1, typename It2,
-    typename LeftOnlyFunc, typename RightOnlyFunc,
-    typename EqualFunc
->
+    typename It1,
+    typename It2,
+    typename LeftOnlyFunc,
+    typename RightOnlyFunc,
+    typename EqualFunc>
 void full_difference(
-    const It1& leftBegin, const It1& leftEnd,
-    const It2& rightBegin, const It2& rightEnd,
+    const It1& leftBegin,
+    const It1& leftEnd,
+    const It2& rightBegin,
+    const It2& rightEnd,
     LeftOnlyFunc leftOnlyFunc,
     RightOnlyFunc rightOnlyFunc,
     EqualFunc equalFunc)
 {
     full_difference(
-        leftBegin, leftEnd, rightBegin, rightEnd,
-        std::move(leftOnlyFunc), std::move(rightOnlyFunc), std::move(equalFunc),
-        [](const auto& left, const auto& right) { return left < right; });
+        leftBegin,
+        leftEnd,
+        rightBegin,
+        rightEnd,
+        std::move(leftOnlyFunc),
+        std::move(rightOnlyFunc),
+        std::move(equalFunc),
+        [](const auto& left, const auto& right)
+        {
+            return left < right;
+        });
 }
 
 /**
@@ -91,24 +106,39 @@ void full_difference(
  * To be more specific, `*equalOutIt=*leftIter` is invoked.
  */
 template<
-    typename It1, typename It2,
-    typename LeftOnlyOutIt, typename RightOnlyOutIt,
+    typename It1,
+    typename It2,
+    typename LeftOnlyOutIt,
+    typename RightOnlyOutIt,
     typename EqualOutIt,
-    typename Compare
->
+    typename Compare>
 void full_difference_2(
-    const It1& leftBegin, const It1& leftEnd,
-    const It2& rightBegin, const It2& rightEnd,
+    const It1& leftBegin,
+    const It1& leftEnd,
+    const It2& rightBegin,
+    const It2& rightEnd,
     LeftOnlyOutIt leftOnlyOutIt,
     RightOnlyOutIt rightOnlyOutIt,
     EqualOutIt equalOutIt,
     Compare comp)
 {
     full_difference(
-        leftBegin, leftEnd, rightBegin, rightEnd,
-        [&leftOnlyOutIt](const auto& val) { *leftOnlyOutIt = val; },
-        [&rightOnlyOutIt](const auto& val) { *rightOnlyOutIt = val; },
-        [&equalOutIt](const auto& left, const auto& /*right*/) { *equalOutIt = left; },
+        leftBegin,
+        leftEnd,
+        rightBegin,
+        rightEnd,
+        [&leftOnlyOutIt](const auto& val)
+        {
+            *leftOnlyOutIt = val;
+        },
+        [&rightOnlyOutIt](const auto& val)
+        {
+            *rightOnlyOutIt = val;
+        },
+        [&equalOutIt](const auto& left, const auto& /*right*/)
+        {
+            *equalOutIt = left;
+        },
         comp);
 }
 
@@ -116,21 +146,32 @@ void full_difference_2(
  * Same as above but uses operator< for comparison.
  */
 template<
-    typename It1, typename It2,
-    typename LeftOnlyOutIt, typename RightOnlyOutIt,
-    typename EqualOutIt
->
+    typename It1,
+    typename It2,
+    typename LeftOnlyOutIt,
+    typename RightOnlyOutIt,
+    typename EqualOutIt>
 void full_difference_2(
-    const It1& leftBegin, const It1& leftEnd,
-    const It2& rightBegin, const It2& rightEnd,
+    const It1& leftBegin,
+    const It1& leftEnd,
+    const It2& rightBegin,
+    const It2& rightEnd,
     LeftOnlyOutIt leftOnlyOutIt,
     RightOnlyOutIt rightOnlyOutIt,
     EqualOutIt equalOutIt)
 {
     full_difference_2(
-        leftBegin, leftEnd, rightBegin, rightEnd,
-        leftOnlyOutIt, rightOnlyOutIt, equalOutIt,
-        [](const auto& left, const auto& right) { return left < right; });
+        leftBegin,
+        leftEnd,
+        rightBegin,
+        rightEnd,
+        leftOnlyOutIt,
+        rightOnlyOutIt,
+        equalOutIt,
+        [](const auto& left, const auto& right)
+        {
+            return left < right;
+        });
 }
 
 } // namespace nx::utils::algorithm

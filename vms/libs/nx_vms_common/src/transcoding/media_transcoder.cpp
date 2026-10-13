@@ -108,7 +108,8 @@ QnFfmpegAudioTranscoder* MediaTranscoder::audioTranscoder()
 }
 
 bool MediaTranscoder::transcodePacket(
-    const QnConstAbstractMediaDataPtr& media, const OnDataHandler& handler)
+    const QnConstAbstractMediaDataPtr& media,
+    const OnDataHandler& handler)
 {
     AbstractCodecTranscoder* transcoder = nullptr;
     if (dynamic_cast<const QnCompressedVideoData*>(media.get()))
@@ -141,7 +142,10 @@ bool MediaTranscoder::transcodePacket(
             int errCode = transcoder->transcodePacket(packet, &transcodedPacket);
             if (errCode != 0)
             {
-                NX_DEBUG(this, "Transcoding error: %1", nx::media::ffmpeg::avErrorToString(errCode));
+                NX_DEBUG(
+                    this,
+                    "Transcoding error: %1",
+                    nx::media::ffmpeg::avErrorToString(errCode));
                 return false;
             }
             if (!transcodedPacket || transcodedPacket->dataSize() == 0)
@@ -160,7 +164,8 @@ bool MediaTranscoder::transcodePacket(
 }
 
 bool finalizeTranscoder(
-    AbstractCodecTranscoder* transcoder, const MediaTranscoder::OnDataHandler& handler)
+    AbstractCodecTranscoder* transcoder,
+    const MediaTranscoder::OnDataHandler& handler)
 {
     if (!transcoder)
         return true;

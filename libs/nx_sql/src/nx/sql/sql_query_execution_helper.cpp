@@ -51,7 +51,10 @@ QString queryLogString(const QSqlQuery& query)
 
 } // namespace
 
-bool SqlQueryExecutionHelper::execSQLQuery(const QString& queryStr, QSqlDatabase& database, const char* details)
+bool SqlQueryExecutionHelper::execSQLQuery(
+    const QString& queryStr,
+    QSqlDatabase& database,
+    const char* details)
 {
     QSqlQuery query(database);
     return prepareSQLQuery(&query, queryStr, details) && execSQLQuery(&query, details);
@@ -67,20 +70,34 @@ bool SqlQueryExecutionHelper::execSQLQuery(QSqlQuery* query, const char* details
 
     auto error = query->lastError();
     // Assert only on statement error type as other errors are not our code responsibility.
-    if (NX_ASSERT(error.type() != QSqlError::StatementError,
-        "%1 to execute SQL query in %2: %3", error, details, queryLogString(*query)))
+    if (NX_ASSERT(
+            error.type() != QSqlError::StatementError,
+            "%1 to execute SQL query in %2: %3",
+            error,
+            details,
+            queryLogString(*query)))
     {
-        NX_DEBUG(NX_SCOPE_TAG,
-            "%1 to execute SQL query in %2: %3", error, details, queryLogString(*query));
+        NX_DEBUG(
+            NX_SCOPE_TAG,
+            "%1 to execute SQL query in %2: %3",
+            error,
+            details,
+            queryLogString(*query));
     }
     return false;
 }
 
 bool SqlQueryExecutionHelper::prepareSQLQuery(
-    QSqlQuery* query, const QString& queryStr, const char* details)
+    QSqlQuery* query,
+    const QString& queryStr,
+    const char* details)
 {
-    return NX_ASSERT(query->prepare(queryStr),
-        "%1 to prepare SQL query in %2: %3", query->lastError(), details, query->lastQuery());
+    return NX_ASSERT(
+        query->prepare(queryStr),
+        "%1 to prepare SQL query in %2: %3",
+        query->lastError(),
+        details,
+        query->lastQuery());
 }
 
 bool SqlQueryExecutionHelper::execSQLScript(const QByteArray& scriptData, QSqlDatabase& database)
@@ -98,13 +115,17 @@ bool SqlQueryExecutionHelper::execSQLScript(const QByteArray& scriptData, QSqlDa
     QByteArray dataWithoutComments = scriptWithoutComments.toUtf8();
     QList<QByteArray> commands = quotedSplit(dataWithoutComments);
     size_t currentCommand = 1;
-    for (const QByteArray& singleCommand : commands)
+    for (const QByteArray& singleCommand: commands)
     {
         QString command = QString::fromUtf8(singleCommand).trimmed();
         if (command.isEmpty())
             continue;
-        NX_VERBOSE(NX_SCOPE_TAG, "Executing %1/%2 command from script:\n%3",
-            currentCommand++, commands.size(), command);
+        NX_VERBOSE(
+            NX_SCOPE_TAG,
+            "Executing %1/%2 command from script:\n%3",
+            currentCommand++,
+            commands.size(),
+            command);
         QSqlQuery ddlQuery(database);
         if (!prepareSQLQuery(&ddlQuery, command, Q_FUNC_INFO))
             return false;
@@ -114,9 +135,7 @@ bool SqlQueryExecutionHelper::execSQLScript(const QByteArray& scriptData, QSqlDa
     return true;
 }
 
-bool SqlQueryExecutionHelper::execSQLFile(
-    const QString& fileName,
-    QSqlDatabase& database)
+bool SqlQueryExecutionHelper::execSQLFile(const QString& fileName, QSqlDatabase& database)
 {
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly))
@@ -168,7 +187,8 @@ void SqlQueryExecutionHelper::execSQLScript(
         nx::utils::GroupToken::doubleQuotes);
 }
 
-void SqlQueryExecutionHelper::bindId(QSqlQuery* query,
+void SqlQueryExecutionHelper::bindId(
+    QSqlQuery* query,
     const QString& parameter,
     const nx::Uuid& id,
     bool optional)

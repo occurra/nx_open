@@ -41,16 +41,19 @@ public:
         m_aioService->initialize(aioThreadPoolSize, enableAioThreadWatcher);
     }
 
-    aio::AIOService& aioService()
-    {
-        return *m_aioService;
-    }
+    aio::AIOService& aioService() { return *m_aioService; }
 
 private:
     std::unique_ptr<aio::AIOService> m_aioService;
 };
 
-enum class InitState { none, inintializing, done, deinitializing };
+enum class InitState
+{
+    none,
+    inintializing,
+    done,
+    deinitializing
+};
 
 static std::atomic<InitState> s_initState(InitState::none);
 static size_t s_counter(0);
@@ -70,25 +73,16 @@ public:
         WSAStartup(versionRequested, &wsaData);
     }
 
-    ~Win32SocketInitializer()
-    {
-        WSACleanup();
-    }
+    ~Win32SocketInitializer() { WSACleanup(); }
 };
 #endif
 
 class UdtInitializer
 {
 public:
-    UdtInitializer()
-    {
-        UDT::startup();
-    }
+    UdtInitializer() { UDT::startup(); }
 
-    ~UdtInitializer()
-    {
-        UDT::cleanup();
-    }
+    ~UdtInitializer() { UDT::cleanup(); }
 };
 
 } // namespace
@@ -165,12 +159,15 @@ SocketGlobals::~SocketGlobals()
         {"HTTP Client Connections", m_debugCounters.httpClientConnectionCount},
         {"HTTP Server Connections", m_debugCounters.httpServerConnectionCount},
         {"TCP Sockets", m_debugCounters.tcpSocketCount},
-        {"UDP Sockets", m_debugCounters.udpSocketCount}
-    };
+        {"UDP Sockets", m_debugCounters.udpSocketCount}};
 
     for (const auto& [key, value]: counters)
     {
-        NX_ASSERT(value == 0, "There are %1 %2 left, allocation report%3", key, value,
+        NX_ASSERT(
+            value == 0,
+            "There are %1 %2 left, allocation report%3",
+            key,
+            value,
             [this]
             {
                 if (const auto r = m_allocationAnalyzer.generateReport())
@@ -212,9 +209,7 @@ static nx::Mutex& socketGlobalsMutexInstance()
     return mtx;
 }
 
-void SocketGlobals::init(
-    const ArgumentParser& arguments,
-    int initializationFlags)
+void SocketGlobals::init(const ArgumentParser& arguments, int initializationFlags)
 {
     NX_MUTEX_LOCKER lock(&socketGlobalsMutexInstance());
 
@@ -237,9 +232,7 @@ void SocketGlobals::init(
     }
 }
 
-void SocketGlobals::init(
-    int initializationFlags,
-    const std::string& customCloudHost)
+void SocketGlobals::init(int initializationFlags, const std::string& customCloudHost)
 {
     ArgumentParser args;
     if (!customCloudHost.empty())
@@ -285,9 +278,8 @@ void SocketGlobals::switchCloudHost(const std::string& customCloudHost)
 
 void SocketGlobals::printArgumentsHelp(std::ostream* outputStream)
 {
-    (*outputStream)
-        << "  --ip-version=, -ip               Ip version to use. 4 or 6" << std::endl
-        << "  --enforce-socket={socket type}   tcp, udt, cloud" << std::endl;
+    (*outputStream) << "  --ip-version=, -ip               Ip version to use. 4 or 6" << std::endl
+                    << "  --enforce-socket={socket type}   tcp, udt, cloud" << std::endl;
     cloud::CloudConnectController::printArgumentsHelp(outputStream);
 }
 
@@ -380,17 +372,14 @@ void SocketGlobals::reloadIni()
     m_impl->hostDisabledViaIni.clear();
 
     std::vector<std::string_view> disabledHosts;
-    nx::utils::split(
-        std::string_view(ini().disableHosts), ',',
-        std::back_inserter(disabledHosts));
+    nx::utils::split(std::string_view(ini().disableHosts), ',', std::back_inserter(disabledHosts));
     for (const auto& regexpString: disabledHosts)
     {
         if (regexpString.empty())
             continue;
 
-        const auto wildcard =
-            QRegularExpression::wildcardToRegularExpression(
-                QString::fromUtf8(regexpString.data(), regexpString.size()));
+        const auto wildcard = QRegularExpression::wildcardToRegularExpression(
+            QString::fromUtf8(regexpString.data(), regexpString.size()));
 
         m_impl->hostDisabledViaIni.emplace(
             regexpString,
@@ -411,7 +400,10 @@ void SocketGlobals::initializeNetworking(const ArgumentParser& arguments)
     m_impl->aioServiceGuard.initialize(aioThreadCount, enableAioThreadWatcher);
 
     m_impl->onAboutToBlockHandler = nx::utils::debug::setOnAboutToBlockHandler(
-        []() { NX_ASSERT(!aioService().isInAnyAioThread()); });
+        []()
+        {
+            NX_ASSERT(!aioService().isInAnyAioThread());
+        });
 
     m_impl->addressResolver = std::make_unique<AddressResolver>();
 
@@ -473,10 +465,7 @@ SocketGlobalsHolder::SocketGlobalsHolder(int initializationFlags):
 {
 }
 
-SocketGlobalsHolder::SocketGlobalsHolder(
-    const ArgumentParser& arguments,
-    int initializationFlags)
-    :
+SocketGlobalsHolder::SocketGlobalsHolder(const ArgumentParser& arguments, int initializationFlags):
     m_args(arguments),
     m_initializationFlags(initializationFlags)
 {
@@ -496,7 +485,8 @@ SocketGlobalsHolder::~SocketGlobalsHolder()
 
 void SocketGlobalsHolder::initialize(bool initializePeerId)
 {
-    m_socketGlobalsGuard = std::make_unique<SocketGlobals::InitGuard>(m_args, m_initializationFlags);
+    m_socketGlobalsGuard =
+        std::make_unique<SocketGlobals::InitGuard>(m_args, m_initializationFlags);
 
     // TODO: #akolesnikov It is not clear why following call is in reinitialize,
     // but not in initial initialization. Remove it from here.

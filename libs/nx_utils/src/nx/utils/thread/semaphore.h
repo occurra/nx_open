@@ -65,7 +65,11 @@ private:
 class SemaphoreLocker
 {
 public:
-    SemaphoreLocker(Semaphore* semaphore): m_semaphore(semaphore) { m_semaphore->acquire(1); }
+    SemaphoreLocker(Semaphore* semaphore):
+        m_semaphore(semaphore)
+    {
+        m_semaphore->acquire(1);
+    }
     ~SemaphoreLocker() { m_semaphore->release(1); }
 
 private:

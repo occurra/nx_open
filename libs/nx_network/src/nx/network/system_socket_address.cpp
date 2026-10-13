@@ -4,12 +4,11 @@
 #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "system_socket_address.h"
-
 #include <nx/utils/log/log.h>
 #include <nx/utils/system_error.h>
 
 #include "socket_global.h"
+#include "system_socket_address.h"
 
 namespace nx::network {
 
@@ -77,7 +76,9 @@ SocketAddress SystemSocketAddress::toSocketAddress() const
     else if (m_sockaddr.untyped.sa_family == AF_INET6)
         return SocketAddress(m_sockaddr.v6);
 
-    NX_ASSERT(false, nx::format("Unknown socket family type: %1").arg(m_sockaddr.untyped.sa_family));
+    NX_ASSERT(
+        false,
+        nx::format("Unknown socket family type: %1").arg(m_sockaddr.untyped.sa_family));
     return SocketAddress();
 }
 

@@ -1,13 +1,12 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <qglobal.h>
-
 #include "pollset.h"
 
+#include <map>
+
+#include <qglobal.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
-
-#include <map>
 
 #include "../system_socket.h"
 
@@ -37,10 +36,7 @@ public:
             eventTypeToUserData.fill(nullptr);
         }
 
-        SockData(
-            int _eventsMask,
-            bool _markedForRemoval)
-            :
+        SockData(int _eventsMask, bool _markedForRemoval):
             eventsMask(_eventsMask),
             markedForRemoval(_markedForRemoval)
         {
@@ -97,7 +93,7 @@ public:
 
     void selectNextSocket()
     {
-        for (; currentIndex < pollSetImpl->signalledSockCount; )
+        for (; currentIndex < pollSetImpl->signalledSockCount;)
         {
             PollSetImpl::MonitoredEventMap::const_pointer socketData = NULL;
             if (currentIndex >= 0)
@@ -106,15 +102,15 @@ public:
                     pollSetImpl->epollEventsArray[currentIndex].data.ptr);
                 // Reporting EPOLLIN and EPOLLOUT as different events to allow
                 // them to have different handlers.
-                if (socketData != NULL &&
-                    !socketData->second.markedForRemoval &&
-                    handlerToUse == aio::etRead &&
-                    (pollSetImpl->epollEventsArray[currentIndex].events & EPOLLOUT))
+                if (socketData != NULL && !socketData->second.markedForRemoval
+                    && handlerToUse == aio::etRead
+                    && (pollSetImpl->epollEventsArray[currentIndex].events & EPOLLOUT))
                 {
                     // If both EPOLLIN and EPOLLOUT have occured and EPOLLIN
                     // has already been reported then reporting EPOLLOUT.
                     handlerToUse = aio::etWrite;
-                    triggeredEvent = (pollSetImpl->epollEventsArray[currentIndex].events & EPOLLERR)
+                    triggeredEvent =
+                        (pollSetImpl->epollEventsArray[currentIndex].events & EPOLLERR)
                         ? aio::etError
                         : aio::etWrite;
                     return;
@@ -147,7 +143,8 @@ public:
                 // Reporting aio::etError to every one who listens.
                 pollSetImpl->epollEventsArray[currentIndex].events |=
                     socketData->second.eventsMask & (EPOLLIN | EPOLLOUT);
-                handlerToUse = (socketData->second.eventsMask & EPOLLIN) ? aio::etRead : aio::etWrite;
+                handlerToUse =
+                    (socketData->second.eventsMask & EPOLLIN) ? aio::etRead : aio::etWrite;
                 triggeredEvent = aio::etError;
             }
             else
@@ -157,7 +154,8 @@ public:
                     // Reporting events to every one who listens.
                     pollSetImpl->epollEventsArray[currentIndex].events |=
                         socketData->second.eventsMask & (EPOLLIN | EPOLLOUT);
-                    handlerToUse = (socketData->second.eventsMask & EPOLLIN) ? aio::etRead : aio::etWrite;
+                    handlerToUse =
+                        (socketData->second.eventsMask & EPOLLIN) ? aio::etRead : aio::etWrite;
                     // Reporting connection closure as an error when writing data to
                     // provide behavior similar to recv/send functions.
                     // recv returns (ok, 0 bytes) in case of a closed connection.
@@ -224,13 +222,15 @@ PollSet::const_iterator& PollSet::const_iterator::operator++() //< ++it
 const Pollable* PollSet::const_iterator::socket() const
 {
     return static_cast<PollSetImpl::MonitoredEventMap::const_pointer>(
-        m_impl->pollSetImpl->epollEventsArray[m_impl->currentIndex].data.ptr)->first;
+               m_impl->pollSetImpl->epollEventsArray[m_impl->currentIndex].data.ptr)
+        ->first;
 }
 
 Pollable* PollSet::const_iterator::socket()
 {
     return static_cast<PollSetImpl::MonitoredEventMap::const_pointer>(
-        m_impl->pollSetImpl->epollEventsArray[m_impl->currentIndex].data.ptr)->first;
+               m_impl->pollSetImpl->epollEventsArray[m_impl->currentIndex].data.ptr)
+        ->first;
 }
 
 aio::EventType PollSet::const_iterator::eventType() const
@@ -241,8 +241,8 @@ aio::EventType PollSet::const_iterator::eventType() const
 void* PollSet::const_iterator::userData()
 {
     return static_cast<PollSetImpl::MonitoredEventMap::pointer>(
-        m_impl->pollSetImpl->epollEventsArray[m_impl->currentIndex].data.ptr
-        )->second.eventTypeToUserData[m_impl->handlerToUse];
+               m_impl->pollSetImpl->epollEventsArray[m_impl->currentIndex].data.ptr)
+        ->second.eventTypeToUserData[m_impl->handlerToUse];
 }
 
 bool PollSet::const_iterator::operator==(const const_iterator& right) const
@@ -264,7 +264,7 @@ PollSet::PollSet():
     {
         epoll_event _event;
         memset(&_event, 0, sizeof(_event));
-        _event.data.ptr = NULL; //m_impl->eventFd;
+        _event.data.ptr = NULL; // m_impl->eventFd;
         _event.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
         if (epoll_ctl(m_impl->epollSetFd, EPOLL_CTL_ADD, m_impl->eventFd, &_event))
         {
@@ -301,7 +301,7 @@ void PollSet::interrupt()
     uint64_t val = 1;
     if (write(m_impl->eventFd, &val, sizeof(val)) != sizeof(val))
     {
-        //TODO #akolesnikov: can this really occur ???
+        // TODO #akolesnikov: can this really occur ???
     }
 }
 
@@ -338,7 +338,8 @@ bool PollSet::add(Pollable* const sock, EventType eventType, void* userData)
         epoll_event _event;
         memset(&_event, 0, sizeof(_event));
         _event.data.ptr = &*p.first;
-        _event.events = epollEventType | p.first->second.eventsMask | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
+        _event.events =
+            epollEventType | p.first->second.eventsMask | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
         if (epoll_ctl(m_impl->epollSetFd, EPOLL_CTL_MOD, sock->handle(), &_event) == 0)
         {
             p.first->second.eventsMask |= epollEventType;
@@ -359,7 +360,8 @@ void PollSet::remove(Pollable* const sock, EventType eventType)
     if ((it == m_impl->monitoredEvents.end()) || !(it->second.eventsMask & epollEventType))
         return;
 
-    const int eventsBesidesRemovedOne = (it->second.eventsMask & (EPOLLIN | EPOLLOUT)) & (~epollEventType);
+    const int eventsBesidesRemovedOne =
+        (it->second.eventsMask & (EPOLLIN | EPOLLOUT)) & (~epollEventType);
     if (eventsBesidesRemovedOne)
     {
         // Socket is being listened for multiple events, modifying event set.
@@ -368,15 +370,19 @@ void PollSet::remove(Pollable* const sock, EventType eventType)
         _event.data.ptr = &*it;
         _event.events = eventsBesidesRemovedOne | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
         epoll_ctl(m_impl->epollSetFd, EPOLL_CTL_MOD, sock->handle(), &_event);
-        it->second.eventsMask &= ~epollEventType; // Resetting disabled event bit.
-                                                  // TODO: #akolesnikov Better remove following linear run.
+        it->second.eventsMask &=
+            ~epollEventType; // Resetting disabled event bit.
+                             // TODO: #akolesnikov Better remove following linear run.
         for (int i = 0; i < m_impl->signalledSockCount; ++i)
         {
-            if (m_impl->epollEventsArray[i].data.ptr != NULL &&
-                static_cast<PollSetImpl::MonitoredEventMap::const_pointer>(
-                    m_impl->epollEventsArray[i].data.ptr)->first == sock)
+            if (m_impl->epollEventsArray[i].data.ptr != NULL
+                && static_cast<PollSetImpl::MonitoredEventMap::const_pointer>(
+                       m_impl->epollEventsArray[i].data.ptr)
+                        ->first
+                    == sock)
             {
-                m_impl->epollEventsArray[i].events &= ~epollEventType; //< Ignoring event which has just been removed.
+                m_impl->epollEventsArray[i].events &=
+                    ~epollEventType; //< Ignoring event which has just been removed.
                 break;
             }
         }
@@ -390,8 +396,11 @@ void PollSet::remove(Pollable* const sock, EventType eventType)
         // TODO: #akolesnikov Netter remove following linear run.
         for (int i = 0; i < m_impl->signalledSockCount; ++i)
         {
-            if (m_impl->epollEventsArray[i].data.ptr != NULL &&
-                static_cast<PollSetImpl::MonitoredEventMap::const_pointer>(m_impl->epollEventsArray[i].data.ptr)->first == sock)
+            if (m_impl->epollEventsArray[i].data.ptr != NULL
+                && static_cast<PollSetImpl::MonitoredEventMap::const_pointer>(
+                       m_impl->epollEventsArray[i].data.ptr)
+                        ->first
+                    == sock)
             {
                 m_impl->epollEventsArray[i].data.ptr = NULL;
                 break;

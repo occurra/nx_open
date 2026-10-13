@@ -112,8 +112,8 @@ static RSA* jwkToRsa(const Key& jwkKey)
     return rsa;
 }
 
-std::expected<KeyPair, std::string /*error*/>
-    generateKeyPairForSigning(const Algorithm& /*algorithm*/)
+std::expected<KeyPair, std::string /*error*/> generateKeyPairForSigning(
+    const Algorithm& /*algorithm*/)
 {
     // TODO: add support for algorithm.
 
@@ -128,7 +128,7 @@ std::expected<KeyPair, std::string /*error*/>
     RSA_generate_key_ex(rsa, keySize, bn, nullptr);
 
     // Extract key components
-    const BIGNUM* rsa_n, * rsa_e, * rsa_d;
+    const BIGNUM *rsa_n, *rsa_e, *rsa_d;
     RSA_get0_key(rsa, &rsa_n, &rsa_e, &rsa_d);
 
     // Convert BIGNUMs to Base64URL encoded strings
@@ -253,10 +253,12 @@ std::expected<ParsedKey, std::string /*error*/> parseKey(const Key& key)
     {
         const auto k = key.get<std::string>("k");
         if (!k)
-            return std::unexpected<std::string>("Inappropriate key for HS256 signing: no 'k' attribute");
+            return std::unexpected<std::string>(
+                "Inappropriate key for HS256 signing: no 'k' attribute");
 
         // Decode the key from Base64URL.
-        return ParsedKey(std::make_unique<ParsedKeyImpl>(key.alg(), key.kid(), nx::utils::fromBase64Url(*k)));
+        return ParsedKey(
+            std::make_unique<ParsedKeyImpl>(key.alg(), key.kid(), nx::utils::fromBase64Url(*k)));
     }
 
     return std::unexpected<std::string>("alg '" + key.alg() + "' is not supported");
@@ -305,8 +307,8 @@ std::expected<SignResult, std::string /*error*/> sign(
     else if (key.impl()->algorithm == "HS256")
         return hs256Sign(message, key);
     else
-        return std::unexpected<std::string>("alg '" + key.impl()->algorithm +
-            "' is not supported for signing");
+        return std::unexpected<std::string>(
+            "alg '" + key.impl()->algorithm + "' is not supported for signing");
 }
 
 std::expected<SignResult, std::string /*error*/> sign(
@@ -321,14 +323,14 @@ std::expected<SignResult, std::string /*error*/> sign(
     if (std::count(keyOps.begin(), keyOps.end(), KeyOp::sign) == 0)
     {
         return std::unexpected<std::string>("Cannot proceed with signing given a key "
-            "that does not specify 'sign' operation");
+                                            "that does not specify 'sign' operation");
     }
 
     const auto parsedKey = parseKey(key);
     if (!parsedKey)
     {
-        return std::unexpected<std::string>("Cannot parse the key for signing: " +
-            parsedKey.error());
+        return std::unexpected<std::string>(
+            "Cannot parse the key for signing: " + parsedKey.error());
     }
 
     return sign(message, *parsedKey);
@@ -399,7 +401,10 @@ bool rs256Verify(
 
     std::string decoded_signature = nx::utils::fromBase64Url(signature);
     int verify_status = EVP_VerifyFinal(
-        md_ctx, (const unsigned char*) decoded_signature.data(), decoded_signature.size(), key.impl()->key);
+        md_ctx,
+        (const unsigned char*) decoded_signature.data(),
+        decoded_signature.size(),
+        key.impl()->key);
 
     EVP_MD_CTX_free(md_ctx);
 
@@ -418,9 +423,14 @@ std::expected<SignResult, std::string /*error*/> hs256Sign(
     unsigned int result_len = 0;
 
     // Create the HMAC.
-    HMAC(EVP_sha256(), key.impl()->binaryKey.data(), key.impl()->binaryKey.size(),
-         reinterpret_cast<const unsigned char*>(message.data()), message.size(),
-         result.get(), &result_len);
+    HMAC(
+        EVP_sha256(),
+        key.impl()->binaryKey.data(),
+        key.impl()->binaryKey.size(),
+        reinterpret_cast<const unsigned char*>(message.data()),
+        message.size(),
+        result.get(),
+        &result_len);
 
     // Convert the result to a Base64URL encoded string.
     std::string signature = nx::utils::toBase64Url(

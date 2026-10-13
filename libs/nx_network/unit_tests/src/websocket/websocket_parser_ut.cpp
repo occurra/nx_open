@@ -1,11 +1,13 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <vector>
 #include <algorithm>
+#include <cstring>
 #include <iterator>
 #include <thread>
-#include <cstring>
+#include <vector>
+
 #include <gtest/gtest.h>
+
 #include <nx/network/websocket/websocket_parser.h>
 #include <nx/network/websocket/websocket_serializer.h>
 
@@ -59,7 +61,7 @@ static nx::Buffer fillDummyPayload(std::size_t size)
     return result;
 }
 
-}
+} // namespace
 
 struct ParserTestParams
 {
@@ -69,35 +71,43 @@ struct ParserTestParams
     ParserTestParams(CompressionType compressionType, int payloadSize):
         compressionType(compressionType),
         payloadSize(payloadSize)
-    {}
+    {
+    }
 };
 
-class WebsocketParserTest : public ::testing::TestWithParam<ParserTestParams>
+class WebsocketParserTest: public ::testing::TestWithParam<ParserTestParams>
 {
 protected:
-    WebsocketParserTest()
-    {
-        m_defaultPayload = fillDummyPayload(GetParam().payloadSize);
-    }
+    WebsocketParserTest() { m_defaultPayload = fillDummyPayload(GetParam().payloadSize); }
 
     void testWebsocketParserAndSerializer(
-        int readSize, int frameCount, FrameType type, bool masked, unsigned int mask)
+        int readSize,
+        int frameCount,
+        FrameType type,
+        bool masked,
+        unsigned int mask)
     {
         int messageOffset = 0;
         auto message = prepareMessage(
-            m_defaultPayload, frameCount, type, masked, mask, GetParam().compressionType);
+            m_defaultPayload,
+            frameCount,
+            type,
+            masked,
+            mask,
+            GetParam().compressionType);
 
         std::vector<FrameType> frameTypes;
         nx::Buffer payload;
         bool fin;
-        Parser parser(Role::client,
+        Parser parser(
+            Role::client,
             [&](FrameType frameType, const nx::Buffer& frame, bool fin_)
             {
                 frameTypes.push_back(frameType);
                 payload += frame;
                 fin = fin_;
             });
-        for (int i = 0; ; ++i)
+        for (int i = 0;; ++i)
         {
             int consumeLen = std::min((int) (message.size() - messageOffset), readSize);
             parser.consume(message.data() + i * readSize, consumeLen);
@@ -140,7 +150,8 @@ TEST_P(WebsocketParserTest, Mask)
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(WebsocketParserSerializer_differentCompressionModes,
+INSTANTIATE_TEST_SUITE_P(
+    WebsocketParserSerializer_differentCompressionModes,
     WebsocketParserTest,
     ::testing::Values(
         ParserTestParams(CompressionType::none, 20),

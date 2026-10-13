@@ -9,7 +9,7 @@
 
 bool isDataEq(const QByteArray& data, char ch)
 {
-    for(int i = 0; i < data.size(); ++i)
+    for (int i = 0; i < data.size(); ++i)
     {
         if (data[i] != ch)
             return false;
@@ -23,17 +23,17 @@ void checkTestPattern(QnMediaCyclicBuffer& buffer)
     for (int i = 1; i < buffer.size() - testString.size() - 1; ++i)
     {
         buffer.insert(0, "B", 1);
-        buffer.insert(buffer.size()-1, "E", 1);
+        buffer.insert(buffer.size() - 1, "E", 1);
         buffer.insert(i, testString.data(), testString.size());
         const char* dstData = buffer.unfragmentedData(i, testString.size());
         QByteArray resultData = QByteArray::fromRawData(dstData, testString.size());
         ASSERT_EQ(testString, resultData);
         ASSERT_EQ(*buffer.unfragmentedData(0, 1), 'B');
-        ASSERT_EQ(*buffer.unfragmentedData(buffer.size()-1, 1), 'E');
+        ASSERT_EQ(*buffer.unfragmentedData(buffer.size() - 1, 1), 'E');
     }
 }
 
-TEST( QnMediaCycleBuffer, main )
+TEST(QnMediaCycleBuffer, main)
 {
     static const int DATA_BLOCK_SIZE = 32;
     static const int DATA_BLOCKS = 5;
@@ -44,11 +44,13 @@ TEST( QnMediaCycleBuffer, main )
     for (int i = 0; i < 5; ++i)
         memset(testData[i], i, DATA_BLOCK_SIZE);
 
-    for (int i = 0; i < 16; ++i) {
+    for (int i = 0; i < 16; ++i)
+    {
         for (int i = 0; i < DATA_BLOCKS; ++i)
             buffer.push_back(testData[i], DATA_BLOCK_SIZE);
     }
-    for (int i = 0; i < DATA_BLOCKS; ++i) {
+    for (int i = 0; i < DATA_BLOCKS; ++i)
+    {
         buffer.pop_front(DATA_BLOCK_SIZE);
         buffer.push_back(testData[i], DATA_BLOCK_SIZE);
     }
@@ -63,7 +65,8 @@ TEST( QnMediaCycleBuffer, main )
         ASSERT_EQ(data.size(), 16);
         ASSERT_TRUE(isDataEq(data, testData[chIdx][0]));
         processedBytes += 16;
-        if (processedBytes == DATA_BLOCK_SIZE) {
+        if (processedBytes == DATA_BLOCK_SIZE)
+        {
             processedBytes = 0;
             chIdx = (chIdx + 1) % DATA_BLOCKS;
         }
@@ -71,7 +74,8 @@ TEST( QnMediaCycleBuffer, main )
     }
 
     // fill buffer again
-    for (int i = 0; i < 16; ++i) {
+    for (int i = 0; i < 16; ++i)
+    {
         for (int i = 0; i < DATA_BLOCKS; ++i)
             buffer.push_back(testData[i], DATA_BLOCK_SIZE);
     }
@@ -79,8 +83,10 @@ TEST( QnMediaCycleBuffer, main )
     checkTestPattern(buffer);
 
     // move offset to the second half of the buffer
-    for (int i = 0; i < 10; ++i) {
-        for (int i = 0; i < DATA_BLOCKS; ++i) {
+    for (int i = 0; i < 10; ++i)
+    {
+        for (int i = 0; i < DATA_BLOCKS; ++i)
+        {
             buffer.pop_front(DATA_BLOCK_SIZE);
             buffer.push_back(testData[i], DATA_BLOCK_SIZE);
         }

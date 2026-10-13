@@ -11,10 +11,10 @@ constexpr std::chrono::seconds kPunchTimeout{2};
 
 using namespace nx::network;
 
-Srflx::Srflx(const std::string& sessionId,
+Srflx::Srflx(
+    const std::string& sessionId,
     const std::vector<nx::network::SocketAddress>& stunServers,
-    const Handler& handler)
-    :
+    const Handler& handler):
     m_sessionId(sessionId),
     m_socket(nx::network::SocketFactory::createDatagramSocket()),
     m_handler(handler)
@@ -28,7 +28,8 @@ Srflx::Srflx(const std::string& sessionId,
     m_socket->setSendTimeout(kPunchTimeout);
 
     // Same request for all servers.
-    stun::Message request(stun::Header(stun::MessageClass::request, stun::MethodType::bindingMethod));
+    stun::Message request(
+        stun::Header(stun::MessageClass::request, stun::MethodType::bindingMethod));
     stun::MessageSerializer stunSerializer;
     stunSerializer.setAlwaysAddFingerprint(true);
     m_sendBuffer = stunSerializer.serialized(request);
@@ -59,12 +60,12 @@ Srflx::Srflx(const std::string& sessionId,
 
 Srflx::~Srflx()
 {
-    m_pollable.executeInAioThreadSync([this]()
+    m_pollable.executeInAioThreadSync(
+        [this]()
         {
             if (m_socket)
                 m_socket->pleaseStopSync();
             m_socket.reset();
-
         });
     NX_VERBOSE(this, "%1: Destroyed.", m_sessionId);
 }
@@ -107,7 +108,11 @@ void Srflx::onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTrans
     if (m_mappedAddress.isNull())
     {
         m_mappedAddress = xorMappedAddress->addr();
-        NX_DEBUG(this, "%1: STUN punched reflexive address %2", m_sessionId, m_mappedAddress.toString());
+        NX_DEBUG(
+            this,
+            "%1: STUN punched reflexive address %2",
+            m_sessionId,
+            m_mappedAddress.toString());
     }
     else if (m_mappedAddress != xorMappedAddress->addr())
     {
@@ -132,8 +137,11 @@ void Srflx::onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTrans
 
     if (m_timeout.hasExpired(kPunchTimeout))
     {
-        NX_DEBUG(this, "%1: Srflx probably (by timeout) punched reflexive address %2",
-            m_sessionId, m_mappedAddress.toString());
+        NX_DEBUG(
+            this,
+            "%1: Srflx probably (by timeout) punched reflexive address %2",
+            m_sessionId,
+            m_mappedAddress.toString());
         return;
     }
 

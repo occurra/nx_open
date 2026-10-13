@@ -70,8 +70,11 @@ bool registerExternalResourceDirectory(const QString& directory)
         return true;
 
     QDir assetsDirectory(externalResourcesDirectory());
-    if (!NX_ASSERT(assetsDirectory.cd(directory),
-        "Unable to find '%1' in asset directory: %2", directory, assetsDirectory))
+    if (!NX_ASSERT(
+            assetsDirectory.cd(directory),
+            "Unable to find '%1' in asset directory: %2",
+            directory,
+            assetsDirectory))
     {
         return false;
     }
@@ -99,16 +102,22 @@ bool unregisterExternalResourceDirectory(const QString& directory)
         return true; // It is safe to unregister directory twice.
 
     QDir assetsDirectory(externalResourcesDirectory());
-    if (!NX_ASSERT(assetsDirectory.cd(directory),
-        "Unable to find '%1' in asset directory: %2", directory, assetsDirectory))
+    if (!NX_ASSERT(
+            assetsDirectory.cd(directory),
+            "Unable to find '%1' in asset directory: %2",
+            directory,
+            assetsDirectory))
     {
         return false;
     }
 
     const auto filenames = assetsDirectory.entryList(QDir::Filter::Files);
-    NX_ASSERT(g_registeredAssets[directory] == filenames,
+    NX_ASSERT(
+        g_registeredAssets[directory] == filenames,
         "Asset list has been changed in directory: %1. Old value: %2, new value: %3",
-        directory, g_registeredAssets[directory], filenames);
+        directory,
+        g_registeredAssets[directory],
+        filenames);
 
     bool result = std::ranges::all_of(
         filenames,

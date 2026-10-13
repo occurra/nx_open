@@ -35,13 +35,19 @@ T keyFromName(const std::string& name)
 }
 
 inline DeserializationResult::Fields* nextOriginFields(
-    std::string_view name, DeserializationResult::Fields* originFields)
+    std::string_view name,
+    DeserializationResult::Fields* originFields)
 {
     if (!originFields)
         return nullptr;
 
-    auto next = std::find_if(originFields->begin(), originFields->end(),
-        [&name](const auto& f) { return f.name == name; });
+    auto next = std::find_if(
+        originFields->begin(),
+        originFields->end(),
+        [&name](const auto& f)
+        {
+            return f.name == name;
+        });
     return next == originFields->end() ? nullptr : &next->fields;
 }
 
@@ -54,8 +60,7 @@ public:
         T* updated,
         DeserializationResult::Fields fields,
         DeserializationResult::Fields* originFields,
-        bool replaceAssociativeContainer)
-        :
+        bool replaceAssociativeContainer):
         m_origin(origin),
         m_updated(updated),
         m_fields(std::move(fields)),
@@ -69,7 +74,12 @@ public:
     {
         auto name = field.name();
         auto next = std::find_if(
-            m_fields.begin(), m_fields.end(), [name](auto f) { return f.name == name; });
+            m_fields.begin(),
+            m_fields.end(),
+            [name](auto f)
+            {
+                return f.name == name;
+            });
         if (next == m_fields.end())
             return;
 
@@ -101,10 +111,16 @@ public:
 
 private:
     template<typename F, typename = void>
-    struct HasRef { static constexpr bool value = false; };
+    struct HasRef
+    {
+        static constexpr bool value = false;
+    };
 
     template<typename F>
-    struct HasRef<F, detail::void_t<decltype(&F::ref)>> { static constexpr bool value = true; };
+    struct HasRef<F, detail::void_t<decltype(&F::ref)>>
+    {
+        static constexpr bool value = true;
+    };
 
 private:
     T* m_origin;
@@ -148,14 +164,18 @@ void mergeAssociativeContainer(
         auto originField = origin->find(key);
         if (originField == origin->end())
         {
-            origin->emplace(std ::move(key), std::move(updatedField->second));
+            origin->emplace(std::move(key), std::move(updatedField->second));
             if (originFields)
                 originFields->push_back(std::move(field));
             continue;
         }
 
-        merge(&originField->second, &updatedField->second, std::move(field.fields),
-            merge_details::nextOriginFields(field.name, originFields), replaceAssociativeContainer);
+        merge(
+            &originField->second,
+            &updatedField->second,
+            std::move(field.fields),
+            merge_details::nextOriginFields(field.name, originFields),
+            replaceAssociativeContainer);
     }
 }
 
@@ -172,8 +192,12 @@ void merge(
         if (!origin->has_value() || !updated->has_value())
             return merge_details::replace(origin, updated, std::move(fields), originFields);
 
-        merge(&origin->value(), &updated->value(), std::move(fields),
-            originFields, replaceAssociativeContainer);
+        merge(
+            &origin->value(),
+            &updated->value(),
+            std::move(fields),
+            originFields,
+            replaceAssociativeContainer);
     }
     else if constexpr (IsVariantV<T>)
     {
@@ -181,11 +205,16 @@ void merge(
             return merge_details::replace(origin, updated, std::move(fields), originFields);
 
         std::visit(
-            [updated, &fields, originFields, replaceAssociativeContainer](auto& originValue) mutable
+            [updated, &fields, originFields, replaceAssociativeContainer](
+                auto& originValue) mutable
             {
                 auto& updatedValue = std::get<std::decay_t<decltype(originValue)>>(*updated);
-                merge(&originValue, &updatedValue, std::move(fields),
-                    originFields, replaceAssociativeContainer);
+                merge(
+                    &originValue,
+                    &updatedValue,
+                    std::move(fields),
+                    originFields,
+                    replaceAssociativeContainer);
             },
             *origin);
     }
@@ -193,12 +222,19 @@ void merge(
     {
         if (!fields.empty())
         {
-            nxReflectVisitAllFields(origin, merge_details::MergeVisitor{
-                origin, updated, std::move(fields), originFields, replaceAssociativeContainer});
+            nxReflectVisitAllFields(
+                origin,
+                merge_details::MergeVisitor{
+                    origin,
+                    updated,
+                    std::move(fields),
+                    originFields,
+                    replaceAssociativeContainer});
         }
     }
-    else if constexpr ((IsAssociativeContainerV<T> && !IsSetContainerV<T>)
-        || (IsUnorderedAssociativeContainerV<T> && !IsUnorderedSetContainerV<T>))
+    else if constexpr (
+        (IsAssociativeContainerV<T> && !IsSetContainerV<T>)
+        || (IsUnorderedAssociativeContainerV<T> && !IsUnorderedSetContainerV<T>) )
     {
         if (replaceAssociativeContainer)
             return merge_details::replace(origin, updated, std::move(fields), originFields);
@@ -206,7 +242,11 @@ void merge(
         if (!fields.empty())
         {
             mergeAssociativeContainer(
-                origin, updated, std::move(fields), originFields, /*replaceAssociativeContainer*/ false);
+                origin,
+                updated,
+                std::move(fields),
+                originFields,
+                /*replaceAssociativeContainer*/ false);
         }
     }
     else

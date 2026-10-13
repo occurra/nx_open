@@ -16,8 +16,7 @@ namespace nx::network::http::server::rest {
  * - Request "GET /account/vpupkin/systems") matches to the registered path.
  * ("accountId": "vpupkin") pair is added to RequestContext::requestPathParams.
  */
-class MessageDispatcher:
-    public BasicMessageDispatcher<PathMatcher>
+class MessageDispatcher: public BasicMessageDispatcher<PathMatcher>
 {
 public:
     /**
@@ -45,18 +44,17 @@ public:
         typename Input,
         typename Output,
         typename... RestArgFetchers,
-        typename Func
-    >
-    bool registerRestHandler(
-        const Method& method,
-        std::string_view path,
-        Func func)
+        typename Func>
+    bool registerRestHandler(const Method& method, std::string_view path, Func func)
     {
         using Handler = RequestHandler<Result, Input, Output, RestArgFetchers...>;
 
         return registerRequestProcessor(
             path,
-            [func]() { return std::make_unique<Handler>(func); },
+            [func]()
+            {
+                return std::make_unique<Handler>(func);
+            },
             method);
     }
 };

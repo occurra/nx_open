@@ -29,7 +29,7 @@ public:
     virtual const char* what() const noexcept override final;
 
 protected:
-    void clearWhatCache();  //< Not thread-safe.
+    void clearWhatCache(); //< Not thread-safe.
 
 private:
     mutable std::atomic<char*> m_whatCache = nullptr;
@@ -43,26 +43,32 @@ private:
  *
  * unwrapNestedErrors() should be used to get output string for wrapped exceptions.
  */
-#define NX_WRAP_EXCEPTION(EXPRESSION, ORIGINAL_EXCEPTION, NEW_EXCEPTION, MESSAGE) [&]() \
-{ \
-    try \
+#define NX_WRAP_EXCEPTION(EXPRESSION, ORIGINAL_EXCEPTION, NEW_EXCEPTION, MESSAGE) \
+    [&]() \
     { \
-        return EXPRESSION; \
-    } catch (const ORIGINAL_EXCEPTION&)  \
-    { \
-        std::throw_with_nested(NEW_EXCEPTION(MESSAGE)); \
-    } \
-}()
+        try \
+        { \
+            return EXPRESSION; \
+        } \
+        catch (const ORIGINAL_EXCEPTION&) \
+        { \
+            std::throw_with_nested(NEW_EXCEPTION(MESSAGE)); \
+        } \
+    }()
 
 class NX_UTILS_API ContextedException: public Exception
 {
 private:
     struct FutureTranslator
     {
-        template <typename Future>
+        template<typename Future>
         decltype(auto) operator()(Future&& future) const
         {
-            return translate([&] { return std::forward<Future>(future).get(); });
+            return translate(
+                [&]
+                {
+                    return std::forward<Future>(future).get();
+                });
         };
     };
 
@@ -71,7 +77,7 @@ public:
     explicit ContextedException(const std::exception& exception);
     explicit ContextedException(QString message);
 
-    template <typename... Args>
+    template<typename... Args>
     explicit ContextedException(const Args&... args):
         ContextedException(nx::format(args...).toQString())
     {
@@ -80,7 +86,7 @@ public:
     void addContext(const std::string& context);
     void addContext(const QString& context);
 
-    template <typename... Args>
+    template<typename... Args>
     void addContext(const Args&... args)
     {
         addContext(nx::format(args...).toQString());
@@ -110,63 +116,60 @@ public:
 
 #else
 
-    template <typename T1, typename T2, typename T3>
+    template<typename T1, typename T2, typename T3>
     static auto addFutureContext(T1&& arg1, T2&& arg2, T3&& arg3)
     {
-        return
-            [=](auto&& future)
+        return [=](auto&& future)
+        {
+            try
             {
-                try
-                {
-                    return std::forward<decltype(future)>(future).get();
-                }
-                catch (ContextedException& exception)
-                {
-                    exception.addContext(arg1, arg2, arg3);
-                    throw;
-                }
-            };
+                return std::forward<decltype(future)>(future).get();
+            }
+            catch (ContextedException& exception)
+            {
+                exception.addContext(arg1, arg2, arg3);
+                throw;
+            }
+        };
     }
 
-    template <typename T1, typename T2>
+    template<typename T1, typename T2>
     static auto addFutureContext(T1&& arg1, T2&& arg2)
     {
-        return
-            [=](auto&& future)
+        return [=](auto&& future)
+        {
+            try
             {
-                try
-                {
-                    return std::forward<decltype(future)>(future).get();
-                }
-                catch (ContextedException& exception)
-                {
-                    exception.addContext(arg1, arg2);
-                    throw;
-                }
-            };
+                return std::forward<decltype(future)>(future).get();
+            }
+            catch (ContextedException& exception)
+            {
+                exception.addContext(arg1, arg2);
+                throw;
+            }
+        };
     }
 
-    template <typename T1>
+    template<typename T1>
     static auto addFutureContext(T1&& arg1)
     {
-        return
-            [=](auto&& future)
+        return [=](auto&& future)
+        {
+            try
             {
-                try
-                {
-                    return std::forward<decltype(future)>(future).get();
-                }
-                catch (ContextedException& exception)
-                {
-                    exception.addContext(arg1);
-                    throw;
-                }
-            };
+                return std::forward<decltype(future)>(future).get();
+            }
+            catch (ContextedException& exception)
+            {
+                exception.addContext(arg1);
+                throw;
+            }
+        };
     }
 
 #endif //< MSVS c++-20 compiler internal error workaround
 
-    template <typename Callable>
+    template<typename Callable>
     static decltype(auto) translate(Callable&& callable)
     {
         try

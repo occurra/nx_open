@@ -40,7 +40,8 @@ int ResolutionData::megaPixels() const
 std::string ResolutionData::toStdString() const
 {
     if (size.isValid())
-        return std::to_string(size.width()) + kResolutionStringSeparator + std::to_string(size.height());
+        return std::to_string(size.width()) + kResolutionStringSeparator
+            + std::to_string(size.height());
 
     return std::to_string(size.height()) + kResolutionStringSuffix;
 }

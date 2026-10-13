@@ -13,7 +13,8 @@ int main(int argc, char** argv)
     QCoreApplication app(argc, argv); //< Required for loading TLS plugins in Qt6.
 
     return nx::network::test::runTest(
-        argc, argv,
+        argc,
+        argv,
         [](const nx::ArgumentParser&)
         {
             nx::network::ssl::useRandomCertificate("nx_network_ut");

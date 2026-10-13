@@ -11,8 +11,7 @@ namespace nx::reflect::json {
 
 namespace detail {
 
-class NX_REFLECT_API Object:
-    public std::unordered_map<std::string, RawJsonText>
+class NX_REFLECT_API Object: public std::unordered_map<std::string, RawJsonText>
 {
 public:
     /**

@@ -39,7 +39,7 @@ extern "C" {
 #endif
 #include <libavutil/pixdesc.h>
 #ifdef WIN32
-#   undef AVPixFmtDescriptor
+    #undef AVPixFmtDescriptor
 #endif
 };
 
@@ -72,38 +72,69 @@ inline __m128 calcWeights(float x, float y)
     __m128 fracValue2 = _mm_sub_ps(_mm_set1_ps(1), fracValue1); //< 1-.y, 1-.x, 1-.y, 1-.x
     __m128 fracValue = _mm_unpacklo_ps(fracValue2, fracValue1); //< .y, 1-.y, .x, 1-.x
 
-    __m128 xWeight = _mm_shuffle_ps(fracValue, fracValue, _MM_SHUFFLE(1, 0, 1, 0)); //<  .x (1-.x) .x (1-.x)
-    __m128 yWeight = _mm_shuffle_ps(fracValue, fracValue, _MM_SHUFFLE(3, 3, 2, 2)); //<  .y, .y, (1-.y), (1-.y),
+    __m128 xWeight =
+        _mm_shuffle_ps(fracValue, fracValue, _MM_SHUFFLE(1, 0, 1, 0)); //<  .x (1-.x) .x (1-.x)
+    __m128 yWeight =
+        _mm_shuffle_ps(fracValue, fracValue, _MM_SHUFFLE(3, 3, 2, 2)); //<  .y, .y, (1-.y), (1-.y),
     return _mm_mul_ps(xWeight, yWeight);
 }
 
-quint8 QnDewarpingImageFilter::getPixel(quint8* buffer, int stride, float x, float y, int width, int height)
+quint8 QnDewarpingImageFilter::getPixel(
+    quint8* buffer,
+    int stride,
+    float x,
+    float y,
+    int width,
+    int height)
 {
     simd128 weight = calcWeights(x, y);
 
-    const quint8* curPtr = buffer + (int)x + (int)y * stride; // pointer to first pixel
+    const quint8* curPtr = buffer + (int) x + (int) y * stride; // pointer to first pixel
     simd128 data;
     if (x < width - 1 && y < height - 1)
-        data = _mm_setr_ps((float)curPtr[0], (float)curPtr[1], (float)curPtr[stride], (float)curPtr[stride + 1]);
+        data = _mm_setr_ps(
+            (float) curPtr[0],
+            (float) curPtr[1],
+            (float) curPtr[stride],
+            (float) curPtr[stride + 1]);
     else if (x < width - 1)
-        data = _mm_setr_ps((float)curPtr[0], (float)curPtr[1], (float)curPtr[0], (float)curPtr[1]);
+        data = _mm_setr_ps(
+            (float) curPtr[0],
+            (float) curPtr[1],
+            (float) curPtr[0],
+            (float) curPtr[1]);
     else if (y < height - 1)
-        data = _mm_setr_ps((float)curPtr[0], (float)curPtr[0], (float)curPtr[stride], (float)curPtr[stride]);
+        data = _mm_setr_ps(
+            (float) curPtr[0],
+            (float) curPtr[0],
+            (float) curPtr[stride],
+            (float) curPtr[stride]);
     else
-        data = _mm_setr_ps((float)curPtr[0], (float)curPtr[0], (float)curPtr[0], (float)curPtr[0]);
+        data = _mm_setr_ps(
+            (float) curPtr[0],
+            (float) curPtr[0],
+            (float) curPtr[0],
+            (float) curPtr[0]);
 
-    union data {
+    union data
+    {
         float fData[4];
         simd128 sseData;
     } memData;
 
     memData.sseData = _mm_mul_ps(data, weight);
-    return quint8 (memData.fData[0] + memData.fData[1] + memData.fData[2] + memData.fData[3]);
+    return quint8(memData.fData[0] + memData.fData[1] + memData.fData[2] + memData.fData[3]);
     // return
-    //return _mm_cvtsi128_si32(out);
+    // return _mm_cvtsi128_si32(out);
 }
 #else
-quint8 QnDewarpingImageFilter::getPixel(quint8* buffer, int stride, float x, float y, int width, int height)
+quint8 QnDewarpingImageFilter::getPixel(
+    quint8* buffer,
+    int stride,
+    float x,
+    float y,
+    int width,
+    int height)
 {
     // TODO: C fallback routine
     return 0;
@@ -120,8 +151,7 @@ QnDewarpingImageFilter::QnDewarpingImageFilter():
 
 QnDewarpingImageFilter::QnDewarpingImageFilter(
     const dewarping::MediaData& mediaParams,
-    const dewarping::ViewData& itemParams)
-    :
+    const dewarping::ViewData& itemParams):
     QnDewarpingImageFilter()
 {
     setParameters(mediaParams, itemParams);
@@ -136,7 +166,8 @@ void QnDewarpingImageFilter::setParameters(
     m_lastImageFormat = -1;
 }
 
-CLVideoDecoderOutputPtr QnDewarpingImageFilter::updateImage(const CLVideoDecoderOutputPtr& srcFrame)
+CLVideoDecoderOutputPtr QnDewarpingImageFilter::updateImage(
+    const CLVideoDecoderOutputPtr& srcFrame)
 {
     if (!m_itemParams.enabled || !m_mediaParams.enabled)
         return srcFrame;
@@ -166,7 +197,8 @@ CLVideoDecoderOutputPtr QnDewarpingImageFilter::updateImage(const CLVideoDecoder
         {
             int w = imageSize.width();
             int h = imageSize.height();
-            if (plane > 0) {
+            if (plane > 0)
+            {
                 w >>= descr->log2_chroma_w;
                 h >>= descr->log2_chroma_h;
             }
@@ -186,7 +218,8 @@ CLVideoDecoderOutputPtr QnDewarpingImageFilter::updateImage(const CLVideoDecoder
         int index = 0;
         int w = imageSize.width();
         int h = imageSize.height();
-        if (plane > 0) {
+        if (plane > 0)
+        {
             w >>= descr->log2_chroma_w;
             h >>= descr->log2_chroma_h;
         }
@@ -197,8 +230,13 @@ CLVideoDecoderOutputPtr QnDewarpingImageFilter::updateImage(const CLVideoDecoder
             for (int x = 0; x < w; ++x)
             {
                 const QPointF* dstPixel = m_transform[plane].data() + index;
-                quint8 pixel = getPixel(frame->data[plane],
-                    frame->linesize[plane], dstPixel->x(), dstPixel->y(), w, h);
+                quint8 pixel = getPixel(
+                    frame->data[plane],
+                    frame->linesize[plane],
+                    dstPixel->x(),
+                    dstPixel->y(),
+                    w,
+                    h);
                 dstLine[x] = pixel;
                 index++;
             }
@@ -212,8 +250,8 @@ void QnDewarpingImageFilter::updateDewarpingParameters(qreal aspectRatio)
     const bool isPanoramic = m_itemParams.panoFactor > 1;
 
     const bool isSpherical = dewarping::MediaData::is360VR(m_mediaParams.cameraProjection);
-    const bool isHorizontal = isSpherical
-        || m_mediaParams.viewMode == dewarping::FisheyeCameraMount::wall;
+    const bool isHorizontal =
+        isSpherical || m_mediaParams.viewMode == dewarping::FisheyeCameraMount::wall;
 
     const qreal yPos = isHorizontal ? 0.5 : 1.0;
 
@@ -238,9 +276,15 @@ void QnDewarpingImageFilter::updateDewarpingParameters(qreal aspectRatio)
         const float centerY = float(maxY * 0.5);
 
         const float cameraImageTransform[9]{
-            centerX / kFloatPi, 0.0f, centerX,
-            0.0f, float(centerY / kFloatPi * aspectRatio), centerY,
-            0.0f, 0.0f, 1.0f};
+            centerX / kFloatPi,
+            0.0f,
+            centerX,
+            0.0f,
+            float(centerY / kFloatPi * aspectRatio),
+            centerY,
+            0.0f,
+            0.0f,
+            1.0f};
 
         m_cameraImageTransform = QMatrix3x3(cameraImageTransform);
 
@@ -252,22 +296,26 @@ void QnDewarpingImageFilter::updateDewarpingParameters(qreal aspectRatio)
     {
         // Fisheye.
 
-        const float cameraRoll = float(qDegreesToRadians(m_mediaParams.fovRot) -
-            (isHorizontal ? 0.0 : (m_itemParams.xAngle - M_PI)));
+        const float cameraRoll = float(
+            qDegreesToRadians(m_mediaParams.fovRot)
+            - (isHorizontal ? 0.0 : (m_itemParams.xAngle - M_PI)));
 
         const float rollSin = sinf(cameraRoll);
         const float rollCos = cosf(cameraRoll);
 
-        const float cameraRollMatrix[9]{
-            rollCos, -rollSin, 0.0f,
-            rollSin, rollCos, 0.0f,
-            0.0f, 0.0f, 1.0f};
+        const float
+            cameraRollMatrix[9]{rollCos, -rollSin, 0.0f, rollSin, rollCos, 0.0f, 0.0f, 0.0f, 1.0f};
 
         const float cameraImageTransform[9]{
-            float(maxX * m_mediaParams.radius), 0.0f, float(maxX * m_mediaParams.xCenter),
-            0.0f, float(maxY * m_mediaParams.radius * scaledAspectRatio),
+            float(maxX * m_mediaParams.radius),
+            0.0f,
+            float(maxX * m_mediaParams.xCenter),
+            0.0f,
+            float(maxY * m_mediaParams.radius * scaledAspectRatio),
             float(maxY * m_mediaParams.yCenter),
-            0.0f, 0.0f, 1.0f};
+            0.0f,
+            0.0f,
+            1.0f};
 
         m_cameraImageTransform = QMatrix3x3(cameraImageTransform) * QMatrix3x3(cameraRollMatrix);
     }
@@ -281,21 +329,23 @@ void QnDewarpingImageFilter::updateDewarpingParameters(qreal aspectRatio)
             : m_itemParams.yAngle - m_itemParams.fov / m_itemParams.panoFactor / 2.0;
 
         const float viewTransform[9]{
-            float(m_itemParams.fov / maxX), 0.0f, float(-0.5 * m_itemParams.fov + xAngle),
-            0.0f, float((m_itemParams.fov / m_itemParams.panoFactor) / maxY),
+            float(m_itemParams.fov / maxX),
+            0.0f,
+            float(-0.5 * m_itemParams.fov + xAngle),
+            0.0f,
+            float((m_itemParams.fov / m_itemParams.panoFactor) / maxY),
             float(-yPos * m_itemParams.fov / m_itemParams.panoFactor - yAngle),
-            0.0f, 0.0f, 1.0f};
+            0.0f,
+            0.0f,
+            1.0f};
 
-        static const float kVerticalSwizzleMatrix[9] = {
-            1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, -1.0f,
-            0.0f, 1.0f, 0.0f};
+        static const float kVerticalSwizzleMatrix[9] =
+            {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f};
 
         m_viewTransform = QMatrix3x3(viewTransform);
 
-        m_sphereRotationTransform = isHorizontal
-            ? QMatrix3x3()
-            : QMatrix3x3(kVerticalSwizzleMatrix);
+        m_sphereRotationTransform =
+            isHorizontal ? QMatrix3x3() : QMatrix3x3(kVerticalSwizzleMatrix);
     }
     else
     {
@@ -314,14 +364,26 @@ void QnDewarpingImageFilter::updateDewarpingParameters(qreal aspectRatio)
         const float cosY = cosf(float(yAngle));
 
         const float unprojectionTransform[9]{
-            cosX * kx, sinX * sinY * ky, sinX * cosY,
-            -sinX * kx, cosX * sinY * ky, cosX * cosY,
-            0.0f, cosY * ky, -sinY};
+            cosX * kx,
+            sinX * sinY * ky,
+            sinX * cosY,
+            -sinX * kx,
+            cosX * sinY * ky,
+            cosX * cosY,
+            0.0f,
+            cosY * ky,
+            -sinY};
 
         const float viewTransform[9]{
-            1.0f / float(maxX), 0.0f, -0.5f,
-            0.0f, 1.0f / float(maxY * scaledAspectRatio), float(-yPos / scaledAspectRatio),
-            0.0f, 0.0f, 1.0f};
+            1.0f / float(maxX),
+            0.0f,
+            -0.5f,
+            0.0f,
+            1.0f / float(maxY * scaledAspectRatio),
+            float(-yPos / scaledAspectRatio),
+            0.0f,
+            0.0f,
+            1.0f};
 
         m_viewTransform = QMatrix3x3(viewTransform);
         m_unprojectionTransform = QMatrix3x3(unprojectionTransform);
@@ -329,7 +391,8 @@ void QnDewarpingImageFilter::updateDewarpingParameters(qreal aspectRatio)
 
     if (!isSpherical && m_mediaParams.viewMode == dewarping::FisheyeCameraMount::ceiling)
     {
-        static const float kViewportRotate180[9]{-1, 0, 1, 0, -1, 1, 0, 0, 1}; //< Around {0.5, 0.5}
+        static const float
+            kViewportRotate180[9]{-1, 0, 1, 0, -1, 1, 0, 0, 1}; //< Around {0.5, 0.5}
         m_viewTransform = m_viewTransform * QMatrix3x3(kViewportRotate180);
     }
 }
@@ -351,7 +414,9 @@ QPointF QnDewarpingImageFilter::transformed(int x, int y, const QSize& imageSize
 }
 
 void QnDewarpingImageFilter::updateTransformMap(
-    const QSize& imageSize, int plane, qreal aspectRatio)
+    const QSize& imageSize,
+    int plane,
+    qreal aspectRatio)
 {
     updateDewarpingParameters(aspectRatio);
 
@@ -394,7 +459,9 @@ QVector2D QnDewarpingImageFilter::cameraProject(const QVector3D& pointOnSphere) 
         case dewarping::CameraProjection::equirectangular360:
         {
             const auto point = m_horizonCorrectionTransform.map(pointOnSphere);
-            return QVector2D(atan2(point.x(), point.y()), asin(std::clamp(point.z(), -1.0f, 1.0f)));
+            return QVector2D(
+                atan2(point.x(), point.y()),
+                asin(std::clamp(point.z(), -1.0f, 1.0f)));
         }
     }
 

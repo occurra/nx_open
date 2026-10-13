@@ -11,8 +11,7 @@
 namespace nx::reflect::test {
 
 template<typename FormatTypeSet>
-class FormatAcceptance:
-    public ::testing::Test
+class FormatAcceptance: public ::testing::Test
 {
 protected:
     A prepareData()
@@ -41,7 +40,7 @@ protected:
     void assertSerializeAndDeserializeAreSymmetric(const Type& value)
     {
         const auto serializedData = FormatTypeSet::serialize(value);
-        //std::cout << serializeData << std::endl;
+        // std::cout << serializeData << std::endl;
 
         Type parsed;
         ASSERT_TRUE(FormatTypeSet::deserialize(serializedData, &parsed));
@@ -62,7 +61,7 @@ TYPED_TEST_P(FormatAcceptance, serialize_and_deserialize_are_symmetric)
 TYPED_TEST_P(FormatAcceptance, type_with_base_without_base)
 {
     D d;
-    (A&)d = this->prepareData();
+    (A&) d = this->prepareData();
     d.ddd = rand();
 
     this->assertSerializeAndDeserializeAreSymmetric(d);
@@ -71,7 +70,7 @@ TYPED_TEST_P(FormatAcceptance, type_with_base_without_base)
 TYPED_TEST_P(FormatAcceptance, type_with_base_with_base)
 {
     E e;
-    (A&)e = this->prepareData();
+    (A&) e = this->prepareData();
     e.ddd = rand();
     e.e = rand();
 
@@ -79,7 +78,8 @@ TYPED_TEST_P(FormatAcceptance, type_with_base_with_base)
 }
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(FormatAcceptance);
-REGISTER_TYPED_TEST_SUITE_P(FormatAcceptance,
+REGISTER_TYPED_TEST_SUITE_P(
+    FormatAcceptance,
     serialize_and_deserialize_are_symmetric,
     type_with_base_without_base,
     type_with_base_with_base);

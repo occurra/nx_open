@@ -31,7 +31,7 @@ String::String(const QByteArray& str):
 {
 }
 
-String::String(QByteArray&& str) :
+String::String(QByteArray&& str):
     QByteArray(std::move(str))
 {
 }

@@ -21,7 +21,9 @@ public:
     operator nx::Url() const;
 
     Builder& setScheme(const QString& scheme);
-    Builder& setAuthority(const std::string& authority, QUrl::ParsingMode mode = QUrl::TolerantMode);
+    Builder& setAuthority(
+        const std::string& authority,
+        QUrl::ParsingMode mode = QUrl::TolerantMode);
     Builder& setUserInfo(const std::string& userInfo, QUrl::ParsingMode mode = QUrl::TolerantMode);
     Builder& setUserName(const QString& userName, QUrl::ParsingMode mode = QUrl::DecodedMode);
     Builder& setPassword(const QString& password, QUrl::ParsingMode mode = QUrl::DecodedMode);
@@ -40,7 +42,8 @@ public:
     Builder& appendPathParts(T first, Ts... tail)
     {
         appendPath(std::forward<T>(first));
-        if constexpr (sizeof...(Ts) > 0) appendPath(std::forward<Ts>(tail)...);
+        if constexpr (sizeof...(Ts) > 0)
+            appendPath(std::forward<Ts>(tail)...);
         return *this;
     }
 

@@ -19,8 +19,7 @@ struct NX_NETWORK_API QnInterfaceAndAddr
         const QString& name,
         const QHostAddress& address,
         const QHostAddress& netMask,
-        const QNetworkInterface& netIf)
-        :
+        const QNetworkInterface& netIf):
         name(name),
         address(address),
         netMask(netMask),
@@ -39,18 +38,15 @@ struct NX_NETWORK_API QnInterfaceAndAddr
     QNetworkInterface netIf;
 };
 
-inline bool operator ==(const QnInterfaceAndAddr& lhs, const QnInterfaceAndAddr& rhs)
+inline bool operator==(const QnInterfaceAndAddr& lhs, const QnInterfaceAndAddr& rhs)
 {
-    return  lhs.name == rhs.name
-        && lhs.address == rhs.address
-        && lhs.netMask == rhs.netMask;
+    return lhs.name == rhs.name && lhs.address == rhs.address && lhs.netMask == rhs.netMask;
 }
 
-inline size_t qHash(const QnInterfaceAndAddr& iface, uint seed=0)
+inline size_t qHash(const QnInterfaceAndAddr& iface, uint seed = 0)
 {
-    return  qHash(iface.name, seed^0xa03f)
-        + qHash(iface.address, seed^0x17a317a3)
-        + qHash(iface.netMask, seed^0x17a317a3);
+    return qHash(iface.name, seed ^ 0xa03f) + qHash(iface.address, seed ^ 0x17a317a3)
+        + qHash(iface.netMask, seed ^ 0x17a317a3);
 }
 
 enum class InterfaceListPolicy
@@ -105,7 +101,7 @@ NX_NETWORK_API QHostAddress resolveAddress(const QString& addr);
 NX_NETWORK_API bool isNewDiscoveryAddressBetter(
     const HostAddress& host,
     const QHostAddress& newAddress,
-    const QHostAddress& oldAddress );
+    const QHostAddress& oldAddress);
 
 static constexpr int MAC_ADDR_LEN = 18;
 /**
@@ -114,7 +110,7 @@ static constexpr int MAC_ADDR_LEN = 18;
  * @return 0 on success, -1 in case of error. Use errno to get error code.
  * TODO #akolesnikov Refactor: make memory safe, introduce some high-level type for MAC.
  */
-NX_NETWORK_API int getMacFromPrimaryIF(char  MAC_str[MAC_ADDR_LEN], char** host);
+NX_NETWORK_API int getMacFromPrimaryIF(char MAC_str[MAC_ADDR_LEN], char** host);
 
 NX_NETWORK_API QString getMacFromPrimaryIF();
 

@@ -14,9 +14,9 @@ int NotifyingOutput::write(const void* data, size_t count)
     NX_ASSERT(count <= std::numeric_limits<int>::max());
 
     NX_MUTEX_LOCKER lock(&m_mutex);
-    m_receivedData.append(static_cast<const char*>(data), (int)count);
+    m_receivedData.append(static_cast<const char*>(data), (int) count);
     m_cond.wakeAll();
-    return (int)count;
+    return (int) count;
 }
 
 void NotifyingOutput::waitForReceivedDataToMatch(const nx::Buffer& referenceData)
@@ -30,7 +30,11 @@ void NotifyingOutput::waitForReceivedDataToMatch(const nx::Buffer& referenceData
 
 void NotifyingOutput::waitForSomeDataToBeReceived()
 {
-    waitFor([this]() { return !m_receivedData.empty(); });
+    waitFor(
+        [this]()
+        {
+            return !m_receivedData.empty();
+        });
 }
 
 const nx::Buffer& NotifyingOutput::internalBuffer() const
@@ -47,6 +51,6 @@ void NotifyingOutput::waitFor(ConditionFunc func)
 }
 
 } // namespace test
-} // namespace pipeline
+} // namespace bstream
 } // namespace utils
 } // namespace nx

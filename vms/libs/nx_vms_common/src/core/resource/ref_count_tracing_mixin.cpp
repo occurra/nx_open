@@ -26,12 +26,12 @@ void RefcountTracingMixin::traceRefcountIncrement(const void* pointer) const
     // pointer must point to an instance of a class derived from QObject, otherwise a crash is
     // expected. reinterpret_cast is needed because of compilation problems due to incomplete
     // types.
-    traceRefcountIncrementInternal((void*)this, reinterpret_cast<const QObject*>(pointer));
+    traceRefcountIncrementInternal((void*) this, reinterpret_cast<const QObject*>(pointer));
 }
 
 void RefcountTracingMixin::traceRefcountDecrement() const
 {
-    traceRefcountDecrementInternal((void*)this);
+    traceRefcountDecrementInternal((void*) this);
 }
 
 void RefcountTracingMixin::traceRefcountIncrementInternal(void* pointer, const QObject* object)

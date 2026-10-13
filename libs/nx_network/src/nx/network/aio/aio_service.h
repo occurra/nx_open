@@ -16,12 +16,11 @@
 namespace nx::network::aio {
 
 /**
- * Monitors multiple sockets for asynchronous events and triggers handler (AIOEventHandler) on event.
- * Holds multiple threads inside, handler triggered from random thread.
- *   Number of internal threads can be specified during initialization.
- *   If not, it is selected at run-time as number of logical CPUs.
- * This class encapsulates aio thread pool and dispatches socket call to a corresponding thread.
- * NOTE: Suggested use of this class: few add/remove, many notifications.
+ * Monitors multiple sockets for asynchronous events and triggers handler (AIOEventHandler) on
+ * event. Holds multiple threads inside, handler triggered from random thread. Number of internal
+ * threads can be specified during initialization. If not, it is selected at run-time as number of
+ * logical CPUs. This class encapsulates aio thread pool and dispatches socket call to a
+ * corresponding thread. NOTE: Suggested use of this class: few add/remove, many notifications.
  * NOTE: A specific socket always receives all events within the same thread.
  * NOTE: All methods are thread-safe.
  */
@@ -51,9 +50,10 @@ public:
 
     /**
      * Monitor sock for event eventToWatch and trigger eventHandler on event.
-     * @return true, if added successfully. If false, error can be read by SystemError::getLastOSErrorCode().
-     * NOTE: if no event in corresponding socket timeout (if not 0), then aio::etTimedOut event will be reported.
-     * NOTE: If not called from aio thread sock can be added to event loop with some delay.
+     * @return true, if added successfully. If false, error can be read by
+     * SystemError::getLastOSErrorCode(). NOTE: if no event in corresponding socket timeout (if not
+     * 0), then aio::etTimedOut event will be reported. NOTE: If not called from aio thread sock
+     * can be added to event loop with some delay.
      */
     void startMonitoring(
         Pollable* const sock,
@@ -79,7 +79,7 @@ public:
     void registerTimer(
         Pollable* const sock,
         std::chrono::milliseconds timeoutMillis,
-        AIOEventHandler* const eventHandler );
+        AIOEventHandler* const eventHandler);
 
     /**
      * @returns true, if socket is still listened for state changes.

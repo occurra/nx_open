@@ -30,12 +30,13 @@ public:
     UrlQuery(const QString& query = QString());
     UrlQuery(std::string_view str);
     UrlQuery(const char* str);
-    explicit UrlQuery(const QUrlQuery& query): m_query(query){};
+    explicit UrlQuery(const QUrlQuery& query):
+        m_query(query) {};
 
     template<
-        typename String, typename T,
-        typename = std::enable_if_t<!std::is_arithmetic_v<std::decay_t<T>>>
-    >
+        typename String,
+        typename T,
+        typename = std::enable_if_t<!std::is_arithmetic_v<std::decay_t<T>>>>
     UrlQuery& addQueryItem(String&& key, T&& value)
     {
         m_query.addQueryItem(
@@ -46,14 +47,12 @@ public:
 
     /** Add a numeric item. Note that bool is represented with 1/0 (true/false). */
     template<
-        typename String, typename T,
-        typename = std::enable_if_t<std::is_arithmetic_v<std::decay_t<T>>>
-    >
+        typename String,
+        typename T,
+        typename = std::enable_if_t<std::is_arithmetic_v<std::decay_t<T>>>>
     UrlQuery& addQueryItem(String&& key, T value)
     {
-        m_query.addQueryItem(
-            nx::toString(std::forward<String>(key)),
-            QString::number(value));
+        m_query.addQueryItem(nx::toString(std::forward<String>(key)), QString::number(value));
         return *this;
     }
 
@@ -61,10 +60,7 @@ public:
 
     bool contains(std::string_view key) const;
 
-    template<
-        typename T, typename String,
-        typename = std::enable_if_t<!std::is_arithmetic_v<T>>
-    >
+    template<typename T, typename String, typename = std::enable_if_t<!std::is_arithmetic_v<T>>>
     // requires !std::is_arithmetic_v<T>
     T queryItemValue(
         const String& key,
@@ -76,9 +72,9 @@ public:
     }
 
     template<
-        typename T, typename String,
-        typename = std::enable_if_t<std::is_integral_v<T> && !std::is_same_v<T, bool>>
-    >
+        typename T,
+        typename String,
+        typename = std::enable_if_t<std::is_integral_v<T> && !std::is_same_v<T, bool>>>
     // requires std::is_integral_v<T> && !std::is_same_v<T, bool>
     T queryItemValue(
         const String& key,
@@ -95,10 +91,7 @@ public:
         return value;
     }
 
-    template<
-        typename T, typename String,
-        typename = std::enable_if_t<std::is_floating_point_v<T>>
-    >
+    template<typename T, typename String, typename = std::enable_if_t<std::is_floating_point_v<T>>>
     // requires std::is_floating_point_v<T>
     T queryItemValue(
         const String& key,
@@ -118,11 +111,7 @@ public:
     /**
      * Returns the item value as bool.
      */
-    template<
-        typename T,
-        typename String,
-        typename = std::enable_if_t<std::is_same_v<T, bool>>
-    >
+    template<typename T, typename String, typename = std::enable_if_t<std::is_same_v<T, bool>>>
     // requires std::is_same_v<T, bool>
     T queryItemValue(
         const String& key,
@@ -170,8 +159,7 @@ public:
 private:
     template<
         typename String,
-        typename = std::enable_if_t<std::is_same_v<std::decay_t<String>, QString>>
-    >
+        typename = std::enable_if_t<std::is_same_v<std::decay_t<String>, QString>>>
     static const QString& prepareKey(const String& str)
     {
         return str;
@@ -179,8 +167,7 @@ private:
 
     template<
         typename String,
-        typename = std::enable_if_t<!std::is_same_v<std::decay_t<String>, QString>>
-    >
+        typename = std::enable_if_t<!std::is_same_v<std::decay_t<String>, QString>>>
     static QString prepareKey(const String& str)
     {
         return nx::toString(str);

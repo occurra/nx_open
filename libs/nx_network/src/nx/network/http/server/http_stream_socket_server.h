@@ -36,10 +36,7 @@ public:
     using ConnectionType = HttpServerConnection;
 
     template<typename... Args>
-    HttpStreamSocketServer(
-        AbstractRequestHandler* requestHandler,
-        Args&&... args)
-        :
+    HttpStreamSocketServer(AbstractRequestHandler* requestHandler, Args&&... args):
         base_type(std::forward<Args>(args)...),
         m_requestHandler(requestHandler)
     {
@@ -80,7 +77,8 @@ private:
     std::uint64_t m_maxHeadersSize = nx::network::http::server::Settings::kDefaultMaxHeadersSize;
 
     mutable nx::Mutex m_mutex;
-    /** Calculates HttpStatistics aggregate statistics that live in its parent, RequestStatistics */
+    /** Calculates HttpStatistics aggregate statistics that live in its parent, RequestStatistics
+     */
     nx::network::http::server::RequestStatisticsCalculator m_statisticsCalculator;
     std::optional<SocketAddress> m_addressToRedirect;
 };
@@ -88,8 +86,7 @@ private:
 //-------------------------------------------------------------------------------------------------
 
 class NX_NETWORK_API StreamConnectionHolder:
-    public nx::network::server::StreamConnectionHolder<
-        nx::network::http::AsyncMessagePipeline>
+    public nx::network::server::StreamConnectionHolder<nx::network::http::AsyncMessagePipeline>
 {
 };
 

@@ -1,11 +1,11 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
+#include <chrono>
 #include <variant>
 
 #include <gtest/gtest.h>
 
-#include <chrono>
-
+#include <nx/network/aio/timer.h>
 #include <nx/network/http/auth_tools.h>
 #include <nx/network/http/buffer_source.h>
 #include <nx/network/http/empty_message_body_source.h>
@@ -13,15 +13,13 @@
 #include <nx/network/http/server/proxy/proxy_handler.h>
 #include <nx/network/http/test_http_server.h>
 #include <nx/network/http/writable_message_body.h>
-#include <nx/network/url/url_builder.h>
+#include <nx/network/socket_delegate.h>
 #include <nx/network/ssl/context.h>
 #include <nx/network/ssl/ssl_stream_socket.h>
-#include <nx/network/socket_delegate.h>
-#include <nx/network/system_socket.h>
 #include <nx/network/system_socket.h>
 #include <nx/network/test_support/message_body.h>
 #include <nx/network/test_support/synchronous_tcp_server.h>
-#include <nx/network/aio/timer.h>
+#include <nx/network/url/url_builder.h>
 #include <nx/reflect/string_conversion.h>
 #include <nx/utils/gzip/gzip_compressor.h>
 #include <nx/utils/random.h>
@@ -40,8 +38,7 @@ static constexpr char kNewProtocolMessage[] = "Hello, Http Client!";
 
 namespace {
 
-class BrokenSocket:
-    public CustomStreamSocketDelegate<AbstractStreamSocket, TCPSocket>
+class BrokenSocket: public CustomStreamSocketDelegate<AbstractStreamSocket, TCPSocket>
 {
     using base_type = CustomStreamSocketDelegate<AbstractStreamSocket, TCPSocket>;
 
@@ -68,8 +65,7 @@ private:
 
 //--------------------------------------------------------------------------------------------------
 
-class UpgradableHttpServer:
-    public nx::network::test::SynchronousStreamSocketServer
+class UpgradableHttpServer: public nx::network::test::SynchronousStreamSocketServer
 {
 protected:
     virtual void processConnection(AbstractStreamSocket* connection) override
@@ -90,17 +86,14 @@ private:
     void sendResponse(AbstractStreamSocket* connection)
     {
         // Sending response.
-        static constexpr char responseMessage[] =
-            "HTTP/1.1 101 Switching Protocols\r\n"
-            "Upgrade: NXRELAY/0.1\r\n"
-            "Connection: Upgrade\r\n"
-            "\r\n";
+        static constexpr char responseMessage[] = "HTTP/1.1 101 Switching Protocols\r\n"
+                                                  "Upgrade: NXRELAY/0.1\r\n"
+                                                  "Connection: Upgrade\r\n"
+                                                  "\r\n";
 
         auto response = nx::utils::buildString<nx::Buffer>(responseMessage, kNewProtocolMessage);
 
-        ASSERT_EQ(
-            response.size(),
-            connection->send(response.data(), response.size()));
+        ASSERT_EQ(response.size(), connection->send(response.data(), response.size()));
     }
 };
 
@@ -109,7 +102,8 @@ private:
 static constexpr char kExtraResponseHandlerPath[] = "/HttpClientTest/extraResponseMessage/";
 static constexpr char kInfiniteResourcePath[] = "/HttpClientTest/infinite-resource";
 static constexpr char kFiniteResourcePath[] = "/HttpClientTest/finite-resource";
-static constexpr char kResourceLimitedByConnectionClosurePath[] = "/HttpClientTest/http-10-resource";
+static constexpr char kResourceLimitedByConnectionClosurePath[] =
+    "/HttpClientTest/http-10-resource";
 static constexpr char kEmptyResourceLimitedByConnectionClosurePath[] =
     "/HttpClientTest/http-10-empty-resource";
 static constexpr char kMalformedResponsePath[] = "/HttpClientTest/malformed-response";
@@ -119,12 +113,12 @@ static constexpr auto kPartialBodyReadTimeout = 50ms;
 
 static constexpr char kResponseBody[] = "testtesttest";
 
-class HttpAsyncClient:
-    public ::testing::Test
+class HttpAsyncClient: public ::testing::Test
 {
 public:
     HttpAsyncClient():
-        m_proxyHost(nx::format("%1.com").args(nx::Uuid::createUuid().toSimpleString()).toStdString())
+        m_proxyHost(
+            nx::format("%1.com").args(nx::Uuid::createUuid().toSimpleString()).toStdString())
     {
         m_credentials = Credentials("username", PasswordAuthToken("password"));
 
@@ -150,7 +144,10 @@ protected:
     {
         m_httpServer.registerRequestProcessorFunc(
             "",
-            [this](auto&&... args) { processHttpRequest(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                processHttpRequest(std::forward<decltype(args)>(args)...);
+            });
 
         m_httpServer.registerRequestProcessorFunc(
             kExtraResponseHandlerPath,
@@ -177,8 +174,7 @@ protected:
             kEmptyResourceLimitedByConnectionClosurePath,
             [this](auto&&... args)
             {
-                sendEmptyBodyLimitedByConnectionClosure(
-                    std::forward<decltype(args)>(args)...);
+                sendEmptyBodyLimitedByConnectionClosure(std::forward<decltype(args)>(args)...);
             });
 
         m_httpServer.registerRequestProcessorFunc(
@@ -206,16 +202,22 @@ protected:
 
     void sendRequest(const nx::Url& url)
     {
-        m_client->doGet(url, [this]() { saveResponse(); });
+        m_client->doGet(
+            url,
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     nx::Url prepareUrl(const std::string& requestPath = std::string())
     {
-        const auto serverAddress = m_synchronousServer
-            ? m_synchronousServer->endpoint()
-            : m_httpServer.serverAddress();
-        return nx::network::url::Builder().setScheme(nx::network::http::kUrlSchemeName)
-            .setEndpoint(serverAddress).setPath(requestPath);
+        const auto serverAddress =
+            m_synchronousServer ? m_synchronousServer->endpoint() : m_httpServer.serverAddress();
+        return nx::network::url::Builder()
+            .setScheme(nx::network::http::kUrlSchemeName)
+            .setEndpoint(serverAddress)
+            .setPath(requestPath);
     }
 
     void createClient()
@@ -266,8 +268,8 @@ protected:
                 return connection;
             });
 
-        m_client = std::make_unique<AsyncClient>(
-            std::move(tcpConnection), ssl::kAcceptAnyCertificate);
+        m_client =
+            std::make_unique<AsyncClient>(std::move(tcpConnection), ssl::kAcceptAnyCertificate);
         configureClient();
     }
 
@@ -284,14 +286,12 @@ protected:
 
     void givenFiniteResourceResponseBodySource()
     {
-        initializeResourceResponseBodySource(
-            kFiniteResourcePath);
+        initializeResourceResponseBodySource(kFiniteResourcePath);
     }
 
     void givenHttp10ResourceResponseBodySource()
     {
-        initializeResourceResponseBodySource(
-            kResourceLimitedByConnectionClosurePath);
+        initializeResourceResponseBodySource(kResourceLimitedByConnectionClosurePath);
     }
 
     void givenEstablishedSslConnectionToTheServer()
@@ -321,12 +321,22 @@ protected:
 
     void whenSendGetRequest()
     {
-        m_client->doGet(prepareUrl("/test"), [this]() { saveResponse(); });
+        m_client->doGet(
+            prepareUrl("/test"),
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     void whenSendGetRequestProvidingPathOnly()
     {
-        m_client->doGet("/test", [this]() { saveResponse(); });
+        m_client->doGet(
+            "/test",
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     void whenSendConnectRequest()
@@ -335,7 +345,10 @@ protected:
         m_client->doConnect(
             prepareUrl("/connect_test"),
             m_proxyHost,
-            [this]() { saveResponse(); });
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     void whenSendRequestWithoutMessageBody(std::string_view method)
@@ -343,20 +356,23 @@ protected:
         m_client->doRequest(
             method,
             prepareUrl("/request_wo_msg_body/"),
-            [this]() { saveResponse(); });
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     void whenSendToBrokenHttpServerThatSendsExtraResponseMessages()
     {
         m_client->doGet(
             prepareUrl(kExtraResponseHandlerPath),
-            [this]() { saveResponse(); });
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
-    void whenServerClosesConnection()
-    {
-        m_httpServer.server().closeAllConnections();
-    }
+    void whenServerClosesConnection() { m_httpServer.server().closeAllConnections(); }
 
     void whenRequestResourceWithInfiniteBody()
     {
@@ -370,7 +386,10 @@ protected:
 
         m_client->doGet(
             prepareUrl(kInfiniteResourcePath),
-            [this]() { saveResponse(); });
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     void whenRequestResourceSignalledByClosingConnection()
@@ -379,7 +398,10 @@ protected:
 
         m_client->doGet(
             prepareUrl(kResourceLimitedByConnectionClosurePath),
-            [this]() { saveResponse(); });
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     void whenRequestEmptyResourceSignalledByClosingConnection()
@@ -388,14 +410,20 @@ protected:
 
         m_client->doGet(
             prepareUrl(kEmptyResourceLimitedByConnectionClosurePath),
-            [this]() { saveResponse(); });
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     void whenRequestMalformedResponseHandler()
     {
         m_client->doGet(
             prepareUrl(kMalformedResponsePath),
-            [this]() { saveResponse(); });
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     void whenRequestPartialBodyResponseHandler()
@@ -404,19 +432,28 @@ protected:
 
         m_client->doGet(
             prepareUrl(kPartialBodyResponsePath),
-            [this]() { saveResponse(); });
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     void whenSuspendHttpClient()
     {
         m_client->executeInAioThreadSync(
-            [this]() { m_client->stopReading(); });
+            [this]()
+            {
+                m_client->stopReading();
+            });
     }
 
     void whenResumeHttpClient()
     {
         m_client->executeInAioThreadSync(
-            [this]() { m_client->resumeReading(); });
+            [this]()
+            {
+                m_client->resumeReading();
+            });
     }
 
     void whenStopAcceptingNewConnections()
@@ -442,7 +479,8 @@ protected:
     void whenCreateClientThatReusesThePreestablishedConnection()
     {
         m_client = std::make_unique<http::AsyncClient>(
-            std::exchange(m_preestablishedConnection, nullptr), ssl::kAcceptAnyCertificate);
+            std::exchange(m_preestablishedConnection, nullptr),
+            ssl::kAcceptAnyCertificate);
 
         configureClient();
     }
@@ -453,7 +491,10 @@ protected:
         m_client->doPost(
             prepareUrl(kSaveRequestPath),
             std::make_unique<BufferSource>("text/plain", body),
-            [this]() { saveResponse(); });
+            [this]()
+            {
+                saveResponse();
+            });
         return body;
     }
 
@@ -464,8 +505,12 @@ protected:
         m_client->doPost(
             prepareUrl(kSaveRequestPath),
             std::make_unique<BufferSource>(
-                "text/plain", nx::utils::bstream::gzip::Compressor::compressData(body)),
-            [this]() { saveResponse(); });
+                "text/plain",
+                nx::utils::bstream::gzip::Compressor::compressData(body)),
+            [this]()
+            {
+                saveResponse();
+            });
         return body;
     }
 
@@ -483,7 +528,14 @@ protected:
     void andRequestContainsHeader(const HttpHeader& header)
     {
         const auto [b, e] = lastRequestCtx().request.headers.equal_range(header.first);
-        ASSERT_TRUE(std::ranges::any_of(b, e, [&header](const auto& val) { return val == header; }));
+        ASSERT_TRUE(
+            std::ranges::any_of(
+                b,
+                e,
+                [&header](const auto& val)
+                {
+                    return val == header;
+                }));
     }
 
     const RequestContext& thenRequestIsReceived()
@@ -492,10 +544,7 @@ protected:
         return *m_lastRequestCtx;
     }
 
-    const RequestContext& lastRequestCtx() const
-    {
-        return *m_lastRequestCtx;
-    }
+    const RequestContext& lastRequestCtx() const { return *m_lastRequestCtx; }
 
     void thenCorrectConnectRequestIsReceived()
     {
@@ -534,10 +583,7 @@ protected:
         ASSERT_EQ(expected, m_prevRequestResult.systemResultCode);
     }
 
-    void thenResponseBodyIsReported()
-    {
-        m_responseBodyChunks.pop();
-    }
+    void thenResponseBodyIsReported() { m_responseBodyChunks.pop(); }
 
     void thenResponseBodyIsNotReportedFor(std::chrono::milliseconds timeout)
     {
@@ -570,10 +616,7 @@ protected:
         ASSERT_FALSE(m_responses.pop(std::chrono::milliseconds(10)));
     }
 
-    void thenExpectedMessageBodyIsRead()
-    {
-        ASSERT_EQ(m_expectedBody, m_prevRequestResult.body);
-    }
+    void thenExpectedMessageBodyIsRead() { ASSERT_EQ(m_expectedBody, m_prevRequestResult.body); }
 
     void assertResponseBodySourceReportsValidContentLength()
     {
@@ -636,8 +679,8 @@ private:
         if (authHeaderIter != requestContext.request.headers.end())
         {
             if (header::DigestAuthorization authorizationHeader;
-                authorizationHeader.parse(authHeaderIter->second) &&
-                authorizationHeader.authScheme == header::AuthScheme::digest)
+                authorizationHeader.parse(authHeaderIter->second)
+                && authorizationHeader.authScheme == header::AuthScheme::digest)
             {
                 if (validateAuthorization(
                         requestContext.request.requestLine.method,
@@ -657,9 +700,7 @@ private:
         wwwAuthenticate.params.emplace("algorithm", "MD5");
 
         http::RequestResult result(StatusCode::unauthorized);
-        result.headers.emplace(
-            header::WWWAuthenticate::NAME,
-            wwwAuthenticate.serialized());
+        result.headers.emplace(header::WWWAuthenticate::NAME, wwwAuthenticate.serialized());
 
         result.headers.emplace("Connection", "close");
 
@@ -676,9 +717,8 @@ private:
         nx::network::http::RequestProcessedHandler completionHandler)
     {
         http::RequestResult result(StatusCode::ok);
-        result.body = std::make_unique<RepeatingBufferMsgBodySource>(
-            "text/plain",
-            "infinite resource. ");
+        result.body =
+            std::make_unique<RepeatingBufferMsgBodySource>("text/plain", "infinite resource. ");
         completionHandler(std::move(result));
     }
 
@@ -700,8 +740,7 @@ private:
         nx::network::http::RequestProcessedHandler completionHandler)
     {
         http::RequestResult result(StatusCode::ok);
-        result.body =
-            std::make_unique<EmptyMessageBodySource>("text/plain", std::nullopt);
+        result.body = std::make_unique<EmptyMessageBodySource>("text/plain", std::nullopt);
         completionHandler(std::move(result));
     }
 
@@ -709,14 +748,14 @@ private:
         nx::network::http::RequestContext requestContext,
         nx::network::http::RequestProcessedHandler completionHandler)
     {
-        auto response = std::make_shared<nx::Buffer>(
-            "GET /some HTTP/1.1\r\n"
-            "\r\n");
+        auto response = std::make_shared<nx::Buffer>("GET /some HTTP/1.1\r\n"
+                                                     "\r\n");
 
         requestContext.conn.lock()->socket()->sendAsync(
             response.get(),
-            [response, connection = requestContext.conn,
-                completionHandler = std::move(completionHandler)](auto&&...)
+            [response,
+             connection = requestContext.conn,
+             completionHandler = std::move(completionHandler)](auto&&...)
             {
                 connection.lock()->closeConnection(SystemError::interrupted);
                 completionHandler(nx::network::http::StatusCode::internalServerError);
@@ -748,7 +787,12 @@ private:
                 m_client.reset();
             });
 
-        m_client->doGet(prepareUrl(path), [this]() { saveResponse(); });
+        m_client->doGet(
+            prepareUrl(path),
+            [this]()
+            {
+                saveResponse();
+            });
 
         thenSuccessResponseIsReceived();
 
@@ -757,13 +801,12 @@ private:
 
     void saveResponse()
     {
-        m_responses.push(RequestResult{
-            m_client->lastSysErrorCode(),
-            m_client->response()
-                ? std::make_unique<Response>(*m_client->response())
-                : nullptr,
-            m_client->fetchMessageBodyBuffer(),
-            m_client->failed()});
+        m_responses.push(
+            RequestResult{
+                m_client->lastSysErrorCode(),
+                m_client->response() ? std::make_unique<Response>(*m_client->response()) : nullptr,
+                m_client->fetchMessageBodyBuffer(),
+                m_client->failed()});
     }
 
     void saveBodyChunk(
@@ -953,8 +996,7 @@ TEST_F(HttpAsyncClient, upload_gzipped_resource)
 
 //-------------------------------------------------------------------------------------------------
 
-class HttpAsyncClientConnectionUpgrade:
-    public HttpAsyncClient
+class HttpAsyncClientConnectionUpgrade: public HttpAsyncClient
 {
     using base_type = HttpAsyncClient;
 
@@ -1004,8 +1046,7 @@ protected:
     {
         nx::Buffer buf;
         buf.resize(sizeof(kNewProtocolMessage) - 1);
-        const int bytesRead =
-            m_upgradedConnection->recv(buf.data(), buf.size(), MSG_WAITALL);
+        const int bytesRead = m_upgradedConnection->recv(buf.data(), buf.size(), MSG_WAITALL);
         buf.resize(bytesRead);
 
         ASSERT_EQ(kNewProtocolMessage, buf);
@@ -1062,8 +1103,7 @@ private:
         m_upgradeResponses.push(std::move(response));
     }
 
-    void assertUpgradeResponseIsCorrect(
-        const ResponseContext& responseContext)
+    void assertUpgradeResponseIsCorrect(const ResponseContext& responseContext)
     {
         ASSERT_EQ(nx::network::http::StatusCode::switchingProtocols, responseContext.statusCode);
         ASSERT_NE(nullptr, responseContext.connection);
@@ -1100,7 +1140,8 @@ TEST(HttpAsyncClientTypes, lexicalSerialization)
     ASSERT_EQ(nx::reflect::toString(AuthType::authBasic), "authBasic");
     ASSERT_EQ(nx::reflect::toString(AuthType::authDigest), "authDigest");
 
-    ASSERT_EQ(nx::reflect::fromString<AuthType>("authBasicAndDigest"),
+    ASSERT_EQ(
+        nx::reflect::fromString<AuthType>("authBasicAndDigest"),
         AuthType::authBasicAndDigest);
     ASSERT_EQ(nx::reflect::fromString<AuthType>("authDigest"), AuthType::authDigest);
     ASSERT_EQ(nx::reflect::fromString<AuthType>("authBasic"), AuthType::authBasic);
@@ -1108,8 +1149,7 @@ TEST(HttpAsyncClientTypes, lexicalSerialization)
 
 //-------------------------------------------------------------------------------------------------
 
-class HttpAsyncClientAuthorization:
-    public HttpAsyncClient
+class HttpAsyncClientAuthorization: public HttpAsyncClient
 {
     using base_type = HttpAsyncClient;
 
@@ -1127,7 +1167,10 @@ protected:
     {
         m_httpServer.registerRequestProcessorFunc(
             kPath,
-            [this](auto&&... args) { processRequest(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                processRequest(std::forward<decltype(args)>(args)...);
+            });
     }
 
     void whenIssueRequest()
@@ -1176,17 +1219,15 @@ private:
     std::optional<ClientAuthorization> m_lastClientAuthorization;
 
 private:
-    void processRequest(
-        RequestContext ctx,
-        RequestProcessedHandler completionHandler)
+    void processRequest(RequestContext ctx, RequestProcessedHandler completionHandler)
     {
         const auto authzStr = getHeaderValue(ctx.request.headers, "Authorization");
         if (!authzStr.empty())
         {
             header::DigestAuthorization authorization;
-            if (authorization.parse(authzStr) &&
-                authorization.authScheme == header::AuthScheme::digest &&
-                validateAuthorization(
+            if (authorization.parse(authzStr)
+                && authorization.authScheme == header::AuthScheme::digest
+                && validateAuthorization(
                     ctx.request.requestLine.method,
                     m_credentials,
                     authorization))
@@ -1194,10 +1235,11 @@ private:
                 const auto nonceUseCount =
                     ++m_generatedNonces[authorization.digest->params["nonce"]];
 
-                m_authorizationReceived.push(ClientAuthorization{
-                    authorization,
-                    ctx.conn.lock()->connectionStatistics.messagesReceivedCount() - 1,
-                    nonceUseCount > 1});
+                m_authorizationReceived.push(
+                    ClientAuthorization{
+                        authorization,
+                        ctx.conn.lock()->connectionStatistics.messagesReceivedCount() - 1,
+                        nonceUseCount > 1});
                 return completionHandler(StatusCode::ok);
             }
         }
@@ -1237,8 +1279,7 @@ TEST_F(HttpAsyncClientAuthorization, server_nonce_is_cached_and_reused)
 
 namespace {
 
-class TransparentProxyHandler:
-    public server::proxy::AbstractProxyHandler
+class TransparentProxyHandler: public server::proxy::AbstractProxyHandler
 {
 public:
     TransparentProxyHandler(const SocketAddress& target):
@@ -1266,8 +1307,7 @@ private:
 
 } // namespace
 
-class HttpAsyncClientProxy:
-    public ::testing::Test
+class HttpAsyncClientProxy: public ::testing::Test
 {
 public:
     HttpAsyncClientProxy():
@@ -1288,10 +1328,7 @@ protected:
 
     virtual void SetUp() override
     {
-        m_resourceServer.registerStaticProcessor(
-            kResourcePath,
-            kResource,
-            "text/plain");
+        m_resourceServer.registerStaticProcessor(kResourcePath, kResource, "text/plain");
 
         m_resourceServer.enableAuthentication(".*");
 
@@ -1309,8 +1346,7 @@ protected:
             kAnyPath,
             [this]()
             {
-                return std::make_unique<TransparentProxyHandler>(
-                    m_resourceServer.serverAddress());
+                return std::make_unique<TransparentProxyHandler>(m_resourceServer.serverAddress());
             });
         ASSERT_TRUE(m_transparentProxy.bindAndListen());
     }
@@ -1339,7 +1375,10 @@ protected:
         m_client->setCredentials(m_userCredentials);
         m_client->doGet(
             getUrl(kResourcePath),
-            [this]() { saveResponse(); });
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     void whenRequestingResourceThroughTransparentProxy()
@@ -1350,16 +1389,20 @@ protected:
             m_client->setProxyCredentials(*m_proxyCredentials);
 
         m_client->doGet(
-            url::Builder(getUrl(kResourcePath))
-                .setEndpoint(m_transparentProxy.serverAddress()),
-            [this]() { saveResponse(); });
+            url::Builder(getUrl(kResourcePath)).setEndpoint(m_transparentProxy.serverAddress()),
+            [this]()
+            {
+                saveResponse();
+            });
     }
 
     nx::Url getUrl(std::string_view)
     {
-        return url::Builder().setScheme(kUrlSchemeName)
+        return url::Builder()
+            .setScheme(kUrlSchemeName)
             .setEndpoint(m_resourceServer.serverAddress())
-            .setPath(kResourcePath).toUrl();
+            .setPath(kResourcePath)
+            .toUrl();
     }
 
     void thenResourceIsDelivered()

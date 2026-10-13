@@ -7,8 +7,7 @@
 
 namespace nx::network::http {
 
-class HttpRequestMatcher:
-    public ::testing::Test
+class HttpRequestMatcher: public ::testing::Test
 {
 protected:
     void add(const Method& method, const std::string& path, int val)

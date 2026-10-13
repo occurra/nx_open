@@ -224,8 +224,14 @@ int KeyedList<Key, Value>::index_of(const Key& key) const
     if (iter == m_keyToNumber.end())
         return kInvalidIndex;
 
-    const auto pos = std::lower_bound(m_items.cbegin(), m_items.cend(), iter.value(),
-        [](const Item& left, qint64 rightNumber) { return left.number < rightNumber; });
+    const auto pos = std::lower_bound(
+        m_items.cbegin(),
+        m_items.cend(),
+        iter.value(),
+        [](const Item& left, qint64 rightNumber)
+        {
+            return left.number < rightNumber;
+        });
     NX_ASSERT(pos != m_items.cend() && pos->number == iter.value());
     return std::distance(m_items.cbegin(), pos);
 }
@@ -339,8 +345,14 @@ int KeyList<Key>::index_of(const Key& key) const
     if (iter == m_keyToNumber.end())
         return kInvalidIndex;
 
-    const auto pos = std::lower_bound(m_items.cbegin(), m_items.cend(), iter.value(),
-        [](const Item& left, qint64 rightNumber) { return left.number < rightNumber; });
+    const auto pos = std::lower_bound(
+        m_items.cbegin(),
+        m_items.cend(),
+        iter.value(),
+        [](const Item& left, qint64 rightNumber)
+        {
+            return left.number < rightNumber;
+        });
     NX_ASSERT(pos != m_items.cend() && pos->number == iter.value());
     return std::distance(m_items.cbegin(), pos);
 }

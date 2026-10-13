@@ -91,7 +91,7 @@ public:
      *
      * @param Handler Must be movable and callable with no arguments.
      */
-    template <typename Handler>
+    template<typename Handler>
     void submit(Handler&& handler) const
     {
         submitImpl(std::forward<Handler>(handler));
@@ -104,12 +104,12 @@ public:
      * arguments.
      * @param args Passed to handler after decaying and unwrapping std::reference_wrappers.
      */
-    template <typename Handler, typename... Args>
+    template<typename Handler, typename... Args>
     void submit(Handler&& handler, Args&&... args) const
     {
         submitImpl(
             [handler = std::forward<Handler>(handler),
-                args = std::make_tuple(std::forward<Args>(args)...)]() mutable
+             args = std::make_tuple(std::forward<Args>(args)...)]() mutable
             {
                 std::apply(handler, std::move(args));
             });
@@ -123,22 +123,25 @@ public:
      * copyable. If called with some arguments, submits handler for execution in appropriate
      * thread with those arguments as if by submit.
      */
-    template <typename Handler>
+    template<typename Handler>
     auto bind(Handler&& handler) const
     {
-        return
-            [*this, handler = std::forward<Handler>(handler)](auto&&... args) mutable
-            {
-                submit(std::move(handler), std::forward<decltype(args)>(args)...);
-            };
+        return [*this, handler = std::forward<Handler>(handler)](auto&&... args) mutable
+        {
+            submit(std::move(handler), std::forward<decltype(args)>(args)...);
+        };
     }
 
     struct NX_UTILS_API Awaiter
     {
-        Awaiter(std::shared_ptr<Impl> impl): m_impl(std::move(impl)) {}
+        Awaiter(std::shared_ptr<Impl> impl):
+            m_impl(std::move(impl))
+        {
+        }
         bool await_ready() const noexcept;
         void await_suspend(std::coroutine_handle<> h);
         void await_resume() const;
+
     private:
         std::shared_ptr<Impl> m_impl;
     };

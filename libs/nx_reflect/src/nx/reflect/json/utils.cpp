@@ -17,7 +17,10 @@ std::tuple<std::string, DeserializationResult> compactJson(const std::string_vie
     {
         return std::make_tuple(
             std::string(),
-            DeserializationResult(false, json_detail::parseErrorToString(document), std::string(json)));
+            DeserializationResult(
+                false,
+                json_detail::parseErrorToString(document),
+                std::string(json)));
     }
 
     StringBuffer buffer;

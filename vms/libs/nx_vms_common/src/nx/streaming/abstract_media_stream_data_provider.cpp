@@ -50,8 +50,7 @@ void QnAbstractMediaStreamDataProvider::onEvent(CameraDiagnostics::Result event)
 }
 
 QnAbstractMediaStreamDataProvider::QnAbstractMediaStreamDataProvider(
-    const QnResourcePtr& resource)
-    :
+    const QnResourcePtr& resource):
     m_resource(resource),
     m_numberOfChannels(
         [this]
@@ -64,7 +63,10 @@ QnAbstractMediaStreamDataProvider::QnAbstractMediaStreamDataProvider(
     m_gotKeyFrame.fill(0);
     resetTimeCheck();
     m_isCamera = (bool) resource.dynamicCast<QnVirtualCameraResource>();
-    connect(resource.data(), &QnResource::propertyChanged, this,
+    connect(
+        resource.data(),
+        &QnResource::propertyChanged,
+        this,
         [this](const QnResourcePtr& /*resource*/, const QString& propertyName)
         {
             if (propertyName == nx::vms::api::device_properties::kVideoLayout)
@@ -167,13 +169,16 @@ float QnAbstractMediaStreamDataProvider::getAverageGopSize() const
 
 void QnAbstractMediaStreamDataProvider::resetTimeCheck()
 {
-    for (int i = 0; i < CL_MAX_CHANNEL_NUMBER+1; ++i)
+    for (int i = 0; i < CL_MAX_CHANNEL_NUMBER + 1; ++i)
         m_lastMediaTime[i] = AV_NOPTS_VALUE;
 }
 
-void QnAbstractMediaStreamDataProvider::checkAndFixTimeFromCamera(const QnAbstractMediaDataPtr& media)
+void QnAbstractMediaStreamDataProvider::checkAndFixTimeFromCamera(
+    const QnAbstractMediaDataPtr& media)
 {
-    if (m_isCamera && media && (media->dataType == QnAbstractMediaData::VIDEO || media->dataType == QnAbstractMediaData::AUDIO))
+    if (m_isCamera && media
+        && (media->dataType == QnAbstractMediaData::VIDEO
+            || media->dataType == QnAbstractMediaData::AUDIO))
     {
         // correct packets timestamp if we have got several packets very fast
         int channel = media->channelNumber;
@@ -182,7 +187,9 @@ void QnAbstractMediaStreamDataProvider::checkAndFixTimeFromCamera(const QnAbstra
 
         if (nxStreamingIni().enableTimeCorrection)
         {
-            if (media->flags & (QnAbstractMediaData::MediaFlags_BOF | QnAbstractMediaData::MediaFlags_ReverseBlockStart))
+            if (media->flags
+                & (QnAbstractMediaData::MediaFlags_BOF
+                   | QnAbstractMediaData::MediaFlags_ReverseBlockStart))
             {
                 resetTimeCheck();
             }
@@ -193,7 +200,9 @@ void QnAbstractMediaStreamDataProvider::checkAndFixTimeFromCamera(const QnAbstra
                 if (timeDiff >= -TIME_RESYNC_THRESHOLD && timeDiff < kMinFrameDurationUsec)
                 {
                     // Most likely, timestamps reported by the camera are not so good.
-                    NX_DEBUG(this, "Timestamp correction. ts diff %1, camera %2, %3 stream",
+                    NX_DEBUG(
+                        this,
+                        "Timestamp correction. ts diff %1, camera %2, %3 stream",
                         timeDiff,
                         m_resource,
                         media->isLQ() ? "low" : "high");

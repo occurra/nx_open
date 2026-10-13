@@ -11,6 +11,7 @@ namespace nx::media {
 class NX_MEDIA_CORE_API InStreamCompressedMetadata: public QnCompressedMetadata
 {
     using base_type = QnCompressedMetadata;
+
 public:
     InStreamCompressedMetadata(QString codec, QByteArray metadata);
 

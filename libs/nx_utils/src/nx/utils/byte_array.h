@@ -50,12 +50,12 @@ public:
     /**
      * Pointer to the data stored in this array.
      */
-    const char *data() const { return constData(); }
+    const char* data() const { return constData(); }
 
     /**
      * Pointer to the data stored in this array.
      */
-    char *data();
+    char* data();
 
     /**
      * Size of this array.

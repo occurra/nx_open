@@ -21,8 +21,7 @@ void RequestHandlerWithContext::serve(
     m_requestContext = std::move(requestContext);
     m_requestContext.requestPathParams = std::exchange(m_requestPathParams, {});
 
-    if (!m_requestBodySource ||
-        m_messageBodyDeliveryType == MessageBodyDeliveryType::stream)
+    if (!m_requestBodySource || m_messageBodyDeliveryType == MessageBodyDeliveryType::stream)
     {
         m_requestContext.body = std::exchange(m_requestBodySource, nullptr);
         return propagateRequest();
@@ -32,8 +31,7 @@ void RequestHandlerWithContext::serve(
     {
         auto& [resultCode, buffer] = *data;
 
-        const bool reachedMessageBodyEnd =
-            processMessageBodyBuffer(resultCode, std::move(buffer));
+        const bool reachedMessageBodyEnd = processMessageBodyBuffer(resultCode, std::move(buffer));
         if (reachedMessageBodyEnd)
             return;
     }
@@ -41,14 +39,12 @@ void RequestHandlerWithContext::serve(
     readMessageBodyAsync();
 }
 
-void RequestHandlerWithContext::setRequestBodyDeliveryType(
-    MessageBodyDeliveryType value)
+void RequestHandlerWithContext::setRequestBodyDeliveryType(MessageBodyDeliveryType value)
 {
     m_messageBodyDeliveryType = value;
 }
 
-void RequestHandlerWithContext::setRequestPathParams(
-    RequestPathParams params)
+void RequestHandlerWithContext::setRequestPathParams(RequestPathParams params)
 {
     m_requestPathParams = std::move(params);
 }
@@ -73,12 +69,16 @@ void RequestHandlerWithContext::readMessageBodyAsync()
 }
 
 bool RequestHandlerWithContext::processMessageBodyBuffer(
-    SystemError::ErrorCode resultCode, nx::Buffer buffer)
+    SystemError::ErrorCode resultCode,
+    nx::Buffer buffer)
 {
     if (resultCode != SystemError::noError)
     {
-        NX_VERBOSE(this, "Request %1. Error reading request body: %2",
-            m_requestContext.request.requestLine, SystemError::toString(resultCode));
+        NX_VERBOSE(
+            this,
+            "Request %1. Error reading request body: %2",
+            m_requestContext.request.requestLine,
+            SystemError::toString(resultCode));
         sendResponse(RequestResult(StatusCode::badRequest));
         return true;
     }
@@ -86,8 +86,11 @@ bool RequestHandlerWithContext::processMessageBodyBuffer(
     if (buffer.empty())
     {
         // The complete message body has been read.
-        NX_VERBOSE(this, "Request %1. The complete request body (%2 bytes) has been received",
-            m_requestContext.request.requestLine, m_requestContext.request.messageBody.size());
+        NX_VERBOSE(
+            this,
+            "Request %1. The complete request body (%2 bytes) has been received",
+            m_requestContext.request.requestLine,
+            m_requestContext.request.messageBody.size());
         propagateRequest();
         return true;
     }
@@ -101,7 +104,10 @@ void RequestHandlerWithContext::propagateRequest()
 {
     processRequest(
         std::exchange(m_requestContext, {}),
-        [this](auto&&... args) { sendResponse(std::forward<decltype(args)>(args)...); });
+        [this](auto&&... args)
+        {
+            sendResponse(std::forward<decltype(args)>(args)...);
+        });
 }
 
 void RequestHandlerWithContext::sendResponse(RequestResult result)

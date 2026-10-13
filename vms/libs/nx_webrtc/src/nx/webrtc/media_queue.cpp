@@ -2,8 +2,8 @@
 
 #include "media_queue.h"
 
-#include <nx/utils/log/log.h>
 #include <nx/media/video_data_packet.h>
+#include <nx/utils/log/log.h>
 
 namespace nx::vms::server {
 
@@ -37,7 +37,7 @@ void MediaQueue::clearTillLastGopUnsafe()
                 [&channelNumber, deviceId, &removed](const auto& value)
                 {
                     if (const auto* video =
-                        dynamic_cast<const QnCompressedVideoData*>(value.get()))
+                            dynamic_cast<const QnCompressedVideoData*>(value.get()))
                     {
                         if (video->channelNumber == channelNumber && video->deviceId == deviceId)
                         {
@@ -85,7 +85,7 @@ int MediaQueue::size() const
 void MediaQueue::putData(const QnConstAbstractMediaDataPtr& media)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
-    if ((int)m_mediaQueue.size() >= m_maxSize)
+    if ((int) m_mediaQueue.size() >= m_maxSize)
         clearTillLastGopUnsafe();
 
     if (const auto& video = std::dynamic_pointer_cast<const QnCompressedVideoData>(media))
@@ -142,7 +142,11 @@ void MediaQueue::clearDataForDevice(nx::Uuid deviceId)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
     std::erase_if(
-        m_mediaQueue, [deviceId](const auto& value) { return value->deviceId == deviceId; });
+        m_mediaQueue,
+        [deviceId](const auto& value)
+        {
+            return value->deviceId == deviceId;
+        });
     // The device restarts from scratch, so require a keyframe again, like clearUnprocessedData().
     m_keyDataFound.erase(deviceId);
 }

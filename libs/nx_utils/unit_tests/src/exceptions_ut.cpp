@@ -2,8 +2,8 @@
 
 #include <gtest/gtest.h>
 
-#include <nx/utils/log/log.h>
 #include <nx/utils/exception.h>
+#include <nx/utils/log/log.h>
 
 namespace nx::utils::test {
 
@@ -32,7 +32,9 @@ TEST(Exceptions, Wrapping)
     EXPECT_EQ(7, NX_WRAP_EXCEPTION(3 + 4, runtime_error, logic_error, ""));
     EXPECT_EQ(nx::unwrapNestedErrors(runtime_error("I am an error!")), "I am an error!");
     EXPECT_EQ(nx::toString(runtime_error("I am an error!")), "I am an error!");
-    EXPECT_EQ(nx::format("%1").args(runtime_error("I am an error!")).toQString(), "I am an error!");
+    EXPECT_EQ(
+        nx::format("%1").args(runtime_error("I am an error!")).toQString(),
+        "I am an error!");
 
     try
     {
@@ -47,18 +49,30 @@ TEST(Exceptions, Wrapping)
 
     try
     {
-        NX_WRAP_EXCEPTION(NX_WRAP_EXCEPTION(NX_WRAP_EXCEPTION(throw runtime_error("I am an error!"),
-            runtime_error, logic_error, "Higher level error"),
-            logic_error, runtime_error, "Very high level error"),
-            runtime_error, logic_error, "Ultra high level error");
+        NX_WRAP_EXCEPTION(
+            NX_WRAP_EXCEPTION(
+                NX_WRAP_EXCEPTION(
+                    throw runtime_error("I am an error!"),
+                    runtime_error,
+                    logic_error,
+                    "Higher level error"),
+                logic_error,
+                runtime_error,
+                "Very high level error"),
+            runtime_error,
+            logic_error,
+            "Ultra high level error");
     }
     catch (const logic_error& e)
     {
-        EXPECT_EQ(nx::unwrapNestedErrors(e),
+        EXPECT_EQ(
+            nx::unwrapNestedErrors(e),
             "Ultra high level error: Very high level error: Higher level error: I am an error!");
-        EXPECT_EQ(nx::toString(e),
+        EXPECT_EQ(
+            nx::toString(e),
             "Ultra high level error: Very high level error: Higher level error: I am an error!");
-        EXPECT_EQ(nx::format("%1").args(e).toQString(),
+        EXPECT_EQ(
+            nx::format("%1").args(e).toQString(),
             "Ultra high level error: Very high level error: Higher level error: I am an error!");
     }
 }

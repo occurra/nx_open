@@ -7,7 +7,7 @@ namespace utils {
 
 BarrierHandler::BarrierHandler(nx::MoveOnlyFunc<void()> handler)
 {
-    //auto handlerPtr = std::make_shared<decltype(handler)>(std::move(handler));
+    // auto handlerPtr = std::make_shared<decltype(handler)>(std::move(handler));
     std::shared_ptr<nx::MoveOnlyFunc<void()>> handlerPtr(
         new nx::MoveOnlyFunc<void()>(std::move(handler)));
     m_handlerHolder = std::shared_ptr<BarrierHandler>(
@@ -22,13 +22,19 @@ BarrierHandler::BarrierHandler(nx::MoveOnlyFunc<void()> handler)
 MoveOnlyFunc<void()> BarrierHandler::fork()
 {
     // TODO: move lambda
-    auto holder = std::make_shared<
-            std::shared_ptr<BarrierHandler>>(m_handlerHolder);
-    return [holder]() { holder->reset(); };
+    auto holder = std::make_shared<std::shared_ptr<BarrierHandler>>(m_handlerHolder);
+    return [holder]()
+    {
+        holder->reset();
+    };
 }
 
 BarrierWaiter::BarrierWaiter():
-    BarrierHandler([this](){ this->m_promise.set_value(); })
+    BarrierHandler(
+        [this]()
+        {
+            this->m_promise.set_value();
+        })
 {
 }
 

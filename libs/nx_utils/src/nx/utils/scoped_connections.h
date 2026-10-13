@@ -13,9 +13,15 @@ class ScopedConnection
 {
 public:
     ScopedConnection() = default;
-    ScopedConnection(QMetaObject::Connection handle): m_handle(handle) {}
+    ScopedConnection(QMetaObject::Connection handle):
+        m_handle(handle)
+    {
+    }
     ScopedConnection(const ScopedConnection&) = delete;
-    ScopedConnection(ScopedConnection&& other) noexcept: m_handle(other.release()) {}
+    ScopedConnection(ScopedConnection&& other) noexcept:
+        m_handle(other.release())
+    {
+    }
 
     ~ScopedConnection() { reset(); }
 
@@ -89,10 +95,7 @@ public:
         m_connections.clear();
     }
 
-    bool isEmpty() const
-    {
-        return m_connections.empty();
-    }
+    bool isEmpty() const { return m_connections.empty(); }
 
 private:
     std::vector<ScopedConnection> m_connections;

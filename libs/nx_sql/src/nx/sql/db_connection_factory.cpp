@@ -7,9 +7,11 @@
 namespace nx::sql {
 
 DbConnectionFactory::DbConnectionFactory():
-    base_type([this](auto&&... args) {
-        return defaultFunction(std::forward<decltype(args)>(args)...);
-    })
+    base_type(
+        [this](auto&&... args)
+        {
+            return defaultFunction(std::forward<decltype(args)>(args)...);
+        })
 {
 }
 

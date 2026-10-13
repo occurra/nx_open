@@ -5,7 +5,8 @@
 namespace nx::webrtc {
 
 Reader::Iterator::Iterator(std::weak_ptr<Reader>&& reader, int id):
-    m_reader(reader), m_id(id)
+    m_reader(reader),
+    m_id(id)
 {
 }
 
@@ -31,7 +32,8 @@ void Reader::Iterator::drop()
     reader->drop(m_id);
 }
 
-Reader::Reader(size_t maxSize): m_maxSize(maxSize)
+Reader::Reader(size_t maxSize):
+    m_maxSize(maxSize)
 {
     NX_ASSERT(m_maxSize != 0);
 }
@@ -102,9 +104,9 @@ std::optional<Reader::Iterator> Reader::iter()
         return std::nullopt;
     std::optional<size_t> position;
     if (m_keyIndex != -1)
-       *position = m_counter + m_keyIndex;
+        *position = m_counter + m_keyIndex;
     else
-       emitKeyframeIfNeededUnsafe();
+        emitKeyframeIfNeededUnsafe();
 
     m_iterators.emplace_back(IteratorInfo{position, id});
     return Reader::Iterator(weak_from_this(), id);
@@ -120,11 +122,13 @@ int Reader::emitIteratorId()
     {
         while (true)
         {
-            if (std::find_if(m_iterators.begin(), m_iterators.end(),
-                [this](const auto& info)
-                {
-                    return info.id == m_idCounter;
-                })
+            if (std::find_if(
+                    m_iterators.begin(),
+                    m_iterators.end(),
+                    [this](const auto& info)
+                    {
+                        return info.id == m_idCounter;
+                    })
                 == m_iterators.end())
             {
                 break;
@@ -187,11 +191,13 @@ Reader::Iterator::Result Reader::next(int id, std::chrono::milliseconds timeout)
         if (!m_started) //< TODO Maybe report dead only on last frame.
             return Reader::Iterator::Result{Iterator::State::dead, QnAbstractMediaDataPtr()};
 
-        iter = std::find_if(m_iterators.begin(), m_iterators.end(),
+        iter = std::find_if(
+            m_iterators.begin(),
+            m_iterators.end(),
             [id](const auto& info)
             {
                 return info.id == id;
-           });
+            });
         if (iter == m_iterators.end())
             return Iterator::Result{Iterator::State::gone, QnAbstractMediaDataPtr()};
 
@@ -229,7 +235,9 @@ Reader::Iterator::Result Reader::next(int id, std::chrono::milliseconds timeout)
 void Reader::drop(int id)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
-    auto iter = std::find_if(m_iterators.begin(), m_iterators.end(),
+    auto iter = std::find_if(
+        m_iterators.begin(),
+        m_iterators.end(),
         [id](const auto& info)
         {
             return info.id == id;

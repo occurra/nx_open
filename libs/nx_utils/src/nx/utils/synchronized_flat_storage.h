@@ -12,38 +12,45 @@
  * of the items inside it.
  */
 template<class Key, class T>
-class QnSynchronizedFlatStorage {
+class QnSynchronizedFlatStorage
+{
     typedef QnFlatStorage<Key, T> base_type;
+
 public:
     QnSynchronizedFlatStorage() {}
 
     ~QnSynchronizedFlatStorage() {}
 
-    T value(const Key &key) const {
+    T value(const Key& key) const
+    {
         std::unique_lock<std::mutex> guard(m_mutex);
 
         return m_storage.value(key);
     }
 
-    QSet<T> values() const {
+    QSet<T> values() const
+    {
         std::unique_lock<std::mutex> guard(m_mutex);
 
         return m_storage.values();
     }
 
-    void insert(const Key &key, T value, bool claimOwnership = true) {
+    void insert(const Key& key, T value, bool claimOwnership = true)
+    {
         std::unique_lock<std::mutex> guard(m_mutex);
 
         m_storage.insert(key, value, claimOwnership);
     }
 
-    void clear() {
+    void clear()
+    {
         std::unique_lock<std::mutex> guard(m_mutex);
 
         m_storage.clear();
     }
 
-    bool empty() const {
+    bool empty() const
+    {
         std::unique_lock<std::mutex> guard(m_mutex);
 
         return m_storage.empty();

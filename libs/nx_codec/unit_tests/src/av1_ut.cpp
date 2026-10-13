@@ -224,7 +224,8 @@ TEST(Av1, SequenceHeaderParsesTimingInfoAndDecoderModel)
 {
     SequenceHeader header;
     ASSERT_TRUE(header.read(
-        kSequenceHeaderTimingAndDecoderModel, sizeof(kSequenceHeaderTimingAndDecoderModel)));
+        kSequenceHeaderTimingAndDecoderModel,
+        sizeof(kSequenceHeaderTimingAndDecoderModel)));
     ASSERT_EQ(2, header.seqProfile);
     ASSERT_EQ(9, header.seqLevelIdx0);
     ASSERT_EQ(1, header.seqTier0);

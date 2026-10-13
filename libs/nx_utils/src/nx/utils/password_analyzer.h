@@ -38,18 +38,18 @@ struct NX_UTILS_API PasswordLimitations
 /** Strength of a password. */
 enum class PasswordStrength
 {
-    Good,           /**< Good. */
-    Fair,           /**< Satisfactory. */
-    Common,         /**< Too commonly used. */
-    Weak,           /**< Contains too few character categories. */
-    Short,          /**< Contains too few characters. */
-    Conseq,         /**< Contains consecutive sequence of characters. */
-    Repeat,         /**< Contains repeating characters. */
-    Long,           /**< Contains too much characters. */
-    Incorrect,      /**< Contains invalid characters. */
-    IncorrectCamera,/**< Contains invalid characters for camera. */
-    WeakAndFair,    /**< Weak, and still quite short. Actual for cameras. */
-    WeakAndGood    /**< Weak, has good length. Actual for cameras. */
+    Good, /**< Good. */
+    Fair, /**< Satisfactory. */
+    Common, /**< Too commonly used. */
+    Weak, /**< Contains too few character categories. */
+    Short, /**< Contains too few characters. */
+    Conseq, /**< Contains consecutive sequence of characters. */
+    Repeat, /**< Contains repeating characters. */
+    Long, /**< Contains too much characters. */
+    Incorrect, /**< Contains invalid characters. */
+    IncorrectCamera, /**< Contains invalid characters for camera. */
+    WeakAndFair, /**< Weak, and still quite short. Actual for cameras. */
+    WeakAndGood /**< Weak, has good length. Actual for cameras. */
 };
 
 NX_UTILS_API QString toString(PasswordStrength strength);

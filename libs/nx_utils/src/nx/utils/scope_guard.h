@@ -41,7 +41,7 @@ public:
     }
 
     /** Fires this guard. */
-    virtual ~ScopeGuard() //noexcept
+    virtual ~ScopeGuard() // noexcept
     {
         fire();
     }
@@ -57,10 +57,7 @@ public:
     }
 
     /** Disarms guard, so callback is newer called */
-    void disarm()
-    {
-        m_callback = std::nullopt;
-    }
+    void disarm() { m_callback = std::nullopt; }
 
     std::optional<Callback> eject()
     {
@@ -69,10 +66,7 @@ public:
         return callback;
     }
 
-    explicit operator bool() const
-    {
-        return static_cast<bool>(m_callback);
-    }
+    explicit operator bool() const { return static_cast<bool>(m_callback); }
 
 private:
     std::optional<Callback> m_callback;
@@ -110,7 +104,11 @@ SharedGuardPtr makeSharedGuard(Func func)
 template<template<typename...> typename Container>
 SharedGuardPtr join(Container<SharedGuardPtr> container)
 {
-    return makeSharedGuard([container = std::move(container)]() mutable { container.clear(); });
+    return makeSharedGuard(
+        [container = std::move(container)]() mutable
+        {
+            container.clear();
+        });
 }
 
 } // namespace nx::utils

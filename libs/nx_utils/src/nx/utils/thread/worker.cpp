@@ -7,7 +7,8 @@ namespace nx::utils {
 using namespace std::chrono;
 constexpr auto kReportOverflowTimeout = 30s;
 
-Worker::Worker(std::optional<size_t> maxTaskCount): m_maxTaskCount(maxTaskCount)
+Worker::Worker(std::optional<size_t> maxTaskCount):
+    m_maxTaskCount(maxTaskCount)
 {
     auto startedFuture = m_startedPromise.get_future();
     start();
@@ -34,9 +35,11 @@ void Worker::post(Task task)
         if (!m_reportOverflowTimer.isValid()
             || m_reportOverflowTimer.elapsed() > kReportOverflowTimeout)
         {
-            NX_WARNING(this,
+            NX_WARNING(
+                this,
                 "%1: Task queue overflow detected. %2 records in the queue",
-                __func__, m_maxTaskCount);
+                __func__,
+                m_maxTaskCount);
             m_reportOverflowTimer.restart();
         }
 

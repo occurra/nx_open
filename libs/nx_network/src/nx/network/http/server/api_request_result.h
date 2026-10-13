@@ -36,7 +36,7 @@ static constexpr char kResultCode[] = "resultCode";
 static constexpr char kErrorDetail[] = "errorDetail";
 static constexpr char kErrorText[] = "errorText";
 
-class ApiRequestResult : public std::map<std::string, std::string>
+class ApiRequestResult: public std::map<std::string, std::string>
 {
 public:
     bool hasErrorClass() const;
@@ -96,12 +96,14 @@ inline ApiRequestResult::ApiRequestResult()
     emplace(kErrorText, "");
 }
 
-inline ApiRequestResult::ApiRequestResult(ApiRequestErrorClass errorClass): ApiRequestResult()
+inline ApiRequestResult::ApiRequestResult(ApiRequestErrorClass errorClass):
+    ApiRequestResult()
 {
     at(kErrorClass) = nx::reflect::toString(errorClass);
 }
 
-inline ApiRequestResult::ApiRequestResult(StatusCode::Value statusCode): ApiRequestResult()
+inline ApiRequestResult::ApiRequestResult(StatusCode::Value statusCode):
+    ApiRequestResult()
 {
     m_httpStatusCode = statusCode;
 }
@@ -185,7 +187,10 @@ inline nx::network::http::StatusCode::Value ApiRequestResult::calculateHttpStatu
     }
 }
 
-inline bool ApiRequestResult::hasErrorClass() const { return contains(kErrorClass); }
+inline bool ApiRequestResult::hasErrorClass() const
+{
+    return contains(kErrorClass);
+}
 
 inline ApiRequestErrorClass ApiRequestResult::getErrorClass() const
 {
@@ -197,7 +202,10 @@ inline ApiRequestErrorClass ApiRequestResult::getErrorClass() const
     return errorClassVal;
 }
 
-inline bool ApiRequestResult::hasResultCode() const { return contains(kResultCode); }
+inline bool ApiRequestResult::hasResultCode() const
+{
+    return contains(kResultCode);
+}
 
 inline const std::string& ApiRequestResult::getResultCode() const
 {
@@ -205,14 +213,20 @@ inline const std::string& ApiRequestResult::getResultCode() const
     return hasResultCode() ? at(kResultCode) : kEmpty;
 }
 
-inline bool ApiRequestResult::hasErrorDetail() const { return contains(kErrorDetail); }
+inline bool ApiRequestResult::hasErrorDetail() const
+{
+    return contains(kErrorDetail);
+}
 
 inline int ApiRequestResult::getErrorDetail() const
 {
     return hasErrorDetail() ? std::stoi(at(kErrorDetail)) : -1;
 }
 
-inline bool ApiRequestResult::hasErrorText() const { return contains(kErrorText); }
+inline bool ApiRequestResult::hasErrorText() const
+{
+    return contains(kErrorText);
+}
 
 inline const std::string& ApiRequestResult::getErrorText() const
 {

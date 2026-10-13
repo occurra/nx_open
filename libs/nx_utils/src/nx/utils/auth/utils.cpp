@@ -99,7 +99,8 @@ std::tuple<bool, std::string> decodeBlock(const std::string_view str)
     }
     if (charNum != 2 && charNum != 4 && charNum != 5 && charNum != 7 && charNum != 8)
         return {false, ""};
-    int shift = charNum * 5 % 8; //< Number of bits added to form an integral number of 5-bit groups.
+    int shift =
+        charNum * 5 % 8; //< Number of bits added to form an integral number of 5-bit groups.
     int resultLen = charNum * 5 / 8;
     buf = buf >> 5 >> shift;
     std::string result;
@@ -136,9 +137,7 @@ Buffer hmacSha1(std::string_view key, std::string_view baseString)
     return hmacSha1(key, std::vector<std::string_view>{baseString});
 }
 
-Buffer hmacSha1(
-    std::string_view key,
-    const std::vector<std::string_view>& messageParts)
+Buffer hmacSha1(std::string_view key, const std::vector<std::string_view>& messageParts)
 {
     unsigned int len = 0;
     Buffer result(20, 0);
@@ -166,6 +165,5 @@ Buffer hmacSha256(std::string_view key, std::string_view baseString)
     result.resize(len);
     return result;
 }
-
 
 } // namespace nx::utils::auth

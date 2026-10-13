@@ -4,17 +4,15 @@
 
 #include <gtest/gtest.h>
 
-#include <nx/utils/fs/file.h>
 #include <nx/utils/fs/async_file_processor.h>
+#include <nx/utils/fs/file.h>
 #include <nx/utils/random.h>
 #include <nx/utils/test_support/test_with_temporary_directory.h>
 #include <nx/utils/thread/sync_queue.h>
 
 namespace nx::utils::fs::test {
 
-class File:
-    public utils::test::TestWithTemporaryDirectory,
-    public ::testing::Test
+class File: public utils::test::TestWithTemporaryDirectory, public ::testing::Test
 {
 public:
     File():
@@ -59,22 +57,33 @@ protected:
     {
         m_scheduler.stat(
             m_filePath,
-            [this](auto&&... args) { m_statResults.emplace(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                m_statResults.emplace(std::forward<decltype(args)>(args)...);
+            });
     }
 
     void whenOpenFileAsync()
     {
         m_file = std::make_unique<nx::utils::fs::File>(m_filePath);
         m_file->openAsync(
-            &m_scheduler, QIODevice::ReadOnly, 0,
-            [this](auto result) { m_openResults.push(result); });
+            &m_scheduler,
+            QIODevice::ReadOnly,
+            0,
+            [this](auto result)
+            {
+                m_openResults.push(result);
+            });
     }
 
     void whenReadWholeFileAsync()
     {
         m_file->readAllAsync(
             &m_scheduler,
-            [this](auto&&... args) { m_readAllResults.emplace(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                m_readAllResults.emplace(std::forward<decltype(args)>(args)...);
+            });
     }
 
     void whenReadWholeFileGradually()
@@ -104,15 +113,9 @@ protected:
             });
     }
 
-    void whenStatQtResourceFile()
-    {
-        whenStatFile(m_resourceFilePath);
-    }
+    void whenStatQtResourceFile() { whenStatFile(m_resourceFilePath); }
 
-    void whenStatRegularFile()
-    {
-        whenStatFile(m_filePath);
-    }
+    void whenStatRegularFile() { whenStatFile(m_filePath); }
 
     void whenStatFile(const std::string& path)
     {
@@ -132,9 +135,8 @@ protected:
 
     void whenDeleteFile()
     {
-        m_scheduler.post(
-            [file = std::exchange(m_file, nullptr),
-                m_readBuffer = std::exchange(m_readBuffer, nullptr)]() {});
+        m_scheduler.post([file = std::exchange(m_file, nullptr),
+                          m_readBuffer = std::exchange(m_readBuffer, nullptr)]() {});
     }
 
     void thenStatSucceeded()

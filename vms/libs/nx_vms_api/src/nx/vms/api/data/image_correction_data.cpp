@@ -7,8 +7,9 @@
 
 namespace nx::vms::api {
 
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(ImageCorrectionData,
-    (ubjson)(json)(xml)(csv_record),
+QN_FUSION_ADAPT_STRUCT_FUNCTIONS(
+    ImageCorrectionData,
+    (ubjson) (json) (xml) (csv_record),
     ImageCorrectionData_Fields)
 
 QByteArray ImageCorrectionData::toByteArray() const
@@ -20,7 +21,7 @@ QByteArray ImageCorrectionData::toByteArray() const
         .append(QByteArray::number(gamma))
         .append(';')
         .append(enabled ? '1' : '0')
-        .append((char)0);
+        .append((char) 0);
 }
 
 ImageCorrectionData ImageCorrectionData::fromByteArray(const QByteArray& data)

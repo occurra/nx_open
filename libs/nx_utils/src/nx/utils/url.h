@@ -52,8 +52,8 @@ public:
     void swap(Url& other) Q_DECL_NOTHROW { m_url.swap(other.m_url); }
 
     void setUrl(const QString& url, QUrl::ParsingMode mode = QUrl::TolerantMode);
-    Q_INVOKABLE QString url(
-        QUrl::FormattingOptions options = QUrl::FormattingOptions(QUrl::PrettyDecoded)) const;
+    Q_INVOKABLE QString
+        url(QUrl::FormattingOptions options = QUrl::FormattingOptions(QUrl::PrettyDecoded)) const;
 
     Q_INVOKABLE QString toString(
         QUrl::FormattingOptions options = QUrl::FormattingOptions(QUrl::PrettyDecoded)) const;
@@ -82,10 +82,10 @@ public:
     Q_INVOKABLE QUrl toQUrl() const;
 
     static Url fromQUrl(const QUrl& url);
-    static Url fromUserInput(const QString &userInput);
+    static Url fromUserInput(const QString& userInput);
     static Url fromUserInput(
-        const QString &userInput,
-        const QString &workingDirectory,
+        const QString& userInput,
+        const QString& workingDirectory,
         QUrl::UserInputResolutionOptions options = QUrl::DefaultResolution);
 
     Q_INVOKABLE bool isValid() const;
@@ -99,20 +99,26 @@ public:
 
     // Emulating explicit setScheme(const QString&).
     template<typename S, typename = std::enable_if_t<std::is_same_v<S, QString>>>
-    void setScheme(const S& s) { setScheme(s.toStdString()); }
+    void setScheme(const S& s)
+    {
+        setScheme(s.toStdString());
+    }
 
     Q_INVOKABLE QString scheme() const;
 
-    void setAuthority(const QString &authority, QUrl::ParsingMode mode = QUrl::TolerantMode);
-    Q_INVOKABLE QString authority(QUrl::ComponentFormattingOptions options = QUrl::PrettyDecoded) const;
+    void setAuthority(const QString& authority, QUrl::ParsingMode mode = QUrl::TolerantMode);
+    Q_INVOKABLE QString
+        authority(QUrl::ComponentFormattingOptions options = QUrl::PrettyDecoded) const;
 
-    void setUserInfo(const QString &userInfo, QUrl::ParsingMode mode = QUrl::TolerantMode);
-    Q_INVOKABLE QString userInfo(QUrl::ComponentFormattingOptions options = QUrl::PrettyDecoded) const;
+    void setUserInfo(const QString& userInfo, QUrl::ParsingMode mode = QUrl::TolerantMode);
+    Q_INVOKABLE QString
+        userInfo(QUrl::ComponentFormattingOptions options = QUrl::PrettyDecoded) const;
 
     void setUserName(const QString& userName, QUrl::ParsingMode mode = QUrl::DecodedMode);
     void setUserName(std::string_view userName, QUrl::ParsingMode mode = QUrl::DecodedMode);
     void setUserName(const char* userName, QUrl::ParsingMode mode = QUrl::DecodedMode);
-    Q_INVOKABLE QString userName(QUrl::ComponentFormattingOptions options = QUrl::FullyDecoded) const;
+    Q_INVOKABLE QString
+        userName(QUrl::ComponentFormattingOptions options = QUrl::FullyDecoded) const;
 
     void setPassword(const QString& password, QUrl::ParsingMode mode = QUrl::DecodedMode);
     void setPassword(std::string_view password, QUrl::ParsingMode mode = QUrl::DecodedMode);
@@ -120,7 +126,10 @@ public:
     Q_INVOKABLE QString password(QUrl::ComponentFormattingOptions = QUrl::FullyDecoded) const;
 
     template<typename T, typename = std::enable_if_t<std::is_same_v<nx::network::HostAddress, T>>>
-    void setHost(const T& hostName) { return setHost(hostName.toString(), QUrl::DecodedMode); }
+    void setHost(const T& hostName)
+    {
+        return setHost(hostName.toString(), QUrl::DecodedMode);
+    }
 
     void setHost(const QString& host, QUrl::ParsingMode mode = QUrl::DecodedMode);
     void setHost(const std::string& host, QUrl::ParsingMode mode = QUrl::DecodedMode);
@@ -130,19 +139,20 @@ public:
     void setPort(int port);
     Q_INVOKABLE int port(int defaultPort = -1) const;
 
-    Q_INVOKABLE QString displayAddress(
-        QUrl::ComponentFormattingOptions = QUrl::FullyDecoded) const;
+    Q_INVOKABLE QString
+        displayAddress(QUrl::ComponentFormattingOptions = QUrl::FullyDecoded) const;
 
     void setPath(const QString& path, QUrl::ParsingMode mode = QUrl::DecodedMode);
     void setPath(std::string_view path, QUrl::ParsingMode mode = QUrl::DecodedMode);
     void setPath(const char* path, QUrl::ParsingMode mode = QUrl::DecodedMode);
 
     Q_INVOKABLE QString path(QUrl::ComponentFormattingOptions options = QUrl::FullyDecoded) const;
-    Q_INVOKABLE QString fileName(QUrl::ComponentFormattingOptions options = QUrl::FullyDecoded) const;
+    Q_INVOKABLE QString
+        fileName(QUrl::ComponentFormattingOptions options = QUrl::FullyDecoded) const;
 
     Q_INVOKABLE bool hasQuery() const;
-    void setQuery(const QString &query, QUrl::ParsingMode mode = QUrl::TolerantMode);
-    void setQuery(const QUrlQuery &query);
+    void setQuery(const QString& query, QUrl::ParsingMode mode = QUrl::TolerantMode);
+    void setQuery(const QUrlQuery& query);
     Q_INVOKABLE QString query(QUrl::ComponentFormattingOptions = QUrl::PrettyDecoded) const;
     Q_INVOKABLE bool hasQueryItem(const QString& key) const;
     Q_INVOKABLE QString queryItem(const QString& key) const;
@@ -150,26 +160,30 @@ public:
     Q_INVOKABLE QVariantMap queryMap() const;
 
     void setPathAndQuery(const QString& pathAndQuery, QUrl::ParsingMode mode = QUrl::DecodedMode);
-    void setPathAndQuery(std::string_view pathAndQuery, QUrl::ParsingMode mode = QUrl::DecodedMode);
-    Q_INVOKABLE QString pathAndQuery(QUrl::ComponentFormattingOptions options = QUrl::PrettyDecoded) const;
+    void setPathAndQuery(
+        std::string_view pathAndQuery,
+        QUrl::ParsingMode mode = QUrl::DecodedMode);
+    Q_INVOKABLE QString
+        pathAndQuery(QUrl::ComponentFormattingOptions options = QUrl::PrettyDecoded) const;
 
     Q_INVOKABLE bool hasFragment() const;
-    Q_INVOKABLE QString fragment(QUrl::ComponentFormattingOptions options = QUrl::PrettyDecoded) const;
-    void setFragment(const QString &fragment, QUrl::ParsingMode mode = QUrl::TolerantMode);
+    Q_INVOKABLE QString
+        fragment(QUrl::ComponentFormattingOptions options = QUrl::PrettyDecoded) const;
+    void setFragment(const QString& fragment, QUrl::ParsingMode mode = QUrl::TolerantMode);
 
     Q_INVOKABLE bool isRelative() const;
-    Q_INVOKABLE bool isParentOf(const QUrl &url) const;
+    Q_INVOKABLE bool isParentOf(const QUrl& url) const;
 
     Q_INVOKABLE bool isLocalFile() const;
-    Q_INVOKABLE static Url fromLocalFile(const QString &localfile);
+    Q_INVOKABLE static Url fromLocalFile(const QString& localfile);
     Q_INVOKABLE QString toLocalFile() const;
 
     Q_INVOKABLE nx::Url cleanUrl() const;
 
-    bool operator <(const Url &url) const;
-    bool operator ==(const Url &url) const;
+    bool operator<(const Url& url) const;
+    bool operator==(const Url& url) const;
 
-    Q_INVOKABLE bool matches(const Url &url, QUrl::FormattingOptions options) const;
+    Q_INVOKABLE bool matches(const Url& url, QUrl::FormattingOptions options) const;
 
     static QString fromPercentEncoding(const QByteArray& url);
     static QString fromPercentEncoding(std::string_view url);
@@ -177,8 +191,8 @@ public:
 
     static QByteArray toPercentEncoding(
         const QString& str,
-        const QByteArray &exclude = QByteArray(),
-        const QByteArray &include = QByteArray());
+        const QByteArray& exclude = QByteArray(),
+        const QByteArray& include = QByteArray());
 
     static std::string toPercentEncoding(
         std::string_view str,
@@ -225,7 +239,10 @@ enum class UrlPart
 using ComparisonFlag = UrlPart;
 Q_DECLARE_FLAGS(ComparisonFlags, ComparisonFlag)
 
-NX_UTILS_API bool equal(const nx::Url& lhs, const nx::Url& rhs, ComparisonFlags flags = ComparisonFlag::All);
+NX_UTILS_API bool equal(
+    const nx::Url& lhs,
+    const nx::Url& rhs,
+    ComparisonFlags flags = ComparisonFlag::All);
 
 inline bool addressesEqual(const nx::Url& lhs, const nx::Url& rhs)
 {
@@ -233,10 +250,10 @@ inline bool addressesEqual(const nx::Url& lhs, const nx::Url& rhs)
 }
 
 /**
-* First tries to parse strings like `hostname`, then strings like `hostname:port` and uses the QUrl
-* parser for other cases.
-* @return URL which may not be a valid one, so it should be checked after the call.
-*/
+ * First tries to parse strings like `hostname`, then strings like `hostname:port` and uses the
+ * QUrl parser for other cases.
+ * @return URL which may not be a valid one, so it should be checked after the call.
+ */
 NX_UTILS_API nx::Url parseUrlFields(const QString& urlStr, QString scheme = "");
 
 /**
@@ -255,8 +272,8 @@ NX_UTILS_API bool webPageHostsEqual(const nx::Url& left, const nx::Url& right);
 } // namespace utils::url
 
 /**
-* Used only to hide passwords from logs.
-*/
+ * Used only to hide passwords from logs.
+ */
 NX_UTILS_API QString toString(const nx::Url& value);
 
 } // namespace nx

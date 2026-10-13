@@ -28,8 +28,17 @@ public:
     }
 };
 
-TEST_F(TimedLogs, DISABLED_s1) { logS(1); }
-TEST_F(TimedLogs, DISABLED_s10) { logS(10); }
-TEST_F(TimedLogs, DISABLED_s50) { logS(50); }
+TEST_F(TimedLogs, DISABLED_s1)
+{
+    logS(1);
+}
+TEST_F(TimedLogs, DISABLED_s10)
+{
+    logS(10);
+}
+TEST_F(TimedLogs, DISABLED_s50)
+{
+    logS(50);
+}
 
 } // namespace nx::test

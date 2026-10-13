@@ -22,7 +22,8 @@ struct ConnectionAttrs
     std::uint64_t id = 0;
     bool isSsl = false;
 
-    // Connection source address. This can be different from the request source address in case of proxy.
+    // Connection source address. This can be different from the request source address in case of
+    // proxy.
     SocketAddress sourceAddr;
 
     // Address the connection was accepted on.
@@ -50,8 +51,8 @@ struct NX_NETWORK_API RequestContext
 
     /**
      * The endpoint of the request originator. Note that this is different from the HTTP connection
-     * source endpoint if HTTP proxy is inplace. In this case, Forwarded and X-Forwarded-For headers
-     * are taken into account.
+     * source endpoint if HTTP proxy is inplace. In this case, Forwarded and X-Forwarded-For
+     * headers are taken into account.
      */
     SocketAddress clientEndpoint;
 
@@ -74,9 +75,10 @@ struct NX_NETWORK_API RequestContext
 
     /**
      * Parameters, taken from request path.
-     * E.g., if handler was registered with path /object_type/{objectId}/sub_object_type/{subObjectId},
-     * and request /object_type/id1/sub_object_type/id2 was received.
-     * Then this would be (("objectId", "id1"), ("subObjectId", "id2")).
+     * E.g., if handler was registered with path
+     * /object_type/{objectId}/sub_object_type/{subObjectId}, and request
+     * /object_type/id1/sub_object_type/id2 was received. Then this would be (("objectId", "id1"),
+     * ("subObjectId", "id2")).
      */
     RequestPathParams requestPathParams;
 

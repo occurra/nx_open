@@ -31,7 +31,8 @@ template<typename T>
 class Comparator: public nx::reflect::GenericVisitor<Comparator<T>>
 {
 public:
-    Comparator(const ArrayOrder& order): m_order{order}
+    Comparator(const ArrayOrder& order):
+        m_order{order}
     {
         m_comparators.resize(m_order.fields.size());
     }
@@ -45,11 +46,10 @@ public:
             {
                 if (auto c = makeComparator<typename WrappedField::Type>(m_order.fields[i]))
                 {
-                    m_comparators[i] =
-                        [field, c = std::move(c)](const T& lhs, const T& rhs)
-                        {
-                            return c(field.get(lhs), field.get(rhs));
-                        };
+                    m_comparators[i] = [field, c = std::move(c)](const T& lhs, const T& rhs)
+                    {
+                        return c(field.get(lhs), field.get(rhs));
+                    };
                 }
                 break;
             }
@@ -58,20 +58,24 @@ public:
 
     std::function<int(const T&, const T&)> finish()
     {
-        std::erase_if(m_comparators, [](const auto& c) { return !c; });
+        std::erase_if(
+            m_comparators,
+            [](const auto& c)
+            {
+                return !c;
+            });
         if (m_comparators.empty())
             return {};
 
-        return
-            [comparators = std::move(m_comparators)](const T& lhs, const T& rhs)
+        return [comparators = std::move(m_comparators)](const T& lhs, const T& rhs)
+        {
+            for (const auto& c: comparators)
             {
-                for (const auto& c: comparators)
-                {
-                    if (int r = c(lhs, rhs); r != 0)
-                        return r;
-                }
-                return 0;
-            };
+                if (int r = c(lhs, rhs); r != 0)
+                    return r;
+            }
+            return 0;
+        };
     }
 
 private:
@@ -119,11 +123,10 @@ std::function<int(const T&, const T&)> makeComparator(const ArrayOrder& order)
         if (!comparator)
             return {};
 
-        return
-            [c = std::move(comparator)](const T& lhs, const T& rhs)
-            {
-                return c(lhs.value_or(Value{}), rhs.value_or(Value{}));
-            };
+        return [c = std::move(comparator)](const T& lhs, const T& rhs)
+        {
+            return c(lhs.value_or(Value{}), rhs.value_or(Value{}));
+        };
     }
     else if constexpr (IsVariantV<T>)
     {
@@ -135,21 +138,22 @@ std::function<int(const T&, const T&)> makeComparator(const ArrayOrder& order)
         }
         std::vector<std::function<int(const T&, const T&)>> comparators;
         comparators.reserve(std::variant_size_v<T>);
-        makeVariantComparators(&comparators, orderPerIndex,
+        makeVariantComparators(
+            &comparators,
+            orderPerIndex,
             std::make_index_sequence<std::variant_size_v<T>>());
         if (comparators.empty())
             return {};
 
-        return
-            [comparators = std::move(comparators)](const T& lhs, const T& rhs)
+        return [comparators = std::move(comparators)](const T& lhs, const T& rhs)
+        {
+            for (const auto& c: comparators)
             {
-                for (const auto& c: comparators)
-                {
-                    if (int r = c(lhs, rhs); r != 0)
-                        return r;
-                }
-                return 0;
-            };
+                if (int r = c(lhs, rhs); r != 0)
+                    return r;
+            }
+            return 0;
+        };
     }
     else if constexpr (IsInstrumentedV<T>)
     {
@@ -161,13 +165,12 @@ std::function<int(const T&, const T&)> makeComparator(const ArrayOrder& order)
     }
     else
     {
-        return
-            [reverse = order.reverse](const T& lhs, const T& rhs)
-            {
-                if (reverse)
-                    return std::less<T>{}(rhs, lhs) ? -1 : std::less<T>{}(lhs, rhs) ? 1 : 0;
-                return std::less<T>{}(lhs, rhs) ? -1 : std::less<T>{}(rhs, lhs) ? 1 : 0;
-            };
+        return [reverse = order.reverse](const T& lhs, const T& rhs)
+        {
+            if (reverse)
+                return std::less<T>{}(rhs, lhs) ? -1 : std::less<T>{}(lhs, rhs) ? 1 : 0;
+            return std::less<T>{}(lhs, rhs) ? -1 : std::less<T>{}(rhs, lhs) ? 1 : 0;
+        };
     }
 }
 
@@ -175,7 +178,11 @@ template<typename T>
 class Orderer: public nx::reflect::GenericVisitor<Orderer<T>>
 {
 public:
-    Orderer(T* data, const ArrayOrder& order): m_data{data}, m_order{order} {}
+    Orderer(T* data, const ArrayOrder& order):
+        m_data{data},
+        m_order{order}
+    {
+    }
 
     template<typename WrappedField>
     void visitField(const WrappedField& field)
@@ -200,10 +207,16 @@ public:
 
 private:
     template<typename F, typename = void>
-    struct HasRef { static constexpr bool value = false; };
+    struct HasRef
+    {
+        static constexpr bool value = false;
+    };
 
     template<typename F>
-    struct HasRef<F, detail::void_t<decltype(&F::ref)>> { static constexpr bool value = true; };
+    struct HasRef<F, detail::void_t<decltype(&F::ref)>>
+    {
+        static constexpr bool value = true;
+    };
 
 private:
     T* m_data;
@@ -224,7 +237,12 @@ void order(T* data, const ArrayOrder& order_)
     }
     else if constexpr (IsVariantV<T>)
     {
-        std::visit([&order_](auto& v) { order(&v, order_); }, *data);
+        std::visit(
+            [&order_](auto& v)
+            {
+                order(&v, order_);
+            },
+            *data);
     }
     else if constexpr (IsInstrumentedV<T>)
     {
@@ -237,8 +255,13 @@ void order(T* data, const ArrayOrder& order_)
         {
             if (auto c = makeComparator<typename T::value_type>(order_))
             {
-                std::stable_sort(data->begin(), data->end(),
-                    [&c](const auto& lhs, const auto& rhs) { return c(lhs, rhs) < 0; });
+                std::stable_sort(
+                    data->begin(),
+                    data->end(),
+                    [&c](const auto& lhs, const auto& rhs)
+                    {
+                        return c(lhs, rhs) < 0;
+                    });
             }
             for (auto& value: *data)
                 order(&value, order_);

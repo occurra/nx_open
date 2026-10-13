@@ -6,8 +6,7 @@ namespace nx::sql::test {
 
 DbConnectionMock::DbConnectionMock(
     const ConnectionOptions& connectionOptions,
-    std::shared_ptr<DBResult> forcedError)
-    :
+    std::shared_ptr<DBResult> forcedError):
     QtDbConnection(connectionOptions),
     m_forcedError(forcedError)
 {
@@ -21,23 +20,17 @@ DbConnectionMock::~DbConnectionMock()
 
 bool DbConnectionMock::open()
 {
-    return *m_forcedError == DBResultCode::ok
-        ? base_type::open()
-        : false;
+    return *m_forcedError == DBResultCode::ok ? base_type::open() : false;
 }
 
 bool DbConnectionMock::begin()
 {
-    return *m_forcedError == DBResultCode::ok
-        ? base_type::begin()
-        : false;
+    return *m_forcedError == DBResultCode::ok ? base_type::begin() : false;
 }
 
 DBResult DbConnectionMock::lastError()
 {
-    return *m_forcedError == DBResultCode::ok
-        ? base_type::lastError()
-        : *m_forcedError;
+    return *m_forcedError == DBResultCode::ok ? base_type::lastError() : *m_forcedError;
 }
 
 void DbConnectionMock::setOnDestructionHandler(nx::MoveOnlyFunc<void()> handler)

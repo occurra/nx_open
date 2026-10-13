@@ -8,8 +8,7 @@
 
 namespace nx::test {
 
-class WaitCondition:
-    public ::testing::Test
+class WaitCondition: public ::testing::Test
 {
 protected:
     void waitForConditionAsync(std::chrono::milliseconds timeout)
@@ -82,6 +81,5 @@ TEST_F(WaitCondition, wait_with_infinite_timeout)
     satisfyCondition();
     assertWaitCompletedWithResult(true);
 }
-
 
 } // namespace nx::test

@@ -8,7 +8,11 @@ namespace nx::network {
 // class RetryPolicy
 
 const RetryPolicy RetryPolicy::kNoRetries(
-    0, kDefaultInitialDelay, kDefaultDelayMultiplier, kDefaultMaxDelay, kDefaultRandomRatio);
+    0,
+    kDefaultInitialDelay,
+    kDefaultDelayMultiplier,
+    kDefaultMaxDelay,
+    kDefaultRandomRatio);
 
 RetryPolicy::RetryPolicy():
     maxRetryCount(kDefaultMaxRetryCount)
@@ -20,8 +24,7 @@ RetryPolicy::RetryPolicy(
     std::chrono::milliseconds initialDelay,
     unsigned int delayMultiplier,
     std::chrono::milliseconds maxDelay,
-    double randomRatio)
-:
+    double randomRatio):
     base_type(initialDelay, delayMultiplier, maxDelay, randomRatio),
     maxRetryCount(maxRetryCount)
 {
@@ -35,8 +38,8 @@ bool RetryPolicy::operator==(const RetryPolicy& rhs) const
 
 QString RetryPolicy::toString() const
 {
-    return nx::format("RetryPolicy(%1, %2, %3, %4, %5)").args(
-        maxRetryCount, initialDelay, delayMultiplier, maxDelay, randomRatio);
+    return nx::format("RetryPolicy(%1, %2, %3, %4, %5)")
+        .args(maxRetryCount, initialDelay, delayMultiplier, maxDelay, randomRatio);
 }
 
 //-------------------------------------------------------------------------------------------------

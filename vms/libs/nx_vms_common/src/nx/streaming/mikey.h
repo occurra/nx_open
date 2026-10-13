@@ -20,12 +20,15 @@ struct MikeyData
 };
 
 NX_VMS_COMMON_API std::optional<std::string> getMikeyPayload(
-    const nx::rtp::Sdp::Media& media, const std::vector<std::string>& sessionSdpAttributes);
+    const nx::rtp::Sdp::Media& media,
+    const std::vector<std::string>& sessionSdpAttributes);
 
 NX_VMS_COMMON_API std::optional<MikeyData> makeStandardMikey(
-    const std::string& mikeyPayload, const nx::Url& setupUrl);
+    const std::string& mikeyPayload,
+    const nx::Url& setupUrl);
 
 NX_VMS_COMMON_API std::optional<MikeyData> makeClientManagedMikey(
-    const nx::Url& setupUrl, nx::rtsp::SrtpCryptoPolicy cryptoPolicy = {});
+    const nx::Url& setupUrl,
+    nx::rtsp::SrtpCryptoPolicy cryptoPolicy = {});
 
 } // namespace nx::streaming::rtsp

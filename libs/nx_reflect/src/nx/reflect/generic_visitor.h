@@ -56,10 +56,7 @@ protected:
     void finish() {}
 
 private:
-    Visitor& self()
-    {
-        return static_cast<Visitor&>(*this);
-    }
+    Visitor& self() { return static_cast<Visitor&>(*this); }
 };
 
 } // namespace nx::reflect

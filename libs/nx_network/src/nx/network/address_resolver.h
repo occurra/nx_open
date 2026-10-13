@@ -21,14 +21,13 @@ class CloudAddressResolver;
  * Resolves hostname to IP address or cloud host id which
  * is enough to establish connection to the host.
  */
-class NX_NETWORK_API AddressResolver:
-    public QnStoppableAsync
+class NX_NETWORK_API AddressResolver: public QnStoppableAsync
 {
 public:
     static constexpr auto kDnsCacheTimeout = std::chrono::seconds(10);
 
-    using ResolveHandler = nx::MoveOnlyFunc<void(
-        SystemError::ErrorCode, std::deque<AddressEntry>)>;
+    using ResolveHandler =
+        nx::MoveOnlyFunc<void(SystemError::ErrorCode, std::deque<AddressEntry>)>;
 
     AddressResolver();
     virtual ~AddressResolver() = default;
@@ -38,16 +37,14 @@ public:
     /**
      * Tells the resolver to resolve hostName into the target.
      */
-    void addFixedAddress(
-        const HostAddress& hostName, const HostAddress& target);
+    void addFixedAddress(const HostAddress& hostName, const HostAddress& target);
 
     /**
      * Tells the resolver to resolve hostName into the endpoint. This means the resulting
      * AddressEntry will have endpoint.host resolve result and endpoint.port as an attribute.
      * See AddressEntry structure for details on attributes.
      */
-    void addFixedAddress(
-        const HostAddress& hostName, const SocketAddress& endpoint);
+    void addFixedAddress(const HostAddress& hostName, const SocketAddress& endpoint);
 
     /**
      * Removes address added with AddressResolver::addFixedAddress.
@@ -84,12 +81,10 @@ public:
     /**
      * Cancels request.
      * If handler not provided the method will block until actual cancellation is done.
-     * TODO: This method should not be blocking because it may commonly be used in AIO thread during
-     * stop operation.
+     * TODO: This method should not be blocking because it may commonly be used in AIO thread
+     * during stop operation.
      */
-    void cancel(
-        void* requestId,
-        nx::MoveOnlyFunc<void()> handler = nullptr);
+    void cancel(void* requestId, nx::MoveOnlyFunc<void()> handler = nullptr);
 
     bool isRequestIdKnown(void* requestId) const;
 
@@ -109,12 +104,16 @@ public:
 protected:
     struct NX_NETWORK_API HostAddressInfo
     {
-        explicit HostAddressInfo(
-            std::chrono::milliseconds dnsCacheTimeout);
+        explicit HostAddressInfo(std::chrono::milliseconds dnsCacheTimeout);
 
         std::set<void*> pendingRequests;
 
-        enum class State { unresolved, resolved, inProgress };
+        enum class State
+        {
+            unresolved,
+            resolved,
+            inProgress
+        };
 
         State dnsState() const { return m_dnsState; }
         void dnsProgress() { m_dnsState = State::inProgress; }
@@ -162,16 +161,16 @@ protected:
         int ipVersion,
         ResolveResult* resolved);
 
-    void dnsResolve(
-        HaInfoIterator info, nx::Locker<nx::Mutex>* lk, int ipVersion);
+    void dnsResolve(HaInfoIterator info, nx::Locker<nx::Mutex>* lk, int ipVersion);
 
     void reportResult(
         HaInfoIterator info,
         SystemError::ErrorCode lastErrorCode,
         std::deque<AddressEntry> entries);
 
-    std::vector<std::multimap<void*, RequestInfo>::iterator>
-        selectRequestsToComplete(const nx::Locker<nx::Mutex>&, HaInfoIterator info);
+    std::vector<std::multimap<void*, RequestInfo>::iterator> selectRequestsToComplete(
+        const nx::Locker<nx::Mutex>&,
+        HaInfoIterator info);
 
 protected:
     mutable nx::Mutex m_mutex;

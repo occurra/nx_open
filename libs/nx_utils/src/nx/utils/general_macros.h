@@ -38,30 +38,32 @@
 
 /** Workaround for MSVC preprocessor issue with concatenation. */
 #define NX_CONCATENATE(s1, s2) NX_DIRECT_CONCATENATE(s1, s2)
-#define NX_DIRECT_CONCATENATE(s1, s2) s1 ## s2
+#define NX_DIRECT_CONCATENATE(s1, s2) s1##s2
 
 /**
  * We can't pass function templates or overload sets as template parameters, so we're unable to
  * use them with std::apply, std::invoke etc. But generic lambdas are ok in such contexts (because
  * they are class objects with `operator()`).
  */
-#define NX_WRAP_FUNC_TO_LAMBDA(...) (\
-    [](auto&&... args) \
-    { \
-        return (__VA_ARGS__)(std::forward<decltype(args)>(args)...); \
-    })
+#define NX_WRAP_FUNC_TO_LAMBDA(...) \
+    ( \
+        [](auto&&... args) \
+        { \
+            return (__VA_ARGS__) (std::forward<decltype(args)>(args)...); \
+        })
 
 /**
  * We can't pass member function templates or overload sets as template parameters, so we're unable
  * to use them with std::apply, std::invoke etc. But generic lambdas are ok in such contexts
  * (because they are class objects with `operator()`).
  */
-#define NX_WRAP_MEM_FUNC_TO_LAMBDA(...) ( \
-    [](auto&& self, auto&&... args) \
-    { \
-        return (std::forward<decltype(self)>(self).__VA_ARGS__)( \
-            std::forward<decltype(args)>(args)...); \
-    })
+#define NX_WRAP_MEM_FUNC_TO_LAMBDA(...) \
+    ( \
+        [](auto&& self, auto&&... args) \
+        { \
+            return (std::forward<decltype(self)>(self).__VA_ARGS__)( \
+                std::forward<decltype(args)>(args)...); \
+        })
 
 #if defined(_MSC_VER)
     #define NX_PRAGMA(x) __pragma(x)
@@ -72,28 +74,29 @@
 
 #if defined(_MSC_VER)
     #define NX_DIAG_PUSH() NX_PRAGMA(warning(push))
-    #define NX_DIAG_POP()  NX_PRAGMA(warning(pop))
-    #define NX_DIAG_DISABLE_DEPRECATED() NX_PRAGMA(warning(disable: 4996))
+    #define NX_DIAG_POP() NX_PRAGMA(warning(pop))
+    #define NX_DIAG_DISABLE_DEPRECATED() NX_PRAGMA(warning(disable : 4996))
 #elif defined(__clang__)
     #define NX_DIAG_PUSH() NX_PRAGMA(clang diagnostic push)
-    #define NX_DIAG_POP()  NX_PRAGMA(clang diagnostic pop)
-    #define NX_DIAG_DISABLE_DEPRECATED() NX_PRAGMA(clang diagnostic ignored "-Wdeprecated-declarations")
+    #define NX_DIAG_POP() NX_PRAGMA(clang diagnostic pop)
+    #define NX_DIAG_DISABLE_DEPRECATED() \
+        NX_PRAGMA(clang diagnostic ignored "-Wdeprecated-declarations")
 #elif defined(__GNUC__)
     #define NX_DIAG_PUSH() NX_PRAGMA(GCC diagnostic push)
-    #define NX_DIAG_POP()  NX_PRAGMA(GCC diagnostic pop)
-    #define NX_DIAG_DISABLE_DEPRECATED() NX_PRAGMA(GCC diagnostic ignored "-Wdeprecated-declarations")
+    #define NX_DIAG_POP() NX_PRAGMA(GCC diagnostic pop)
+    #define NX_DIAG_DISABLE_DEPRECATED() \
+        NX_PRAGMA(GCC diagnostic ignored "-Wdeprecated-declarations")
 #else
-    #define NX_DIAG_PUSH() ((void)0)
-    #define NX_DIAG_POP()  ((void)0)
-    #define NX_DIAG_DISABLE_DEPRECATED() ((void)0)
+    #define NX_DIAG_PUSH() ((void) 0)
+    #define NX_DIAG_POP() ((void) 0)
+    #define NX_DIAG_DISABLE_DEPRECATED() ((void) 0)
 #endif
 
 #define NX_SUPPRESS_DEPRECATED_BEGIN() \
     NX_DIAG_PUSH(); \
     NX_DIAG_DISABLE_DEPRECATED()
 
-#define NX_SUPPRESS_DEPRECATED_END() \
-    NX_DIAG_POP()
+#define NX_SUPPRESS_DEPRECATED_END() NX_DIAG_POP()
 
 // Microsoft's way to "support" the standard's [[no_unique_address]] attribute is
 // "It won't create an error, but it won't have any effect":

@@ -7,9 +7,7 @@
 class NX_UTILS_API WaitConditionTimer
 {
 public:
-    WaitConditionTimer(
-        nx::WaitCondition* waitCondition,
-        std::chrono::milliseconds timeout);
+    WaitConditionTimer(nx::WaitCondition* waitCondition, std::chrono::milliseconds timeout);
 
     /**
      * @return false if timeout has passed since object instantiation.

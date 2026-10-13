@@ -44,10 +44,10 @@ public:
     int frame_crop_top_offset = 0;
     int frame_crop_bottom_offset = 0;
     int vui_parameters_present_flag = 0;
-    //int field_pic_flag;
+    // int field_pic_flag;
     int pic_size_in_map_units = 0;
     int nal_hrd_parameters_present_flag = 0;
-    //int orig_hrd_parameters_present_flag;
+    // int orig_hrd_parameters_present_flag;
     int vcl_hrd_parameters_present_flag = 0;
     int pic_struct_present_flag = 0;
 
@@ -105,25 +105,32 @@ public:
     bool UseDefaultScalingMatrix4x4Flag[6];
     bool UseDefaultScalingMatrix8x8Flag[2];
 
-
     int max_dec_frame_buffering = 0;
 
     QString getStreamDescr();
-    int getWidth() const { return pic_width_in_mbs*16 - getCropX();}
-    int getHeight() const {
-        return (2 - frame_mbs_only_flag) * pic_height_in_map_units*16 - getCropY();
+    int getWidth() const { return pic_width_in_mbs * 16 - getCropX(); }
+    int getHeight() const
+    {
+        return (2 - frame_mbs_only_flag) * pic_height_in_map_units * 16 - getCropY();
     }
     double getFPS() const;
     void setFps(double fps);
     double getSar() const;
 
-
     SequenceParameterSet()
     {
-        memset( ScalingList4x4, 16, sizeof(ScalingList4x4) );
-        memset( ScalingList8x8, 16, sizeof(ScalingList8x8) );
-        std::fill( (bool*)UseDefaultScalingMatrix4x4Flag, ((bool*)UseDefaultScalingMatrix4x4Flag)+sizeof(UseDefaultScalingMatrix4x4Flag)/sizeof(*UseDefaultScalingMatrix4x4Flag), true );
-        std::fill( (bool*)UseDefaultScalingMatrix8x8Flag, ((bool*)UseDefaultScalingMatrix8x8Flag)+sizeof(UseDefaultScalingMatrix8x8Flag)/sizeof(*UseDefaultScalingMatrix8x8Flag), true );
+        memset(ScalingList4x4, 16, sizeof(ScalingList4x4));
+        memset(ScalingList8x8, 16, sizeof(ScalingList8x8));
+        std::fill(
+            (bool*) UseDefaultScalingMatrix4x4Flag,
+            ((bool*) UseDefaultScalingMatrix4x4Flag)
+                + sizeof(UseDefaultScalingMatrix4x4Flag) / sizeof(*UseDefaultScalingMatrix4x4Flag),
+            true);
+        std::fill(
+            (bool*) UseDefaultScalingMatrix8x8Flag,
+            ((bool*) UseDefaultScalingMatrix8x8Flag)
+                + sizeof(UseDefaultScalingMatrix8x8Flag) / sizeof(*UseDefaultScalingMatrix8x8Flag),
+            true);
     }
 
     int deserialize();

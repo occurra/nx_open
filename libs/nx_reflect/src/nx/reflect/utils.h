@@ -9,19 +9,36 @@ namespace nx::reflect::detail {
  */
 
 template<bool B, typename T = void>
-struct enable_if {};
+struct enable_if
+{
+};
 
 template<typename T>
-struct enable_if<true, T> { using type = T; };
+struct enable_if<true, T>
+{
+    using type = T;
+};
 
 template<bool B, typename T = void>
 using enable_if_t = typename enable_if<B, T>::type;
 
 //-------------------------------------------------------------------------------------------------
 
-template<typename T> struct remove_reference { using type = T; };
-template<typename T> struct remove_reference<T&> { using type = T; };
-template<typename T> struct remove_reference<T&&> { using type = T; };
+template<typename T>
+struct remove_reference
+{
+    using type = T;
+};
+template<typename T>
+struct remove_reference<T&>
+{
+    using type = T;
+};
+template<typename T>
+struct remove_reference<T&&>
+{
+    using type = T;
+};
 
 template<typename T>
 using remove_reference_t = typename remove_reference<T>::type;
@@ -40,13 +57,18 @@ constexpr T&& forward(remove_reference_t<T>&& t) noexcept
 
 //-------------------------------------------------------------------------------------------------
 
-template<typename...> struct make_void { typedef void type; };
-template<typename... Args> using void_t = typename make_void<Args...>::type;
+template<typename...>
+struct make_void
+{
+    typedef void type;
+};
+template<typename... Args>
+using void_t = typename make_void<Args...>::type;
 
-template <typename, typename>
+template<typename, typename>
 constexpr bool is_same_v = false;
 
-template <typename T>
+template<typename T>
 constexpr bool is_same_v<T, T> = true;
 
 //-------------------------------------------------------------------------------------------------
@@ -67,8 +89,15 @@ private:
 
 public:
     constexpr string_view() = default;
-    constexpr string_view(const char* data, int length): m_data(data), m_length(length) {}
-    constexpr string_view(const char* data): string_view(data, strlen(data)) {}
+    constexpr string_view(const char* data, int length):
+        m_data(data),
+        m_length(length)
+    {
+    }
+    constexpr string_view(const char* data):
+        string_view(data, strlen(data))
+    {
+    }
 
     constexpr const char* data() const { return m_data; }
     constexpr int length() const { return m_length; }
@@ -105,29 +134,61 @@ public:
 
 //-------------------------------------------------------------------------------------------------
 
-template<typename T> struct Decay { using Type = T; };
-template<typename T> struct Decay<const T&> { using Type = T; };
-template<typename T> struct Decay<T&> { using Type = T; };
-template<typename T> struct Decay<const T> { using Type = T; };
+template<typename T>
+struct Decay
+{
+    using Type = T;
+};
+template<typename T>
+struct Decay<const T&>
+{
+    using Type = T;
+};
+template<typename T>
+struct Decay<T&>
+{
+    using Type = T;
+};
+template<typename T>
+struct Decay<const T>
+{
+    using Type = T;
+};
 
 // Getter is a `T(Class::*) const`.
 template<typename Getter>
-struct GetterReturnType {};
+struct GetterReturnType
+{
+};
 
 template<typename C, typename T>
-struct GetterReturnType<T (C::*)() const> { using Type = typename Decay<T>::Type; };
+struct GetterReturnType<T (C::*)() const>
+{
+    using Type = typename Decay<T>::Type;
+};
 
 template<typename C, typename T>
-struct GetterReturnType<T (C::*)() const noexcept> { using Type = typename Decay<T>::Type; };
+struct GetterReturnType<T (C::*)() const noexcept>
+{
+    using Type = typename Decay<T>::Type;
+};
 
 // Setter is a `void(Class::*)(T)`.
 template<typename Setter>
-struct SetterReturnType {};
+struct SetterReturnType
+{
+};
 
 template<typename C, typename T>
-struct SetterReturnType<void(C::*)(T)> { using Type = typename Decay<T>::Type; };
+struct SetterReturnType<void (C::*)(T)>
+{
+    using Type = typename Decay<T>::Type;
+};
 
 template<typename C, typename T>
-struct SetterReturnType<void(C::*)(T) noexcept> { using Type = typename Decay<T>::Type; };
+struct SetterReturnType<void (C::*)(T) noexcept>
+{
+    using Type = typename Decay<T>::Type;
+};
 
 } // namespace nx::reflect::detail

@@ -6,8 +6,7 @@
 
 namespace nx::utils::math::test {
 
-class Graph:
-    public ::testing::Test
+class Graph: public ::testing::Test
 {
 protected:
     using IntGraph = math::Graph<int>;

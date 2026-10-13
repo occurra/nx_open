@@ -5,8 +5,8 @@
 #include <memory>
 #include <vector>
 
-#include <QtCore/QRect>
 #include <QtCore/QList>
+#include <QtCore/QRect>
 
 #include <nx/media/media_data_packet.h>
 #include <nx/media/motion_detection.h>
@@ -41,7 +41,6 @@ enum class MetadataType
 // It should be an interface not a base implementation.
 struct NX_MEDIA_CORE_API QnAbstractCompressedMetadata: public QnAbstractMediaData
 {
-
 public:
     QnAbstractCompressedMetadata(MetadataType type, size_t bufferSize);
 
@@ -72,7 +71,7 @@ struct NX_MEDIA_CORE_API QnCompressedMetadata: public QnAbstractCompressedMetada
     void setData(const QByteArray& data);
     using QnAbstractCompressedMetadata::setData;
 
-    void setDurationUsec(qint64 value) { m_duration = value;  }
+    void setDurationUsec(qint64 value) { m_duration = value; }
     void setTimestampUsec(qint64 value) { timestamp = value; }
 
     static QnCompressedMetadataPtr createMediaEventPacket(
@@ -87,21 +86,20 @@ protected:
 };
 
 /**
-* This structure used for serialized QnMetaDataV1
-* Timestamp and duration specified in milliseconds
-* structure can be directly mapped to deserialized memory buffer to represent MetaData
-*/
+ * This structure used for serialized QnMetaDataV1
+ * Timestamp and duration specified in milliseconds
+ * structure can be directly mapped to deserialized memory buffer to represent MetaData
+ */
 #pragma pack(push, 1)
 struct NX_MEDIA_CORE_API QnMetaDataV1Light
 {
-
 public:
     /**
-    * Structure MUST be prepared before use by calling doMarshalling method
-    */
+     * Structure MUST be prepared before use by calling doMarshalling method
+     */
     void doMarshalling();
 
-    qint64 endTimeMs() const  { return startTimeMs + durationMs; }
+    qint64 endTimeMs() const { return startTimeMs + durationMs; }
 
 public:
     quint64 startTimeMs;
@@ -109,34 +107,37 @@ public:
     quint8 channel;
     quint8 reserved0;
     quint16 reserved;
-    quint8 data[Qn::kMotionGridWidth * Qn::kMotionGridHeight/8];
+    quint8 data[Qn::kMotionGridWidth * Qn::kMotionGridHeight / 8];
 };
 #pragma pack(pop)
 
-NX_MEDIA_CORE_API bool operator< (const QnMetaDataV1Light& data, const quint64 timeMs);
-NX_MEDIA_CORE_API bool operator< (const quint64 timeMs, const QnMetaDataV1Light& data);
+NX_MEDIA_CORE_API bool operator<(const QnMetaDataV1Light& data, const quint64 timeMs);
+NX_MEDIA_CORE_API bool operator<(const quint64 timeMs, const QnMetaDataV1Light& data);
 
 struct NX_MEDIA_CORE_API QnMetaDataV1: public QnAbstractCompressedMetadata
 {
 public:
-    static const int kMotionDataBufferSize = Qn::kMotionGridWidth*Qn::kMotionGridHeight / 8;
+    static const int kMotionDataBufferSize = Qn::kMotionGridWidth * Qn::kMotionGridHeight / 8;
 
     QnMetaDataV1();
-    QnMetaDataV1(std::chrono::microseconds timestamp, int initialValue = 0, int extraBufferSize = 0);
+    QnMetaDataV1(
+        std::chrono::microseconds timestamp,
+        int initialValue = 0,
+        int extraBufferSize = 0);
     QnMetaDataV1(std::chrono::microseconds timestamp_, const char* buffer, int extraBufferSize);
 
     static QnMetaDataV1Ptr fromLightData(const QnMetaDataV1Light& lightData);
 
     /**
-    * Merge existing motion image with new motion image. Matrix is allowed col to col
-    * 0   1
-    * |   |
-    * \/  \/
-    * |   |
-    * \/  \/
-    * |   |
-    * \/  \/
-    */
+     * Merge existing motion image with new motion image. Matrix is allowed col to col
+     * 0   1
+     * |   |
+     * \/  \/
+     * |   |
+     * \/  \/
+     * |   |
+     * \/  \/
+     */
     void addMotion(const quint8* data, qint64 timestamp);
     void addMotion(QnMetaDataV1Ptr data);
     void addMotion(QnConstMetaDataV1Ptr data);
@@ -178,16 +179,8 @@ public:
         char* mask,
         int* maskStart = 0,
         int* maskEnd = 0);
-    static void createMask(
-        const QRect& rect,
-        char* mask,
-        int* maskStart = 0,
-        int* maskEnd = 0);
-    static void createMask(
-        const QRectF& rectF,
-        char* mask,
-        int* maskStart = 0,
-        int* maskEnd = 0);
+    static void createMask(const QRect& rect, char* mask, int* maskStart = 0, int* maskEnd = 0);
+    static void createMask(const QRectF& rectF, char* mask, int* maskStart = 0, int* maskEnd = 0);
 
     virtual QnMetaDataV1* clone() const override;
 

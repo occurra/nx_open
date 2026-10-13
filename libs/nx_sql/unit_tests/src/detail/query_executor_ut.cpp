@@ -10,8 +10,7 @@
 
 namespace nx::sql::detail::test {
 
-class DbRequestExecutor:
-    public nx::sql::test::BaseDbTest
+class DbRequestExecutor: public nx::sql::test::BaseDbTest
 {
     using base_type = nx::sql::test::BaseDbTest;
 
@@ -53,10 +52,7 @@ private:
         throw Exception(*m_expectedResult);
     }
 
-    void queryCompletionHandler(DBResult result)
-    {
-        m_resultProvidedToCompletionHandler = result;
-    }
+    void queryCompletionHandler(DBResult result) { m_resultProvidedToCompletionHandler = result; }
 };
 
 TEST_F(DbRequestExecutor, handles_exception)

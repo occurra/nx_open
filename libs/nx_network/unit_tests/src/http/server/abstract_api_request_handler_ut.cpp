@@ -11,12 +11,11 @@
 namespace nx::network::http::test {
 
 template<typename TypeSet>
-class HttpServerGenericApiHandler:
-    public ::testing::Test
+class HttpServerGenericApiHandler: public ::testing::Test
 {
 protected:
-    template<typename... Args> using Handler =
-        typename TypeSet::template Handler<Args...>;
+    template<typename... Args>
+    using Handler = typename TypeSet::template Handler<Args...>;
 
     template<typename TypedHandler>
     class BaseContext
@@ -32,10 +31,7 @@ protected:
             m_request.requestLine.version = nx::network::http::http_1_1;
         }
 
-        void whenSendRequest()
-        {
-            invokeProcessRequest(nx::network::http::StatusCode::ok);
-        }
+        void whenSendRequest() { invokeProcessRequest(nx::network::http::StatusCode::ok); }
 
         void whenRequestCompletedSuccessfully()
         {
@@ -76,20 +72,17 @@ protected:
             m_handler.setHttpStatusCode(statusCode);
 
             m_handler.serve(
-                RequestContext(
-                    {},
-                    {},
-                    SocketAddress(),
-                    {},
-                    m_request),
-                [this](auto result) { m_requestResults.push(std::move(result)); });
+                RequestContext({}, {}, SocketAddress(), {}, m_request),
+                [this](auto result)
+                {
+                    m_requestResults.push(std::move(result));
+                });
         }
     };
 
     //-------------------------------------------------------------------------------------------------
 
-    class OutHandler:
-        public Handler<void /*no input*/>
+    class OutHandler: public Handler<void /*no input*/>
     {
     public:
         virtual void processRequest(http::RequestContext /*requestContext*/) override
@@ -109,20 +102,17 @@ protected:
         nx::network::http::StatusCode::Value m_httpStatusCode = nx::network::http::StatusCode::ok;
     };
 
-    class OutOnlyContext:
-        public BaseContext<OutHandler>
+    class OutOnlyContext: public BaseContext<OutHandler>
     {
     };
 
     //-------------------------------------------------------------------------------------------------
 
-    class InOutHandler:
-        public Handler<Serializable>
+    class InOutHandler: public Handler<Serializable>
     {
     public:
-        virtual void processRequest(
-            http::RequestContext /*requestContext*/,
-            Serializable input) override
+        virtual void processRequest(http::RequestContext /*requestContext*/, Serializable input)
+            override
         {
             m_lastInput = input;
 
@@ -137,18 +127,14 @@ protected:
             m_httpStatusCode = httpStatusCode;
         }
 
-        Serializable lastInput() const
-        {
-            return m_lastInput;
-        }
+        Serializable lastInput() const { return m_lastInput; }
 
     private:
         nx::network::http::StatusCode::Value m_httpStatusCode = nx::network::http::StatusCode::ok;
         Serializable m_lastInput;
     };
 
-    class InOutContext:
-        public BaseContext<InOutHandler>
+    class InOutContext: public BaseContext<InOutHandler>
     {
     public:
         void preparePostRequestCommon()
@@ -192,8 +178,7 @@ protected:
 
     //-------------------------------------------------------------------------------------------------
 
-    class NoDataHandler:
-        public Handler<void>
+    class NoDataHandler: public Handler<void>
     {
     public:
         virtual void processRequest(http::RequestContext /*requestContext*/) override
@@ -213,8 +198,7 @@ protected:
         nx::network::http::StatusCode::Value m_httpStatusCode = nx::network::http::StatusCode::ok;
     };
 
-    class NoDataContext:
-        public BaseContext<NoDataHandler>
+    class NoDataContext: public BaseContext<NoDataHandler>
     {
     public:
         void assertRequestCompletedWithStatus(Method method, StatusCode::Value status)
@@ -301,7 +285,8 @@ TYPED_TEST_P(HttpServerGenericApiHandler, no_data_request_with_no_body_is_handle
     ctx.assertRequestCompletedWithStatus(Method::delete_, StatusCode::ok);
 }
 
-REGISTER_TYPED_TEST_SUITE_P(HttpServerGenericApiHandler,
+REGISTER_TYPED_TEST_SUITE_P(
+    HttpServerGenericApiHandler,
     out_only_success_result_output_serialized_to_message_body,
     out_only_success_result_output_serialized_to_response_headers_if_status_code_forbids_body,
 
@@ -310,20 +295,16 @@ REGISTER_TYPED_TEST_SUITE_P(HttpServerGenericApiHandler,
     in_out_unsupported_input_format_results_in_error,
 
     DISABLED_no_data_any_request_with_body_produces_an_error,
-    no_data_request_with_no_body_is_handled
-);
+    no_data_request_with_no_body_is_handled);
 
 //-------------------------------------------------------------------------------------------------
 
 struct FusionTypes
 {
-    template<typename... Args> using Handler =
-        nx::network::http::AbstractApiRequestHandler<Args...>;
+    template<typename... Args>
+    using Handler = nx::network::http::AbstractApiRequestHandler<Args...>;
 };
 
-INSTANTIATE_TYPED_TEST_SUITE_P(
-    Fusion,
-    HttpServerGenericApiHandler,
-    FusionTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(Fusion, HttpServerGenericApiHandler, FusionTypes);
 
 } // namespace nx::network::http::test

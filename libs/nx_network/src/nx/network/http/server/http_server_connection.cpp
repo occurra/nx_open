@@ -19,8 +19,7 @@ static std::atomic<std::uint64_t> sConnectionId{0};
 HttpServerConnection::HttpServerConnection(
     std::unique_ptr<AbstractStreamSocket> sock,
     nx::network::http::AbstractRequestHandler* requestHandler,
-    std::optional<SocketAddress> addressToRedirect)
-    :
+    std::optional<SocketAddress> addressToRedirect):
     base_type(std::move(sock)),
     m_requestHandler(requestHandler),
     m_addressToRedirect(std::move(addressToRedirect)),
@@ -33,9 +32,11 @@ HttpServerConnection::HttpServerConnection(
     SocketGlobals::instance().allocationAnalyzer().recordObjectCreation(this);
     ++SocketGlobals::instance().debugCounters().httpServerConnectionCount;
 
-    m_closeHandlerSubscription =
-        registerCloseHandler([this](SystemError::ErrorCode reason, auto /*connectionDestroyed*/)
-            { cleanUpOnConnectionClosure(reason); });
+    m_closeHandlerSubscription = registerCloseHandler(
+        [this](SystemError::ErrorCode reason, auto /*connectionDestroyed*/)
+        {
+            cleanUpOnConnectionClosure(reason);
+        });
 }
 
 HttpServerConnection::~HttpServerConnection()
@@ -51,24 +52,26 @@ std::unique_ptr<AbstractStreamSocket> HttpServerConnection::takeSocket()
     auto connection = base_type::takeSocket();
     // Taking socket prohibits queued responses from being sent.
 
-    const auto pendingRequests =
-        nx::utils::join(m_responseQueue, "; ",
-            [](const auto& val) { return val->requestLine.toString(); });
+    const auto pendingRequests = nx::utils::join(
+        m_responseQueue,
+        "; ",
+        [](const auto& val)
+        {
+            return val->requestLine.toString();
+        });
     NX_ASSERT(m_responseQueue.empty(), pendingRequests);
     return connection;
 }
 
-std::unique_ptr<nx::network::http::AbstractMsgBodySource>
-    HttpServerConnection::takeCurrentMsgBody()
+std::unique_ptr<nx::network::http::AbstractMsgBodySource> HttpServerConnection::
+    takeCurrentMsgBody()
 {
     return std::exchange(m_currentMsgBody, nullptr);
 }
 
 SocketAddress HttpServerConnection::lastRequestSource() const
 {
-    return m_clientEndpoint
-        ? *m_clientEndpoint
-        : socket()->getForeignAddress();
+    return m_clientEndpoint ? *m_clientEndpoint : socket()->getForeignAddress();
 }
 
 void HttpServerConnection::setPersistentConnectionEnabled(bool value)
@@ -98,15 +101,17 @@ void HttpServerConnection::setOnResponseSent(OnResponseSentHandler handler)
     m_responseSentHandler = std::move(handler);
 }
 
-void HttpServerConnection::processMessage(
-    nx::network::http::Message requestMessage)
+void HttpServerConnection::processMessage(nx::network::http::Message requestMessage)
 {
     // NOTE: The message contains only headers. No message body yet.
 
     if (requestMessage.type != nx::network::http::MessageType::request)
     {
-        NX_DEBUG(this, "Unexpectedly received %1 from %2. Closing connection",
-            http::MessageType::toString(requestMessage.type), getForeignAddress());
+        NX_DEBUG(
+            this,
+            "Unexpectedly received %1 from %2. Closing connection",
+            http::MessageType::toString(requestMessage.type),
+            getForeignAddress());
         closeConnection(SystemError::invalidData);
         return;
     }
@@ -125,8 +130,11 @@ void HttpServerConnection::processMessage(
 
     auto requestContext = prepareRequestAuthContext(std::move(*requestMessage.request));
 
-    NX_VERBOSE(this, "Processing request %1 received from %2",
-        requestContext->request.requestLine, getForeignAddress());
+    NX_VERBOSE(
+        this,
+        "Processing request %1 received from %2",
+        requestContext->request.requestLine,
+        getForeignAddress());
 
     checkForConnectionPersistency(requestContext->request);
 
@@ -135,7 +143,9 @@ void HttpServerConnection::processMessage(
         nx::network::http::Message response(nx::network::http::MessageType::response);
         response.response->statusLine.statusCode = StatusCode::movedPermanently;
         const auto url = nx::network::url::Builder(requestContext->request.requestLine.url)
-            .setScheme(kSecureUrlSchemeName).setEndpoint(*m_addressToRedirect).toUrl();
+                             .setScheme(kSecureUrlSchemeName)
+                             .setEndpoint(*m_addressToRedirect)
+                             .toUrl();
         response.response->headers.emplace("Location", url.toStdString());
 
         prepareAndSendResponse(
@@ -196,13 +206,11 @@ void HttpServerConnection::extractClientEndpoint(const HttpHeaders& headers)
         m_clientEndpoint = socket()->getForeignAddress();
 }
 
-void HttpServerConnection::extractClientEndpointFromXForwardedHeader(
-    const HttpHeaders& headers)
+void HttpServerConnection::extractClientEndpointFromXForwardedHeader(const HttpHeaders& headers)
 {
     header::XForwardedFor xForwardedFor;
     auto xForwardedForIter = headers.find(header::XForwardedFor::NAME);
-    if (xForwardedForIter != headers.end() &&
-        xForwardedFor.parse(xForwardedForIter->second))
+    if (xForwardedForIter != headers.end() && xForwardedFor.parse(xForwardedForIter->second))
     {
         m_clientEndpoint.emplace(SocketAddress(xForwardedFor.client, 0));
 
@@ -212,14 +220,12 @@ void HttpServerConnection::extractClientEndpointFromXForwardedHeader(
     }
 }
 
-void HttpServerConnection::extractClientEndpointFromForwardedHeader(
-    const HttpHeaders& headers)
+void HttpServerConnection::extractClientEndpointFromForwardedHeader(const HttpHeaders& headers)
 {
     header::Forwarded forwarded;
     auto forwardedIter = headers.find(header::Forwarded::NAME);
-    if (forwardedIter != headers.end() &&
-        forwarded.parse(forwardedIter->second) &&
-        !forwarded.elements.front().for_.empty())
+    if (forwardedIter != headers.end() && forwarded.parse(forwardedIter->second)
+        && !forwarded.elements.front().for_.empty())
     {
         m_clientEndpoint.emplace(forwarded.elements.front().for_);
     }
@@ -235,9 +241,8 @@ void HttpServerConnection::stopWhileInAioThread()
     NX_VERBOSE(this, "Stopped");
 }
 
-std::unique_ptr<HttpServerConnection::RequestAuthContext>
-    HttpServerConnection::prepareRequestAuthContext(
-        nx::network::http::Request request)
+std::unique_ptr<HttpServerConnection::RequestAuthContext> HttpServerConnection::
+    prepareRequestAuthContext(nx::network::http::Request request)
 {
     auto requestContext = std::make_unique<RequestAuthContext>();
     requestContext->requestReceivedTime = clock_type::now();
@@ -272,35 +277,36 @@ void HttpServerConnection::invokeRequestHandler(
     auto strongRef = shared_from_this();
     std::weak_ptr<HttpServerConnection> weakThis = strongRef;
 
-    auto sendResponseFunc =
-        [this, weakThis, requestDescriptor = std::exchange(requestAuthContext->descriptor, {}),
-            requestReceivedTime = requestAuthContext->requestReceivedTime](
-                RequestResult result) mutable
-        {
-            auto strongThis = weakThis.lock();
-            if (!strongThis)
-                return;
+    auto sendResponseFunc = [this,
+                             weakThis,
+                             requestDescriptor = std::exchange(requestAuthContext->descriptor, {}),
+                             requestReceivedTime = requestAuthContext->requestReceivedTime](
+                                RequestResult result) mutable
+    {
+        auto strongThis = weakThis.lock();
+        if (!strongThis)
+            return;
 
-            auto spanScope = m_currentMessageSpan.activate();
+        auto spanScope = m_currentMessageSpan.activate();
 
-            Message response(http::MessageType::response);
-            response.response->statusLine.statusCode = result.statusCode;
-            response.response->statusLine.reasonPhrase = StatusCode::toString(result.statusCode);
-            response.response->statusLine.version = requestDescriptor.requestLine.version;
-            response.response->headers = std::move(result.headers);
+        Message response(http::MessageType::response);
+        response.response->statusLine.statusCode = result.statusCode;
+        response.response->statusLine.reasonPhrase = StatusCode::toString(result.statusCode);
+        response.response->statusLine.version = requestDescriptor.requestLine.version;
+        response.response->headers = std::move(result.headers);
 
-            auto requestLine = requestDescriptor.requestLine;
-            processResponse(
-                std::move(strongThis),
-                std::move(requestDescriptor),
-                std::make_unique<ResponseMessageContext>(
-                    std::move(requestLine),
-                    std::move(response),
-                    std::move(result.body),
-                    std::move(result.connectionEvents),
-                    requestReceivedTime,
-                    m_currentMessageSpan));
-        };
+        auto requestLine = requestDescriptor.requestLine;
+        processResponse(
+            std::move(strongThis),
+            std::move(requestDescriptor),
+            std::make_unique<ResponseMessageContext>(
+                std::move(requestLine),
+                std::move(response),
+                std::move(result.body),
+                std::move(result.connectionEvents),
+                requestReceivedTime,
+                m_currentMessageSpan));
+    };
 
     if (!m_requestHandler)
         return sendResponseFunc(RequestResult(StatusCode::notFound));
@@ -312,8 +318,7 @@ void HttpServerConnection::invokeRequestHandler(
         std::move(sendResponseFunc));
 }
 
-RequestContext HttpServerConnection::buildRequestContext(
-    RequestAuthContext requestAuthContext)
+RequestContext HttpServerConnection::buildRequestContext(RequestAuthContext requestAuthContext)
 {
     return RequestContext(
         m_attrs,
@@ -330,22 +335,26 @@ void HttpServerConnection::processResponse(
     std::unique_ptr<ResponseMessageContext> responseMessageContext)
 {
     post(
-        [this, strongThis = std::move(strongThis),
-            requestDescriptor = std::move(requestDescriptor),
-            responseMessageContext = std::move(responseMessageContext)]() mutable
+        [this,
+         strongThis = std::move(strongThis),
+         requestDescriptor = std::move(requestDescriptor),
+         responseMessageContext = std::move(responseMessageContext)]() mutable
         {
             if (!socket())
             {
                 // Connection is closed.
-                NX_VERBOSE(this, "Closing connection since socket is not available to send response (2). "
-                    "Last request %1", requestDescriptor.requestLine);
+                NX_VERBOSE(
+                    this,
+                    "Closing connection since socket is not available to send response (2). "
+                    "Last request %1",
+                    requestDescriptor.requestLine);
                 closeConnection(SystemError::noError);
                 return;
             }
 
             NX_ASSERT(
-                !responseMessageContext->msgBody ||
-                nx::network::http::StatusCode::isMessageBodyAllowed(
+                !responseMessageContext->msgBody
+                || nx::network::http::StatusCode::isMessageBodyAllowed(
                     responseMessageContext->msg.response->statusLine.statusCode));
 
             prepareAndSendResponse(
@@ -372,41 +381,41 @@ void HttpServerConnection::prepareAndSendResponse(
 
     std::string responseContentLengthStr = "-";
     if (responseMessageContext->msgBody && responseMessageContext->msgBody->contentLength())
-        responseContentLengthStr = std::to_string(*responseMessageContext->msgBody->contentLength());
+        responseContentLengthStr =
+            std::to_string(*responseMessageContext->msgBody->contentLength());
 
     const auto requestProcessedIn = std::chrono::floor<std::chrono::milliseconds>(
         clock_type::now() - responseMessageContext->requestReceivedTime);
 
-    NX_VERBOSE(this, "%1 - %2 [%3] \"%4\" %5 %6 %7",
-            getForeignAddress().address, "?" /*username*/, // TODO: #akolesnikov Fetch username.
-            nx::utils::timestampToRfc2822(nx::utils::utcTime()),
-            requestDescriptor.requestLine.toString(),
-            responseMessageContext->msg.response->statusLine.statusCode,
-            responseContentLengthStr,
-            requestProcessedIn.count());
+    NX_VERBOSE(
+        this,
+        "%1 - %2 [%3] \"%4\" %5 %6 %7",
+        getForeignAddress().address,
+        "?" /*username*/, // TODO: #akolesnikov Fetch username.
+        nx::utils::timestampToRfc2822(nx::utils::utcTime()),
+        requestDescriptor.requestLine.toString(),
+        responseMessageContext->msg.response->statusLine.statusCode,
+        responseContentLengthStr,
+        requestProcessedIn.count());
 
     addResponseHeaders(
         requestDescriptor,
         responseMessageContext->msg.response,
         responseMessageContext->msgBody.get());
 
-    scheduleResponseDelivery(
-        requestDescriptor,
-        std::move(responseMessageContext));
+    scheduleResponseDelivery(requestDescriptor, std::move(responseMessageContext));
 }
 
 void HttpServerConnection::scheduleResponseDelivery(
     const RequestDescriptor& requestDescriptor,
     std::unique_ptr<ResponseMessageContext> responseMessageContext)
 {
-    m_requestsBeingProcessed[requestDescriptor.sequence] =
-        std::move(responseMessageContext);
+    m_requestsBeingProcessed[requestDescriptor.sequence] = std::move(responseMessageContext);
 
     while (!m_requestsBeingProcessed.empty()
-        && m_requestsBeingProcessed.begin()->second != nullptr)
+           && m_requestsBeingProcessed.begin()->second != nullptr)
     {
-        m_responseQueue.push_back(
-            std::move(m_requestsBeingProcessed.begin()->second));
+        m_responseQueue.push_back(std::move(m_requestsBeingProcessed.begin()->second));
         m_requestsBeingProcessed.erase(m_requestsBeingProcessed.begin());
 
         if (m_responseQueue.size() == 1)
@@ -443,8 +452,10 @@ void HttpServerConnection::addResponseHeaders(
 
     nx::network::http::insertOrReplaceHeader(
         &response->headers,
-        HttpHeader("Date", nx::utils::formatDateTime(QDateTime::fromMSecsSinceEpoch(
-            nx::utils::millisSinceEpoch().count()))));
+        HttpHeader(
+            "Date",
+            nx::utils::formatDateTime(
+                QDateTime::fromMSecsSinceEpoch(nx::utils::millisSinceEpoch().count()))));
 
     const auto sslSocket = dynamic_cast<AbstractEncryptedStreamSocket*>(socket().get());
     if (sslSocket && sslSocket->isEncryptionEnabled())
@@ -482,17 +493,15 @@ void HttpServerConnection::addMessageBodyHeaders(
         {
             nx::network::http::insertOrReplaceHeader(
                 &response->headers,
-                nx::network::http::HttpHeader(
-                    "Content-Length",
-                    std::to_string(*contentLength)));
+                nx::network::http::HttpHeader("Content-Length", std::to_string(*contentLength)));
         }
     }
-    else if (StatusCode::isMessageBodyAllowed(response->statusLine.statusCode) &&
-        response->headers.find("Content-Length") == response->headers.end()) //< Not overriding existing header.
+    else if (
+        StatusCode::isMessageBodyAllowed(response->statusLine.statusCode)
+        && response->headers.find("Content-Length")
+            == response->headers.end()) //< Not overriding existing header.
     {
-        nx::network::http::insertOrReplaceHeader(
-            &response->headers,
-            {"Content-Length", "0"});
+        nx::network::http::insertOrReplaceHeader(&response->headers, {"Content-Length", "0"});
     }
 }
 
@@ -519,12 +528,15 @@ void HttpServerConnection::sendNextResponse()
     sendMessage(
         std::exchange(m_responseQueue.front()->msg, {}),
         std::bind(
-            &HttpServerConnection::responseSent, this,
-            m_responseQueue.front()->requestReceivedTime, statusCode));
+            &HttpServerConnection::responseSent,
+            this,
+            m_responseQueue.front()->requestReceivedTime,
+            statusCode));
 }
 
 void HttpServerConnection::responseSent(
-    const time_point& requestReceivedTime, StatusCode::Value statusCode)
+    const time_point& requestReceivedTime,
+    StatusCode::Value statusCode)
 {
     NX_ASSERT(!m_responseQueue.empty());
 
@@ -548,16 +560,20 @@ void HttpServerConnection::responseSent(
     readMoreMessageBodyData();
 }
 
-void HttpServerConnection::someMsgBodyRead(
-    SystemError::ErrorCode errorCode,
-    nx::Buffer buf)
+void HttpServerConnection::someMsgBodyRead(SystemError::ErrorCode errorCode, nx::Buffer buf)
 {
-    NX_VERBOSE(this, "Got %1 bytes of message body. Error code %2",
-        buf.size(), SystemError::toString(errorCode));
+    NX_VERBOSE(
+        this,
+        "Got %1 bytes of message body. Error code %2",
+        buf.size(),
+        SystemError::toString(errorCode));
 
     if (errorCode != SystemError::noError)
     {
-        NX_DEBUG(this, "Error fetching message body to send. %1", SystemError::toString(errorCode));
+        NX_DEBUG(
+            this,
+            "Error fetching message body to send. %1",
+            SystemError::toString(errorCode));
         closeConnection(errorCode);
         return;
     }
@@ -572,9 +588,13 @@ void HttpServerConnection::someMsgBodyRead(
             // for any reason (like establishing some tunnel, etc...).
             m_isPersistent = false;
 
-            NX_VERBOSE(this, "Switching connection from %1 to non-persistent mode to signal the end "
-                "of the request %2 response body", m_clientEndpoint,
-                !m_responseQueue.empty() ? m_responseQueue.front()->requestLine.url.toStdString() : "");
+            NX_VERBOSE(
+                this,
+                "Switching connection from %1 to non-persistent mode to signal the end "
+                "of the request %2 response body",
+                m_clientEndpoint,
+                !m_responseQueue.empty() ? m_responseQueue.front()->requestLine.url.toStdString()
+                                         : "");
         }
 
         // Done with message body.
@@ -590,7 +610,10 @@ void HttpServerConnection::someMsgBodyRead(
             // Reached end of HTTP/1.1 chunked message body.
             sendData(
                 std::move(buf),
-                [this](auto&&...) { fullMessageHasBeenSent(); });
+                [this](auto&&...)
+                {
+                    fullMessageHasBeenSent();
+                });
             return;
         }
     }
@@ -605,7 +628,9 @@ void HttpServerConnection::someMsgBodyRead(
         {
             if (sendResult != SystemError::noError)
             {
-                NX_VERBOSE(this, "Failed to send message body. %1",
+                NX_VERBOSE(
+                    this,
+                    "Failed to send message body. %1",
                     SystemError::toString(sendResult));
                 return;
             }
@@ -619,7 +644,10 @@ void HttpServerConnection::readMoreMessageBodyData()
     NX_VERBOSE(this, "Not full message has been sent yet. Fetching more message body to send...");
 
     m_currentMsgBody->readAsync(
-        [this](auto&&... args) { someMsgBodyRead(std::forward<decltype(args)>(args)...); });
+        [this](auto&&... args)
+        {
+            someMsgBodyRead(std::forward<decltype(args)>(args)...);
+        });
 }
 
 void HttpServerConnection::fullMessageHasBeenSent()
@@ -648,7 +676,7 @@ void HttpServerConnection::fullMessageHasBeenSent()
     if (m_bridge)
         return;
 
-    if (!socket())        //< Socket could be taken by event handler.
+    if (!socket()) //< Socket could be taken by event handler.
     {
         NX_ASSERT(m_responseQueue.empty());
         NX_VERBOSE(this, "Closing connection since socket is not available");
@@ -658,8 +686,7 @@ void HttpServerConnection::fullMessageHasBeenSent()
 
     if (!m_isPersistent || !m_persistentConnectionEnabled)
     {
-        NX_VERBOSE(this, "Marking connection from %1 for closure",
-            getForeignAddress());
+        NX_VERBOSE(this, "Marking connection from %1 for closure", getForeignAddress());
         return closeConnectionAfterReceivingCompleteRequest(SystemError::noError);
     }
 
@@ -679,8 +706,11 @@ void HttpServerConnection::startConnectionBridging(
     m_bridge->start(
         [this, remoteAddr = std::move(remoteAddr)](SystemError::ErrorCode resultCode)
         {
-            NX_VERBOSE(this, "Closing connection from %1 since bridging completed with %2",
-                remoteAddr, SystemError::toString(resultCode));
+            NX_VERBOSE(
+                this,
+                "Closing connection from %1 since bridging completed with %2",
+                remoteAddr,
+                SystemError::toString(resultCode));
             closeConnection(resultCode);
         });
 }
@@ -700,8 +730,7 @@ const ConnectionAttrs& HttpServerConnection::attrs() const
     return m_attrs;
 }
 
-void HttpServerConnection::checkForConnectionPersistency(
-    const Request& request)
+void HttpServerConnection::checkForConnectionPersistency(const Request& request)
 {
     const auto isPersistentBak = m_isPersistent;
 
@@ -709,15 +738,22 @@ void HttpServerConnection::checkForConnectionPersistency(
     if (m_persistentConnectionEnabled)
     {
         if (request.requestLine.version == nx::network::http::http_1_1)
-            m_isPersistent = nx::utils::stricmp(getHeaderValue(request.headers, "Connection"), "close") != 0;
+            m_isPersistent =
+                nx::utils::stricmp(getHeaderValue(request.headers, "Connection"), "close") != 0;
         else if (request.requestLine.version == nx::network::http::http_1_0)
-            m_isPersistent = nx::utils::stricmp(getHeaderValue(request.headers, "Connection"), "keep-alive") == 0;
+            m_isPersistent =
+                nx::utils::stricmp(getHeaderValue(request.headers, "Connection"), "keep-alive")
+                == 0;
     }
 
     if (m_isPersistent != isPersistentBak)
     {
-        NX_VERBOSE(this, "Changed persistence of the connection from %1 to %2 based on request %3 (%4)",
-            getForeignAddress(), m_isPersistent, request.requestLine,
+        NX_VERBOSE(
+            this,
+            "Changed persistence of the connection from %1 to %2 based on request %3 (%4)",
+            getForeignAddress(),
+            m_isPersistent,
+            request.requestLine,
             getHeaderValue(request.headers, "Connection"));
     }
 }
@@ -731,14 +767,20 @@ void HttpServerConnection::closeConnectionAfterReceivingCompleteRequest(
 
     if (!m_currentRequestBodyWriter)
     {
-        NX_VERBOSE(this, "Closing connection from %1 due to marking. %2",
-            getForeignAddress(), SystemError::toString(reason));
+        NX_VERBOSE(
+            this,
+            "Closing connection from %1 due to marking. %2",
+            getForeignAddress(),
+            SystemError::toString(reason));
         closeConnection(reason);
     }
     else
     {
-        NX_VERBOSE(this, "Marking connection from %1 for closure. %2",
-            getForeignAddress(), SystemError::toString(reason));
+        NX_VERBOSE(
+            this,
+            "Marking connection from %1 for closure. %2",
+            getForeignAddress(),
+            SystemError::toString(reason));
         m_markedForClosure = reason;
     }
 }
@@ -748,14 +790,15 @@ void HttpServerConnection::onRequestBodyReaderCompleted()
     m_currentRequestBodyWriter = nullptr;
     if (m_markedForClosure)
     {
-        NX_VERBOSE(this, "Closing marked connection from %1 since request body reader has completed",
+        NX_VERBOSE(
+            this,
+            "Closing marked connection from %1 since request body reader has completed",
             getForeignAddress());
         closeConnection(*m_markedForClosure);
     }
 }
 
-void HttpServerConnection::cleanUpOnConnectionClosure(
-    SystemError::ErrorCode reason)
+void HttpServerConnection::cleanUpOnConnectionClosure(SystemError::ErrorCode reason)
 {
     NX_ASSERT(isInSelfAioThread());
 

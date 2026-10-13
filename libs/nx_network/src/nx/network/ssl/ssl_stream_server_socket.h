@@ -20,7 +20,7 @@ class NX_NETWORK_API AbstractAcceptedSslStreamSocketWrapper:
         CustomStreamSocketDelegate<AbstractEncryptedStreamSocket, AbstractStreamSocket>;
 
 public:
-    template<typename ...Args>
+    template<typename... Args>
     AbstractAcceptedSslStreamSocketWrapper(Args... args):
         base_type(std::move(args)...)
     {
@@ -43,8 +43,7 @@ enum class EncryptionUse
  *   So, Accepting TCP connections and performing SSL handshake is done
  *   right after StreamServerSocket::listen call.
  */
-class NX_NETWORK_API StreamServerSocket:
-    public StreamServerSocketDelegate
+class NX_NETWORK_API StreamServerSocket: public StreamServerSocketDelegate
 {
     using base_type = StreamServerSocketDelegate;
 

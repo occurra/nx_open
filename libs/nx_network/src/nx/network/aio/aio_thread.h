@@ -20,8 +20,7 @@ class AioThreadWatcher;
 
 namespace detail { class AioTaskQueue; }
 
-class NX_NETWORK_API AbstractAioThread:
-    public nx::utils::Thread
+class NX_NETWORK_API AbstractAioThread: public nx::utils::Thread
 {
 public:
     virtual ~AbstractAioThread() = default;
@@ -53,8 +52,7 @@ public:
  *   - Asynchronous functor execution via AioThread::post or AioThread::dispatch.
  *   - Maximum timeout to wait for desired event.
  */
-class NX_NETWORK_API AioThread:
-    public AbstractAioThread
+class NX_NETWORK_API AioThread: public AbstractAioThread
 {
 public:
     /**
@@ -67,18 +65,15 @@ public:
 
     virtual void pleaseStop() override;
 
-    virtual void post(
-        Pollable* const sock,
-        nx::MoveOnlyFunc<void()> functor) override;
+    virtual void post(Pollable* const sock, nx::MoveOnlyFunc<void()> functor) override;
 
-    virtual void dispatch(
-        Pollable* const sock,
-        nx::MoveOnlyFunc<void()> functor) override;
+    virtual void dispatch(Pollable* const sock, nx::MoveOnlyFunc<void()> functor) override;
 
     virtual void cancelPostedCalls(Pollable* const sock) override;
 
     /**
-     * Start monitoring socket sock for event eventToWatch and trigger eventHandler when event happens.
+     * Start monitoring socket sock for event eventToWatch and trigger eventHandler when event
+     * happens.
      */
     void startMonitoring(
         Pollable* const sock,
@@ -89,11 +84,11 @@ public:
 
     /**
      * Stop monitoring sock for event eventType.
-     * Guarantees that no AIOEventHandler::eventTriggered will be called after return of this method.
-     * If AIOEventHandler::eventTriggered is running and stopMonitoring called not from AIOEventHandler::eventTriggered,
-     *   method blocks until AIOEventHandler::eventTriggered had returned.
-     * NOTE: Calling this method with same parameters simultaneously from
-     *   multiple threads can cause undefined behavior.
+     * Guarantees that no AIOEventHandler::eventTriggered will be called after return of this
+     * method. If AIOEventHandler::eventTriggered is running and stopMonitoring called not from
+     * AIOEventHandler::eventTriggered, method blocks until AIOEventHandler::eventTriggered had
+     * returned. NOTE: Calling this method with same parameters simultaneously from multiple
+     * threads can cause undefined behavior.
      */
     void stopMonitoring(Pollable* const sock, aio::EventType eventType);
 
@@ -115,7 +110,8 @@ private:
     std::unique_ptr<AbstractPollSet> m_pollSet;
     std::unique_ptr<detail::AioTaskQueue> m_taskQueue;
     std::atomic<int> m_processingPostedCalls{0};
-    // TODO: #akolesnikov This mutex seem to be redundant after introduction of detail::AioTaskQueue.
+    // TODO: #akolesnikov This mutex seem to be redundant after introduction of
+    // detail::AioTaskQueue.
     mutable nx::Mutex m_mutex;
 
     bool getSocketTimeout(

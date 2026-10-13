@@ -21,8 +21,7 @@ NX_NETWORK_API void recordSocketDelegateDestruction(void* ptr);
  */
 template<typename SocketInterfaceToImplement, typename TargetType>
 // requires std::is_base_of<AbstractSocket, SocketInterfaceToImplement>::value
-class SocketDelegate:
-    public SocketInterfaceToImplement
+class SocketDelegate: public SocketInterfaceToImplement
 {
     static_assert(
         std::is_base_of<AbstractSocket, SocketInterfaceToImplement>::value,
@@ -35,20 +34,14 @@ public:
         detail::recordSocketDelegateCreation(this);
     }
 
-    ~SocketDelegate()
-    {
-        detail::recordSocketDelegateDestruction(this);
-    }
+    ~SocketDelegate() { detail::recordSocketDelegateDestruction(this); }
 
     virtual bool getLastError(SystemError::ErrorCode* errorCode) const override
     {
         return m_target->getLastError(errorCode);
     }
 
-    virtual AbstractSocket::SOCKET_HANDLE handle() const override
-    {
-        return m_target->handle();
-    }
+    virtual AbstractSocket::SOCKET_HANDLE handle() const override { return m_target->handle(); }
 
     virtual bool getRecvTimeout(unsigned int* millis) const override
     {
@@ -70,35 +63,20 @@ public:
         return m_target->bindToAioThread(aioThread);
     }
 
-    virtual bool isInSelfAioThread() const override
-    {
-        return m_target->isInSelfAioThread();
-    }
+    virtual bool isInSelfAioThread() const override { return m_target->isInSelfAioThread(); }
 
     virtual bool bind(const SocketAddress& localAddress) override
     {
         return m_target->bind(localAddress);
     }
 
-    virtual SocketAddress getLocalAddress() const override
-    {
-        return m_target->getLocalAddress();
-    }
+    virtual SocketAddress getLocalAddress() const override { return m_target->getLocalAddress(); }
 
-    virtual bool close() override
-    {
-        return m_target->close();
-    }
+    virtual bool close() override { return m_target->close(); }
 
-    virtual bool shutdown() override
-    {
-        return m_target->shutdown();
-    }
+    virtual bool shutdown() override { return m_target->shutdown(); }
 
-    virtual bool isClosed() const override
-    {
-        return m_target->isClosed();
-    }
+    virtual bool isClosed() const override { return m_target->isClosed(); }
 
     virtual bool setReuseAddrFlag(bool reuseAddr) override
     {
@@ -155,30 +133,18 @@ public:
         return m_target->getRecvBufferSize(buffSize);
     }
 
-    virtual bool setRecvTimeout(unsigned int ms) override
-    {
-        return m_target->setRecvTimeout(ms);
-    }
+    virtual bool setRecvTimeout(unsigned int ms) override { return m_target->setRecvTimeout(ms); }
 
-    virtual bool setSendTimeout(unsigned int ms) override
-    {
-        return m_target->setSendTimeout(ms);
-    }
+    virtual bool setSendTimeout(unsigned int ms) override { return m_target->setSendTimeout(ms); }
 
-    virtual bool setIpv6Only(bool val) override
-    {
-        return m_target->setIpv6Only(val);
-    }
+    virtual bool setIpv6Only(bool val) override { return m_target->setIpv6Only(val); }
 
     virtual bool getProtocol(int* protocol) const override
     {
         return m_target->getProtocol(protocol);
     }
 
-    virtual Pollable* pollable() override
-    {
-        return m_target->pollable();
-    }
+    virtual Pollable* pollable() override { return m_target->pollable(); }
 
     virtual void post(nx::MoveOnlyFunc<void()> handler) override
     {
@@ -195,8 +161,7 @@ protected:
 };
 
 template<typename SocketInterfaceToImplement, typename TargetType>
-class CommunicatingSocketDelegate:
-    public SocketDelegate<SocketInterfaceToImplement, TargetType>
+class CommunicatingSocketDelegate: public SocketDelegate<SocketInterfaceToImplement, TargetType>
 {
     static_assert(
         std::is_base_of<AbstractCommunicatingSocket, SocketInterfaceToImplement>::value,
@@ -237,10 +202,7 @@ public:
         return this->m_target->getForeignHostName();
     }
 
-    virtual bool isConnected() const override
-    {
-        return this->m_target->isConnected();
-    }
+    virtual bool isConnected() const override { return this->m_target->isConnected(); }
 
     virtual void connectAsync(
         const SocketAddress& address,
@@ -249,9 +211,7 @@ public:
         return this->m_target->connectAsync(address, std::move(handler));
     }
 
-    virtual void readSomeAsync(
-        nx::Buffer* const buffer,
-        IoCompletionHandler handler) override
+    virtual void readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler) override
     {
         return this->m_target->readSomeAsync(buffer, std::move(handler));
     }
@@ -260,16 +220,13 @@ public:
      * Warning! Buffer should live at least till asynchronous send occurs, so
      * do not use buffers with local scope here.
      */
-    virtual void sendAsync(
-        const nx::Buffer* buffer,
-        IoCompletionHandler handler) override
+    virtual void sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler) override
     {
         return this->m_target->sendAsync(buffer, std::move(handler));
     }
 
-    virtual void registerTimer(
-        std::chrono::milliseconds timeout,
-        nx::MoveOnlyFunc<void()> handler) override
+    virtual void registerTimer(std::chrono::milliseconds timeout, nx::MoveOnlyFunc<void()> handler)
+        override
     {
         return this->m_target->registerTimer(timeout, std::move(handler));
     }
@@ -296,10 +253,7 @@ public:
     {
     }
 
-    virtual bool setNoDelay(bool value) override
-    {
-        return this->m_target->setNoDelay(value);
-    }
+    virtual bool setNoDelay(bool value) override { return this->m_target->setNoDelay(value); }
 
     virtual bool getNoDelay(bool* value) const override
     {
@@ -316,12 +270,12 @@ public:
         return this->m_target->getConnectionStatistics(info);
     }
 
-    virtual bool setKeepAlive(std::optional< KeepAliveOptions > info) override
+    virtual bool setKeepAlive(std::optional<KeepAliveOptions> info) override
     {
         return this->m_target->setKeepAlive(info);
     }
 
-    virtual bool getKeepAlive(std::optional< KeepAliveOptions >* result) const override
+    virtual bool getKeepAlive(std::optional<KeepAliveOptions>* result) const override
     {
         return this->m_target->getKeepAlive(result);
     }
@@ -330,8 +284,7 @@ public:
 class NX_NETWORK_API StreamSocketDelegate:
     public CustomStreamSocketDelegate<AbstractStreamSocket, AbstractStreamSocket>
 {
-    using base_type =
-        CustomStreamSocketDelegate<AbstractStreamSocket, AbstractStreamSocket>;
+    using base_type = CustomStreamSocketDelegate<AbstractStreamSocket, AbstractStreamSocket>;
 
 public:
     StreamSocketDelegate(AbstractStreamSocket* target);

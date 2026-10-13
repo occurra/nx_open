@@ -21,10 +21,9 @@ public:
      * Caller MUST ensure that no asynchronous operations are started after this call
      * @param completionHandler Executed when asynchronous operation is interrupted.
      *   For example, in case with async socket operations,
-     *   completionHandler is triggered when socket completion handler returned or will never be called.
-     *   Allowed to be null.
-     * NOTE: If operation is already stopped it is allowed for completionHandler
-     *   to be executed directly in QnStoppableAsync::pleaseStop.
+     *   completionHandler is triggered when socket completion handler returned or will never be
+     * called. Allowed to be null. NOTE: If operation is already stopped it is allowed for
+     * completionHandler to be executed directly in QnStoppableAsync::pleaseStop.
      */
     virtual void pleaseStop(nx::MoveOnlyFunc<void()> completionHandler) = 0;
 

@@ -44,9 +44,9 @@ std::string normalizePath(std::string_view path)
         tokens.push_back(std::string_view());
 
     nx::utils::split(
-        path, '/',
-        [&tokens, tokenCountBak = tokens.size()](
-            std::string_view token)
+        path,
+        '/',
+        [&tokens, tokenCountBak = tokens.size()](std::string_view token)
         {
             if (token == ".")
                 return;
@@ -73,7 +73,7 @@ QString normalizedPath(const QString& path, const QString& pathIgnorePrefix)
         ++startIndex;
 
     int endIndex = path.size(); // [startIndex..endIndex)
-    while (endIndex > 0 && path[endIndex-1] == '/')
+    while (endIndex > 0 && path[endIndex - 1] == '/')
         --endIndex;
 
     if (path.mid(startIndex).startsWith(pathIgnorePrefix))

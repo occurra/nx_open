@@ -20,53 +20,77 @@
 #include <nx/utils/math/fuzzy.h>
 
 namespace QnMathDetail {
-    using ::qFuzzyIsNull;
 
-#define QN_DEFINE_INTEGER_FUZZY_IS_NULL(TYPE)                                   \
-    inline bool qFuzzyIsNull(TYPE p) { return p == 0; }
+using ::qFuzzyIsNull;
 
-    QN_DEFINE_INTEGER_FUZZY_IS_NULL(short)
-    QN_DEFINE_INTEGER_FUZZY_IS_NULL(unsigned short)
-    QN_DEFINE_INTEGER_FUZZY_IS_NULL(int)
-    QN_DEFINE_INTEGER_FUZZY_IS_NULL(unsigned int)
-    QN_DEFINE_INTEGER_FUZZY_IS_NULL(long)
-    QN_DEFINE_INTEGER_FUZZY_IS_NULL(unsigned long)
-    QN_DEFINE_INTEGER_FUZZY_IS_NULL(long long)
-    QN_DEFINE_INTEGER_FUZZY_IS_NULL(unsigned long long)
+#define QN_DEFINE_INTEGER_FUZZY_IS_NULL(TYPE) \
+    inline bool qFuzzyIsNull(TYPE p) \
+    { \
+        return p == 0; \
+    }
+
+QN_DEFINE_INTEGER_FUZZY_IS_NULL(short)
+QN_DEFINE_INTEGER_FUZZY_IS_NULL(unsigned short)
+QN_DEFINE_INTEGER_FUZZY_IS_NULL(int)
+QN_DEFINE_INTEGER_FUZZY_IS_NULL(unsigned int)
+QN_DEFINE_INTEGER_FUZZY_IS_NULL(long)
+QN_DEFINE_INTEGER_FUZZY_IS_NULL(unsigned long)
+QN_DEFINE_INTEGER_FUZZY_IS_NULL(long long)
+QN_DEFINE_INTEGER_FUZZY_IS_NULL(unsigned long long)
 #undef QN_DEFINE_INTEGER_FUZZY_IS_NULL
+
 } // namespace QnMathDetail
 
-inline bool qIsNaN(const QVector2D &vector) {
+inline bool qIsNaN(const QVector2D& vector)
+{
     return qIsNaN(vector.x()) || qIsNaN(vector.y());
 }
 
-inline bool qIsNaN(const QVector3D &vector) {
+inline bool qIsNaN(const QVector3D& vector)
+{
     return qIsNaN(vector.x()) || qIsNaN(vector.y()) || qIsNaN(vector.z());
 }
 
-inline bool qIsNaN(const QVector4D &vector) {
+inline bool qIsNaN(const QVector4D& vector)
+{
     return qIsNaN(vector.x()) || qIsNaN(vector.y()) || qIsNaN(vector.z()) || qIsNaN(vector.w());
 }
 
-template<class T> inline T qQNaN();
-template<class T> inline T qSNaN();
+template<class T>
+inline T qQNaN();
+template<class T>
+inline T qSNaN();
 
-#define QN_DEFINE_NAN_FUNCTION(TYPE, NAME, VALUE) template<> inline TYPE NAME<TYPE>() { return VALUE; }
+#define QN_DEFINE_NAN_FUNCTION(TYPE, NAME, VALUE) \
+    template<> \
+    inline TYPE NAME<TYPE>() \
+    { \
+        return VALUE; \
+    }
 QN_DEFINE_NAN_FUNCTION(float, qQNaN, std::numeric_limits<float>::quiet_NaN())
 QN_DEFINE_NAN_FUNCTION(float, qSNaN, std::numeric_limits<float>::signaling_NaN())
 QN_DEFINE_NAN_FUNCTION(double, qQNaN, std::numeric_limits<double>::quiet_NaN())
 QN_DEFINE_NAN_FUNCTION(double, qSNaN, std::numeric_limits<double>::signaling_NaN())
 #undef QN_DEFINE_NAN_FUNCTION
 
-#define QN_DEFINE_COMPOSITE_NAN_FUNCTIONS(TYPE, SOURCE_TYPE, VALUE)             \
-template<> inline TYPE qQNaN<TYPE>() { SOURCE_TYPE nan = qQNaN<SOURCE_TYPE>(); return VALUE; } \
-template<> inline TYPE qSNaN<TYPE>() { SOURCE_TYPE nan = qSNaN<SOURCE_TYPE>(); return VALUE; }
+#define QN_DEFINE_COMPOSITE_NAN_FUNCTIONS(TYPE, SOURCE_TYPE, VALUE) \
+    template<> \
+    inline TYPE qQNaN<TYPE>() \
+    { \
+        SOURCE_TYPE nan = qQNaN<SOURCE_TYPE>(); \
+        return VALUE; \
+    } \
+    template<> \
+    inline TYPE qSNaN<TYPE>() \
+    { \
+        SOURCE_TYPE nan = qSNaN<SOURCE_TYPE>(); \
+        return VALUE; \
+    }
 
 QN_DEFINE_COMPOSITE_NAN_FUNCTIONS(QVector2D, qreal, QVector2D(nan, nan))
 QN_DEFINE_COMPOSITE_NAN_FUNCTIONS(QVector3D, qreal, QVector3D(nan, nan, nan))
 QN_DEFINE_COMPOSITE_NAN_FUNCTIONS(QVector4D, qreal, QVector4D(nan, nan, nan, nan))
 #undef QN_DEFINE_COMPOSITE_NAN_FUNCTIONS
-
 
 /**
  * \param min                           Interval's left border.
@@ -75,7 +99,8 @@ QN_DEFINE_COMPOSITE_NAN_FUNCTIONS(QVector4D, qreal, QVector4D(nan, nan, nan, nan
  * \returns                             Whether the given value lies in [min, max) interval.
  */
 template<class T>
-bool qBetween(const T &min, const T &value, const T &max) {
+bool qBetween(const T& min, const T& value, const T& max)
+{
     return min <= value && value < max;
 }
 
@@ -84,7 +109,8 @@ bool qBetween(const T &min, const T &value, const T &max) {
  * \returns                             Whether the given value is a power of 2.
  */
 template<class T>
-inline bool qIsPower2(T value) {
+inline bool qIsPower2(T value)
+{
     return (value & (value - 1)) == 0;
 }
 
@@ -99,7 +125,8 @@ inline unsigned int qPower2Ceil(unsigned int value, int step)
     return ((value - 1) & ~(step - 1)) + step;
 }
 
-inline quint64 qPower2Ceil(quint64 value, int step) {
+inline quint64 qPower2Ceil(quint64 value, int step)
+{
     NX_ASSERT(qIsPower2(step));
     return ((value - 1) & ~(step - 1)) + step;
 }
@@ -109,7 +136,8 @@ inline quint64 qPower2Ceil(quint64 value, int step) {
  * \param step                          Rounding step, must be power of 2.
  * \returns                             Rounded value.
  */
-inline unsigned int qPower2Floor(unsigned int value, int step) {
+inline unsigned int qPower2Floor(unsigned int value, int step)
+{
     NX_ASSERT(qIsPower2(step));
     return value & ~(step - 1);
 }
@@ -135,8 +163,8 @@ inline QSize alignSizeRound(QSize source, int widthAlign, int heightAlign)
 
 inline QSize alignSizeCeil(QSize source, int widthAlign, int heightAlign)
 {
-    int width = qPower2Ceil((uint32_t)source.width(), widthAlign);
-    int height = qPower2Ceil((uint32_t)source.height(), heightAlign);
+    int width = qPower2Ceil((uint32_t) source.width(), widthAlign);
+    int height = qPower2Ceil((uint32_t) source.height(), heightAlign);
     return QSize(width, height);
 }
 
@@ -148,24 +176,26 @@ inline QSize alignSizeCeil(QSize source, int widthAlign, int heightAlign)
  * \returns                             Non-negative modulo.
  */
 template<class T>
-T qMod(T l, T r) {
+T qMod(T l, T r)
+{
     return (l % r + r) % r;
 }
 
-inline float qMod(float l, float r) {
+inline float qMod(float l, float r)
+{
     float result = std::fmod(l, r);
-    if(result < 0.0f)
+    if (result < 0.0f)
         result += r;
     return result;
 }
 
-inline double qMod(double l, double r) {
+inline double qMod(double l, double r)
+{
     double result = std::fmod(l, r);
-    if(result < 0.0)
+    if (result < 0.0)
         result += r;
     return result;
 }
-
 
 /**
  * \param value                         Value to round up.
@@ -173,7 +203,7 @@ inline double qMod(double l, double r) {
  * \returns                             Rounded value.
  */
 template<typename T>
-requires std::is_integral_v<T>
+    requires std::is_integral_v<T>
 T qCeil(T value, T step)
 {
     auto remainder = value % step;
@@ -197,7 +227,7 @@ T qCeil(T value, Step step)
  * \returns                             Rounded value.
  */
 template<typename T>
-requires std::is_integral_v<T>
+    requires std::is_integral_v<T>
 T qFloor(T value, T step)
 {
     return value - value % step;
@@ -209,7 +239,6 @@ T qFloor(T value, Step step)
     NX_ASSERT(step > 0);
     return value - qMod(value, static_cast<T>(step));
 }
-
 
 /**
  * \param value                         Value to round.
@@ -224,26 +253,29 @@ T qRound(T value, Step step)
 }
 
 /**
- * \returns                             Index of the leading 1 bit, counting the least significant bit at index 0.
- *                                      (1 << IntegerLog2(x)) is a mask for the most significant bit of x.
- *                                      Result is undefined if input is zero.
+ * \returns                             Index of the leading 1 bit, counting the least significant
+ * bit at index 0. (1 << IntegerLog2(x)) is a mask for the most significant bit of x. Result is
+ * undefined if input is zero.
  */
 int qIntegerLog2(quint32 value);
 
 #if defined(__GNUC__)
-inline int qIntegerLog2(quint32 value) {
+inline int qIntegerLog2(quint32 value)
+{
     return 31 - __builtin_clz(value);
 }
 #elif defined(_MSC_VER)
-#   include <intrin.h>
-#   pragma intrinsic(_BitScanReverse)
-inline int qIntegerLog2(quint32 value) {
-    unsigned long result;             /* MSVC intrinsic demands this type. */
+    #include <intrin.h>
+    #pragma intrinsic(_BitScanReverse)
+inline int qIntegerLog2(quint32 value)
+{
+    unsigned long result; /* MSVC intrinsic demands this type. */
     _BitScanReverse(&result, value);
     return result;
 }
 #else
-inline int qIntegerLog2(quint32 value) {
+inline int qIntegerLog2(quint32 value)
+{
     /* Default version using regular operations. Code taken from:
      * http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog */
     int result, shift;
@@ -272,53 +304,65 @@ inline int qIntegerLog2(quint32 value) {
 
 /* Overloads for double-float interop. */
 
-inline double qMod(double l, float r) {
+inline double qMod(double l, float r)
+{
     return qMod(l, static_cast<double>(r));
 }
 
-inline double qMod(float l, double r) {
+inline double qMod(float l, double r)
+{
     return qMod(static_cast<double>(l), r);
 }
 
-inline double qMin(double l, float r) {
+inline double qMin(double l, float r)
+{
     return qMin(l, static_cast<double>(r));
 }
 
-inline double qMin(float l, double r) {
+inline double qMin(float l, double r)
+{
     return qMin(static_cast<double>(l), r);
 }
 
-inline double qMax(double l, float r) {
+inline double qMax(double l, float r)
+{
     return qMax(l, static_cast<double>(r));
 }
 
-inline double qMax(float l, double r) {
+inline double qMax(float l, double r)
+{
     return qMax(static_cast<double>(l), r);
 }
 
-inline float qSign(float value) {
+inline float qSign(float value)
+{
     return value >= 0.0f ? 1.0f : -1.0f;
 }
 
-inline double qSign(double value) {
+inline double qSign(double value)
+{
     return value >= 0.0 ? 1.0 : -1.0;
 }
 
-inline bool equalWithPrecision(double one, double two, int precision) {
+inline bool equalWithPrecision(double one, double two, int precision)
+{
     return abs(two - one) < (1.0 / std::pow(10.0, precision));
 }
 
-inline bool equalWithPrecision(const QPointF& one, const QPointF& two, int precision) {
+inline bool equalWithPrecision(const QPointF& one, const QPointF& two, int precision)
+{
     return equalWithPrecision(one.x(), two.x(), precision)
         && equalWithPrecision(one.y(), two.y(), precision);
 }
 
-inline bool equalWithPrecision(const QSizeF& one, const QSizeF& two, int precision) {
+inline bool equalWithPrecision(const QSizeF& one, const QSizeF& two, int precision)
+{
     return equalWithPrecision(one.width(), two.width(), precision)
         && equalWithPrecision(one.height(), two.height(), precision);
 }
 
-inline bool equalWithPrecision(const QRectF& one, const QRectF& two, int precision) {
+inline bool equalWithPrecision(const QRectF& one, const QRectF& two, int precision)
+{
     return equalWithPrecision(one.topLeft(), two.topLeft(), precision)
         && equalWithPrecision(one.bottomRight(), two.bottomRight(), precision);
 }

@@ -2,8 +2,9 @@
 
 #include "message_integrity.h"
 
-#include <nx/utils/auth/utils.h>
 #include <nx/utils/system_network_headers.h>
+
+#include <nx/utils/auth/utils.h>
 
 #include "message_parser.h"
 #include "message_serializer.h"
@@ -17,21 +18,26 @@ static Buffer hmacSha1(
     const Buffer& msg,
     std::size_t messageIntegrityAttrPos)
 {
-    static constexpr char k20ZeroBytes[] = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    static constexpr char k20ZeroBytes[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     static_assert(sizeof(k20ZeroBytes) == attrs::MessageIntegrity::SIZE);
 
     std::vector<std::string_view> messageParts;
     if (options.legacyMode)
     {
         messageParts = {
-            std::string_view(msg.data(), messageIntegrityAttrPos + 4), // Everything up to MESSAGE-INTEGRITY and attribute header.
-            std::string_view(k20ZeroBytes, sizeof(k20ZeroBytes)) }; // Dummy MESSAGE-INTEGRITY value.
+            std::string_view(
+                msg.data(),
+                messageIntegrityAttrPos
+                    + 4), // Everything up to MESSAGE-INTEGRITY and attribute header.
+            std::string_view(
+                k20ZeroBytes,
+                sizeof(k20ZeroBytes))}; // Dummy MESSAGE-INTEGRITY value.
     }
     else
     {
         // All message attributes up to MESSAGE-INTEGRITY.
-        messageParts = { std::string_view(msg.data(), messageIntegrityAttrPos) };
+        messageParts = {std::string_view(msg.data(), messageIntegrityAttrPos)};
     }
 
     return nx::utils::auth::hmacSha1(key, messageParts);
@@ -52,9 +58,8 @@ Buffer calcMessageIntegrity(
         return Buffer();
 
     // Adjusting message header size to point to the end of MESSAGE-INTEGRITY.
-    std::uint16_t newSize =
-        (messageIntegrityAttrPos - MessageParser::kMessageHeaderSize) +
-        4 + attrs::MessageIntegrity::SIZE;
+    std::uint16_t newSize = (messageIntegrityAttrPos - MessageParser::kMessageHeaderSize) + 4
+        + attrs::MessageIntegrity::SIZE;
     newSize = ntohs(newSize);
     memcpy(buffer.data() + sizeof(newSize), &newSize, sizeof(newSize));
 

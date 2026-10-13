@@ -10,8 +10,7 @@ BaseProperty::BaseProperty(
     Storage* storage,
     const QString& name,
     const QString& description,
-    bool secure)
-    :
+    bool secure):
     storage(storage),
     name(name),
     description(description),

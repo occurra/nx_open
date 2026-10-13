@@ -50,14 +50,15 @@ Result BaseMetadataRtpParser::processData(
 
     const uint32_t currentDataChunkTimestamp = rtpHeader.getTimestamp();
 
-    if ((m_previousDataChunkTimestamp
-        && *m_previousDataChunkTimestamp != currentDataChunkTimestamp
-        && !m_trustMarkerBit)
+    if ((m_previousDataChunkTimestamp && *m_previousDataChunkTimestamp != currentDataChunkTimestamp
+         && !m_trustMarkerBit)
         || (m_buffer.size() > kMaxMetadataPacketSizeBytes))
     {
-        NX_VERBOSE(this,
+        NX_VERBOSE(
+            this,
             "%1: Got an RTP packet with timestamp that differs from the previous packet, "
-            "creating metadata", logId());
+            "creating metadata",
+            logId());
 
         m_metadata = makeCompressedMetadata(*m_previousDataChunkTimestamp);
         if (m_metadata)
@@ -65,20 +66,23 @@ Result BaseMetadataRtpParser::processData(
     }
 
     m_previousDataChunkTimestamp = currentDataChunkTimestamp;
-    m_buffer.append((const char*)(data), bytesRead);
+    m_buffer.append((const char*) (data), bytesRead);
 
     if (gotData)
-        return { true };
+        return {true};
 
     if (rtpHeader.marker)
     {
-        NX_VERBOSE(this, "%1: Got an RTP packet with the marker bit set, creating metadata", logId());
+        NX_VERBOSE(
+            this,
+            "%1: Got an RTP packet with the marker bit set, creating metadata",
+            logId());
         m_metadata = makeCompressedMetadata(currentDataChunkTimestamp);
         if (m_metadata)
             gotData = true;
     }
 
-    return { true };
+    return {true};
 }
 
 void BaseMetadataRtpParser::clear()
@@ -88,8 +92,8 @@ void BaseMetadataRtpParser::clear()
 
 QnCompressedMetadataPtr BaseMetadataRtpParser::makeCompressedMetadata(int32_t timestamp)
 {
-    const auto metadataPacket = std::make_shared<nx::media::InStreamCompressedMetadata>(
-        m_sdp.rtpmap.codecName, m_buffer);
+    const auto metadataPacket =
+        std::make_shared<nx::media::InStreamCompressedMetadata>(m_sdp.rtpmap.codecName, m_buffer);
 
     metadataPacket->timestamp = timestamp;
 

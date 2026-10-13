@@ -1,8 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <ostream>
-
 #include "software_version.h"
+
+#include <ostream>
 
 namespace nx::utils {
 
@@ -57,18 +57,17 @@ bool SoftwareVersion::deserialize(const QString& versionString)
     // Set segment values.
 
     bool ok = true;
-    auto setSegment =
-        [index = 0, s, &ok](int& segment) mutable
-        {
-            if (index == -1)
-                return;
+    auto setSegment = [index = 0, s, &ok](int& segment) mutable
+    {
+        if (index == -1)
+            return;
 
-            const int dotIndex = s.indexOf('.', index);
-            bool segmentOk = false;
-            segment = s.mid(index, dotIndex - index).toInt(&segmentOk);
-            ok &= segmentOk;
-            index = dotIndex >= 0 ? dotIndex + 1 : -1;
-        };
+        const int dotIndex = s.indexOf('.', index);
+        bool segmentOk = false;
+        segment = s.mid(index, dotIndex - index).toInt(&segmentOk);
+        ok &= segmentOk;
+        index = dotIndex >= 0 ? dotIndex + 1 : -1;
+    };
 
     setSegment(major);
     setSegment(minor);

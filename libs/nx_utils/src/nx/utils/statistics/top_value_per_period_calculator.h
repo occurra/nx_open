@@ -54,8 +54,7 @@ private:
 
 template<typename T, typename Comp>
 TopValuePerPeriodCalculator<T, Comp>::TopValuePerPeriodCalculator(
-    std::chrono::milliseconds period)
-    :
+    std::chrono::milliseconds period):
     m_expirationPeriod(period),
     m_aggregationPeriod(period / 100)
 {
@@ -68,13 +67,10 @@ void TopValuePerPeriodCalculator<T, Comp>::add(T val)
 
     const auto now = nx::utils::monotonicTime();
 
-    if (m_values.empty() ||
-        Comp()(val, m_values.top().value) ||
-        now - m_values.top().timestamp > m_aggregationPeriod)
+    if (m_values.empty() || Comp()(val, m_values.top().value)
+        || now - m_values.top().timestamp > m_aggregationPeriod)
     {
-        m_values.push(ValueWithTimestamp{
-            std::move(val),
-            nx::utils::monotonicTime()});
+        m_values.push(ValueWithTimestamp{std::move(val), nx::utils::monotonicTime()});
     }
 }
 
@@ -94,8 +90,7 @@ void TopValuePerPeriodCalculator<T, Comp>::removeExpiredStatistics()
 {
     const auto now = nx::utils::monotonicTime();
 
-    while (!m_values.empty() &&
-        now - m_values.front().timestamp > m_expirationPeriod)
+    while (!m_values.empty() && now - m_values.front().timestamp > m_expirationPeriod)
     {
         m_values.pop();
     }
@@ -103,11 +98,11 @@ void TopValuePerPeriodCalculator<T, Comp>::removeExpiredStatistics()
 
 //-------------------------------------------------------------------------------------------------
 
-template<typename T> using MaxValuePerPeriodCalculator =
-    TopValuePerPeriodCalculator<T, typename std::greater<T>>;
+template<typename T>
+using MaxValuePerPeriodCalculator = TopValuePerPeriodCalculator<T, typename std::greater<T>>;
 
-template<typename T> using MinValuePerPeriodCalculator =
-    TopValuePerPeriodCalculator<T, typename std::less<T>>;
+template<typename T>
+using MinValuePerPeriodCalculator = TopValuePerPeriodCalculator<T, typename std::less<T>>;
 
 } // namespace statistics
 } // namespace utils

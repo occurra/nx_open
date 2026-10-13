@@ -8,12 +8,12 @@ namespace nx::sql {
 
 void AbstractDbConnection::setStatisticsCollector(StatisticsCollector* statisticsCollector)
 {
-	m_statisticsCollector = statisticsCollector;
+    m_statisticsCollector = statisticsCollector;
 }
 
 StatisticsCollector* AbstractDbConnection::statisticsCollector()
 {
-	return m_statisticsCollector;
+    return m_statisticsCollector;
 }
 
 } // namespace nx::sql

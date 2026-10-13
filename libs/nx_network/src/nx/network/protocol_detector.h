@@ -34,8 +34,7 @@ public:
     virtual ProtocolMatchResult match(const nx::Buffer& buf) = 0;
 };
 
-class NX_NETWORK_API FixedProtocolPrefixRule:
-    public AbstractProtocolRule
+class NX_NETWORK_API FixedProtocolPrefixRule: public AbstractProtocolRule
 {
 public:
     FixedProtocolPrefixRule(const std::string& prefix);
@@ -83,9 +82,8 @@ public:
             }
         }
 
-        return needMoreData
-            ? std::make_tuple(ProtocolMatchResult::needMoreData, nullptr)
-            : std::make_tuple(ProtocolMatchResult::unknownProtocol, nullptr);
+        return needMoreData ? std::make_tuple(ProtocolMatchResult::needMoreData, nullptr)
+                            : std::make_tuple(ProtocolMatchResult::unknownProtocol, nullptr);
     }
 
 private:

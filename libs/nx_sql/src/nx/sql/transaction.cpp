@@ -64,8 +64,7 @@ bool Transaction::isActive() const
     return m_started;
 }
 
-void Transaction::addOnSuccessfulCommitHandler(
-    nx::MoveOnlyFunc<void()> func)
+void Transaction::addOnSuccessfulCommitHandler(nx::MoveOnlyFunc<void()> func)
 {
     addOnTransactionCompletionHandler(
         [func = std::move(func)](DBResult result)
@@ -75,8 +74,7 @@ void Transaction::addOnSuccessfulCommitHandler(
         });
 }
 
-void Transaction::addOnTransactionCompletionHandler(
-    nx::MoveOnlyFunc<void(DBResult)> func)
+void Transaction::addOnTransactionCompletionHandler(nx::MoveOnlyFunc<void(DBResult)> func)
 {
     m_onTransactionCompletedHandlers.push_back(std::move(func));
 }

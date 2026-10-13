@@ -8,15 +8,14 @@
 #include <nx/rtp/rtp.h>
 #include <utils/common/util.h>
 
-namespace {
-    static const int kMaxPacketLen = 1024 * 32;
-}
+namespace { static const int kMaxPacketLen = 1024 * 32; }
 
 static const QString kNxPayloadTypeName("FFMPEG");
 static const uint32_t kNxBasicSsrc = 20'000;
 
-QnRtspFfmpegEncoder::QnRtspFfmpegEncoder(const DecoderConfig& config, nx::metric::Storage* metrics)
-    :
+QnRtspFfmpegEncoder::QnRtspFfmpegEncoder(
+    const DecoderConfig& config,
+    nx::metric::Storage* metrics):
     m_decoderConfig(config),
     m_gotLivePacket(false),
     m_curDataBuffer(0),
@@ -30,7 +29,9 @@ QnRtspFfmpegEncoder::QnRtspFfmpegEncoder(const DecoderConfig& config, nx::metric
 }
 
 void QnRtspFfmpegEncoder::setDstResolution(
-    const QSize& srcVideoSize, const QSize& dstVideoSize, AVCodecID dstCodec)
+    const QSize& srcVideoSize,
+    const QSize& dstVideoSize,
+    AVCodecID dstCodec)
 {
     QnFfmpegVideoTranscoder::Config config;
     config.decoderConfig = m_decoderConfig;
@@ -54,7 +55,8 @@ void QnRtspFfmpegEncoder::init()
 
 CodecParametersConstPtr QnRtspFfmpegEncoder::getGeneratedContext(AVCodecID compressionType)
 {
-    QMap<AVCodecID, CodecParametersConstPtr>::iterator itr = m_generatedContexts.find(compressionType);
+    QMap<AVCodecID, CodecParametersConstPtr>::iterator itr =
+        m_generatedContexts.find(compressionType);
     CodecParametersConstPtr result;
     if (itr != m_generatedContexts.end())
     {
@@ -72,7 +74,8 @@ CodecParametersConstPtr QnRtspFfmpegEncoder::getGeneratedContext(AVCodecID compr
     return result;
 }
 
-QnConstAbstractMediaDataPtr QnRtspFfmpegEncoder::transcodeVideoPacket(QnConstAbstractMediaDataPtr media)
+QnConstAbstractMediaDataPtr QnRtspFfmpegEncoder::transcodeVideoPacket(
+    QnConstAbstractMediaDataPtr media)
 {
     QnAbstractMediaDataPtr transcodedMedia;
     m_videoTranscoder->transcodePacket(media, &transcodedMedia);
@@ -151,7 +154,8 @@ bool QnRtspFfmpegEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
     flags |= m_additionFlags;
 
     int cseq = m_media->opaque;
-    if (m_media->isLive()) {
+    if (m_media->isLive())
+    {
         cseq = m_liveMarker;
         if (!m_gotLivePacket)
             flags |= QnAbstractMediaData::MediaFlags_BOF;
@@ -166,7 +170,8 @@ bool QnRtspFfmpegEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
     if (isFirstPacketForFrame)
     {
         // send data with RTP headers
-        const QnCompressedVideoData* video = dynamic_cast<const QnCompressedVideoData*>(m_media.get());
+        const QnCompressedVideoData* video =
+            dynamic_cast<const QnCompressedVideoData*>(m_media.get());
         const QnAbstractCompressedMetadata* metadata =
             dynamic_cast<const QnAbstractCompressedMetadata*>(m_media.get());
 
@@ -181,10 +186,11 @@ bool QnRtspFfmpegEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
         if (video)
         {
             quint32 videoHeader = htonl(video->dataSize() & 0x00ffffff);
-            sendBuffer.write(((const char*) &videoHeader)+1, 3);
+            sendBuffer.write(((const char*) &videoHeader) + 1, 3);
         }
-        else if (metadata) {
-            quint32 metadataHeader = htonl(metadata->m_duration/1000);
+        else if (metadata)
+        {
+            quint32 metadataHeader = htonl(metadata->m_duration / 1000);
             quint32 metadataType = htonl(static_cast<quint32>(metadata->metadataType));
             sendBuffer.write((const char*) &metadataHeader, 4);
             sendBuffer.write((const char*) &metadataType, 4);
@@ -197,11 +203,12 @@ bool QnRtspFfmpegEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
     m_curDataBuffer += sendLen;
 
     m_eofReached = m_curDataBuffer == dataEnd;
-    nx::rtp::RtpHeader* rtpHeader =
-        (nx::rtp::RtpHeader*)(sendBuffer.data() + dataStartIndex);
+    nx::rtp::RtpHeader* rtpHeader = (nx::rtp::RtpHeader*) (sendBuffer.data() + dataStartIndex);
     rtpHeader->marker = m_eofReached;
 
-    NX_VERBOSE(this, "Made RTP packet: isFirst %1, timestamp %2, sequence %3",
+    NX_VERBOSE(
+        this,
+        "Made RTP packet: isFirst %1, timestamp %2, sequence %3",
         isFirstPacketForFrame ? "true" : "false",
         m_media->timestamp,
         qFromBigEndian(rtpHeader->sequence));
@@ -216,10 +223,12 @@ QString QnRtspFfmpegEncoder::getSdpMedia(bool isVideo, int trackId, int port, bo
     stream << "m=" << (isVideo ? "video " : "audio ") << port << " RTP/AVP ";
     stream << nx::rtp::kNxPayloadType << "\r\n";
     stream << "a=control:trackID=" << trackId << "\r\n";
-    stream << "a=rtpmap:" << nx::rtp::kNxPayloadType << " " << kNxPayloadTypeName << "/" << 1'000'000 <<"\r\n";
+    stream << "a=rtpmap:" << nx::rtp::kNxPayloadType << " " << kNxPayloadTypeName << "/"
+           << 1'000'000 << "\r\n";
 
     if (!m_codecParamsData.isEmpty())
-        stream << "a=fmtp:" << nx::rtp::kNxPayloadType << " config=" << m_codecParamsData.toBase64() <<"\r\n";
+        stream << "a=fmtp:" << nx::rtp::kNxPayloadType
+               << " config=" << m_codecParamsData.toBase64() << "\r\n";
 
     return sdpMedia;
 }

@@ -84,7 +84,8 @@ bool RtcpNackReport::parse(const uint8_t* data, size_t size)
         header.length = reader.getBits(16);
         header.sourceSsrc = reader.getBits(32);
         header.senderSsrc = reader.getBits(32);
-        if (header.payloadType != kRtcpGenericFeedback || header.format() != kRtcpFeedbackFormatNack)
+        if (header.payloadType != kRtcpGenericFeedback
+            || header.format() != kRtcpFeedbackFormatNack)
             return 0;
         const uint8_t* p = data + kRtcpFeedbackHeaderSize;
         // length of the RTCP packet in 32-bit words minus one,

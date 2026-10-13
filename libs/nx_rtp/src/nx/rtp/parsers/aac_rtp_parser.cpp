@@ -60,7 +60,7 @@ void AacParser::setSdpInfo(const Sdp::Media& sdp)
         m_channels = sdp.rtpmap.channels;
 
     QByteArray aacConfig;
-    for(const QString& paramStr: sdp.fmtp.params)
+    for (const QString& paramStr: sdp.fmtp.params)
     {
         FmtpParam param;
         if (!param.parse(paramStr))
@@ -79,8 +79,8 @@ void AacParser::setSdpInfo(const Sdp::Media& sdp)
         param.getValueInt("constantSize", m_constantSize);
         param.getValueHex("config", aacConfig);
     }
-    m_auHeaderExists = m_sizeLength || m_indexLength || m_indexDeltaLength || m_CTSDeltaLength ||
-        m_DTSDeltaLength || m_randomAccessIndication || m_streamStateIndication;
+    m_auHeaderExists = m_sizeLength || m_indexLength || m_indexDeltaLength || m_CTSDeltaLength
+        || m_DTSDeltaLength || m_randomAccessIndication || m_streamStateIndication;
     AACCodec aacCodec;
     aacCodec.readConfig(aacConfig);
 
@@ -91,11 +91,15 @@ void AacParser::setSdpInfo(const Sdp::Media& sdp)
     av_channel_layout_default(&codecParams->ch_layout, aacCodec.m_channels);
     codecParams->sample_rate = aacCodec.m_sample_rate;
     codecParams->format = AV_SAMPLE_FMT_FLTP;
-    m_context->setExtradata((const quint8*)aacConfig.data(), aacConfig.size());
+    m_context->setExtradata((const quint8*) aacConfig.data(), aacConfig.size());
 }
 
 Result AacParser::processData(
-    const RtpHeader& rtpHeader, quint8* rtpBufferBase, int bufferOffset, int bufferSize, bool& gotData)
+    const RtpHeader& rtpHeader,
+    quint8* rtpBufferBase,
+    int bufferOffset,
+    int bufferSize,
+    bool& gotData)
 {
     gotData = false;
 
@@ -121,27 +125,31 @@ Result AacParser::processData(
             curPtr += 2;
             if (curPtr + auHeaderLen > end)
             {
-                return {false, NX_FMT(
-                    "Malformed AAC packet. Invalid au header length %1", auHeaderLen)};
+                return {
+                    false,
+                    NX_FMT("Malformed AAC packet. Invalid au header length %1", auHeaderLen)};
             }
             nx::utils::BitStreamReader reader(curPtr, curPtr + auHeaderLen);
-            while(reader.getBitsCount() < auHeaderLen)
+            while (reader.getBitsCount() < auHeaderLen)
             {
                 if (m_sizeLength)
                     auSize << reader.getBits(m_sizeLength);
-                if (m_indexLength) {
+                if (m_indexLength)
+                {
                     if (auIndex.isEmpty())
                         auIndex << reader.getBits(m_indexLength);
                     else
                         auIndex << auIndex.last() + reader.getBits(m_indexDeltaLength) + 1;
                 }
-                if (m_CTSDeltaLength) {
+                if (m_CTSDeltaLength)
+                {
                     if (reader.getBit())
                         auCtsDelta << reader.getBits(m_CTSDeltaLength);
                     else
                         auCtsDelta << 0;
                 }
-                if (m_DTSDeltaLength) {
+                if (m_DTSDeltaLength)
+                {
                     if (reader.getBit())
                         auDtsDelta << reader.getBits(m_DTSDeltaLength);
                     else
@@ -152,7 +160,7 @@ Result AacParser::processData(
                 if (m_streamStateIndication)
                     reader.skipBits(m_streamStateIndication);
             }
-            curPtr += qPower2Ceil(auHeaderLen, 8)/8;
+            curPtr += qPower2Ceil(auHeaderLen, 8) / 8;
         }
     }
     catch (const nx::utils::BitStreamException&)
@@ -168,8 +176,13 @@ Result AacParser::processData(
         {
             if (auSize.size() <= i)
             {
-                return {false, NX_FMT("Malformed AAC packet. Invalid auSize header. "
-                    "auSize %1, expected at least %2", auSize.size(), i + 1)};
+                return {
+                    false,
+                    NX_FMT(
+                        "Malformed AAC packet. Invalid auSize header. "
+                        "auSize %1, expected at least %2",
+                        auSize.size(),
+                        i + 1)};
             }
             unitSize = auSize[i];
         }
@@ -186,7 +199,7 @@ Result AacParser::processData(
         audioData->compressionType = AV_CODEC_ID_AAC;
         audioData->context = m_context;
         audioData->timestamp = rtpTime + rtpTimeOffset;
-        audioData->m_data.write((const char*)curPtr, unitSize);
+        audioData->m_data.write((const char*) curPtr, unitSize);
         gotData = true;
         curPtr += unitSize;
         m_audioData.push_back(audioData);

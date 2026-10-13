@@ -8,8 +8,7 @@
 
 namespace nx::utils::test {
 
-class TimeOutCache:
-    public ::testing::Test
+class TimeOutCache: public ::testing::Test
 {
 public:
     static constexpr auto kExpirationPeriod = std::chrono::hours(1) * 24 * 365;
@@ -38,10 +37,7 @@ protected:
             m_cache.getValue(m_originalCacheItems.front().first));
     }
 
-    void assertUnknownItemIsNotFound()
-    {
-        ASSERT_FALSE(m_cache.getValue(123));
-    }
+    void assertUnknownItemIsNotFound() { ASSERT_FALSE(m_cache.getValue(123)); }
 
     void whenExpirationPeriodHasPassed()
     {
@@ -119,8 +115,7 @@ TEST_F(TimeOutCache, begin_end_iteration_does_not_affect_item_expiration)
 
 //-------------------------------------------------------------------------------------------------
 
-class TimeOutCacheWithoutProlongation:
-    public TimeOutCache
+class TimeOutCacheWithoutProlongation: public TimeOutCache
 {
 public:
     TimeOutCacheWithoutProlongation():

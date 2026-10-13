@@ -5,10 +5,7 @@
 #include <nx/media/ffmpeg/frame_info.h>
 #include <nx/utils/log/log.h>
 
-QnScaleImageFilter::QnScaleImageFilter(
-    const QSize& size,
-    AVPixelFormat format)
-    :
+QnScaleImageFilter::QnScaleImageFilter(const QSize& size, AVPixelFormat format):
     m_size(size),
     m_format(format)
 {
@@ -16,8 +13,8 @@ QnScaleImageFilter::QnScaleImageFilter(
 
 CLVideoDecoderOutputPtr QnScaleImageFilter::updateImage(const CLVideoDecoderOutputPtr& frame)
 {
-    //if (frame->size() == m_size && (frame->format == m_format || m_format == AV_PIX_FMT_NONE))
-      //  return frame;
+    // if (frame->size() == m_size && (frame->format == m_format || m_format == AV_PIX_FMT_NONE))
+    //   return frame;
 
     auto result = frame->scaled(m_size, m_format);
     if (!result)
@@ -34,7 +31,7 @@ QSize QnScaleImageFilter::updatedResolution(const QSize& /*srcSize*/)
     return m_size;
 }
 
-void QnScaleImageFilter::setOutputImageSize( const QSize& size )
+void QnScaleImageFilter::setOutputImageSize(const QSize& size)
 {
     m_size = size;
 }

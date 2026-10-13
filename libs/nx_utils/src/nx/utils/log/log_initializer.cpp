@@ -7,9 +7,9 @@
 #include <nx/utils/argument_parser.h>
 #include <nx/utils/deprecated_settings.h>
 
-#include "logger_builder.h"
-#include "log_main.h"
 #include "log_logger.h"
+#include "log_main.h"
+#include "logger_builder.h"
 
 namespace nx::log {
 
@@ -31,7 +31,7 @@ std::unique_ptr<AbstractLogger> buildLogger(
 void initializeGlobally(const nx::ArgumentParser& arguments)
 {
     log::Settings settings;
-    settings.load(QnSettings(arguments), "log"/*, deafultCompatibilityLevel "none"*/);
+    settings.load(QnSettings(arguments), "log" /*, deafultCompatibilityLevel "none"*/);
     for (auto& logger: settings.loggers)
     {
         if (logger.logBaseName.isEmpty())

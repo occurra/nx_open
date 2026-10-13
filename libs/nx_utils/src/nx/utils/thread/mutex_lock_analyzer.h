@@ -51,7 +51,7 @@ public:
     class TwoMutexLockData
     {
     public:
-        //!ID of threads, mutex is being locked in
+        //! ID of threads, mutex is being locked in
         std::uintptr_t threadID;
         MutexLockKey firstLocked;
         MutexLockKey secondLocked;
@@ -66,7 +66,7 @@ public:
         bool operator==(const TwoMutexLockData& rhs) const = default;
     };
 
-    //!Information about mutex lock
+    //! Information about mutex lock
     std::set<TwoMutexLockData> lockPositions;
 
     LockGraphEdgeData();
@@ -94,11 +94,11 @@ struct ThreadContext
 class NX_UTILS_API ThreadContextPool
 {
 public:
-    ThreadContext & currentThreadContext();
+    ThreadContext& currentThreadContext();
     void removeCurrentThreadContext();
 
 private:
-    //!map<threadId, stack<mutex lock position>>
+    //! map<threadId, stack<mutex lock position>>
     std::map<std::uintptr_t, ThreadContext> m_threadIdToContext;
     std::mutex m_mutex;
 };
@@ -118,7 +118,7 @@ public:
     const ThreadContext* operator->() const;
 
 private:
-    ThreadContextPool * m_threadContextPool;
+    ThreadContextPool* m_threadContextPool;
     ThreadContext& m_threadContext;
 };
 
@@ -163,7 +163,8 @@ private:
         for (_Iter it = pathStart; it != pathEnd; ++it)
         {
             if (it != pathStart)
-                pathStr += QString::fromLatin1("    thread %1\n").arg(it->threadHoldingMutex, 0, 16);
+                pathStr +=
+                    QString::fromLatin1("    thread %1\n").arg(it->threadHoldingMutex, 0, 16);
             pathStr += it->toString() + QLatin1String("\n");
         }
 

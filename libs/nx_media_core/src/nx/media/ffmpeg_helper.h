@@ -27,13 +27,16 @@ public:
      * deallocating if not null, then allocating via av_malloc().
      * If size is 0, data can be null.
      */
-    static void copyAvCodecContextField(void **fieldPtr, const void* data, size_t size);
+    static void copyAvCodecContextField(void** fieldPtr, const void* data, size_t size);
 
     static CodecParametersPtr createVideoCodecParametersAnnexB(
-        const QnCompressedVideoData* data, const std::vector<uint8_t>* externalExtradata = nullptr);
+        const QnCompressedVideoData* data,
+        const std::vector<uint8_t>* externalExtradata = nullptr);
 
     static CodecParametersPtr createVideoCodecParametersMp4(
-        const QnCompressedVideoData* video, int width, int height);
+        const QnCompressedVideoData* video,
+        int width,
+        int height);
 
     static qint64 getFileSizeByIOContext(AVIOContext* ioContext);
 
@@ -41,7 +44,8 @@ public:
 
     static int audioSampleSize(AVCodecContext* ctx);
 
-    static AVSampleFormat fromAudioFormatToFfmpegSampleType(const nx::media::audio::Format& format);
+    static AVSampleFormat fromAudioFormatToFfmpegSampleType(
+        const nx::media::audio::Format& format);
 
     static int getDefaultFrameSize(AVCodecParameters* codecParams);
 
@@ -51,8 +55,8 @@ public:
     static bool isChromaPlane(int plane, const AVPixFmtDescriptor* avPixFmtDescriptor);
 
     /**
-     * Ffmpeg does not store the number of planes in a frame explicitly, thus, deducing it. On error,
-     * fails an assertion and returns 0.
+     * Ffmpeg does not store the number of planes in a frame explicitly, thus, deducing it. On
+     * error, fails an assertion and returns 0.
      */
     static int planeCount(const AVPixFmtDescriptor* avPixFmtDescriptor);
 };

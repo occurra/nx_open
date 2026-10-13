@@ -19,13 +19,9 @@ static const QList<int> k360Pano({kPanoLow, kPanoNormal, kPanoWide});
 
 } // namespace
 
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(MediaData,
-    (ubjson)(json),
-    MediaData_Fields)
+QN_FUSION_ADAPT_STRUCT_FUNCTIONS(MediaData, (ubjson) (json), MediaData_Fields)
 
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(ViewData,
-    (ubjson)(json)(xml)(csv_record),
-    ViewData_Fields)
+QN_FUSION_ADAPT_STRUCT_FUNCTIONS(ViewData, (ubjson) (json) (xml) (csv_record), ViewData_Fields)
 
 const QList<int>& MediaData::allowedPanoFactorValues() const
 {
@@ -34,9 +30,7 @@ const QList<int>& MediaData::allowedPanoFactorValues() const
 
 const QList<int>& MediaData::allowedPanoFactorValues(FisheyeCameraMount mode)
 {
-    return (mode == FisheyeCameraMount::wall)
-        ? kHorizontalPano
-        : kVerticalPano;
+    return (mode == FisheyeCameraMount::wall) ? kHorizontalPano : kVerticalPano;
 }
 
 bool MediaData::is360VR() const

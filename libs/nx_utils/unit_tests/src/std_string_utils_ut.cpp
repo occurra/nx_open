@@ -15,17 +15,23 @@ TEST(String, maxCommonPrefix)
     ASSERT_EQ("abc", maxCommonPrefix(std::string("abc"), std::string("abc")));
 
     ASSERT_EQ(
-        std::vector<int>({ 1, 2, 3 }),
-        maxCommonPrefix(std::vector<int>({ 1, 2, 3, 4, 5 }), std::vector<int>({ 1, 2, 3, 6, 7 })));
+        std::vector<int>({1, 2, 3}),
+        maxCommonPrefix(std::vector<int>({1, 2, 3, 4, 5}), std::vector<int>({1, 2, 3, 6, 7})));
 }
 
 TEST(StringTrim, trimming_spaces)
 {
-    const std::vector<std::string> data = { " v1 ", "   ", "v2", "v3 ", " v4" };
-    const std::vector<std::string> expected = { "v1", "", "v2", "v3", "v4" };
+    const std::vector<std::string> data = {" v1 ", "   ", "v2", "v3 ", " v4"};
+    const std::vector<std::string> expected = {"v1", "", "v2", "v3", "v4"};
 
     auto actual = data;
-    std::for_each(actual.begin(), actual.end(), [](auto& value) { trim(&value); });
+    std::for_each(
+        actual.begin(),
+        actual.end(),
+        [](auto& value)
+        {
+            trim(&value);
+        });
     ASSERT_EQ(expected, actual);
 
     ASSERT_EQ("v1,", trim(" v1, "));
@@ -49,15 +55,20 @@ TEST(StringTrim, trim_inplace)
 TEST(StringReplace, replaces)
 {
     ASSERT_EQ("raz, raz, raz", replace("raz-raz-raz", "-", ", "));
-    ASSERT_EQ("raz, raz, raz", replace(std::string("raz-raz-raz"), std::string("-"), std::string(", ")));
-    ASSERT_EQ("raz, raz, raz", replace(std::string_view("raz-raz-raz"), std::string_view("-"), std::string_view(", ")));
-    ASSERT_EQ("raz, raz, raz", replace(std::string("raz-raz-raz"), std::string_view("-"), std::string_view(", ")));
+    ASSERT_EQ(
+        "raz, raz, raz",
+        replace(std::string("raz-raz-raz"), std::string("-"), std::string(", ")));
+    ASSERT_EQ(
+        "raz, raz, raz",
+        replace(std::string_view("raz-raz-raz"), std::string_view("-"), std::string_view(", ")));
+    ASSERT_EQ(
+        "raz, raz, raz",
+        replace(std::string("raz-raz-raz"), std::string_view("-"), std::string_view(", ")));
 }
 
 //-------------------------------------------------------------------------------------------------
 
-class StringSplit:
-    public ::testing::Test
+class StringSplit: public ::testing::Test
 {
 protected:
     int m_groupTokens = GroupToken::none;
@@ -77,49 +88,39 @@ protected:
 
 TEST_F(StringSplit, splits)
 {
-    assertSplitsAsExpected(
-        "v1,v2, v3", separator::isAnyOf(","),
-        { "v1", "v2", " v3" });
-
-    assertSplitsAsExpected(
-        "v1,v2, v3", separator::isAnyOf(std::string_view(",")),
-        { "v1", "v2", " v3" });
+    assertSplitsAsExpected("v1,v2, v3", separator::isAnyOf(","), {"v1", "v2", " v3"});
 
     assertSplitsAsExpected(
         "v1,v2, v3",
-        ',',
-        { "v1", "v2", " v3" });
+        separator::isAnyOf(std::string_view(",")),
+        {"v1", "v2", " v3"});
+
+    assertSplitsAsExpected("v1,v2, v3", ',', {"v1", "v2", " v3"});
 }
 
 TEST_F(StringSplit, skipping_empty_tokens)
 {
-    assertSplitsAsExpected(
-        "v1,v2,, v3", separator::isAnyOf(","),
-        { "v1", "v2", " v3" });
+    assertSplitsAsExpected("v1,v2,, v3", separator::isAnyOf(","), {"v1", "v2", " v3"});
 }
 
 TEST_F(StringSplit, providing_empty_tokens)
 {
     m_flags = SplitterFlag::noFlags;
 
-    assertSplitsAsExpected("v1,v2,, v3", ',', { "v1", "v2", "", " v3" });
-    assertSplitsAsExpected("v1,v2", ',', { "v1", "v2" });
-    assertSplitsAsExpected(",v1,", ',', { "", "v1", "" });
-    assertSplitsAsExpected(",v1", ',', { "", "v1" });
-    assertSplitsAsExpected("v1,", ',', { "v1", "" });
-    assertSplitsAsExpected(",,,", ',', { "", "", "", "" });
+    assertSplitsAsExpected("v1,v2,, v3", ',', {"v1", "v2", "", " v3"});
+    assertSplitsAsExpected("v1,v2", ',', {"v1", "v2"});
+    assertSplitsAsExpected(",v1,", ',', {"", "v1", ""});
+    assertSplitsAsExpected(",v1", ',', {"", "v1"});
+    assertSplitsAsExpected("v1,", ',', {"v1", ""});
+    assertSplitsAsExpected(",,,", ',', {"", "", "", ""});
     assertSplitsAsExpected("", ',', {});
 }
 
 TEST_F(StringSplit, empty_string)
 {
-    assertSplitsAsExpected(
-        "", separator::isAnyOf(","),
-        {});
+    assertSplitsAsExpected("", separator::isAnyOf(","), {});
 
-    assertSplitsAsExpected(
-        ",,,", separator::isAnyOf(","),
-        {});
+    assertSplitsAsExpected(",,,", separator::isAnyOf(","), {});
 }
 
 TEST_F(StringSplit, accepts_std_string)
@@ -136,8 +137,7 @@ TEST_F(StringSplit, accepts_std_string_view)
 
 //-------------------------------------------------------------------------------------------------
 
-class StringSplitN:
-    public ::testing::Test
+class StringSplitN: public ::testing::Test
 {
 protected:
     template<int n, typename Separator>
@@ -162,52 +162,53 @@ private:
 
 TEST_F(StringSplitN, splits)
 {
-    assertSplitsAsExpected<2>(
-        "abc:def", ':',
-        std::array<std::string_view, 2>{"abc", "def"}, 2);
+    assertSplitsAsExpected<2>("abc:def", ':', std::array<std::string_view, 2>{"abc", "def"}, 2);
 
-    assertSplitsAsExpected<2>(
-        "a", ':',
-        std::array<std::string_view, 2>{"a", ""}, 1);
+    assertSplitsAsExpected<2>("a", ':', std::array<std::string_view, 2>{"a", ""}, 1);
 
     setFlags(SplitterFlag::noFlags);
 
-    assertSplitsAsExpected<2>(
-        "abc", ':',
-        std::array<std::string_view, 2>{"abc", ""}, 1);
+    assertSplitsAsExpected<2>("abc", ':', std::array<std::string_view, 2>{"abc", ""}, 1);
 }
 
 TEST_F(StringSplitN, reports_the_remainder_as_the_last_token)
 {
     assertSplitsAsExpected<2>(
-        "a:b:c:d:e:", ':',
-        std::array<std::string_view, 2>{"a", "b:c:d:e:"}, 2);
+        "a:b:c:d:e:",
+        ':',
+        std::array<std::string_view, 2>{"a", "b:c:d:e:"},
+        2);
 
     setGroupTokens(GroupToken::singleQuotes);
 
     assertSplitsAsExpected<2>(
-        "a:b:'c:d':e:", ':',
-        std::array<std::string_view, 2>{"a", "b:'c:d':e:"}, 2);
+        "a:b:'c:d':e:",
+        ':',
+        std::array<std::string_view, 2>{"a", "b:'c:d':e:"},
+        2);
 
     assertSplitsAsExpected<2>(
-        "a:'b:c:d:e:'", ':',
-        std::array<std::string_view, 2>{"a", "'b:c:d:e:'"}, 2);
+        "a:'b:c:d:e:'",
+        ':',
+        std::array<std::string_view, 2>{"a", "'b:c:d:e:'"},
+        2);
 
     assertSplitsAsExpected<2>(
-        "a:'b:c:d:e:", ':',
-        std::array<std::string_view, 2>{"a", "'b:c:d:e:"}, 2);
+        "a:'b:c:d:e:",
+        ':',
+        std::array<std::string_view, 2>{"a", "'b:c:d:e:"},
+        2);
 }
 
 //-------------------------------------------------------------------------------------------------
 
-class StringSplitQuoted:
-    public StringSplit
+class StringSplitQuoted: public StringSplit
 {
 public:
     StringSplitQuoted()
     {
-        m_groupTokens = GroupToken::singleQuotes | GroupToken::doubleQuotes |
-            GroupToken::roundBrackets | GroupToken::squareBrackets;
+        m_groupTokens = GroupToken::singleQuotes | GroupToken::doubleQuotes
+            | GroupToken::roundBrackets | GroupToken::squareBrackets;
     }
 };
 
@@ -216,51 +217,44 @@ TEST_F(StringSplitQuoted, separator_in_quotes_is_ignored)
     assertSplitsAsExpected(
         "n1=v1,n2=[v21,v22],n3=\"raz,raz,raz\",n4='x,y,z'",
         ',',
-        { "n1=v1", "n2=[v21,v22]", "n3=\"raz,raz,raz\"", "n4='x,y,z'" });
+        {"n1=v1", "n2=[v21,v22]", "n3=\"raz,raz,raz\"", "n4='x,y,z'"});
 }
 
 TEST_F(StringSplitQuoted, separator_in_braces_is_ignored)
 {
-    assertSplitsAsExpected(
-        "name=(\"\")",
-        '=',
-        { "name", "(\"\")" });
+    assertSplitsAsExpected("name=(\"\")", '=', {"name", "(\"\")"});
 
     assertSplitsAsExpected(
         "n1=v1,n2=[raz,raz],n3=\"raz,raz,raz\"",
         ',',
-        { "n1=v1", "n2=[raz,raz]", "n3=\"raz,raz,raz\"" });
+        {"n1=v1", "n2=[raz,raz]", "n3=\"raz,raz,raz\""});
 
     assertSplitsAsExpected(
         "n1=v1,n2=(raz,\"raz,raz\",raz),n3=\"raz,[raz,raz],raz\"",
         ',',
-        { "n1=v1", "n2=(raz,\"raz,raz\",raz)", "n3=\"raz,[raz,raz],raz\"" });
+        {"n1=v1", "n2=(raz,\"raz,raz\",raz)", "n3=\"raz,[raz,raz],raz\""});
 }
 
 TEST_F(StringSplitQuoted, missing_closing_braces)
 {
-    assertSplitsAsExpected(
-        "v=(abc=",
-        '=',
-        {"v", "(abc="});
+    assertSplitsAsExpected("v=(abc=", '=', {"v", "(abc="});
 }
 
 TEST_F(StringSplitQuoted, other_group_token_inside_a_group_is_part_of_token)
 {
-    assertSplitsAsExpected(
-        "v=(a=[b=d]c)",
-        '=',
-        {"v", "(a=[b=d]c)"});
+    assertSplitsAsExpected("v=(a=[b=d]c)", '=', {"v", "(a=[b=d]c)"});
 }
 
 TEST(StringSplitNameValuePairs, works_and_trims_value_of_quotes)
 {
     std::map<std::string, std::string> params;
     const auto pairsFound = splitNameValuePairs(
-        std::string("a=b, c= \"d,d,d\",e"), ',', '=',
+        std::string("a=b, c= \"d,d,d\",e"),
+        ',',
+        '=',
         std::inserter(params, params.end()));
 
-    const std::map<std::string, std::string> expected = { {"a", "b"}, {"c", "d,d,d"}, {"e", ""} };
+    const std::map<std::string, std::string> expected = {{"a", "b"}, {"c", "d,d,d"}, {"e", ""}};
     ASSERT_EQ(expected, params);
     ASSERT_EQ(expected.size(), pairsFound);
 }
@@ -269,7 +263,9 @@ TEST(StringSplitNameValuePairs, accepts_string_view)
 {
     std::map<std::string_view, std::string_view> params;
     splitNameValuePairs(
-        std::string_view("a=b, c= \"d,d,d\",e"), ',', '=',
+        std::string_view("a=b, c= \"d,d,d\",e"),
+        ',',
+        '=',
         std::inserter(params, params.end()));
 }
 
@@ -339,13 +335,11 @@ struct Record
 
     std::string toString() const
     {
-        return nx::utils::buildString(
-            "a=", getA(), ',', "b=", b, ',', "x=", x);
+        return nx::utils::buildString("a=", getA(), ',', "b=", b, ',', "x=", x);
     }
 };
 
-class StringJoinRecords:
-    public ::testing::Test
+class StringJoinRecords: public ::testing::Test
 {
 protected:
     static const std::vector<std::optional<Record>> tokens;
@@ -353,8 +347,10 @@ protected:
     static constexpr char kExpected[] = "a=a1,b=b1,x=12;a=a2,b=b2,x=34";
 };
 
-const std::vector<std::optional<Record>> StringJoinRecords::tokens =
-    { Record{"a1", "b1", 12}, std::nullopt, Record{"a2", "b2", 34} };
+const std::vector<std::optional<Record>> StringJoinRecords::tokens = {
+    Record{"a1", "b1", 12},
+    std::nullopt,
+    Record{"a2", "b2", 34}};
 
 // The most efficient (in terms of allocation count) syntax.
 // As low as a single allocation if each element string representation is short.
@@ -362,13 +358,13 @@ TEST_F(StringJoinRecords, the_most_efficient_syntax)
 {
     {
         const auto actual = join(
-            tokens.begin(), tokens.end(),
+            tokens.begin(),
+            tokens.end(),
             ';',
             [](std::string* out, const auto& rec)
             {
-                nx::utils::buildString(
-                    out,
-                    "a=", rec->getA(), ',', "b=", rec->b, ',', "x=", rec->x);
+                nx::utils::
+                    buildString(out, "a=", rec->getA(), ',', "b=", rec->b, ',', "x=", rec->x);
             });
 
         ASSERT_EQ(kExpected, actual);
@@ -380,9 +376,8 @@ TEST_F(StringJoinRecords, the_most_efficient_syntax)
             ';',
             [](std::string* out, const auto& rec)
             {
-                nx::utils::buildString(
-                    out,
-                    "a=", rec->getA(), ',', "b=", rec->b, ',', "x=", rec->x);
+                nx::utils::
+                    buildString(out, "a=", rec->getA(), ',', "b=", rec->b, ',', "x=", rec->x);
             });
 
         ASSERT_EQ(kExpected, actual);
@@ -402,13 +397,23 @@ TEST_F(StringJoinRecords, convenience_overload_2)
     ASSERT_EQ(
         kExpected,
         join(
-            tokens.begin(), tokens.end(),
+            tokens.begin(),
+            tokens.end(),
             ';',
-            [](const auto& rec) { return rec->toString(); }));
+            [](const auto& rec)
+            {
+                return rec->toString();
+            }));
 
     ASSERT_EQ(
         kExpected,
-        join(tokens, ';', [](const auto& rec) { return rec->toString(); }));
+        join(
+            tokens,
+            ';',
+            [](const auto& rec)
+            {
+                return rec->toString();
+            }));
 }
 
 // Joining range of iterators that have linear time distance calculation.
@@ -418,16 +423,20 @@ TEST_F(StringJoinRecords, range_with_linear_distance_complexity)
     std::copy(tokens.begin(), tokens.end(), std::back_inserter(tokens1));
 
     const auto actual = join(
-        tokens1.begin(), tokens1.end(),
+        tokens1.begin(),
+        tokens1.end(),
         ';',
-        [](const auto& rec) { return rec->toString(); });
+        [](const auto& rec)
+        {
+            return rec->toString();
+        });
 
     ASSERT_EQ(kExpected, actual);
 }
 
 TEST(StringJoin, strings)
 {
-    const std::vector<std::string> data = { "abc", "def", "ghi" };
+    const std::vector<std::string> data = {"abc", "def", "ghi"};
 
     const auto actual = join(data.begin(), data.end(), ',');
     ASSERT_EQ("abc,def,ghi", actual);
@@ -435,7 +444,7 @@ TEST(StringJoin, strings)
 
 TEST(StringJoin, optional_strings)
 {
-    const std::vector<std::optional<std::string>> data = { "abc", "def", std::nullopt, "ghi" };
+    const std::vector<std::optional<std::string>> data = {"abc", "def", std::nullopt, "ghi"};
 
     const auto actual = join(data.begin(), data.end(), ',');
     ASSERT_EQ("abc,def,ghi", actual);
@@ -443,7 +452,7 @@ TEST(StringJoin, optional_strings)
 
 TEST(StringJoin, string_views)
 {
-    const std::vector<std::string_view> data = { "abc", "def", "ghi" };
+    const std::vector<std::string_view> data = {"abc", "def", "ghi"};
 
     const auto actual = join(data.begin(), data.end(), ',');
     ASSERT_EQ("abc,def,ghi", actual);
@@ -547,15 +556,14 @@ TEST(StringRemoveExcessSeparators, common)
 TEST(StringRemoveExcessSeparatorsInplace, no_out_bounds_access_on_empty_result_string)
 {
     std::string s(32, ' ');
-    const std::size_t newSize = removeExcessSeparatorsInplace(s.data()+1, s.size()-1, ' ');
+    const std::size_t newSize = removeExcessSeparatorsInplace(s.data() + 1, s.size() - 1, ' ');
     ASSERT_EQ(0, newSize);
 }
 
 //-------------------------------------------------------------------------------------------------
 // Hex
 
-class StringHex:
-    public ::testing::Test
+class StringHex: public ::testing::Test
 {
 protected:
     void assertReversible(const std::string& data, const std::string& hex)

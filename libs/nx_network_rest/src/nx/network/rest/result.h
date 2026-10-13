@@ -112,20 +112,28 @@ public:
 
 inline bool operator<(const Result& rhs, const Result& lhs) noexcept
 {
-    const auto tieFields = [](const Result& r) { return std::tie(r.errorId, r.errorString); };
+    const auto tieFields = [](const Result& r)
+    {
+        return std::tie(r.errorId, r.errorString);
+    };
     return tieFields(rhs) < tieFields(lhs);
 }
 
 NX_NETWORK_REST_API void serialize(
-    QnJsonContext* context, const Result& value, QJsonValue* outTarget);
+    QnJsonContext* context,
+    const Result& value,
+    QJsonValue* outTarget);
 NX_NETWORK_REST_API bool deserialize(
-    QnJsonContext* context, QnConversionWrapper<QJsonValue> value, Result* outTarget);
+    QnJsonContext* context,
+    QnConversionWrapper<QJsonValue> value,
+    Result* outTarget);
 
 #define Result_Fields (errorId)(errorString)
-QN_FUSION_DECLARE_FUNCTIONS(Result, (ubjson)(xml)(csv_record), NX_NETWORK_REST_API)
+QN_FUSION_DECLARE_FUNCTIONS(Result, (ubjson) (xml) (csv_record), NX_NETWORK_REST_API)
 
 NX_NETWORK_REST_API nx::reflect::DeserializationResult deserialize(
-    const nx::reflect::json::DeserializationContext& context, Result* data);
+    const nx::reflect::json::DeserializationContext& context,
+    Result* data);
 
 template<typename SerializationContext>
 inline void serialize(SerializationContext* context, const Result& value)
@@ -160,11 +168,15 @@ public:
 };
 
 NX_NETWORK_REST_API void serialize(
-    QnJsonContext* context, const JsonResult& value, QJsonValue* outTarget);
+    QnJsonContext* context,
+    const JsonResult& value,
+    QJsonValue* outTarget);
 NX_NETWORK_REST_API bool deserialize(
-    QnJsonContext* context, QnConversionWrapper<QJsonValue> value, JsonResult* outTarget);
+    QnJsonContext* context,
+    QnConversionWrapper<QJsonValue> value,
+    JsonResult* outTarget);
 
-#define JsonResult_Fields Result_Fields (reply)
+#define JsonResult_Fields Result_Fields(reply)
 QN_FUSION_DECLARE_FUNCTIONS(JsonResult, (ubjson), NX_NETWORK_REST_API)
 
 class NX_NETWORK_REST_API UbjsonResult: public Result
@@ -184,17 +196,21 @@ public:
 };
 
 NX_NETWORK_REST_API void serialize(
-    QnJsonContext* context, const UbjsonResult& value, QJsonValue* outTarget);
+    QnJsonContext* context,
+    const UbjsonResult& value,
+    QJsonValue* outTarget);
 NX_NETWORK_REST_API bool deserialize(
-    QnJsonContext* context, QnConversionWrapper<QJsonValue> value, UbjsonResult* outTarget);
+    QnJsonContext* context,
+    QnConversionWrapper<QJsonValue> value,
+    UbjsonResult* outTarget);
 
-#define UbjsonResult_Fields Result_Fields (reply)
+#define UbjsonResult_Fields Result_Fields(reply)
 QN_FUSION_DECLARE_FUNCTIONS(UbjsonResult, (ubjson), NX_NETWORK_REST_API)
 
 //--------------------------------------------------------------------------------------------------
 
 template<typename T>
-void JsonResult::setReply(const T &data)
+void JsonResult::setReply(const T& data)
 {
     QJson::serialize(data, &reply);
 }

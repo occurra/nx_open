@@ -12,7 +12,7 @@ namespace {
  * "abc \r\n def\r\nghi \r\n jkl \r\nmno\r\n\r\n" ->
  * "abc", "def", "ghi", "jkl", "mno"
  * */
-template <typename Callback>
+template<typename Callback>
 void getTokens(std::string_view str, char delim, Callback callback)
 {
     if (str.begin() == str.end())
@@ -23,13 +23,17 @@ void getTokens(std::string_view str, char delim, Callback callback)
     const char* end = start + str.size();
     while (start != end)
     {
-        while (start != end && (*start <= 0x20 || *start == delim)) ++start;
+        while (start != end && (*start <= 0x20 || *start == delim))
+            ++start;
         stop = start;
-        while (stop != end && *stop != delim) ++stop;
-        while (stop != start && *(stop - 1) <= 0x20) --stop;
+        while (stop != end && *stop != delim)
+            ++stop;
+        while (stop != start && *(stop - 1) <= 0x20)
+            --stop;
         callback(std::string_view(start, stop - start));
         start = stop;
-        while (start != end && (*start <= 0x20 || *start == delim)) ++start;
+        while (start != end && (*start <= 0x20 || *start == delim))
+            ++start;
     }
 }
 
@@ -47,16 +51,14 @@ Fingerprint Fingerprint::parse(std::string_view sv)
         Type type = Type::none;
         int size = 0;
     };
-    static constexpr std::array<HashInfo, 7> hashInfos =
-    {{
-        {"sha-1", Type::sha1, 20},
-        {"sha-224", Type::sha224, 28},
-        {"sha-256", Type::sha256, 32},
-        {"sha-384", Type::sha384, 48},
-        {"sha-512", Type::sha512, 64},
-        {"md5", Type::md5, 16},
-        {"md2", Type::md2, 16}
-    }};
+    static constexpr std::array<HashInfo, 7> hashInfos = {
+        {{"sha-1", Type::sha1, 20},
+         {"sha-224", Type::sha224, 28},
+         {"sha-256", Type::sha256, 32},
+         {"sha-384", Type::sha384, 48},
+         {"sha-512", Type::sha512, 64},
+         {"md5", Type::md5, 16},
+         {"md2", Type::md2, 16}}};
     Fingerprint result;
     int i = 0;
     bool error = false;
@@ -200,10 +202,12 @@ SdpParseResult SdpParseResult::parse(const std::string& sdp)
             else if (sv.find(kMid) == 0)
             {
                 std::string midStr = std::string(sv, kMid.size(), std::string::npos);
-                try {
+                try
+                {
                     int mid = std::stoi(midStr);
                     result.tracksState[mid] = supportedMids.count(midStr) && !inactiveTrack
-                        ? TrackState::active : TrackState::inactive;
+                        ? TrackState::active
+                        : TrackState::inactive;
                     lastMid = mid;
                 }
                 catch (...)
@@ -221,9 +225,9 @@ SdpParseResult SdpParseResult::parse(const std::string& sdp)
 }
 
 IceCandidate IceCandidate::constructTcpHost(
-        unsigned int _foundation,
-        int _priority,
-        const nx::network::SocketAddress& _address)
+    unsigned int _foundation,
+    int _priority,
+    const nx::network::SocketAddress& _address)
 {
     return IceCandidate{
         .foundation = _foundation,
@@ -236,9 +240,9 @@ IceCandidate IceCandidate::constructTcpHost(
 }
 
 IceCandidate IceCandidate::constructUdpHost(
-        unsigned int _foundation,
-        int _priority,
-        const nx::network::SocketAddress& _address)
+    unsigned int _foundation,
+    int _priority,
+    const nx::network::SocketAddress& _address)
 {
     return IceCandidate{
         .foundation = _foundation,
@@ -247,14 +251,13 @@ IceCandidate IceCandidate::constructUdpHost(
         .priority = _priority,
         .address = _address,
         .type = Type::Host};
-
 }
 
 IceCandidate IceCandidate::constructUdpSrflx(
-        unsigned int _foundation,
-        int _priority,
-        const nx::network::SocketAddress& _address,
-        const nx::network::SocketAddress& _relatedAddress)
+    unsigned int _foundation,
+    int _priority,
+    const nx::network::SocketAddress& _address,
+    const nx::network::SocketAddress& _relatedAddress)
 {
     return IceCandidate{
         .foundation = _foundation,
@@ -453,9 +456,9 @@ bool IceCandidate::matchFilter(const Filter filter) const
     if (type == Type::Host)
     {
         if (protocol == Protocol::TCP)
-           actualType = Filter::TcpHost;
+            actualType = Filter::TcpHost;
         else
-           actualType = Filter::UdpHost;
+            actualType = Filter::UdpHost;
     }
     else if (type == Type::Srflx)
     {
@@ -490,7 +493,7 @@ IceCandidate::Filter IceCandidate::parseFilter(const std::string& filter)
             else if (sv == kRelay)
                 result |= Filter::UdpRelay;
         });
-    return (IceCandidate::Filter)result;
+    return (IceCandidate::Filter) result;
 }
 
 } // namespace nx::webrtc

@@ -22,10 +22,7 @@ TimerManager::TimerGuard::TimerGuard():
 {
 }
 
-TimerManager::TimerGuard::TimerGuard(
-    TimerManager* const TimerManager,
-    TimerId timerId)
-:
+TimerManager::TimerGuard::TimerGuard(TimerManager* const TimerManager, TimerId timerId):
     m_timerManager(TimerManager),
     m_timerId(timerId)
 {
@@ -43,8 +40,7 @@ TimerManager::TimerGuard::~TimerGuard()
     reset();
 }
 
-TimerManager::TimerGuard& TimerManager::TimerGuard::operator=(
-    TimerManager::TimerGuard&& right)
+TimerManager::TimerGuard& TimerManager::TimerGuard::operator=(TimerManager::TimerGuard&& right)
 {
     if (&right == this)
         return *this;
@@ -82,8 +78,7 @@ TimerManager::TimerGuard::operator bool_type() const
     return m_timerId ? &TimerGuard::this_type_does_not_support_comparisons : 0;
 }
 
-bool TimerManager::TimerGuard::operator==(
-    const TimerManager::TimerGuard& right) const
+bool TimerManager::TimerGuard::operator==(const TimerManager::TimerGuard& right) const
 {
     return m_timerId == right.m_timerId;
 }
@@ -126,17 +121,11 @@ TimerId TimerManager::addTimer(
     return addTimer(std::bind(&TimerEventHandler::onTimer, taskManager, _1), delay);
 }
 
-TimerId TimerManager::addTimer(
-    MoveOnlyFunc<void(TimerId)> func,
-    std::chrono::milliseconds delay)
+TimerId TimerManager::addTimer(MoveOnlyFunc<void(TimerId)> func, std::chrono::milliseconds delay)
 {
     NX_MUTEX_LOCKER lk(&m_mutex);
     const auto timerId = ++m_lastTaskId;
-    addTaskNonSafe(
-        lk,
-        timerId,
-        TaskContext(std::move(func)),
-        delay);
+    addTaskNonSafe(lk, timerId, TaskContext(std::move(func)), delay);
     NX_VERBOSE(this, nx::format("Added timer %1, delay %2").arg(timerId).arg(delay));
     return timerId;
 }
@@ -156,13 +145,13 @@ TimerId TimerManager::addNonStopTimer(
 {
     NX_MUTEX_LOCKER lk(&m_mutex);
     const auto timerId = ++m_lastTaskId;
-    addTaskNonSafe(
-        lk,
-        timerId,
-        TaskContext(std::move(func), repeatPeriod),
-        firstShotDelay);
-    NX_VERBOSE(this, nx::format("Added non stop timer %1, repeat period %2, first shot delay %3")
-        .arg(timerId).arg(repeatPeriod).arg(firstShotDelay));
+    addTaskNonSafe(lk, timerId, TaskContext(std::move(func), repeatPeriod), firstShotDelay);
+    NX_VERBOSE(
+        this,
+        nx::format("Added non stop timer %1, repeat period %2, first shot delay %3")
+            .arg(timerId)
+            .arg(repeatPeriod)
+            .arg(firstShotDelay));
     return timerId;
 }
 
@@ -187,28 +176,27 @@ void TimerManager::joinAndDeleteTimer(const TimerId& timerId)
         return;
 
     NX_MUTEX_LOCKER lk(&m_mutex);
-    //having locked m_mutex we guarantee, that execution of timer timerId will not start
+    // having locked m_mutex we guarantee, that execution of timer timerId will not start
 
     if (QThread::currentThread() != this)
     {
         NX_VERBOSE(this, nx::format("Waiting for timer %1 to complete").arg(timerId));
 
         while (m_runningTaskID == timerId)
-            m_cond.wait(lk.mutex());      //waiting for timer handler execution finish
+            m_cond.wait(lk.mutex()); // waiting for timer handler execution finish
     }
     else
     {
-        //method called from scheduler thread (there is TimerManagerImpl::run upper in stack).
-        //    There is no sense to wait task completion
+        // method called from scheduler thread (there is TimerManagerImpl::run upper in stack).
+        //     There is no sense to wait task completion
     }
 
-    //since mutex is locked and m_runningTaskID != timerId,
-    //    timer handler is not running at the moment
+    // since mutex is locked and m_runningTaskID != timerId,
+    //     timer handler is not running at the moment
     deleteTaskNonSafe(lk, timerId);
 }
 
-constexpr static std::chrono::milliseconds kErrorSkipTimeout =
-    std::chrono::milliseconds(3000);
+constexpr static std::chrono::milliseconds kErrorSkipTimeout = std::chrono::milliseconds(3000);
 
 void TimerManager::run()
 {
@@ -268,16 +256,20 @@ void TimerManager::run()
             if (!m_timeToTask.empty())
             {
                 if (m_timeToTask.begin()->first.first <= currentTime)
-                    continue;   //< Time to execute another task.
+                    continue; //< Time to execute another task.
 
-                timeToWait = std::chrono::milliseconds(
-                    m_timeToTask.begin()->first.first - currentTime);
+                timeToWait =
+                    std::chrono::milliseconds(m_timeToTask.begin()->first.first - currentTime);
             }
         }
         catch (exception& e)
         {
-            NX_ERROR(this, nx::format("Error. Exception in %1:%2. %3")
-                .arg(__FILE__).arg(__LINE__).arg(e.what()));
+            NX_ERROR(
+                this,
+                nx::format("Error. Exception in %1:%2. %3")
+                    .arg(__FILE__)
+                    .arg(__LINE__)
+                    .arg(e.what()));
             timeToWait = kErrorSkipTimeout;
             m_runningTaskID = 0;
         }
@@ -309,9 +301,7 @@ void TimerManager::addTaskNonSafe(
     m_cond.wakeOne();
 }
 
-void TimerManager::deleteTaskNonSafe(
-    const nx::Locker<nx::Mutex>& /*lk*/,
-    const TimerId timerId)
+void TimerManager::deleteTaskNonSafe(const nx::Locker<nx::Mutex>& /*lk*/, const TimerId timerId)
 {
     const auto it = m_taskToTime.find(timerId);
     if (it == m_taskToTime.end())
@@ -332,8 +322,7 @@ TimerManager::TaskContext::TaskContext(MoveOnlyFunc<void(TimerId)> _func):
 
 TimerManager::TaskContext::TaskContext(
     MoveOnlyFunc<void(TimerId)> _func,
-    std::chrono::milliseconds _repeatPeriod)
-:
+    std::chrono::milliseconds _repeatPeriod):
     func(std::move(_func)),
     singleShot(false),
     repeatPeriod(_repeatPeriod)
@@ -341,9 +330,8 @@ TimerManager::TaskContext::TaskContext(
     NX_CRITICAL(func);
 }
 
-std::chrono::milliseconds NX_UTILS_API parseTimerDuration(
-    std::string_view duration,
-    std::chrono::milliseconds defaultValue)
+std::chrono::milliseconds NX_UTILS_API
+    parseTimerDuration(std::string_view duration, std::chrono::milliseconds defaultValue)
 {
     // TODO: #akolesnikov Move implementation to this overload and optimize.
     return parseTimerDuration(QString::fromStdString(std::string(duration)), defaultValue);

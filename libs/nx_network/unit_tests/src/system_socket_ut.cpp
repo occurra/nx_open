@@ -10,8 +10,7 @@
 
 namespace nx::network::test {
 
-class TcpSocket:
-    public ::testing::Test
+class TcpSocket: public ::testing::Test
 {
 public:
     ~TcpSocket()
@@ -34,8 +33,8 @@ protected:
                 connected.set_value(resultCode);
             });
 
-         m_acceptedSocket = m_tcpServerSocket.accept();
-         ASSERT_EQ(SystemError::noError, connected.get_future().get());
+        m_acceptedSocket = m_tcpServerSocket.accept();
+        ASSERT_EQ(SystemError::noError, connected.get_future().get());
     }
 
     void thenTimeoutsAreReportedCorrectly()
@@ -84,70 +83,70 @@ private:
 
     static bool readSocketTimeout(int fd, int socketOption, unsigned int* millis)
     {
-        #ifdef _WIN32
-            int valLen = sizeof(*millis);
-            if (getsockopt(fd, SOL_SOCKET, socketOption, (char*)millis, &valLen) != 0)
-                return false;
-        #else
-            timeval tv;
-            memset(&tv, 0, sizeof(tv));
-            socklen_t valLen = sizeof(tv);
-            if (::getsockopt(fd, SOL_SOCKET, socketOption, (void*)&tv, &valLen) < 0)
-                return false;
-            *millis = tv.tv_sec*1000 + tv.tv_usec/1000;
-        #endif
+#ifdef _WIN32
+        int valLen = sizeof(*millis);
+        if (getsockopt(fd, SOL_SOCKET, socketOption, (char*) millis, &valLen) != 0)
+            return false;
+#else
+        timeval tv;
+        memset(&tv, 0, sizeof(tv));
+        socklen_t valLen = sizeof(tv);
+        if (::getsockopt(fd, SOL_SOCKET, socketOption, (void*) &tv, &valLen) < 0)
+            return false;
+        *millis = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+#endif
 
         return true;
     }
 };
 
-TEST_F(TcpSocket, KeepAliveOptions )
+TEST_F(TcpSocket, KeepAliveOptions)
 {
-    if( SocketFactory::isStreamSocketTypeEnforced() )
+    if (SocketFactory::isStreamSocketTypeEnforced())
         return;
 
-    const auto socket = std::make_unique< TCPSocket >(AF_INET);
-    std::optional< KeepAliveOptions > result;
+    const auto socket = std::make_unique<TCPSocket>(AF_INET);
+    std::optional<KeepAliveOptions> result;
 
     // Enable
     typedef std::chrono::seconds seconds;
-    ASSERT_TRUE( socket->setKeepAlive( KeepAliveOptions( seconds(5), seconds(1), 3 ) ) );
-    ASSERT_TRUE( socket->getKeepAlive( &result ) );
-    ASSERT_TRUE( static_cast< bool >( result ) );
+    ASSERT_TRUE(socket->setKeepAlive(KeepAliveOptions(seconds(5), seconds(1), 3)));
+    ASSERT_TRUE(socket->getKeepAlive(&result));
+    ASSERT_TRUE(static_cast<bool>(result));
 
-    #if defined( Q_OS_LINUX )
-        EXPECT_EQ( result->inactivityPeriodBeforeFirstProbe, seconds(5) );
-        EXPECT_EQ( result->probeSendPeriod, seconds(1) );
-        EXPECT_EQ( result->probeCount, 3U );
-    #elif defined( Q_OS_WIN )
-        EXPECT_EQ( result->inactivityPeriodBeforeFirstProbe, seconds(5) );
-        EXPECT_EQ( result->probeSendPeriod, seconds(1) );
-        EXPECT_EQ( result->probeCount, 10U ); // means default
-    #elif defined( Q_OS_MACOS )
-        EXPECT_EQ( result->inactivityPeriodBeforeFirstProbe, seconds(5) );
-        EXPECT_EQ( result->probeSendPeriod, seconds::zero() ); // means default
-        EXPECT_EQ( result->probeCount, 0U ); // means default
-    #endif
+#if defined(Q_OS_LINUX)
+    EXPECT_EQ(result->inactivityPeriodBeforeFirstProbe, seconds(5));
+    EXPECT_EQ(result->probeSendPeriod, seconds(1));
+    EXPECT_EQ(result->probeCount, 3U);
+#elif defined(Q_OS_WIN)
+    EXPECT_EQ(result->inactivityPeriodBeforeFirstProbe, seconds(5));
+    EXPECT_EQ(result->probeSendPeriod, seconds(1));
+    EXPECT_EQ(result->probeCount, 10U); // means default
+#elif defined(Q_OS_MACOS)
+    EXPECT_EQ(result->inactivityPeriodBeforeFirstProbe, seconds(5));
+    EXPECT_EQ(result->probeSendPeriod, seconds::zero()); // means default
+    EXPECT_EQ(result->probeCount, 0U); // means default
+#endif
 
     // Disable
-    ASSERT_TRUE( socket->setKeepAlive( std::nullopt ) );
-    ASSERT_TRUE( socket->getKeepAlive( &result ) );
-    ASSERT_FALSE( static_cast< bool >( result ) );
+    ASSERT_TRUE(socket->setKeepAlive(std::nullopt));
+    ASSERT_TRUE(socket->getKeepAlive(&result));
+    ASSERT_FALSE(static_cast<bool>(result));
 }
 
 TEST_F(TcpSocket, DISABLED_KeepAliveOptionsDefaults)
 {
-    const auto socket = std::make_unique< TCPSocket >( AF_INET );
-    std::optional< KeepAliveOptions > result;
-    ASSERT_TRUE( socket->getKeepAlive( &result ) );
-    ASSERT_FALSE( static_cast< bool >( result ) );
+    const auto socket = std::make_unique<TCPSocket>(AF_INET);
+    std::optional<KeepAliveOptions> result;
+    ASSERT_TRUE(socket->getKeepAlive(&result));
+    ASSERT_FALSE(static_cast<bool>(result));
 }
 
 static void waitForKeepAliveDisconnect(AbstractStreamSocket* socket)
 {
     Buffer buffer(1024, 0);
-    ASSERT_TRUE(socket->setKeepAlive(KeepAliveOptions(
-        std::chrono::seconds(10), std::chrono::seconds(5), 3)));
+    ASSERT_TRUE(socket->setKeepAlive(
+        KeepAliveOptions(std::chrono::seconds(10), std::chrono::seconds(5), 3)));
 
     NX_INFO(typeid(TcpSocket), nx::format("waitForKeepAliveDisconnect recv"));
     EXPECT_LT(socket->recv(buffer.data(), buffer.size()), 0);
@@ -197,7 +196,12 @@ TEST_F(TcpSocket, socket_timer_is_single_shot)
     std::atomic<int> triggerCount(0);
 
     TCPSocket tcpSocket(AF_INET);
-    tcpSocket.registerTimer(kTimeout, [&triggerCount]() { ++triggerCount; });
+    tcpSocket.registerTimer(
+        kTimeout,
+        [&triggerCount]()
+        {
+            ++triggerCount;
+        });
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
     tcpSocket.pleaseStopSync();
@@ -235,25 +239,53 @@ TEST(TcpServerSocketIpv6, BindsToLocalAddress)
 }
 
 NX_NETWORK_BOTH_SOCKET_TEST_CASE(
-    TEST, TcpSocketV4,
-    [](){ return std::make_unique<TCPServerSocket>(AF_INET); },
-    [](){ return std::make_unique<TCPSocket>(AF_INET); })
+    TEST,
+    TcpSocketV4,
+    []()
+    {
+        return std::make_unique<TCPServerSocket>(AF_INET);
+    },
+    []()
+    {
+        return std::make_unique<TCPSocket>(AF_INET);
+    })
 
 NX_NETWORK_BOTH_SOCKET_TEST_CASE(
-    TEST, TcpSocketV6,
-    [](){ return std::make_unique<TCPServerSocket>(AF_INET6); },
-    [](){ return std::make_unique<TCPSocket>(AF_INET6); })
+    TEST,
+    TcpSocketV6,
+    []()
+    {
+        return std::make_unique<TCPServerSocket>(AF_INET6);
+    },
+    []()
+    {
+        return std::make_unique<TCPSocket>(AF_INET6);
+    })
 
 // NOTE: Currently IP v4 address 127.0.0.1 is represented as ::1 IP v6 address, which is not true.
 // TODO: Enable these tests when IP v6 is properly supported.
 NX_NETWORK_TRANSFER_SOCKET_TESTS_CASE(
-    TEST, DISABLED_TcpSocketV4to6,
-    [](){ return std::make_unique<TCPServerSocket>(AF_INET6); },
-    [](){ return std::make_unique<TCPSocket>(AF_INET); })
+    TEST,
+    DISABLED_TcpSocketV4to6,
+    []()
+    {
+        return std::make_unique<TCPServerSocket>(AF_INET6);
+    },
+    []()
+    {
+        return std::make_unique<TCPSocket>(AF_INET);
+    })
 
 NX_NETWORK_TRANSFER_SOCKET_TESTS_CASE(
-    TEST, DISABLED_TcpSocketV6to4,
-    [](){ return std::make_unique<TCPServerSocket>(AF_INET); },
-    [](){ return std::make_unique<TCPSocket>(AF_INET6); })
+    TEST,
+    DISABLED_TcpSocketV6to4,
+    []()
+    {
+        return std::make_unique<TCPServerSocket>(AF_INET);
+    },
+    []()
+    {
+        return std::make_unique<TCPSocket>(AF_INET6);
+    })
 
-} // nx::network::test
+} // namespace nx::network::test

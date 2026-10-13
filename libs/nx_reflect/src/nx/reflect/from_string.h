@@ -14,14 +14,18 @@ namespace nx::reflect {
 namespace detail {
 
 template<typename T, typename = void>
-struct IsQByteArrayAlike: std::false_type {};
+struct IsQByteArrayAlike: std::false_type
+{
+};
 
 template<typename T>
 struct IsQByteArrayAlike<
     T,
-    std::void_t<decltype(T::fromBase64(std::declval<decltype(
-        T::fromRawData((const char*) nullptr, (std::size_t) 0))>()))>
->: std::true_type {};
+    std::void_t<decltype(T::fromBase64(
+        std::declval<decltype(T::fromRawData((const char*) nullptr, (std::size_t) 0))>()))>>:
+    std::true_type
+{
+};
 
 template<typename... Args>
 inline constexpr bool IsQByteArrayAlikeV = IsQByteArrayAlike<Args...>::value;
@@ -29,13 +33,15 @@ inline constexpr bool IsQByteArrayAlikeV = IsQByteArrayAlike<Args...>::value;
 //-------------------------------------------------------------------------------------------------
 
 template<typename T, typename = void>
-struct HasFromBase64: std::false_type {};
+struct HasFromBase64: std::false_type
+{
+};
 
 template<typename T>
-struct HasFromBase64<
-    T,
-    std::void_t<decltype(T::fromBase64(std::declval<std::string_view>()))>
->: std::true_type {};
+struct HasFromBase64<T, std::void_t<decltype(T::fromBase64(std::declval<std::string_view>()))>>:
+    std::true_type
+{
+};
 
 template<typename... Args>
 inline constexpr bool HasFromBase64V = HasFromBase64<Args...>::value;
@@ -43,9 +49,9 @@ inline constexpr bool HasFromBase64V = HasFromBase64<Args...>::value;
 //-------------------------------------------------------------------------------------------------
 
 template<
-    typename String, typename T,
-    typename = std::enable_if_t<std::is_same_v<String, std::string_view>>
->
+    typename String,
+    typename T,
+    typename = std::enable_if_t<std::is_same_v<String, std::string_view>>>
 bool fromString(const String& str, T* result)
 {
     // No proper fromString overload is available for type T.

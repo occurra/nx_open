@@ -1,38 +1,40 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include "file.h"
-
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
 
 #include "async_file_processor.h"
+#include "file.h"
 
-static void splitPath( const QString& path, QString* dirPath, QString* fileName )
+static void splitPath(const QString& path, QString* dirPath, QString* fileName)
 {
 #ifdef _WIN32
-    //on win32, '/' and '\' is allowed as path separator
+    // on win32, '/' and '\' is allowed as path separator
     const int slashPos = path.lastIndexOf(QLatin1Char('/'));
     const int reverseSlashPos = path.lastIndexOf(QLatin1Char('\\'));
-    const int separatorPos =
-        slashPos == -1
+    const int separatorPos = slashPos == -1
         ? reverseSlashPos
         : (reverseSlashPos == -1 ? slashPos : std::max<int>(reverseSlashPos, slashPos));
 #else
     const int separatorPos = path.lastIndexOf(QLatin1Char('/'));
 #endif
 
-    if( separatorPos == -1 )
+    if (separatorPos == -1)
     {
-        if( dirPath )  *dirPath = QString();
-        if( fileName ) *fileName = path;
+        if (dirPath)
+            *dirPath = QString();
+        if (fileName)
+            *fileName = path;
     }
     else
     {
-        if( dirPath )  *dirPath = path.mid(0,separatorPos+1);  //including separator with path
-        if( fileName ) *fileName = path.mid(separatorPos+1);
+        if (dirPath)
+            *dirPath = path.mid(0, separatorPos + 1); // including separator with path
+        if (fileName)
+            *fileName = path.mid(separatorPos + 1);
     }
 }
 
@@ -57,28 +59,28 @@ std::optional<nx::Buffer> IQnFile::readAll()
 
 //-------------------------------------------------------------------------------------------------
 
-QString QnFile::filePath( const QString& path )
+QString QnFile::filePath(const QString& path)
 {
     QString filePath;
-    splitPath( path, &filePath, NULL );
+    splitPath(path, &filePath, NULL);
     return filePath;
 }
 
-QString QnFile::fileName( const QString& path )
+QString QnFile::fileName(const QString& path)
 {
     QString _fileName;
-    splitPath( path, NULL, &_fileName );
+    splitPath(path, NULL, &_fileName);
     return _fileName;
 }
 
-QString QnFile::baseName( const QString& path )
+QString QnFile::baseName(const QString& path)
 {
-    const QString _fileName = fileName( path );
+    const QString _fileName = fileName(path);
     const int sepPos = _fileName.indexOf(QLatin1Char('.'));
     return sepPos == -1 ? _fileName : _fileName.mid(0, sepPos);
 }
 
-QString QnFile::absolutePath( const QString& path )
+QString QnFile::absolutePath(const QString& path)
 {
     return QFileInfo(path).absolutePath();
 }
@@ -89,15 +91,13 @@ namespace nx::utils::fs {
 
 namespace {
 
-class QtFileWrapper:
-    public IQnFile
+class QtFileWrapper: public IQnFile
 {
 public:
     QtFileWrapper(const QString& filename);
 
-    virtual bool open(
-        const QIODevice::OpenMode& mode,
-        unsigned int systemDependentFlags = 0) override;
+    virtual bool open(const QIODevice::OpenMode& mode, unsigned int systemDependentFlags = 0)
+        override;
 
     virtual void close() override;
     virtual qint64 read(char* buffer, qint64 count) override;
@@ -109,6 +109,7 @@ public:
     virtual bool truncate(qint64 newFileSize) override;
     virtual bool eof() const override;
     virtual QString url() const override;
+
 private:
     QFile m_file;
 };
@@ -118,9 +119,7 @@ QtFileWrapper::QtFileWrapper(const QString& filename):
 {
 }
 
-bool QtFileWrapper::open(
-    const QIODevice::OpenMode& mode,
-    unsigned int /*systemDependentFlags*/)
+bool QtFileWrapper::open(const QIODevice::OpenMode& mode, unsigned int /*systemDependentFlags*/)
 {
     return m_file.open(mode);
 }
@@ -231,9 +230,7 @@ File::File(const std::string& filename)
         m_delegate = std::make_unique<QnFile>(filename.c_str());
 }
 
-bool File::open(
-    const QIODevice::OpenMode& mode,
-    unsigned int systemDependentFlags)
+bool File::open(const QIODevice::OpenMode& mode, unsigned int systemDependentFlags)
 {
     return m_delegate->open(mode, systemDependentFlags);
 }

@@ -15,7 +15,11 @@ RtpParser::RtpParser(int payloadType, StreamParserPtr codecParser):
 }
 
 Result RtpParser::processData(
-    uint8_t* buffer, int offset, int size, bool& packetLoss, bool& gotData)
+    uint8_t* buffer,
+    int offset,
+    int size,
+    bool& packetLoss,
+    bool& gotData)
 {
     gotData = false;
     packetLoss = false;
@@ -35,13 +39,15 @@ Result RtpParser::processData(
     }
 
     uint16_t sequenceNumber = rtpHeader.header.getSequence();
-    if (m_sequenceNumber.has_value() &&
-        m_sequenceNumber.value() != uint16_t(sequenceNumber - 1) &&
-        m_sequenceNumber != sequenceNumber) // Some cameras send duplicate packets, ignore it
+    if (m_sequenceNumber.has_value() && m_sequenceNumber.value() != uint16_t(sequenceNumber - 1)
+        && m_sequenceNumber != sequenceNumber) // Some cameras send duplicate packets, ignore it
     {
         packetLoss = true;
-        NX_DEBUG(this, "RTP packet loss detected: previous sequence number: %1, current: %2",
-            m_sequenceNumber.value(), sequenceNumber);
+        NX_DEBUG(
+            this,
+            "RTP packet loss detected: previous sequence number: %1, current: %2",
+            m_sequenceNumber.value(),
+            sequenceNumber);
     }
     m_sequenceNumber = sequenceNumber;
 
@@ -60,7 +66,11 @@ Result RtpParser::processData(
     }
 
     return m_codecParser->processData(
-        rtpHeader.header, buffer, offset + rtpHeader.payloadOffset, rtpHeader.payloadSize, gotData);
+        rtpHeader.header,
+        buffer,
+        offset + rtpHeader.payloadOffset,
+        rtpHeader.payloadSize,
+        gotData);
 }
 
 void RtpParser::clear()
@@ -94,8 +104,7 @@ QString RtpParser::idForToStringFromPtr() const
     return NX_FMT("Payload type %1", m_payloadType);
 }
 
-void RtpParser::processRtpExtension(
-    const RtpHeaderExtensionHeader& header, quint8* data, int size)
+void RtpParser::processRtpExtension(const RtpHeaderExtensionHeader& header, quint8* data, int size)
 {
     // Try to parse onvif timestamp extension (increase the buffer to the extension header, as the
     // analyzer decodes it itself)
@@ -107,7 +116,7 @@ void RtpParser::processRtpExtension(
         if (onvifExtension.read(headerData, headerSize))
             m_onvifExtensionTimestamp = onvifExtension.ntp;
         else
-            NX_VERBOSE(this, "Failed to parse onvif rtp extension, header size: %1",  size);
+            NX_VERBOSE(this, "Failed to parse onvif rtp extension, header size: %1", size);
 
         if (header.lengthBytes() <= kOnvifHeaderExtensionLength * 4)
             return;
@@ -121,7 +130,7 @@ void RtpParser::processRtpExtension(
             NX_VERBOSE(this, "Invalid RTP header size with a double extension, size: %1", size);
             return;
         }
-        RtpHeaderExtensionHeader jpegHeader = *(RtpHeaderExtensionHeader*)(data);
+        RtpHeaderExtensionHeader jpegHeader = *(RtpHeaderExtensionHeader*) (data);
         data += RtpHeaderExtensionHeader::kSize;
         size -= RtpHeaderExtensionHeader::kSize;
         if (!m_codecParser->processRtpExtension(jpegHeader, data, size))
@@ -142,8 +151,8 @@ int64_t RtpParser::getTimestamp(uint32_t rtpTime, const nx::rtp::RtcpSenderRepor
     // rtcp
     if (senderReport.ntpTimestamp > 0)
     {
-        const int64_t rtpTimeDiff = int32_t(rtpTime - senderReport.rtpTimestamp)
-            * 1'000'000LL / m_codecParser->getFrequency();
+        const int64_t rtpTimeDiff = int32_t(rtpTime - senderReport.rtpTimestamp) * 1'000'000LL
+            / m_codecParser->getFrequency();
         return senderReport.ntpTimestamp + rtpTimeDiff;
     }
 

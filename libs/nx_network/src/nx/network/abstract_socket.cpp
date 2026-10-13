@@ -63,13 +63,12 @@ void AbstractCommunicatingSocket::registerTimer(
     unsigned int timeout,
     nx::MoveOnlyFunc<void()> handler)
 {
-    return registerTimer(
-        std::chrono::milliseconds(timeout),
-        std::move(handler));
+    return registerTimer(std::chrono::milliseconds(timeout), std::move(handler));
 }
 
 void AbstractCommunicatingSocket::readAsyncAtLeast(
-    nx::Buffer* const buffer, std::size_t minimalSize,
+    nx::Buffer* const buffer,
+    std::size_t minimalSize,
     IoCompletionHandler handler)
 {
     NX_CRITICAL(
@@ -83,7 +82,9 @@ void AbstractCommunicatingSocket::readAsyncAtLeast(
     }
 
     readAsyncAtLeastImpl(
-        buffer, minimalSize, std::move(handler),
+        buffer,
+        minimalSize,
+        std::move(handler),
         static_cast<size_t>(buffer->size()));
 }
 
@@ -109,7 +110,11 @@ void AbstractCommunicatingSocket::pleaseStopSync()
     else
     {
         std::promise<void> stopped;
-        pleaseStop([&stopped]() { stopped.set_value(); });
+        pleaseStop(
+            [&stopped]()
+            {
+                stopped.set_value();
+            });
         stopped.get_future().wait();
     }
 }
@@ -146,31 +151,30 @@ void AbstractCommunicatingSocket::cancelIOSync(nx::network::aio::EventType event
 }
 
 void AbstractCommunicatingSocket::readAsyncAtLeastImpl(
-    nx::Buffer* const buffer, std::size_t minimalSize,
+    nx::Buffer* const buffer,
+    std::size_t minimalSize,
     IoCompletionHandler handler,
     std::size_t initBufSize)
 {
     readSomeAsync(
         buffer,
         [this, buffer, minimalSize, handler = std::move(handler), initBufSize](
-            SystemError::ErrorCode code, std::size_t size) mutable
+            SystemError::ErrorCode code,
+            std::size_t size) mutable
         {
-            if (code != SystemError::noError || size == 0 ||
-                static_cast<std::size_t>(buffer->size()) >= initBufSize + minimalSize)
+            if (code != SystemError::noError || size == 0
+                || static_cast<std::size_t>(buffer->size()) >= initBufSize + minimalSize)
             {
-                return handler(
-                    code, static_cast<std::size_t>(buffer->size()) - initBufSize);
+                return handler(code, static_cast<std::size_t>(buffer->size()) - initBufSize);
             }
 
-            readAsyncAtLeastImpl(
-                buffer, minimalSize, std::move(handler), initBufSize);
+            readAsyncAtLeastImpl(buffer, minimalSize, std::move(handler), initBufSize);
         });
 }
 
 //-------------------------------------------------------------------------------------------------
 
-void AbstractStreamServerSocket::cancelIOAsync(
-    nx::MoveOnlyFunc<void()> handler)
+void AbstractStreamServerSocket::cancelIOAsync(nx::MoveOnlyFunc<void()> handler)
 {
     post(
         [this, handler = std::move(handler)]()
@@ -214,15 +218,10 @@ bool AbstractDatagramSocket::sendTo(
     const std::string& foreignAddress,
     unsigned short foreignPort)
 {
-    return sendTo(
-        buffer,
-        bufferLen,
-        SocketAddress(foreignAddress, foreignPort));
+    return sendTo(buffer, bufferLen, SocketAddress(foreignAddress, foreignPort));
 }
 
-bool AbstractDatagramSocket::sendTo(
-    const nx::Buffer& buf,
-    const SocketAddress& foreignAddress)
+bool AbstractDatagramSocket::sendTo(const nx::Buffer& buf, const SocketAddress& foreignAddress)
 {
     return sendTo(buf.data(), buf.size(), foreignAddress);
 }

@@ -1,11 +1,10 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
+#include <QUuid>
 #include <array>
 #include <set>
 
-#include <QUuid>
+#include <gtest/gtest.h>
 
 #include <nx/reflect/instrument.h>
 #include <nx/reflect/tags.h>
@@ -33,7 +32,12 @@ struct FlatData
     static FlatData data()
     {
         return FlatData{
-            10, false, -50.5, "str with {} ~ special symbols", 50, std::chrono::seconds(10)};
+            10,
+            false,
+            -50.5,
+            "str with {} ~ special symbols",
+            50,
+            std::chrono::seconds(10)};
     }
 };
 
@@ -61,7 +65,9 @@ struct ArrayData
     static ArrayData data()
     {
         return ArrayData{
-            {1, 0, 3, -4, 5}, {"s1", "s2", "s3"}, {{"a`", "_x"}, {"b", "y"}, {"c", "z"}}};
+            {1, 0, 3, -4, 5},
+            {"s1", "s2", "s3"},
+            {{"a`", "_x"}, {"b", "y"}, {"c", "z"}}};
     }
 };
 
@@ -131,7 +137,10 @@ struct ComplexObjData
     static ComplexObjData data()
     {
         return ComplexObjData{
-            42, FlatData{1, true, 0.5, "aa", 3, std::chrono::seconds(10)}, ArrayData{{1, 2}, {"s1", "s2"}, {{"a", "x"}}}, EnumClass::val1};
+            42,
+            FlatData{1, true, 0.5, "aa", 3, std::chrono::seconds(10)},
+            ArrayData{{1, 2}, {"s1", "s2"}, {{"a", "x"}}},
+            EnumClass::val1};
     }
 };
 
@@ -148,16 +157,16 @@ struct UnorderedMap
 {
     std::unordered_map<std::string, std::string> x;
 
-    void compare(const UnorderedMap& r)
-    {
-        ASSERT_EQ(x, r.x);
-    }
+    void compare(const UnorderedMap& r) { ASSERT_EQ(x, r.x); }
 
-    static UnorderedMap data() { return UnorderedMap{.x={{"one", "two"}}}; }
+    static UnorderedMap data() { return UnorderedMap{.x = {{"one", "two"}}}; }
     static constexpr std::string_view encoded = "x={one=two}";
 };
 
-struct UnorderedMapDummy: UnorderedMap { using ParentT = UnorderedMap; };
+struct UnorderedMapDummy: UnorderedMap
+{
+    using ParentT = UnorderedMap;
+};
 
 NX_REFLECTION_INSTRUMENT(UnorderedMap, (x));
 
@@ -207,7 +216,8 @@ TYPED_TEST_P(Urlencoded, decoding_empty_string_produces_default_object)
     decoded.compare(DataType());
 }
 
-REGISTER_TYPED_TEST_SUITE_P(Urlencoded,
+REGISTER_TYPED_TEST_SUITE_P(
+    Urlencoded,
     encode,
     decode,
     encodeDecode,
@@ -218,8 +228,7 @@ using TestingTypes = ::testing::Types<
     ArrayDataWithResultStr,
     ComplexObjDataWithResultStr,
     ComplexArrayDataWithResultStr,
-    UnorderedMapDummy
->;
+    UnorderedMapDummy>;
 INSTANTIATE_TYPED_TEST_SUITE_P(UrlencodedEncode, Urlencoded, TestingTypes);
 
 struct TestStringDeserialization
@@ -245,10 +254,7 @@ struct Stringizable
 
     std::string toString() const { return text; }
 
-    static Stringizable fromString(std::string_view str)
-    {
-        return Stringizable{std::string(str)};
-    }
+    static Stringizable fromString(std::string_view str) { return Stringizable{std::string(str)}; }
 };
 
 NX_REFLECTION_TAG_TYPE(Stringizable, useStringConversionForSerialization)
@@ -262,13 +268,13 @@ NX_REFLECTION_INSTRUMENT(Foo1, (str))
 
 TEST(UrlencodedStr, toString_is_used_to_serialize_a_value)
 {
-    const auto actual = urlencoded::serialize(Foo1{.str={.text="Hello_world"}});
+    const auto actual = urlencoded::serialize(Foo1{.str = {.text = "Hello_world"}});
     ASSERT_EQ("str=Hello_world", actual);
 }
 
 TEST(UrlencodedStr, fromString_is_used_to_deserialize_a_value)
 {
-    const auto expected = Foo1{.str={.text="Hello_world"}};
+    const auto expected = Foo1{.str = {.text = "Hello_world"}};
     const auto [actual, result] = urlencoded::deserialize<Foo1>("str=Hello_world");
     ASSERT_TRUE(result);
     ASSERT_EQ(expected.str.text, actual.str.text);
@@ -321,7 +327,7 @@ TEST(Urlencoded, std_set_is_represented_as_array)
         urlencoded::deserialize<FooSet>("bar=1one,2two,3three"));
 
     // TODO: add support for the following format.
-    //ASSERT_EQ(
+    // ASSERT_EQ(
     //    std::make_tuple(expected, true),
     //    urlencoded::deserialize<FooSet>("bar[]=1one,bar[]=2two,bar[]=3three"));
 }

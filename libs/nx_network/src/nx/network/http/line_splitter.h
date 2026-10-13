@@ -38,7 +38,8 @@ public:
      * parseByLines call or until the object destruction.
      * @param bytesRead Always contains number of bytes read from the data.
      * The reading stops when a line is found. The line ending is consumed also.
-     * NOTE: If data contains multiple lines, this method returns the first line and does not cache anything!
+     * NOTE: If data contains multiple lines, this method returns the first line and does not cache
+     * anything!
      */
     bool parseByLines(
         const ConstBufferRefType& data,
@@ -47,15 +48,12 @@ public:
 
     /**
      * Since this class allows CR, LF or CRLF line ending, it is possible that line,
-     * actually terminated with CRLF will be found after CR only (if CR and LF come in different buffers).
-     * This method will read that trailing LF.
-     * NOTE: This method is needed if we do not want to call parseByLines anymore.
-     *   E.g. we have read all HTTP headers and starting to read message body.
-     *   Call this method to read trailing LF.
+     * actually terminated with CRLF will be found after CR only (if CR and LF come in different
+     * buffers). This method will read that trailing LF. NOTE: This method is needed if we do not
+     * want to call parseByLines anymore. E.g. we have read all HTTP headers and starting to read
+     * message body. Call this method to read trailing LF.
      */
-    void finishCurrentLineEnding(
-        const ConstBufferRefType& data,
-        std::size_t* bytesRead);
+    void finishCurrentLineEnding(const ConstBufferRefType& data, std::size_t* bytesRead);
 
     bool currentLineEndingClosed() const;
 

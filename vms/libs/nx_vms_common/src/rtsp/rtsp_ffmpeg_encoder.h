@@ -14,7 +14,8 @@ class NX_VMS_COMMON_API QnRtspFfmpegEncoder: public AbstractRtspEncoder
 public:
     QnRtspFfmpegEncoder(const DecoderConfig& config, nx::metric::Storage* metrics);
 
-    virtual QString getSdpMedia(bool isVideo, int trackId, int port = 0, bool ssl = false) override;
+    virtual QString getSdpMedia(bool isVideo, int trackId, int port = 0, bool ssl = false)
+        override;
 
     void setCodecContext(const CodecParametersConstPtr& codecParams);
 
@@ -24,7 +25,10 @@ public:
     virtual bool isEof() const override { return false; }
     virtual void setMtu(int mtu) override;
 
-    void setDstResolution(const QSize& srcVideoSize, const QSize& dstVideoSize, AVCodecID dstCodec);
+    void setDstResolution(
+        const QSize& srcVideoSize,
+        const QSize& dstVideoSize,
+        AVCodecID dstCodec);
 
     void setLiveMarker(int value);
     void setAdditionFlags(quint16 value);

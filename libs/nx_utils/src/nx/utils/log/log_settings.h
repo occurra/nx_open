@@ -33,8 +33,8 @@ static constexpr char kLogArchivingEnabledSymbolicName[] = "logArchivingEnabled"
  *
  * "-" means STDOUT
  *
- * For most applications logger settings are specified with `--log/logger=LOGGER_SETTINGS` argument.
- * There can be multiple `--log/logger=` arguments.
+ * For most applications logger settings are specified with `--log/logger=LOGGER_SETTINGS`
+ * argument. There can be multiple `--log/logger=` arguments.
  *
  * LOGGER_SETTINGS examples:
  *
@@ -87,9 +87,7 @@ public:
     void updateDirectoryIfEmpty(const QString& logDirectory);
 
 private:
-    void loadCompatibilityLogger(
-        const QnSettings& settings,
-        const QString& prefix);
+    void loadCompatibilityLogger(const QnSettings& settings, const QString& prefix);
 };
 
 } // namespace nx::log

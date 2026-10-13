@@ -16,7 +16,9 @@ void fillDummyAvCodecParameters(AVCodecParameters* avCodecParams)
     avCodecParams->codec_id = AV_CODEC_ID_FFMETADATA;
     avCodecParams->codec_type = AVMEDIA_TYPE_VIDEO;
     avCodecParams->extradata_size = (int) strlen(kExtradataDummy);
-    QnFfmpegHelper::copyAvCodecContextField((void**) &avCodecParams->extradata, kExtradataDummy,
+    QnFfmpegHelper::copyAvCodecContextField(
+        (void**) &avCodecParams->extradata,
+        kExtradataDummy,
         strlen(kExtradataDummy));
 
     avCodecParams->ch_layout.nb_channels = 113;
@@ -35,7 +37,10 @@ void fillDummyAvCodecParameters(AVCodecParameters* avCodecParams)
  * Pointers are allowed to be null only if size is 0.
  */
 void expectMemsAreDeepCopies(
-    const void* expected, const void* actual, int size, const char *fieldName)
+    const void* expected,
+    const void* actual,
+    int size,
+    const char* fieldName)
 {
     const QByteArray captionString = ("Mem field: " + QString::fromLatin1(fieldName)).toLatin1();
     const char* const caption = captionString.constData();
@@ -57,15 +62,17 @@ void expectMemsAreDeepCopies(
     }
 }
 
-void testMediaContextFieldsEqual(
-    const CodecParameters& expected, const CodecParameters& actual)
+void testMediaContextFieldsEqual(const CodecParameters& expected, const CodecParameters& actual)
 {
     EXPECT_EQ(expected.getCodecId(), actual.getCodecId());
     EXPECT_EQ(expected.getCodecType(), actual.getCodecType());
 
     ASSERT_EQ(expected.getExtradataSize(), actual.getExtradataSize());
-    expectMemsAreDeepCopies(expected.getExtradata(), actual.getExtradata(),
-        expected.getExtradataSize(), "extradata");
+    expectMemsAreDeepCopies(
+        expected.getExtradata(),
+        actual.getExtradata(),
+        expected.getExtradataSize(),
+        "extradata");
 
     EXPECT_EQ(expected.getChannels(), actual.getChannels());
     EXPECT_EQ(expected.getSampleRate(), actual.getSampleRate());
@@ -89,6 +96,5 @@ TEST(QnMediaDataPacket, serialization)
     CodecParameters avCodecMediaContextParsed;
     ASSERT_EQ(avCodecMediaContextParsed.deserialize(data.data(), data.size()), true);
 
-    testMediaContextFieldsEqual(
-        avCodecMediaContext, avCodecMediaContextParsed);
+    testMediaContextFieldsEqual(avCodecMediaContext, avCodecMediaContextParsed);
 }

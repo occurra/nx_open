@@ -73,7 +73,10 @@ bool Counter::waitFor(std::chrono::milliseconds timeout)
     return m_counterReachedZeroCondition.waitFor(
         lk.mutex(),
         timeout,
-        [this]() { return m_count <= 0; });
+        [this]()
+        {
+            return m_count <= 0;
+        });
 }
 
 int Counter::increment()

@@ -12,8 +12,7 @@ QnSettings::QnSettings(
     const QString& organizationName,
     const QString& applicationName,
     const QString& moduleName,
-    QSettings::Scope scope)
-:
+    QSettings::Scope scope):
     m_organizationName(organizationName),
     m_applicationName(applicationName),
     m_moduleName(moduleName),
@@ -59,9 +58,7 @@ bool QnSettings::containsGroup(const QString& groupSrc) const
     return it != allSettings.end() && it->first.startsWith(group);
 }
 
-QVariant QnSettings::value(
-    const QString& key,
-    const QVariant& defaultValue) const
+QVariant QnSettings::value(const QString& key, const QVariant& defaultValue) const
 {
     if (const auto value = m_args.get(key))
         return QVariant(*value);
@@ -86,16 +83,12 @@ std::multimap<QString, QString> QnSettings::allArgs() const
     return args;
 }
 
-QVariant QnSettings::value(
-    std::string_view key,
-    const QVariant& defaultValue) const
+QVariant QnSettings::value(std::string_view key, const QVariant& defaultValue) const
 {
     return value(QString::fromUtf8(key.data(), key.size()), defaultValue);
 }
 
-QVariant QnSettings::value(
-    const char* key,
-    const QVariant& defaultValue) const
+QVariant QnSettings::value(const char* key, const QVariant& defaultValue) const
 {
     return value(QString::fromUtf8(key), defaultValue);
 }
@@ -112,13 +105,14 @@ void QnSettings::initializeSystemSettings()
     }
     else
     {
-        #ifdef _WIN32
-            m_ownSettings = std::make_unique<QSettings>(
-                m_scope, m_organizationName, m_applicationName);
-        #else
-            m_ownSettings = std::make_unique<QSettings>(QString("/opt/%1/%2/etc/%2.conf")
-                .arg(m_organizationName).arg(m_moduleName), QSettings::IniFormat);
-        #endif
+#ifdef _WIN32
+        m_ownSettings =
+            std::make_unique<QSettings>(m_scope, m_organizationName, m_applicationName);
+#else
+        m_ownSettings = std::make_unique<QSettings>(
+            QString("/opt/%1/%2/etc/%2.conf").arg(m_organizationName).arg(m_moduleName),
+            QSettings::IniFormat);
+#endif
     }
 
     m_systemSettings = m_ownSettings.get();
@@ -126,10 +120,7 @@ void QnSettings::initializeSystemSettings()
 
 //-------------------------------------------------------------------------------------------------
 
-QnSettingsGroupReader::QnSettingsGroupReader(
-    const SettingsReader& settings,
-    const QString& name)
-    :
+QnSettingsGroupReader::QnSettingsGroupReader(const SettingsReader& settings, const QString& name):
     m_settings(settings),
     m_groupName(name)
 {
@@ -147,9 +138,7 @@ bool QnSettingsGroupReader::containsGroup(const QString& groupName) const
     return m_settings.containsGroup(key);
 }
 
-QVariant QnSettingsGroupReader::value(
-    const QString& keyName,
-    const QVariant& defaultValue) const
+QVariant QnSettingsGroupReader::value(const QString& keyName, const QVariant& defaultValue) const
 {
     QString key = m_groupName.isEmpty() ? keyName : m_groupName + "/" + keyName;
     return m_settings.value(key, defaultValue);

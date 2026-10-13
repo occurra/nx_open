@@ -20,8 +20,8 @@ class NX_SQL_API SqlQueryExecutionHelper
 public:
     static bool execSQLQuery(const QString& query, QSqlDatabase& database, const char* details);
 
-    static bool execSQLQuery(QSqlQuery *query, const char* details);
-    static bool prepareSQLQuery(QSqlQuery *query, const QString &queryStr, const char* details);
+    static bool execSQLQuery(QSqlQuery* query, const char* details);
+    static bool prepareSQLQuery(QSqlQuery* query, const QString& queryStr, const char* details);
     /**
      * @param scriptData SQL commands separated with ;
      */
@@ -36,12 +36,11 @@ public:
      * Execute multiple SQL queries separated with semicolon.
      * Throws on failure.
      */
-    static void execSQLScript(
-        nx::sql::QueryContext* queryContext,
-        std::string_view script);
+    static void execSQLScript(nx::sql::QueryContext* queryContext, std::string_view script);
 
     /** Bind uuid to a query parameter. By default, null id is bound as NULL (param: optional). */
-    static void bindId(QSqlQuery* query,
+    static void bindId(
+        QSqlQuery* query,
         const QString& parameter,
         const nx::Uuid& id,
         bool optional = true);

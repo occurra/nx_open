@@ -28,5 +28,4 @@ TEST(ffmpeg, build_configuration)
     ASSERT_TRUE(avcodec_find_encoder(AV_CODEC_ID_MP3));
 }
 
-
 } // namespace nx::media::test

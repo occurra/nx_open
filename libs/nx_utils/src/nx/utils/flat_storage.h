@@ -13,7 +13,8 @@
  * Uses integer keys that allows it to use arrays for faster lookup.
  */
 template<class Key, class T>
-class QnFlatStorage: private QnFlatMap<Key, T> {
+class QnFlatStorage: private QnFlatMap<Key, T>
+{
     typedef QnFlatMap<Key, T> base_type;
 
     static_assert(std::is_pointer<T>::value, "Stored type must be a pointer.");
@@ -21,8 +22,9 @@ class QnFlatStorage: private QnFlatMap<Key, T> {
 public:
     QnFlatStorage() {}
 
-    ~QnFlatStorage() {
-        for(T value: m_owned)
+    ~QnFlatStorage()
+    {
+        for (T value: m_owned)
             delete value;
     }
 
@@ -30,13 +32,12 @@ public:
     using base_type::clear;
     using base_type::value;
 
-    const QSet<T> &values() const {
-        return m_owned;
-    }
+    const QSet<T>& values() const { return m_owned; }
 
-    void insert(const Key &key, T value, bool claimOwnership = true) {
+    void insert(const Key& key, T value, bool claimOwnership = true)
+    {
         base_type::insert(key, value);
-        if(value != NULL && claimOwnership)
+        if (value != NULL && claimOwnership)
             m_owned.insert(value);
     }
 

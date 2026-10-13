@@ -60,10 +60,7 @@ struct PlaybackRange
         return endTimeUsec >= startTimeUsec;
     }
 
-    QString toString() const
-    {
-        return nx::format("(%1us, %2us)", startTimeUsec, endTimeUsec);
-    }
+    QString toString() const { return nx::format("(%1us, %2us)", startTimeUsec, endTimeUsec); }
 };
 
 class NX_VMS_COMMON_API RtspStreamProvider:
@@ -123,7 +120,8 @@ public:
 
     QnRtspClient& rtspClient();
     void addRequestHeader(
-        std::string_view requestName, const nx::network::http::HttpHeader& header);
+        std::string_view requestName,
+        const nx::network::http::HttpHeader& header);
     void setRtpFrameTimeoutMs(int value);
     void setConnectionTimeout(std::chrono::milliseconds timeout);
     std::chrono::milliseconds connectionTimeout() const;
@@ -132,7 +130,8 @@ public:
      * This callback is called every time socket read timeout happens.
      * Connection may be closed on socket read error, media frame timeout
      * or by RTSP session timeout (usually 1 minute).
-     * If callback returns valid packet it is returned from getNextDataTcp, otherwise timeout is skipped.
+     * If callback returns valid packet it is returned from getNextDataTcp, otherwise timeout is
+     * skipped.
      */
     void setOnSocketReadTimeoutCallback(
         std::chrono::milliseconds timeout,
@@ -141,8 +140,7 @@ public:
     virtual nx::vms::api::RtpTransportType getRtpTransport() const;
 
     // Adds custom track parser factory to the chain
-    void addCustomTrackParserFactory(
-        std::unique_ptr<nx::rtp::IRtpParserFactory> parserFactory);
+    void addCustomTrackParserFactory(std::unique_ptr<nx::rtp::IRtpParserFactory> parserFactory);
 
     // Extra payload types for which parsers will be created for each track, if possible
     void setExtraPayloadTypes(std::vector<int> payloadTypes);
@@ -198,7 +196,8 @@ private:
     void clearKeyData(int channelNum);
     QnAbstractMediaDataPtr getNextDataUDP();
     QnAbstractMediaDataPtr getNextDataTCP();
-    void processTcpRtcp(quint8* buffer,
+    void processTcpRtcp(
+        quint8* buffer,
         int bufferSize,
         int bufferCapacity,
         std::optional<std::uint32_t> clientSsrc);
@@ -209,7 +208,12 @@ private:
 
     bool isFormatSupported(const nx::rtp::Sdp::Media media) const;
     bool processData(
-        TrackInfo& track, uint8_t* buffer, int offset, int size, int channel, int& errorCount);
+        TrackInfo& track,
+        uint8_t* buffer,
+        int offset,
+        int size,
+        int channel,
+        int& errorCount);
 
     // Returns true if any of custom track factories support this codec
     bool isCodecSupportedByCustomParserFactories(const QString& codecName) const;
@@ -275,6 +279,7 @@ protected:
 class NX_VMS_COMMON_API RtspResourceStreamProvider: public RtspStreamProvider
 {
     using base_type = RtspStreamProvider;
+
 public:
     RtspResourceStreamProvider(
         const QnVirtualCameraResourcePtr& resource,

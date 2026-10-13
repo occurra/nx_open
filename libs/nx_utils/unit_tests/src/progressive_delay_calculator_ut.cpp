@@ -52,4 +52,4 @@ TEST(ProgressiveDelayCalculator, reset)
     ASSERT_EQ(calculator.calculateNewDelay(), kInitialDelay * 2);
 }
 
-} // nx::utils::test
+} // namespace nx::utils::test

@@ -12,8 +12,7 @@ namespace nx {
 namespace utils {
 namespace test {
 
-class SyncQueue:
-    public ::testing::Test
+class SyncQueue: public ::testing::Test
 {
 protected:
     std::thread pushAsync(
@@ -65,20 +64,19 @@ TEST_F(SyncQueue, MultiPushPop)
     pusher3.join();
 }
 
-
 TEST_F(SyncQueue, TimedPop)
 {
     const std::chrono::milliseconds kSmallDelay(100);
     const std::chrono::hours kLongDelay(1);
 
-    const auto syncPushAndPop =
-        [&](int value)
-        {
-            auto pusher = pushAsync({value}, kSmallDelay);
-            const auto popedValue = queue.pop(std::chrono::duration_cast<std::chrono::milliseconds>(kLongDelay));
-            pusher.join();
-            return popedValue && popedValue == value;
-        };
+    const auto syncPushAndPop = [&](int value)
+    {
+        auto pusher = pushAsync({value}, kSmallDelay);
+        const auto popedValue =
+            queue.pop(std::chrono::duration_cast<std::chrono::milliseconds>(kLongDelay));
+        pusher.join();
+        return popedValue && popedValue == value;
+    };
 
     ASSERT_FALSE(static_cast<bool>(queue.pop(kSmallDelay)));
     syncPushAndPop(1);
@@ -92,9 +90,27 @@ TEST_F(SyncQueue, conditional_pop)
     for (int i = 1; i < 8; ++i)
         queue.push(i);
 
-    ASSERT_EQ(4, queue.popIf([](int val) { return val > 3; }));
-    ASSERT_EQ(2, queue.popIf([](int val) { return val > 1; }));
-    ASSERT_EQ(1, queue.popIf([](int val) { return val >= 1; }));
+    ASSERT_EQ(
+        4,
+        queue.popIf(
+            [](int val)
+            {
+                return val > 3;
+            }));
+    ASSERT_EQ(
+        2,
+        queue.popIf(
+            [](int val)
+            {
+                return val > 1;
+            }));
+    ASSERT_EQ(
+        1,
+        queue.popIf(
+            [](int val)
+            {
+                return val >= 1;
+            }));
 }
 
 TEST_F(SyncQueue, conditional_pop_blocks_if_no_element_satisfies_condition)
@@ -112,41 +128,35 @@ TEST_F(SyncQueue, conditional_pop_blocks_if_no_element_satisfies_condition)
             queue.retestPopIfCondition();
         });
 
-    ASSERT_EQ(4, queue.popIf([&limit](int val) { return val >= limit.load(); }));
+    ASSERT_EQ(
+        4,
+        queue.popIf(
+            [&limit](int val)
+            {
+                return val >= limit.load();
+            }));
 
     t.join();
 }
 
 //-------------------------------------------------------------------------------------------------
 
-class SyncQueueTermination:
-    public ::testing::Test
+class SyncQueueTermination: public ::testing::Test
 {
 public:
-    SyncQueueTermination()
-    {
-    }
+    SyncQueueTermination() {}
 
-    ~SyncQueueTermination()
-    {
-        deinit();
-    }
+    ~SyncQueueTermination() { deinit(); }
 
 protected:
-    void givenReaderThreadBlockedOnPopFromQueue()
-    {
-        initializeReaders(1U);
-    }
+    void givenReaderThreadBlockedOnPopFromQueue() { initializeReaders(1U); }
 
     void givenMultipleReadersThreadBlockedOnPopFromQueue()
     {
         initializeReaders(nx::utils::random::number<std::size_t>(2, 10));
     }
 
-    void havingAskedRandomReaderToTerminate()
-    {
-        terminateReader(m_readers.begin()->first);
-    }
+    void havingAskedRandomReaderToTerminate() { terminateReader(m_readers.begin()->first); }
 
     void havingAskedReaderToTerminate()
     {
@@ -191,8 +201,7 @@ private:
     };
 
     using Readers = std::map<QueueReaderId, ReaderContext>;
-    using OnElementReadHandler =
-        nx::MoveOnlyFunc<void(QueueReaderId /*readerId*/, int /*value*/)>;
+    using OnElementReadHandler = nx::MoveOnlyFunc<void(QueueReaderId /*readerId*/, int /*value*/)>;
 
     Readers m_readers;
     nx::utils::SyncQueue<int> m_syncQueue;
@@ -204,8 +213,8 @@ private:
         {
             m_readers.emplace(
                 i,
-                ReaderContext{std::thread(
-                    std::bind(&SyncQueueTermination::readThreadMain, this, i))});
+                ReaderContext{
+                    std::thread(std::bind(&SyncQueueTermination::readThreadMain, this, i))});
         }
     }
 
@@ -245,10 +254,7 @@ private:
         m_onElementReadHandler = std::move(onElementReadHandler);
     }
 
-    void deinit()
-    {
-        ASSERT_TRUE(m_readers.empty());
-    }
+    void deinit() { ASSERT_TRUE(m_readers.empty()); }
 };
 
 TEST_F(SyncQueueTermination, SingleReaderTermination)

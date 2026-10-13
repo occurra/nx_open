@@ -17,11 +17,11 @@
 #include "async_file_processor.h"
 
 #ifdef _WIN32
-#pragma warning( disable : 4290 )
+    #pragma warning(disable : 4290)
 #endif
 
-#if defined (Q_OS_LINUX) || defined (Q_OS_MAC)
-    NX_UTILS_API int makeUnixOpenFlags(const QIODevice::OpenMode& oflag);
+#if defined(Q_OS_LINUX) || defined(Q_OS_MAC)
+NX_UTILS_API int makeUnixOpenFlags(const QIODevice::OpenMode& oflag);
 #endif
 
 /**
@@ -32,9 +32,7 @@ class NX_UTILS_API IQnFile
 public:
     virtual ~IQnFile() = default;
 
-    virtual bool open(
-        const QIODevice::OpenMode& mode,
-        unsigned int systemDependentFlags = 0) = 0;
+    virtual bool open(const QIODevice::OpenMode& mode, unsigned int systemDependentFlags = 0) = 0;
 
     virtual void close() = 0;
     virtual qint64 read(char* buffer, qint64 count) = 0;
@@ -67,15 +65,13 @@ namespace nx::utils::fs {
  * Asynchronous calls may be scheduled without waiting for the last one to complete.
  * They will be queued and processed in the order.
  */
-class NX_UTILS_API File:
-    public IQnFile
+class NX_UTILS_API File: public IQnFile
 {
 public:
     File(const std::string& filename);
 
-    virtual bool open(
-        const QIODevice::OpenMode& mode,
-        unsigned int systemDependentFlags = 0) override;
+    virtual bool open(const QIODevice::OpenMode& mode, unsigned int systemDependentFlags = 0)
+        override;
 
     virtual void close() override;
     virtual qint64 read(char* buffer, qint64 count) override;
@@ -136,7 +132,7 @@ private:
 
 NX_UTILS_API std::optional<FileStat> stat(const std::string& path);
 
-} // nx::utils::fs
+} // namespace nx::utils::fs
 
 //-------------------------------------------------------------------------------------------------
 
@@ -144,9 +140,7 @@ NX_UTILS_API std::optional<FileStat> stat(const std::string& path);
  * Regular file class.
  * Recommended over QFile due to performance considerations.
  */
-class NX_UTILS_API QnFile:
-    public IQnFile,
-    public std::enable_shared_from_this<QnFile>
+class NX_UTILS_API QnFile: public IQnFile, public std::enable_shared_from_this<QnFile>
 {
 public:
     QnFile();
@@ -156,7 +150,8 @@ public:
     void setFileName(const QString& fName) { m_fileName = fName; }
     QString fileName() const { return m_fileName; }
 
-    virtual bool open(const QIODevice::OpenMode& mode, unsigned int systemDependentFlags = 0) override;
+    virtual bool open(const QIODevice::OpenMode& mode, unsigned int systemDependentFlags = 0)
+        override;
     virtual void close() override;
     virtual qint64 read(char* buffer, qint64 count) override;
     virtual bool eof() const override;
@@ -170,25 +165,25 @@ public:
     virtual void sync();
     virtual bool isOpen() const override;
     virtual qint64 size() const override;
-    virtual bool seek( qint64 offset) override;
-    virtual bool truncate( qint64 newFileSize) override;
+    virtual bool seek(qint64 offset) override;
+    virtual bool truncate(qint64 newFileSize) override;
     virtual QString url() const override { return fileName(); }
 
     /**
      * @return true if file system entry with name fileName exists.
      */
-    static bool fileExists( const QString& fileName );
+    static bool fileExists(const QString& fileName);
 
     /** If path /etc/smb.conf, returns /etc/, if /etc/ returns /etc/. */
-    static QString filePath( const QString& path );
+    static QString filePath(const QString& path);
 
     /** If path /etc/smb.conf, returns smb.conf. */
-    static QString fileName( const QString& path );
+    static QString fileName(const QString& path);
 
     /** If path /etc/smb.conf, returns smb. */
-    static QString baseName( const QString& path );
+    static QString baseName(const QString& path);
 
-    static QString absolutePath( const QString& path );
+    static QString absolutePath(const QString& path);
 
 protected:
     QString m_fileName;

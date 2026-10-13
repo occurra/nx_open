@@ -84,8 +84,9 @@ void ClaimSet::setJti(const std::string& val)
 
 //-------------------------------------------------------------------------------------------------
 
-std::expected<jws::TokenEncodeResult<ClaimSet>, std::string /*error*/>
-    encodeAndSign(ClaimSet claimSet, const jwk::Key& key)
+std::expected<jws::TokenEncodeResult<ClaimSet>, std::string /*error*/> encodeAndSign(
+    ClaimSet claimSet,
+    const jwk::Key& key)
 {
     return jws::encodeAndSign<ClaimSet>(kJwtTokenType, std::move(claimSet), key);
 }

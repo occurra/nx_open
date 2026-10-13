@@ -15,27 +15,20 @@ namespace nx::network::ssl::test {
 /**
  * Only synchronous mode is implemented!
  */
-class SyncSslSocket:
-    public StreamSocketDelegate
+class SyncSslSocket: public StreamSocketDelegate
 {
     using base_type = StreamSocketDelegate;
 
 public:
-    SyncSslSocket(
-        std::unique_ptr<AbstractStreamSocket> delegate,
-        bool isServerSide);
+    SyncSslSocket(std::unique_ptr<AbstractStreamSocket> delegate, bool isServerSide);
     virtual ~SyncSslSocket();
 
     virtual int recv(void* buffer, std::size_t bufferLen, int flags = 0) override;
     virtual int send(const void* buffer, std::size_t bufferLen) override;
 
-    virtual void readSomeAsync(
-        nx::Buffer* const buffer,
-        IoCompletionHandler handler) override;
+    virtual void readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler) override;
 
-    virtual void sendAsync(
-        const nx::Buffer* buffer,
-        IoCompletionHandler handler) override;
+    virtual void sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler) override;
 
     bool performHandshake();
 
@@ -45,8 +38,8 @@ protected:
     quint8 m_extraBuffer[32];
     int m_extraBufferLen;
 
-    friend int sock_read(BIO *b, char *out, int outl);
-    friend int sock_write(BIO *b, const char *in, int inl);
+    friend int sock_read(BIO* b, char* out, int outl);
+    friend int sock_write(BIO* b, const char* in, int inl);
 
     int recvInternal(void* buffer, unsigned int bufferLen, int flags);
     int sendInternal(const void* buffer, unsigned int bufferLen);
@@ -61,15 +54,13 @@ private:
     bool doClientHandshake();
 };
 
-class ClientSyncSslSocket:
-    public SyncSslSocket
+class ClientSyncSslSocket: public SyncSslSocket
 {
 public:
     ClientSyncSslSocket(std::unique_ptr<AbstractStreamSocket> wrappedSocket);
 };
 
-class AcceptedSyncSslSocket:
-    public SyncSslSocket
+class AcceptedSyncSslSocket: public SyncSslSocket
 {
 public:
     AcceptedSyncSslSocket(std::unique_ptr<AbstractStreamSocket> wrappedSocket);

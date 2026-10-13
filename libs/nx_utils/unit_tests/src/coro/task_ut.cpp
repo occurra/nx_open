@@ -17,13 +17,9 @@ namespace nx::coro::test {
 class TaskTest: public ::testing::Test
 {
 protected:
-    TaskTest()
-    {
-    }
+    TaskTest() {}
 
-    ~TaskTest()
-    {
-    }
+    ~TaskTest() {}
 
     using Messages = std::vector<std::string>;
     using Func = std::function<void(std::string)>;
@@ -65,8 +61,7 @@ protected:
         // Return custom suspend_always.
         struct suspend_always
         {
-            suspend_always(const std::string& arg, TaskTest* test)
-                :
+            suspend_always(const std::string& arg, TaskTest* test):
                 m_test(test),
                 m_arg(arg)
             {
@@ -98,10 +93,7 @@ protected:
                 return m_result;
             }
 
-            ~suspend_always()
-            {
-                m_test->m_messages.emplace_back("wrap destroyed with " + m_arg);
-            }
+            ~suspend_always() { m_test->m_messages.emplace_back("wrap destroyed with " + m_arg); }
 
             TaskTest* m_test;
             bool m_canceled = false;
@@ -116,18 +108,14 @@ protected:
 
     struct Scope
     {
-        Scope(const std::string& name, TaskTest* test)
-            :
+        Scope(const std::string& name, TaskTest* test):
             m_name(name),
             m_test(test)
         {
             m_test->m_messages.push_back("scope begin " + m_name);
         }
 
-        ~Scope()
-        {
-            m_test->m_messages.push_back("scope end " + m_name);
-        }
+        ~Scope() { m_test->m_messages.push_back("scope end " + m_name); }
 
         std::string m_name;
         TaskTest* m_test;
@@ -138,17 +126,15 @@ TEST_F(TaskTest, simpleContinuation)
 {
     int result = 0;
 
-    const auto getOne =
-        []() -> Task<int>
-        {
-            co_return 1;
-        };
+    const auto getOne = []() -> Task<int>
+    {
+        co_return 1;
+    };
 
-    const auto test =
-        [&]() -> Task<>
-        {
-            result = co_await getOne();
-        };
+    const auto test = [&]() -> Task<>
+    {
+        result = co_await getOne();
+    };
 
     auto t = test();
     t.start();
@@ -160,13 +146,12 @@ TEST_F(TaskTest, simpleContinuation)
 TEST_F(TaskTest, taskIsOwningHandle)
 {
     {
-        const auto test =
-            [&]() -> Task<>
-            {
-                Scope s{"test", this};
+        const auto test = [&]() -> Task<>
+        {
+            Scope s{"test", this};
 
-                m_messages.push_back(co_await wrapAsyncCall("A"));
-            };
+            m_messages.push_back(co_await wrapAsyncCall("A"));
+        };
 
         auto task = test();
 
@@ -187,24 +172,22 @@ TEST_F(TaskTest, taskIsOwningHandle)
 
 TEST_F(TaskTest, multipleAwait)
 {
-    const auto foo =
-        [&](const std::string a) -> Task<std::string>
-        {
-            Scope s{"foo", this};
+    const auto foo = [&](const std::string a) -> Task<std::string>
+    {
+        Scope s{"foo", this};
 
-            std::string val = co_await wrapAsyncCall(a);
-            std::string val2 = co_await wrapAsyncCall("B");
+        std::string val = co_await wrapAsyncCall(a);
+        std::string val2 = co_await wrapAsyncCall("B");
 
-            co_return val + "+" + val2;
-        };
+        co_return val + "+" + val2;
+    };
 
-    const auto test =
-        [&]() -> Task<>
-        {
-            Scope s{"test", this};
+    const auto test = [&]() -> Task<>
+    {
+        Scope s{"test", this};
 
-            m_messages.push_back(co_await foo("A"));
-        };
+        m_messages.push_back(co_await foo("A"));
+    };
 
     auto t = test();
 
@@ -258,23 +241,21 @@ TEST_F(TaskTest, multipleAwait)
 
 TEST_F(TaskTest, unfinishedCoroutineDestroyed)
 {
-    const auto foo =
-        [&](const std::string a) -> Task<std::string>
-        {
-            Scope s{"foo", this};
+    const auto foo = [&](const std::string a) -> Task<std::string>
+    {
+        Scope s{"foo", this};
 
-            std::string val = co_await wrapAsyncCall(a);
-            std::string val2 = co_await wrapAsyncCall("B");
+        std::string val = co_await wrapAsyncCall(a);
+        std::string val2 = co_await wrapAsyncCall("B");
 
-            co_return val + "+" + val2;
-        };
+        co_return val + "+" + val2;
+    };
 
-    const auto test =
-        [&]() -> Task<>
-        {
-            Scope s{"test", this};
-            m_messages.push_back(co_await foo("A"));
-        };
+    const auto test = [&]() -> Task<>
+    {
+        Scope s{"test", this};
+        m_messages.push_back(co_await foo("A"));
+    };
 
     {
         auto t = test();
@@ -323,26 +304,24 @@ TEST_F(TaskTest, unfinishedCoroutineDestroyed)
 
 TEST_F(TaskTest, rethrowException)
 {
-    const auto foo =
-        [&](const std::string a) -> Task<std::string>
-        {
-            Scope s{"foo", this};
+    const auto foo = [&](const std::string a) -> Task<std::string>
+    {
+        Scope s{"foo", this};
 
-            std::string val = co_await wrapAsyncCall(a);
-            if (!val.empty())
-                throw std::invalid_argument("exception with " + val);
+        std::string val = co_await wrapAsyncCall(a);
+        if (!val.empty())
+            throw std::invalid_argument("exception with " + val);
 
-            std::string val2 = co_await wrapAsyncCall("B");
+        std::string val2 = co_await wrapAsyncCall("B");
 
-            co_return val + "+" + val2;
-        };
+        co_return val + "+" + val2;
+    };
 
-    const auto test =
-        [&]() -> Task<>
-        {
-            Scope s{"test", this};
-            m_messages.push_back(co_await foo("A"));
-        };
+    const auto test = [&]() -> Task<>
+    {
+        Scope s{"test", this};
+        m_messages.push_back(co_await foo("A"));
+    };
 
     {
         auto t = test();
@@ -375,30 +354,28 @@ TEST_F(TaskTest, rethrowException)
 
 TEST_F(TaskTest, catchExceptionFromCoAwait)
 {
-    const auto foo =
-        [&](const std::string a) -> Task<std::string>
+    const auto foo = [&](const std::string a) -> Task<std::string>
+    {
+        Scope s{"foo", this};
+
+        throw std::invalid_argument("exception");
+
+        co_return co_await wrapAsyncCall(a);
+    };
+
+    const auto test = [&]() -> Task<>
+    {
+        Scope s{"test", this};
+
+        try
         {
-            Scope s{"foo", this};
-
-            throw std::invalid_argument("exception");
-
-            co_return co_await wrapAsyncCall(a);
-        };
-
-    const auto test =
-        [&]() -> Task<>
+            m_messages.push_back(co_await foo("A"));
+        }
+        catch (std::invalid_argument& e)
         {
-            Scope s{"test", this};
-
-            try
-            {
-                m_messages.push_back(co_await foo("A"));
-            }
-            catch (std::invalid_argument& e)
-            {
-                m_messages.push_back(e.what());
-            }
-        };
+            m_messages.push_back(e.what());
+        }
+    };
 
     auto t = test();
 
@@ -420,18 +397,17 @@ TEST_F(TaskTest, catchExceptionFromCoAwait)
 TEST_F(TaskTest, fireAndForget)
 {
     {
-        const auto test =
-            [this](std::string msg) -> FireAndForget
-            {
-                // Copy captures into coroutine stack because 'test' captures are destroyed when
-                // 'test' goes out of scope.
-                auto self = this;
+        const auto test = [this](std::string msg) -> FireAndForget
+        {
+            // Copy captures into coroutine stack because 'test' captures are destroyed when
+            // 'test' goes out of scope.
+            auto self = this;
 
-                Scope s{"test", self};
+            Scope s{"test", self};
 
-                self->m_messages.push_back(co_await self->wrapAsyncCall("a"));
-                self->m_messages.push_back(msg);
-            };
+            self->m_messages.push_back(co_await self->wrapAsyncCall("a"));
+            self->m_messages.push_back(msg);
+        };
 
         test("b");
     } //< 'test' lambda captures are destroyed here.
@@ -446,38 +422,35 @@ TEST_F(TaskTest, fireAndForget)
         "result from a",
         "wrap destroyed with a",
         "b",
-        "scope end test"
-    };
+        "scope end test"};
     ASSERT_EQ(kFull, m_messages);
 }
 
 TEST_F(TaskTest, cancelException)
 {
-    const auto foo =
-        [this](const std::string str) -> Task<std::string>
-        {
-            Scope s{"foo", this};
+    const auto foo = [this](const std::string str) -> Task<std::string>
+    {
+        Scope s{"foo", this};
 
-            m_messages.push_back(co_await wrapAsyncCall(str));
+        m_messages.push_back(co_await wrapAsyncCall(str));
 
-            co_return "unreachable";
-        };
+        co_return "unreachable";
+    };
 
     {
-        const auto test =
-            [this, &foo]() -> FireAndForget
-            {
-                // Copy captures into coroutine stack because 'test' captures are destroyed when
-                // 'test' goes out of scope.
-                auto self = this;
-                auto& fooRef = foo;
+        const auto test = [this, &foo]() -> FireAndForget
+        {
+            // Copy captures into coroutine stack because 'test' captures are destroyed when
+            // 'test' goes out of scope.
+            auto self = this;
+            auto& fooRef = foo;
 
-                Scope s{"test", this};
+            Scope s{"test", this};
 
-                self->m_messages.push_back(co_await self->wrapAsyncCall("a"));
-                self->m_messages.push_back(co_await fooRef("cancel"));
-                self->m_messages.push_back("unreachable");
-            };
+            self->m_messages.push_back(co_await self->wrapAsyncCall("a"));
+            self->m_messages.push_back(co_await fooRef("cancel"));
+            self->m_messages.push_back("unreachable");
+        };
 
         test();
     } //< 'test' lambda captures are destroyed here.
@@ -507,33 +480,31 @@ TEST_F(TaskTest, QObjectGuard)
 {
     QObject* destructible = new QObject();
 
-    const auto foo =
-        [this](const std::string str) -> Task<std::string>
-        {
-            Scope s{"foo", this};
+    const auto foo = [this](const std::string str) -> Task<std::string>
+    {
+        Scope s{"foo", this};
 
-            m_messages.push_back(co_await wrapAsyncCall(str));
+        m_messages.push_back(co_await wrapAsyncCall(str));
 
-            co_return "foo result";
-        };
+        co_return "foo result";
+    };
 
-    const auto test =
-        [this, destructible, &foo](std::string msg) -> FireAndForget
-        {
-            co_await guard(destructible);
+    const auto test = [this, destructible, &foo](std::string msg) -> FireAndForget
+    {
+        co_await guard(destructible);
 
-            // Copy captures into coroutine stack because 'test' captures are destroyed when
-            // 'test' goes out of scope.
-            auto self = this;
+        // Copy captures into coroutine stack because 'test' captures are destroyed when
+        // 'test' goes out of scope.
+        auto self = this;
 
-            Scope s{"test", self};
+        Scope s{"test", self};
 
-            self->m_messages.push_back(co_await foo("a"));
-            self->m_messages.push_back(co_await self->wrapAsyncCall("b"));
-            self->m_messages.push_back(co_await self->wrapAsyncCall("c"));
+        self->m_messages.push_back(co_await foo("a"));
+        self->m_messages.push_back(co_await self->wrapAsyncCall("b"));
+        self->m_messages.push_back(co_await self->wrapAsyncCall("c"));
 
-            self->m_messages.push_back(msg);
-        };
+        self->m_messages.push_back(msg);
+    };
 
     ASSERT_TRUE(m_messages.empty());
 
@@ -543,8 +514,7 @@ TEST_F(TaskTest, QObjectGuard)
         "scope begin test",
         "scope begin foo",
         "wrap constructed with a",
-        "suspend a"
-    };
+        "suspend a"};
     ASSERT_EQ(kBeforeFirstSuspend, m_messages);
 
     triggerAsyncCall();
@@ -582,48 +552,47 @@ TEST_F(TaskTest, QObjectGuard)
         "suspend b",
         "callback b",
         "wrap destroyed with b",
-        "scope end test"
-    };
+        "scope end test"};
     ASSERT_EQ(kFull, m_messages);
 }
 
 TEST_F(TaskTest, WhenAll)
 {
     // Result is move-only
-    const auto uniqueptrTask =
-        [this]() -> Task<std::unique_ptr<std::string>>
-        {
-            auto self = this;
-            co_await self->wrapAsyncCall("a");
-            co_return std::make_unique<std::string>("unique_ptr result");
-        };
+    const auto uniqueptrTask = [this]() -> Task<std::unique_ptr<std::string>>
+    {
+        auto self = this;
+        co_await self->wrapAsyncCall("a");
+        co_return std::make_unique<std::string>("unique_ptr result");
+    };
 
     struct Value
     {
-        Value(std::string value): value(std::move(value)) {}
+        Value(std::string value):
+            value(std::move(value))
+        {
+        }
         std::string value;
     };
     static_assert(!std::is_default_constructible_v<Value>);
 
     // Result is non-default-constructible.
-    const auto valueTask =
-        [this]() -> Task<Value>
-        {
-            auto self = this;
-            co_await self->wrapAsyncCall("b");
-            co_return Value("value result");
-        };
+    const auto valueTask = [this]() -> Task<Value>
+    {
+        auto self = this;
+        co_await self->wrapAsyncCall("b");
+        co_return Value("value result");
+    };
 
-    const auto test =
-        [&]() -> FireAndForget
-        {
-            Scope s{"test", this};
+    const auto test = [&]() -> FireAndForget
+    {
+        Scope s{"test", this};
 
-            auto [uniqueptrValue, strValue] = co_await whenAll(uniqueptrTask(), valueTask());
+        auto [uniqueptrValue, strValue] = co_await whenAll(uniqueptrTask(), valueTask());
 
-            m_messages.push_back(*uniqueptrValue);
-            m_messages.push_back(strValue.value);
-        };
+        m_messages.push_back(*uniqueptrValue);
+        m_messages.push_back(strValue.value);
+    };
 
     test();
 
@@ -645,8 +614,7 @@ TEST_F(TaskTest, WhenAll)
         "wrap constructed with b",
         "suspend b",
         "callback a",
-        "wrap destroyed with a"
-    };
+        "wrap destroyed with a"};
     ASSERT_EQ(kGotResultA, m_messages);
 
     triggerAsyncCall();
@@ -663,8 +631,7 @@ TEST_F(TaskTest, WhenAll)
         "wrap destroyed with b",
         "unique_ptr result",
         "value result",
-        "scope end test"
-    };
+        "scope end test"};
     ASSERT_EQ(kGotBothResults, m_messages);
 }
 
@@ -682,16 +649,15 @@ TEST_F(TaskTest, RunAll)
             }(this, arg));
     }
 
-    const auto test =
-        [&]() -> FireAndForget
-        {
-            Scope s{"test", this};
+    const auto test = [&]() -> FireAndForget
+    {
+        Scope s{"test", this};
 
-            auto results = co_await runAll(std::move(tasks), /*limit*/ 2);
+        auto results = co_await runAll(std::move(tasks), /*limit*/ 2);
 
-            for (const auto& result: results)
-                m_messages.push_back(result);
-        };
+        for (const auto& result: results)
+            m_messages.push_back(result);
+    };
 
     test();
 
@@ -769,23 +735,32 @@ TEST_F(TaskTest, InheritCancelCondition)
     {
         Scope s{"nested", this};
 
-        co_await cancelIf([&]() { m_messages.push_back("cancel check nested"); return false; });
+        co_await cancelIf(
+            [&]()
+            {
+                m_messages.push_back("cancel check nested");
+                return false;
+            });
 
         m_messages.push_back(co_await wrapAsyncCall("a"));
         m_messages.push_back(co_await wrapAsyncCall("b"));
     };
 
-    const auto test =
-        [&]() -> FireAndForget
-        {
-            Scope s{"test", this};
+    const auto test = [&]() -> FireAndForget
+    {
+        Scope s{"test", this};
 
-            co_await cancelIf([&]() { m_messages.push_back("cancel check"); return false; });
+        co_await cancelIf(
+            [&]()
+            {
+                m_messages.push_back("cancel check");
+                return false;
+            });
 
-            co_await nested();
+        co_await nested();
 
-            m_messages.push_back(co_await wrapAsyncCall("c"));
-        };
+        m_messages.push_back(co_await wrapAsyncCall("c"));
+    };
 
     test();
 
@@ -822,8 +797,7 @@ TEST_F(TaskTest, InheritCancelCondition)
         "cancel check", //< Resume after await c, via isCancelRequested()
         "result from c",
         "wrap destroyed with c",
-        "scope end test"
-    };
+        "scope end test"};
     ASSERT_EQ(kFull, m_messages);
 }
 
@@ -833,12 +807,23 @@ TEST_F(TaskTest, InheritCancelConditionWhenAll)
     {
         Scope s{"nested", this};
 
-        co_await cancelIf([&]() { m_messages.push_back("cancel check nested"); return false; });
+        co_await cancelIf(
+            [&]()
+            {
+                m_messages.push_back("cancel check nested");
+                return false;
+            });
 
         // Wrap awaiters with Task<> so they can be used with whenAll(). Each Task<> adds it own
         // cancellation checks.
-        auto aTask = [this]() -> Task<std::string> { co_return co_await wrapAsyncCall("a"); };
-        auto bTask = [this]() -> Task<std::string> { co_return co_await wrapAsyncCall("b"); };
+        auto aTask = [this]() -> Task<std::string>
+        {
+            co_return co_await wrapAsyncCall("a");
+        };
+        auto bTask = [this]() -> Task<std::string>
+        {
+            co_return co_await wrapAsyncCall("b");
+        };
 
         auto [a, b] = co_await whenAll(aTask(), bTask());
 
@@ -846,15 +831,19 @@ TEST_F(TaskTest, InheritCancelConditionWhenAll)
         m_messages.push_back(b);
     };
 
-    const auto test =
-        [&]() -> FireAndForget
-        {
-            Scope s{"test", this};
+    const auto test = [&]() -> FireAndForget
+    {
+        Scope s{"test", this};
 
-            co_await cancelIf([&]() { m_messages.push_back("cancel check"); return false; });
+        co_await cancelIf(
+            [&]()
+            {
+                m_messages.push_back("cancel check");
+                return false;
+            });
 
-            co_await nested();
-        };
+        co_await nested();
+    };
 
     test();
 
@@ -864,39 +853,29 @@ TEST_F(TaskTest, InheritCancelConditionWhenAll)
 
     // Note that isCancelRequested() is used by wrapAsyncCall() before resuming because it returns
     // the custom awaiter instead of Task<>.
-    static const Messages kFull{
-        "scope begin test",
-        "cancel check", //< Resume on cancelIf.
-        "scope begin nested",
-        "cancel check nested", //< Resume on cancelIf in nested.
-        "cancel check", //< Resume aTask.
-        "cancel check nested",
-        "wrap constructed with a",
-        "suspend a",
-        "cancel check", //< Resume bTask.
-        "cancel check nested",
-        "wrap constructed with b",
-        "suspend b",
-        "callback a",
-        "cancel check", //< Resume after await a, via isCancelRequested().
-        "cancel check nested",
-        "wrap destroyed with a",
-        "cancel check", //< Resume aTask.
-        "cancel check nested",
-        "callback b",
-        "cancel check", //< Resume after await b, via isCancelRequested().
-        "cancel check nested",
-        "wrap destroyed with b",
-        "cancel check", //< Resume bTask.
-        "cancel check nested",
-        "cancel check", //< Resume after await whenAll.
-        "cancel check nested",
-        "result from a",
-        "result from b",
-        "scope end nested",
-        "cancel check", //< Resume after await nested.
-        "scope end test"
-    };
+    static const Messages kFull{"scope begin test",
+                                "cancel check", //< Resume on cancelIf.
+                                "scope begin nested",
+                                "cancel check nested", //< Resume on cancelIf in nested.
+                                "cancel check", //< Resume aTask.
+                                "cancel check nested", "wrap constructed with a",
+                                "suspend a",
+                                "cancel check", //< Resume bTask.
+                                "cancel check nested", "wrap constructed with b",
+                                "suspend b",           "callback a",
+                                "cancel check", //< Resume after await a, via isCancelRequested().
+                                "cancel check nested", "wrap destroyed with a",
+                                "cancel check", //< Resume aTask.
+                                "cancel check nested", "callback b",
+                                "cancel check", //< Resume after await b, via isCancelRequested().
+                                "cancel check nested", "wrap destroyed with b",
+                                "cancel check", //< Resume bTask.
+                                "cancel check nested",
+                                "cancel check", //< Resume after await whenAll.
+                                "cancel check nested", "result from a",
+                                "result from b",       "scope end nested",
+                                "cancel check", //< Resume after await nested.
+                                "scope end test"};
     ASSERT_EQ(kFull, m_messages);
 }
 
@@ -905,15 +884,13 @@ TEST_F(TaskTest, ResumeInSuspension)
     // Resumes directly from await_suspend.
     struct Awaiter
     {
-        Awaiter(Messages* messages): m_messages(messages)
+        Awaiter(Messages* messages):
+            m_messages(messages)
         {
             m_messages->emplace_back("awaiter constructed");
         }
 
-        ~Awaiter()
-        {
-            m_messages->emplace_back("awaiter destroyed");
-        }
+        ~Awaiter() { m_messages->emplace_back("awaiter destroyed"); }
 
         bool await_ready() const { return false; }
 
@@ -933,13 +910,12 @@ TEST_F(TaskTest, ResumeInSuspension)
     };
 
     {
-        const auto test =
-            [&]() -> FireAndForget
-            {
-                Scope s{"test", this};
+        const auto test = [&]() -> FireAndForget
+        {
+            Scope s{"test", this};
 
-                co_await Awaiter(&m_messages);
-            };
+            co_await Awaiter(&m_messages);
+        };
 
         test();
     }
@@ -951,18 +927,16 @@ TEST_F(TaskTest, ResumeInSuspension)
         "awaiter destroyed",
         "scope end test",
         // Awaiter is destroyed yet it's await_suspend() continues execution.
-        "awaiter after resume finished"
-    };
+        "awaiter after resume finished"};
     ASSERT_EQ(kFull, m_messages);
 }
 
 TEST_F(TaskTest, AwaitExecutor)
 {
-    static auto threadName =
-        []()
-        {
-            return QThread::currentThread()->objectName().toStdString();
-        };
+    static auto threadName = []()
+    {
+        return QThread::currentThread()->objectName().toStdString();
+    };
 
     QThread thread1;
     thread1.setObjectName("thread1");
@@ -979,13 +953,12 @@ TEST_F(TaskTest, AwaitExecutor)
         object,
         [&]() -> FireAndForget
         {
-            nx::utils::ScopeGuard guard =
-                [&]()
-                {
-                    m_messages.push_back("destroy on " + threadName());
-                    thread1.quit();
-                    thread2.quit();
-                };
+            nx::utils::ScopeGuard guard = [&]()
+            {
+                m_messages.push_back("destroy on " + threadName());
+                thread1.quit();
+                thread2.quit();
+            };
 
             // Copy captures into coroutine stack because 'test' captures are destroyed on suspend.
             auto t2 = &thread2;
@@ -1029,4 +1002,4 @@ TEST_F(TaskTest, AwaitExecutor)
     ASSERT_EQ(kFull, m_messages);
 }
 
-} // namespace nx::utils::test
+} // namespace nx::coro::test

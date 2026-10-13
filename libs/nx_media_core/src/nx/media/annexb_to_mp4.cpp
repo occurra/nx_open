@@ -19,18 +19,19 @@ std::vector<uint8_t> buildExtraDataMp4(const QnCompressedVideoData* frame)
     if (frame->context && frame->context->getExtradata() && frame->context->getExtradataSize())
     {
         extradata = extraDataBuilder(
-            (const uint8_t*)frame->context->getExtradata(), frame->context->getExtradataSize());
+            (const uint8_t*) frame->context->getExtradata(),
+            frame->context->getExtradataSize());
     }
     if (extradata.empty())
     {
-        extradata = extraDataBuilder((const uint8_t*)frame->data(), frame->dataSize());
+        extradata = extraDataBuilder((const uint8_t*) frame->data(), frame->dataSize());
     }
     return extradata;
 }
 
 QnCompressedVideoDataPtr convertStartCodesToSizes(const QnCompressedVideoData* videoData)
 {
-    const uint8_t* data = (const uint8_t*)videoData->data();
+    const uint8_t* data = (const uint8_t*) videoData->data();
     int32_t size = videoData->dataSize();
     constexpr int kNaluSizeLenght = 4;
     auto nalUnits = nx::media::nal::findNalUnitsAnnexB(data, size);
@@ -48,7 +49,7 @@ QnCompressedVideoDataPtr convertStartCodesToSizes(const QnCompressedVideoData* v
     char* resultData = result->m_data.data();
     for (const auto& nalu: nalUnits)
     {
-        uint32_t* ptr = (uint32_t*)resultData;
+        uint32_t* ptr = (uint32_t*) resultData;
         *ptr = htonl(nalu.size);
         memcpy(resultData + kNaluSizeLenght, nalu.data, nalu.size);
         resultData += nalu.size + kNaluSizeLenght;

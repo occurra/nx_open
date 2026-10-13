@@ -3,8 +3,8 @@
 #include <gtest/gtest.h>
 
 #include <QtCore/QDir>
-#include <QtCore/QFileInfo>
 #include <QtCore/QFile>
+#include <QtCore/QFileInfo>
 
 #include <nx/utils/file_system.h>
 #include <nx/utils/test_support/test_options.h>
@@ -55,7 +55,9 @@ protected:
         return QString();
     }
 
-    QString createFile(const QString& fileName, Location location = Location::source,
+    QString createFile(
+        const QString& fileName,
+        Location location = Location::source,
         const QByteArray& data = QByteArray())
     {
         const auto dir = (location == Location::source) ? sourceDir : targetDir;
@@ -100,8 +102,8 @@ protected:
 
     int entriesCount(const QDir& dir, bool recursive = false)
     {
-        const auto flags = QDir::Files | QDir::Dirs
-            | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System;
+        const auto flags =
+            QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System;
 
         int count = 0;
 
@@ -165,7 +167,9 @@ TEST_F(CopyMoveTest, copyFileToNotExistingDirectory)
     ASSERT_EQ(result.code, file_system::Result::cannotCreateDirectory);
 
     result = file_system::copy(
-        srcName, targetDir.absoluteFilePath(dstName), file_system::CreateTargetPath);
+        srcName,
+        targetDir.absoluteFilePath(dstName),
+        file_system::CreateTargetPath);
     ASSERT_EQ(result.code, file_system::Result::ok);
 
     ASSERT_TRUE(QFileInfo(dstName).exists());
@@ -184,13 +188,15 @@ TEST_F(CopyMoveTest, copyFileOverwrite)
     auto result = file_system::copy(srcName, dstName);
     ASSERT_EQ(result.code, file_system::Result::alreadyExists);
 
-    result = file_system::copy(
-        srcName, targetDir.absoluteFilePath(dstName), file_system::SkipExisting);
+    result =
+        file_system::copy(srcName, targetDir.absoluteFilePath(dstName), file_system::SkipExisting);
     ASSERT_EQ(result.code, file_system::Result::ok);
     ASSERT_FALSE(filesAreEqual(srcName, dstName));
 
     result = file_system::copy(
-        srcName, targetDir.absoluteFilePath(dstName), file_system::OverwriteExisting);
+        srcName,
+        targetDir.absoluteFilePath(dstName),
+        file_system::OverwriteExisting);
     ASSERT_EQ(result.code, file_system::Result::ok);
     ASSERT_TRUE(filesAreEqual(srcName, dstName));
 }
@@ -225,9 +231,7 @@ TEST_F(CopyMoveTest, copyDirectory)
     auto result = file_system::copy(srcName, targetDir.absolutePath());
     ASSERT_EQ(result.code, file_system::Result::ok);
 
-    ASSERT_EQ(
-        entriesCount(srcName),
-        entriesCount(targetDir.absoluteFilePath(dirName)));
+    ASSERT_EQ(entriesCount(srcName), entriesCount(targetDir.absoluteFilePath(dirName)));
     ASSERT_EQ(
         entriesCount(srcName, true),
         entriesCount(targetDir.absoluteFilePath(dirName), true));
@@ -251,8 +255,8 @@ TEST_F(CopyMoveTest, copyDirectoryOverwrite)
     auto result = file_system::copy(srcName, targetDir.absolutePath());
     ASSERT_EQ(result.code, file_system::Result::alreadyExists);
 
-    auto skipResult = file_system::copy(srcName, targetDir.absolutePath(),
-        file_system::SkipExisting);
+    auto skipResult =
+        file_system::copy(srcName, targetDir.absolutePath(), file_system::SkipExisting);
     ASSERT_EQ(skipResult.code, file_system::Result::ok);
     ASSERT_EQ(
         entriesCount(srcName, true),
@@ -261,8 +265,8 @@ TEST_F(CopyMoveTest, copyDirectoryOverwrite)
         sourceDir.absoluteFilePath("dir/subdir/subsubdir/inner_file"),
         targetDir.absoluteFilePath("dir/subdir/subsubdir/inner_file")));
 
-    auto overwriteResult = file_system::copy(srcName, targetDir.absolutePath(),
-        file_system::OverwriteExisting);
+    auto overwriteResult =
+        file_system::copy(srcName, targetDir.absolutePath(), file_system::OverwriteExisting);
     ASSERT_EQ(overwriteResult.code, file_system::Result::ok);
     ASSERT_EQ(
         entriesCount(srcName, true),
@@ -284,9 +288,7 @@ TEST_F(CopyMoveTest, Move_SourceIsFile_TargetExists_TargetIsFile)
     auto tgtName = createFile("tgt/file1", Location::target);
 
     ASSERT_EQ(file_system::Result::alreadyExists, file_system::move(srcName, tgtName).code);
-    ASSERT_EQ(
-        file_system::Result::ok,
-        file_system::move(srcName, tgtName, /*replace*/ true).code);
+    ASSERT_EQ(file_system::Result::ok, file_system::move(srcName, tgtName, /*replace*/ true).code);
 
     QFile file(tgtName);
     ASSERT_TRUE(file.open(QIODevice::ReadOnly));
@@ -380,9 +382,7 @@ TEST_F(CopyMoveTest, Move_SourceIsFolder_TargetExists_TargetIsFile)
     auto srcFilePath = createFile("src/file1", Location::source, "src");
     auto tgtFilePath = createFile("tgt/file2", Location::target);
 
-    ASSERT_EQ(
-        file_system::Result::cannotMove,
-        file_system::move(srcDirPath, tgtFilePath).code);
+    ASSERT_EQ(file_system::Result::cannotMove, file_system::move(srcDirPath, tgtFilePath).code);
 }
 
 TEST_F(CopyMoveTest, Move_SourceIsFolder_TargetExists_TargetIsFolder)
@@ -392,9 +392,7 @@ TEST_F(CopyMoveTest, Move_SourceIsFolder_TargetExists_TargetIsFolder)
 
     auto srcFilePath = createFile("src/file1", Location::source, "src");
 
-    ASSERT_EQ(
-        file_system::Result::ok,
-        file_system::move(srcDirPath, tgtDirPath).code);
+    ASSERT_EQ(file_system::Result::ok, file_system::move(srcDirPath, tgtDirPath).code);
 
     QFile file(tgtDirPath + "/src/file1");
     ASSERT_TRUE(file.open(QIODevice::ReadOnly));
@@ -549,103 +547,103 @@ TEST_F(CopyMoveTest, MoveFolderContents_ReplaceExistingFalse)
 }
 
 #if defined(Q_OS_UNIX)
-    TEST_F(CopyMoveTest, readSymLinkTarget)
-    {
-        const QString linkName("link");
+TEST_F(CopyMoveTest, readSymLinkTarget)
+{
+    const QString linkName("link");
 
-        createFile("file");
+    createFile("file");
 
-        const auto srcName = createSymLink(linkName, "file");
-        ASSERT_FALSE(srcName.isEmpty());
+    const auto srcName = createSymLink(linkName, "file");
+    ASSERT_FALSE(srcName.isEmpty());
 
-        QString symLinkTarget = file_system::symLinkTarget(srcName);
-        ASSERT_EQ(symLinkTarget, "file");
-    }
+    QString symLinkTarget = file_system::symLinkTarget(srcName);
+    ASSERT_EQ(symLinkTarget, "file");
+}
 
-    TEST_F(CopyMoveTest, copyFileLink)
-    {
-        const QString linkName("link");
+TEST_F(CopyMoveTest, copyFileLink)
+{
+    const QString linkName("link");
 
-        createFile("file");
+    createFile("file");
 
-        const auto srcName = createSymLink(linkName, "file");
-        ASSERT_FALSE(srcName.isEmpty());
+    const auto srcName = createSymLink(linkName, "file");
+    ASSERT_FALSE(srcName.isEmpty());
 
-        auto result = file_system::copy(srcName, targetDir.absolutePath());
-        ASSERT_EQ(result.code, file_system::Result::ok);
-        const QFileInfo linkInfo(targetDir.filePath(linkName));
+    auto result = file_system::copy(srcName, targetDir.absolutePath());
+    ASSERT_EQ(result.code, file_system::Result::ok);
+    const QFileInfo linkInfo(targetDir.filePath(linkName));
 
-        ASSERT_FALSE(linkInfo.exists());
+    ASSERT_FALSE(linkInfo.exists());
 
-        result = file_system::copy(sourceDir.absoluteFilePath("file"), targetDir.absolutePath());
-        ASSERT_EQ(result.code, file_system::Result::ok);
+    result = file_system::copy(sourceDir.absoluteFilePath("file"), targetDir.absolutePath());
+    ASSERT_EQ(result.code, file_system::Result::ok);
 
-        ASSERT_TRUE(linkInfo.isSymLink());
-    }
+    ASSERT_TRUE(linkInfo.isSymLink());
+}
 
-    TEST_F(CopyMoveTest, copyDirectoryLink)
-    {
-        const auto srcName = createPath("dir");
-        createFile("dir/file");
-        createSymLink("link", "dir");
+TEST_F(CopyMoveTest, copyDirectoryLink)
+{
+    const auto srcName = createPath("dir");
+    createFile("dir/file");
+    createSymLink("link", "dir");
 
-        auto result = file_system::copy(sourceDir.absoluteFilePath("link"), targetDir.absolutePath());
-        ASSERT_EQ(result.code, file_system::Result::ok);
+    auto result = file_system::copy(sourceDir.absoluteFilePath("link"), targetDir.absolutePath());
+    ASSERT_EQ(result.code, file_system::Result::ok);
 
-        const QFileInfo linkInfo(targetDir.filePath("link"));
-        ASSERT_FALSE(linkInfo.exists());
+    const QFileInfo linkInfo(targetDir.filePath("link"));
+    ASSERT_FALSE(linkInfo.exists());
 
-        result = file_system::copy(sourceDir.absoluteFilePath("dir"), targetDir.absolutePath());
-        ASSERT_EQ(result.code, file_system::Result::ok);
+    result = file_system::copy(sourceDir.absoluteFilePath("dir"), targetDir.absolutePath());
+    ASSERT_EQ(result.code, file_system::Result::ok);
 
-        ASSERT_TRUE(linkInfo.isSymLink());
-        ASSERT_EQ(
-            entriesCount(srcName, true),
-            entriesCount(targetDir.absoluteFilePath("dir"), true));
-    }
+    ASSERT_TRUE(linkInfo.isSymLink());
+    ASSERT_EQ(entriesCount(srcName, true), entriesCount(targetDir.absoluteFilePath("dir"), true));
+}
 
-    TEST_F(CopyMoveTest, followSymLinks)
-    {
-        createPath("dir");
-        createFile("dir/file");
-        createSymLink("link", "dir");
-        createSymLink("dir/link", "file");
+TEST_F(CopyMoveTest, followSymLinks)
+{
+    createPath("dir");
+    createFile("dir/file");
+    createSymLink("link", "dir");
+    createSymLink("dir/link", "file");
 
-        auto result = file_system::copy(sourceDir.absoluteFilePath("link"), targetDir.absolutePath(),
-            file_system::FollowSymLinks);
-        ASSERT_EQ(result.code, file_system::Result::ok);
+    auto result = file_system::copy(
+        sourceDir.absoluteFilePath("link"),
+        targetDir.absolutePath(),
+        file_system::FollowSymLinks);
+    ASSERT_EQ(result.code, file_system::Result::ok);
 
-        const QFileInfo dirInfo(targetDir.filePath("link"));
-        ASSERT_TRUE(dirInfo.isDir());
-        ASSERT_FALSE(dirInfo.isSymLink());
+    const QFileInfo dirInfo(targetDir.filePath("link"));
+    ASSERT_TRUE(dirInfo.isDir());
+    ASSERT_FALSE(dirInfo.isSymLink());
 
-        const QFileInfo fileInfo(targetDir.filePath("link/link"));
-        ASSERT_TRUE(fileInfo.isFile());
-        ASSERT_FALSE(dirInfo.isSymLink());
-    }
+    const QFileInfo fileInfo(targetDir.filePath("link/link"));
+    ASSERT_TRUE(fileInfo.isFile());
+    ASSERT_FALSE(dirInfo.isSymLink());
+}
 
-    TEST_F(CopyMoveTest, symLinkOverlap)
-    {
-        const auto srcFile = createFile("file");
-        ASSERT_FALSE(srcFile.isEmpty());
-        const auto srcLink = createSymLink("link", "file");
-        ASSERT_FALSE(srcLink.isEmpty());
+TEST_F(CopyMoveTest, symLinkOverlap)
+{
+    const auto srcFile = createFile("file");
+    ASSERT_FALSE(srcFile.isEmpty());
+    const auto srcLink = createSymLink("link", "file");
+    ASSERT_FALSE(srcLink.isEmpty());
 
-        auto result = file_system::copy(srcLink, srcFile);
-        ASSERT_EQ(result.code, file_system::Result::sourceAndTargetAreSame);
-    }
+    auto result = file_system::copy(srcLink, srcFile);
+    ASSERT_EQ(result.code, file_system::Result::sourceAndTargetAreSame);
+}
 
-    TEST_F(CopyMoveTest, directorySelfOverlap)
-    {
-        createPath("dir/dir/dir");
-        createSymLink("dir/dir/dir/dir", "../dir");
+TEST_F(CopyMoveTest, directorySelfOverlap)
+{
+    createPath("dir/dir/dir");
+    createSymLink("dir/dir/dir/dir", "../dir");
 
-        auto result = file_system::copy(
-            sourceDir.absoluteFilePath("dir/dir"), sourceDir.absolutePath());
-        ASSERT_EQ(result.code, file_system::Result::sourceAndTargetAreSame);
-    }
+    auto result =
+        file_system::copy(sourceDir.absoluteFilePath("dir/dir"), sourceDir.absolutePath());
+    ASSERT_EQ(result.code, file_system::Result::sourceAndTargetAreSame);
+}
 
-#endif //defined(Q_OS_UNIX)
+#endif // defined(Q_OS_UNIX)
 
 TEST_F(CopyMoveTest, directoryOverlap)
 {
@@ -654,8 +652,8 @@ TEST_F(CopyMoveTest, directoryOverlap)
 
     const auto initialEntriesCount = entriesCount(sourceDir, true);
 
-    auto result = file_system::copy(
-        sourceDir.absoluteFilePath("dir/dir"), sourceDir.absolutePath());
+    auto result =
+        file_system::copy(sourceDir.absoluteFilePath("dir/dir"), sourceDir.absolutePath());
     ASSERT_EQ(result.code, file_system::Result::ok);
 
     ASSERT_TRUE(QFile(sourceDir.absoluteFilePath("dir/dir/file")).exists());
@@ -663,7 +661,6 @@ TEST_F(CopyMoveTest, directoryOverlap)
     const auto newEntriesCount = entriesCount(sourceDir, true);
     ASSERT_EQ(initialEntriesCount + 1, newEntriesCount);
 }
-
 
 TEST_F(CopyMoveTest, simpleOverlap)
 {

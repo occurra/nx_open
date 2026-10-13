@@ -5,7 +5,6 @@
 #include <cmath>
 
 #include <QtGui/QImage>
-#include <cmath>
 
 namespace nx::utils::graphics {
 
@@ -23,7 +22,8 @@ void BlurFilter::filterImage(QImage& image)
 void BlurFilter::filterImageAlpha(QImage& image)
 {
     // Force Alpha channel.
-    if (image.format() != QImage::Format_ARGB32 && image.format() != QImage::Format_ARGB32_Premultiplied)
+    if (image.format() != QImage::Format_ARGB32
+        && image.format() != QImage::Format_ARGB32_Premultiplied)
     {
         image = image.convertToFormat(QImage::Format_ARGB32);
     }
@@ -31,9 +31,9 @@ void BlurFilter::filterImageAlpha(QImage& image)
     filterImage(image, &BlurFilter::filter1DAlpha);
 }
 
-
-void BlurFilter::filterImage(QImage& image,
-    void (BlurFilter::* filter1D)(QImage image, QImage& blurred) const)
+void BlurFilter::filterImage(
+    QImage& image,
+    void (BlurFilter::*filter1D)(QImage image, QImage& blurred) const)
 {
     if (image.format() != QImage::Format_RGB32 && image.format() != QImage::Format_ARGB32
         && image.format() != QImage::Format_ARGB32_Premultiplied)
@@ -53,7 +53,7 @@ void BlurFilter::filterImage(QImage& image,
 void BlurFilter::filter1DARGB(QImage image, QImage& blurred) const
 {
     blurred = image.copy();
-    for(int line = 0; line < image.height(); line++)
+    for (int line = 0; line < image.height(); line++)
     {
         const uint32_t* pixels = (const uint32_t*) image.constScanLine(line);
         uint32_t* blurredPixels = (uint32_t*) blurred.scanLine(line);
@@ -75,8 +75,8 @@ void BlurFilter::filter1DARGB(QImage image, QImage& blurred) const
                 c4 += kernel * (pixel & 0xff000000);
             }
 
-            blurredPixels[i] = (uint32_t)c1 + (0xff00 & (uint32_t)c2)
-                + (0xff0000 & (uint32_t)c3) + (0xff000000 & (uint32_t)c4);
+            blurredPixels[i] = (uint32_t) c1 + (0xff00 & (uint32_t) c2)
+                + (0xff0000 & (uint32_t) c3) + (0xff000000 & (uint32_t) c4);
         }
     }
 }
@@ -84,7 +84,7 @@ void BlurFilter::filter1DARGB(QImage image, QImage& blurred) const
 void BlurFilter::filter1DAlpha(QImage image, QImage& blurred) const
 {
     blurred = image.copy();
-    for(int line = 0; line < image.height(); line++)
+    for (int line = 0; line < image.height(); line++)
     {
         const uint32_t* pixels = (const uint32_t*) image.constScanLine(line);
         uint32_t* blurredPixels = (uint32_t*) blurred.scanLine(line);
@@ -96,7 +96,7 @@ void BlurFilter::filter1DAlpha(QImage image, QImage& blurred) const
             for (int j = -m_kernelWidth; j < m_kernelWidth + 1; j++)
                 a += pixels[i + j] * m_kernel[j + m_kernelWidth];
 
-            blurredPixels[i] = 0xff000000 & (uint32_t)a;
+            blurredPixels[i] = 0xff000000 & (uint32_t) a;
         }
     }
 }
@@ -108,7 +108,8 @@ std::vector<float> BlurFilter::createKernel(int size) const
 
     for (int i = 0; i <= size; i++)
     {
-        kernel[size + i] = std::exp(- 4.5 * std::pow((float)i / size, 2)); //< = (3 * sigma) ^ 2 / 2 .
+        kernel[size + i] =
+            std::exp(-4.5 * std::pow((float) i / size, 2)); //< = (3 * sigma) ^ 2 / 2 .
         sum += kernel[size + i];
     }
 

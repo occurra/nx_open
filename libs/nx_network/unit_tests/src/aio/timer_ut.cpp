@@ -8,14 +8,10 @@
 
 namespace nx::network::aio::test {
 
-class AioTimer:
-    public ::testing::Test
+class AioTimer: public ::testing::Test
 {
 public:
-    AioTimer()
-    {
-        m_timer = std::make_unique<aio::Timer>();
-    }
+    AioTimer() { m_timer = std::make_unique<aio::Timer>(); }
 
     ~AioTimer()
     {
@@ -43,15 +39,9 @@ protected:
             });
     }
 
-    void cancelTimer()
-    {
-        m_timer->cancelSync();
-    }
+    void cancelTimer() { m_timer->cancelSync(); }
 
-    void assertTimerEventRaised()
-    {
-        m_timerEvents.pop();
-    }
+    void assertTimerEventRaised() { m_timerEvents.pop(); }
 
     void assertTimerEventNotRaised(std::chrono::milliseconds timeToWait)
     {
@@ -78,7 +68,10 @@ TEST_F(AioTimer, destroying_in_timeout_handler)
 {
     startTimerFor(
         std::chrono::milliseconds::zero(),
-        [this](){ m_timer.reset(); });
+        [this]()
+        {
+            m_timer.reset();
+        });
     assertTimerEventRaised();
 }
 
@@ -90,7 +83,11 @@ TEST_F(AioTimer, cancel_timer_does_not_cancel_posted_calls)
         std::chrono::seconds::zero(),
         [this, &postInvokedPromise]()
         {
-            m_timer->post([&postInvokedPromise]() { postInvokedPromise.set_value(); });
+            m_timer->post(
+                [&postInvokedPromise]()
+                {
+                    postInvokedPromise.set_value();
+                });
             m_timer->cancelSync();
         });
     postInvokedPromise.get_future().wait();
@@ -112,12 +109,12 @@ TEST_F(AioTimer, modified_timer_is_invoked_only_once)
         [this, timeout]()
         {
             startTimerFor(timeout);
-            startTimerFor(timeout*2);
+            startTimerFor(timeout * 2);
         });
 
     assertTimerEventRaised();
 
-    assertTimerEventNotRaised(timeout*10);
+    assertTimerEventNotRaised(timeout * 10);
 }
 
 TEST_F(AioTimer, cancelled_timer_is_not_raised)
@@ -131,7 +128,7 @@ TEST_F(AioTimer, cancelled_timer_is_not_raised)
             cancelTimer();
         });
 
-    assertTimerEventNotRaised(timeout*10);
+    assertTimerEventNotRaised(timeout * 10);
 }
 
 } // namespace nx::network::aio::test

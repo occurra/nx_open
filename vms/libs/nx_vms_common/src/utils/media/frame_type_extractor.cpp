@@ -10,13 +10,17 @@
 void FrameTypeExtractor::decodeWMVSequence(const quint8* data, int size)
 {
     m_vcSequence = new VC1SequenceHeader();
-    try {
+    try
+    {
         m_vcSequence->vc1_unescape_buffer(data, size);
-        if (m_vcSequence->decode_sequence_header() != 0) {
+        if (m_vcSequence->decode_sequence_header() != 0)
+        {
             delete m_vcSequence;
             m_vcSequence = 0;
         }
-    } catch (...) {
+    }
+    catch (...)
+    {
         delete m_vcSequence;
         m_vcSequence = 0;
     }
@@ -36,17 +40,17 @@ FrameTypeExtractor::FrameTypeExtractor(const CodecParametersConstPtr& context):
         {
             for (int i = 0; i < size - 4; ++i)
             {
-                if (data[i + 0] == 0 &&
-                    data[i + 1] == 0 &&
-                    data[i + 2] == 1 &&
-                    data[i + 3] == VC1_CODE_SEQHDR)
+                if (data[i + 0] == 0 && data[i + 1] == 0 && data[i + 2] == 1
+                    && data[i + 3] == VC1_CODE_SEQHDR)
                 {
                     decodeWMVSequence(data + i + 4, size - i - 4);
                     break;
                 }
             }
         }
-        else if (m_codecId == AV_CODEC_ID_WMV1 || m_codecId == AV_CODEC_ID_WMV2 || m_codecId == AV_CODEC_ID_WMV3)
+        else if (
+            m_codecId == AV_CODEC_ID_WMV1 || m_codecId == AV_CODEC_ID_WMV2
+            || m_codecId == AV_CODEC_ID_WMV3)
         {
             decodeWMVSequence(data, size);
         }
@@ -70,8 +74,7 @@ FrameTypeExtractor::~FrameTypeExtractor()
     delete m_vcSequence;
 }
 
-FrameTypeExtractor::FrameType FrameTypeExtractor::getH264FrameType(
-    const quint8* data, int size)
+FrameTypeExtractor::FrameType FrameTypeExtractor::getH264FrameType(const quint8* data, int size)
 {
     if (size < 4)
         return UnknownFrameType;
@@ -96,22 +99,30 @@ FrameTypeExtractor::FrameType FrameTypeExtractor::getH264FrameType(
 
             nx::utils::BitStreamReader bitReader;
             bitReader.setBuffer(data + 1, end);
-            try {
-                /*int first_mb_in_slice =*/ bitReader.getGolomb();
+            try
+            {
+                /*int first_mb_in_slice =*/bitReader.getGolomb();
 
                 int slice_type = bitReader.getGolomb();
                 if (slice_type >= 5)
-                    slice_type -= 5; //< +5 flag is: all other slices at this picture must be of the same type.
+                    slice_type -= 5; //< +5 flag is: all other slices at this picture must be of
+                                     // the same type.
 
-                if (slice_type == nx::media::h264::SliceHeader::I_TYPE || slice_type == nx::media::h264::SliceHeader::SI_TYPE)
-                    return P_Frame; //< Fake. It is i-frame, but not IDR, so we can't seek to this time and etc.  // I_Frame;
-                else if (slice_type == nx::media::h264::SliceHeader::P_TYPE || slice_type == nx::media::h264::SliceHeader::SP_TYPE)
+                if (slice_type == nx::media::h264::SliceHeader::I_TYPE
+                    || slice_type == nx::media::h264::SliceHeader::SI_TYPE)
+                    return P_Frame; //< Fake. It is i-frame, but not IDR, so we can't seek to this
+                                    // time and etc.  // I_Frame;
+                else if (
+                    slice_type == nx::media::h264::SliceHeader::P_TYPE
+                    || slice_type == nx::media::h264::SliceHeader::SP_TYPE)
                     return P_Frame;
                 else if (slice_type == nx::media::h264::SliceHeader::B_TYPE)
                     return B_Frame;
                 else
                     return UnknownFrameType;
-            } catch(...) {
+            }
+            catch (...)
+            {
                 return UnknownFrameType;
             }
         }
@@ -122,11 +133,19 @@ FrameTypeExtractor::FrameType FrameTypeExtractor::getH264FrameType(
 }
 
 FrameTypeExtractor::FrameType FrameTypeExtractor::getMpegVideoFrameType(
-    const quint8* data, int size)
+    const quint8* data,
+    int size)
 {
-    enum PictureCodingType { PCT_FORBIDDEN, PCT_I_FRAME, PCT_P_FRAME, PCT_B_FRAME, PCT_D_FRAME };
+    enum PictureCodingType
+    {
+        PCT_FORBIDDEN,
+        PCT_I_FRAME,
+        PCT_P_FRAME,
+        PCT_B_FRAME,
+        PCT_D_FRAME
+    };
     const quint8* end = data + size;
-    while (data <= end-4 && data[3] > 0x80)
+    while (data <= end - 4 && data[3] > 0x80)
     {
         data = nx::media::nal::findNextNAL(data + 4, end);
         if (data == end)
@@ -147,10 +166,10 @@ FrameTypeExtractor::FrameType FrameTypeExtractor::getMpegVideoFrameType(
     return UnknownFrameType;
 }
 
-FrameTypeExtractor::FrameType FrameTypeExtractor::getWMVFrameType(
-    const quint8* data, int size)
+FrameTypeExtractor::FrameType FrameTypeExtractor::getWMVFrameType(const quint8* data, int size)
 {
-    if (m_vcSequence) {
+    if (m_vcSequence)
+    {
         VC1Frame frame;
         if (frame.decode_frame_direct(*m_vcSequence, data, data + size) == 0)
         {
@@ -165,11 +184,9 @@ FrameTypeExtractor::FrameType FrameTypeExtractor::getWMVFrameType(
     return UnknownFrameType;
 }
 
-FrameTypeExtractor::FrameType FrameTypeExtractor::getVCFrameType(
-    const quint8* data, int size)
+FrameTypeExtractor::FrameType FrameTypeExtractor::getVCFrameType(const quint8* data, int size)
 {
-    if (data[3] == VC1_CODE_FRAME ||
-        (data[3] == VC1_USER_CODE_FRAME && m_vcSequence))
+    if (data[3] == VC1_CODE_FRAME || (data[3] == VC1_USER_CODE_FRAME && m_vcSequence))
     {
         return getWMVFrameType(data + 4, size - 4);
     }
@@ -191,10 +208,15 @@ FrameTypeExtractor::FrameType FrameTypeExtractor::getVCFrameType(
     return UnknownFrameType;
 }
 
-FrameTypeExtractor::FrameType FrameTypeExtractor::getMpeg4FrameType(
-    const quint8* data, int size)
+FrameTypeExtractor::FrameType FrameTypeExtractor::getMpeg4FrameType(const quint8* data, int size)
 {
-    enum PictureCodingType { PCT_I_FRAME, PCT_P_FRAME, PCT_B_FRAME, PCT_S_FRAME };
+    enum PictureCodingType
+    {
+        PCT_I_FRAME,
+        PCT_P_FRAME,
+        PCT_B_FRAME,
+        PCT_S_FRAME
+    };
 
     const quint8* end = data + size;
     while (data <= end - 4 && data[3] != 0xb6)
@@ -232,8 +254,7 @@ FrameTypeExtractor::FrameType FrameTypeExtractor::getMpeg4FrameType(
 #endif // 0
 }
 
-FrameTypeExtractor::FrameType FrameTypeExtractor::getFrameType(
-    const quint8* data, int dataLen)
+FrameTypeExtractor::FrameType FrameTypeExtractor::getFrameType(const quint8* data, int dataLen)
 {
     if (!data)
         return UnknownFrameType;

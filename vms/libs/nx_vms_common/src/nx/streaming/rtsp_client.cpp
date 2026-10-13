@@ -29,8 +29,8 @@ extern "C" {
 #include <nx/streaming/rtsp_client.h>
 #include <nx/utils/datetime.h>
 #include <nx/utils/log/log.h>
-#include <nx/utils/std_string_utils.h>
 #include <nx/utils/std/algorithm.h>
+#include <nx/utils/std_string_utils.h>
 #include <nx/utils/uuid.h>
 #include <nx/vms/auth/time_based_nonce_provider.h>
 #include <rtsp/srtp_encryptor.h>
@@ -96,13 +96,14 @@ QString extractRtspParam(const QString& buffer, const QString& paramName);
 int64_t nextRtspMessage(const uint8_t* data, int64_t size, int maxChannelNumber)
 {
     int i = 0;
-    for(; i < size - 1 && (data[i] != '$' || data[i + 1] > maxChannelNumber); i++);
+    for (; i < size - 1 && (data[i] != '$' || data[i + 1] > maxChannelNumber); i++)
+        ;
 
     if (i == size - 1)
         i = size;
 
     const auto messageSize =
-        QnTCPConnectionProcessor::isFullMessage(QByteArray::fromRawData((const char *)data, i));
+        QnTCPConnectionProcessor::isFullMessage(QByteArray::fromRawData((const char*) data, i));
 
     if (messageSize > 0)
         return messageSize;
@@ -118,8 +119,7 @@ QnRtspIoDevice::QnRtspIoDevice(
     QnRtspClient* owner,
     nx::vms::api::RtpTransportType transport,
     quint16 mediaPort,
-    quint16 rtcpPort)
-    :
+    quint16 rtcpPort):
     m_owner(owner),
     m_remoteMediaPort(mediaPort),
     m_remoteRtcpPort(rtcpPort)
@@ -164,8 +164,12 @@ void QnRtspIoDevice::sendDummy()
         auto remoteEndpoint = nx::network::SocketAddress(m_hostAddress, port);
         if (!socket->setDestAddr(remoteEndpoint))
         {
-            NX_WARNING(this, "Failed to set address for socket, host: %1, port: %2, error: %3",
-                m_hostAddress, port, SystemError::getLastOSErrorText());
+            NX_WARNING(
+                this,
+                "Failed to set address for socket, host: %1, port: %2, error: %3",
+                m_hostAddress,
+                port,
+                SystemError::getLastOSErrorText());
             return;
         }
         socket->send(&dummy, sizeof(dummy));
@@ -174,11 +178,13 @@ void QnRtspIoDevice::sendDummy()
     sendDummy(m_udpSockets.rtcpSocket.get(), m_remoteRtcpPort);
 }
 
-qint64 QnRtspIoDevice::read(char *data, qint64 maxSize)
+qint64 QnRtspIoDevice::read(char* data, qint64 maxSize)
 {
     int bytesRead;
     if (m_transport == nx::vms::api::RtpTransportType::tcp)
-        bytesRead = m_owner->readBinaryResponse((quint8*) data, maxSize); // demux binary data from TCP socket
+        bytesRead = m_owner->readBinaryResponse(
+            (quint8*) data,
+            maxSize); // demux binary data from TCP socket
     else
         bytesRead = m_udpSockets.mediaSocket->recv(data, maxSize);
 
@@ -222,7 +228,8 @@ bool QnRtspIoDevice::setTransport(nx::vms::api::RtpTransportType rtpTransport)
     return updateSockets();
 }
 
-void QnRtspIoDevice::setSrtpSessions(std::shared_ptr<nx::rtsp::SrtpDecryptor> decryptor,
+void QnRtspIoDevice::setSrtpSessions(
+    std::shared_ptr<nx::rtsp::SrtpDecryptor> decryptor,
     std::shared_ptr<nx::rtsp::SrtpEncryptor> encryptor)
 {
     m_srtpDecryptor = std::move(decryptor);
@@ -264,7 +271,7 @@ void QnRtspIoDevice::processRtcpData()
     quint8 rtcpBuffer[MAX_RTCP_PACKET_SIZE];
 
     bool rtcpReportAlreadySent = false;
-    while( m_udpSockets.rtcpSocket->hasData() )
+    while (m_udpSockets.rtcpSocket->hasData())
     {
         nx::network::SocketAddress senderEndpoint;
         int bytesRead =
@@ -318,15 +325,19 @@ void QnRtspIoDevice::processRtcpData()
     }
 }
 
-std::unique_ptr<nx::network::AbstractDatagramSocket> QnRtspIoDevice::createMulticastSocket(int port)
+std::unique_ptr<nx::network::AbstractDatagramSocket> QnRtspIoDevice::createMulticastSocket(
+    int port)
 {
     auto result = nx::network::SocketFactory::createDatagramSocket();
     result->setReuseAddrFlag(true);
 
     if (!result->bind(nx::network::SocketAddress(nx::network::HostAddress::anyHost, port)))
     {
-        NX_WARNING(this, "Failed to bind multicast socket to port: %1, error: %2",
-            port, SystemError::getLastOSErrorCode());
+        NX_WARNING(
+            this,
+            "Failed to bind multicast socket to port: %1, error: %2",
+            port,
+            SystemError::getLastOSErrorCode());
         return nullptr;
     }
 
@@ -401,9 +412,7 @@ QnRtspIoDevice::AddressInfo QnRtspIoDevice::addressInfo(int port) const
 //-------------------------------------------------------------------------------------------------
 // QnRtspClient
 
-QnRtspClient::QnRtspClient(
-    const Config& config)
-    :
+QnRtspClient::QnRtspClient(const Config& config):
     m_config(config),
     m_csec(1),
     m_transport(nx::vms::api::RtpTransportType::udp),
@@ -424,7 +433,7 @@ QnRtspClient::QnRtspClient(
 QnRtspClient::~QnRtspClient()
 {
     stop();
-    delete [] m_responseBuffer;
+    delete[] m_responseBuffer;
 }
 
 void QnRtspClient::setFormat(const Format format)
@@ -461,19 +470,24 @@ bool QnRtspClient::parseSDP(const QByteArray& response)
             m_sdpTracks.emplace_back(media, this, m_transport, media.serverPort);
     }
 
-    m_sdpTracks.erase(std::remove_if(
-        m_sdpTracks.begin(), m_sdpTracks.end(),
-        [this](const QnRtspClient::SDPTrackInfo& track)
-        {
-            if (m_config.backChannelAudioOnly && track.sdpMedia.mediaType != nx::rtp::Sdp::MediaType::Audio)
-                return true; //< Remove non audio tracks for back audio channel.
-            return m_config.backChannelAudioOnly != track.sdpMedia.sendOnly;
-        }),
+    m_sdpTracks.erase(
+        std::remove_if(
+            m_sdpTracks.begin(),
+            m_sdpTracks.end(),
+            [this](const QnRtspClient::SDPTrackInfo& track)
+            {
+                if (m_config.backChannelAudioOnly
+                    && track.sdpMedia.mediaType != nx::rtp::Sdp::MediaType::Audio)
+                    return true; //< Remove non audio tracks for back audio channel.
+                return m_config.backChannelAudioOnly != track.sdpMedia.sendOnly;
+            }),
         m_sdpTracks.end());
 
     if (m_sdpTracks.size() <= 0)
     {
-        NX_WARNING(this, "Invalid DESCRIBE response, no relevant media track found: [%1]",
+        NX_WARNING(
+            this,
+            "Invalid DESCRIBE response, no relevant media track found: [%1]",
             response);
         return false;
     }
@@ -499,8 +513,8 @@ void QnRtspClient::setTcpSocket(std::unique_ptr<nx::network::AbstractStreamSocke
 CameraDiagnostics::Result QnRtspClient::open(const nx::Url& url, qint64 startTime)
 {
     /*
-     * Our own client uses CSEQ. This value is put to the media packets and player check whether it get old or new value
-     * after the seek.
+     * Our own client uses CSEQ. This value is put to the media packets and player check whether it
+     * get old or new value after the seek.
      */
     if (!m_additionAttrs.contains(Qn::EC2_INTERNAL_RTP_FORMAT))
         m_csec = 1;
@@ -531,7 +545,8 @@ CameraDiagnostics::Result QnRtspClient::open(const nx::Url& url, qint64 startTim
 
     if (!NX_ASSERT(!m_credentials.authToken.isBearerToken() || isSslRequired, "Url: %1", m_url))
     {
-        return CameraDiagnostics::RequestFailedResult(m_url.toString(),
+        return CameraDiagnostics::RequestFailedResult(
+            m_url.toString(),
             "Bearer token authorization can't be used with insecure url scheme.");
     }
 
@@ -541,8 +556,11 @@ CameraDiagnostics::Result QnRtspClient::open(const nx::Url& url, qint64 startTim
     }
     else
     {
-        setTcpSocket(nx::network::SocketFactory::createStreamSocket(
-            nx::network::ssl::kAcceptAnyCertificate, isSslRequired, m_natTraversal));
+        setTcpSocket(
+            nx::network::SocketFactory::createStreamSocket(
+                nx::network::ssl::kAcceptAnyCertificate,
+                isSslRequired,
+                m_natTraversal));
 
         m_tcpSock->setRecvTimeout(TCP_RECEIVE_TIMEOUT_MS);
         const nx::network::SocketAddress targetAddress =
@@ -616,7 +634,7 @@ QString QnRtspClient::parseContentBase(const QString& response)
      * If this attribute contains only an asterisk (*), then the URL is
      * treated as if it were an empty embedded URL, and thus inherits the
      * entire base URL.
-    */
+     */
     QString contentBase = extractRtspParam(response, "Content-Base:");
     if (!contentBase.isEmpty())
     {
@@ -703,15 +721,16 @@ void QnRtspClient::fillRequestAuthorizationByResponseAuthenticate(
     {
         header::DigestAuthorization authorization;
         if (calcDigestResponse(
-            request->requestLine.method,
-            m_credentials,
-            m_url.toStdString(),
-            *m_responseAuthenticate,
-            &authorization,
-            ++m_nonceCount))
+                request->requestLine.method,
+                m_credentials,
+                m_url.toStdString(),
+                *m_responseAuthenticate,
+                &authorization,
+                ++m_nonceCount))
         {
             insertOrReplaceHeader(
-                &request->headers, HttpHeader(headerName, authorization.serialized()));
+                &request->headers,
+                HttpHeader(headerName, authorization.serialized()));
         }
         return;
     }
@@ -720,8 +739,10 @@ void QnRtspClient::fillRequestAuthorizationByResponseAuthenticate(
         const auto& token = m_credentials.authToken;
         if (token.isPassword() || token.empty())
         {
-            insertOrReplaceHeader(&request->headers,
-                HttpHeader(headerName,
+            insertOrReplaceHeader(
+                &request->headers,
+                HttpHeader(
+                    headerName,
                     header::BasicAuthorization(m_credentials.username, token.value).serialized()));
         }
     }
@@ -738,8 +759,10 @@ void QnRtspClient::fillRequestAuthorization(nx::network::http::Request* request)
 
     if (token.isBearerToken())
     {
-        insertOrReplaceHeader(&request->headers,
-            HttpHeader(header::Authorization::NAME,
+        insertOrReplaceHeader(
+            &request->headers,
+            HttpHeader(
+                header::Authorization::NAME,
                 header::BearerAuthorization(token.value).serialized()));
         return;
     }
@@ -772,7 +795,8 @@ void QnRtspClient::fillRequestAuthorization(nx::network::http::Request* request)
             &authorization);
         if (calcRes)
         {
-            insertOrReplaceHeader(&request->headers,
+            insertOrReplaceHeader(
+                &request->headers,
                 HttpHeader(header::Authorization::NAME, authorization.serialized()));
         }
     }
@@ -781,18 +805,19 @@ void QnRtspClient::fillRequestAuthorization(nx::network::http::Request* request)
 void QnRtspClient::addCommonHeaders(nx::network::http::HttpHeaders& headers)
 {
     nx::network::http::insertOrReplaceHeader(
-        &headers, nx::network::http::HttpHeader("CSeq", QByteArray::number(m_csec++)));
-    nx::network::http::insertOrReplaceHeader(
-        &headers, nx::network::http::HttpHeader("User-Agent", m_userAgent));
+        &headers,
+        nx::network::http::HttpHeader("CSeq", QByteArray::number(m_csec++)));
     nx::network::http::insertOrReplaceHeader(
         &headers,
-        nx::network::http::HttpHeader(
-            "Host",
-            nx::network::url::getEndpoint(m_url).toString()));
+        nx::network::http::HttpHeader("User-Agent", m_userAgent));
+    nx::network::http::insertOrReplaceHeader(
+        &headers,
+        nx::network::http::HttpHeader("Host", nx::network::url::getEndpoint(m_url).toString()));
 }
 
 void QnRtspClient::addAdditionalHeaders(
-    std::string_view requestName, nx::network::http::HttpHeaders* outHeaders)
+    std::string_view requestName,
+    nx::network::http::HttpHeaders* outHeaders)
 {
     for (const auto& header: m_additionalHeaders[std::string(requestName)])
         nx::network::http::insertOrReplaceHeader(outHeaders, header);
@@ -807,10 +832,10 @@ nx::network::http::Request QnRtspClient::createDescribeRequest()
     request.requestLine.url = m_url;
     request.requestLine.version = nx::network::rtsp::rtsp_1_0;
     addCommonHeaders(request.headers);
-    request.headers.insert( nx::network::http::HttpHeader( "Accept", "application/sdp" ) );
-    if( m_openedTime != AV_NOPTS_VALUE )
-        addRangeHeader( &request, m_openedTime, AV_NOPTS_VALUE );
-    addAdditionAttrs( &request );
+    request.headers.insert(nx::network::http::HttpHeader("Accept", "application/sdp"));
+    if (m_openedTime != AV_NOPTS_VALUE)
+        addRangeHeader(&request, m_openedTime, AV_NOPTS_VALUE);
+    addAdditionAttrs(&request);
     return request;
 }
 
@@ -822,7 +847,7 @@ bool QnRtspClient::sendRequestInternal(nx::network::http::Request&& request)
     fillRequestAuthorization(&request);
     addAdditionAttrs(&request);
     nx::Buffer requestBuf;
-    request.serialize( &requestBuf );
+    request.serialize(&requestBuf);
     return m_tcpSock->send(requestBuf.data(), requestBuf.size()) > 0;
 }
 
@@ -842,7 +867,9 @@ CameraDiagnostics::Result QnRtspClient::sendOptions()
     m_keepAliveSupported = allowedMethods.contains("GET_PARAMETER");
     if (!m_keepAliveSupported)
     {
-        NX_DEBUG(this, "GET_PARAMETER method not allowed, disable keep alive, public methods: %1",
+        NX_DEBUG(
+            this,
+            "GET_PARAMETER method not allowed, disable keep alive, public methods: %1",
             allowedMethods);
     }
 
@@ -887,7 +914,8 @@ void QnRtspClient::registerRTPChannel(int rtpNum, int rtcpNum, int trackIndex)
     m_rtpToTrack[rtcpNum].isRtcp = true;
 }
 
-std::optional<QnRtspClient::SetupRequest> QnRtspClient::createSetupRequest(const nx::Url& setupUrl,
+std::optional<QnRtspClient::SetupRequest> QnRtspClient::createSetupRequest(
+    const nx::Url& setupUrl,
     SDPTrackInfo& track,
     int trackIndex,
     const nx::streaming::rtsp::MikeyData* mikey,
@@ -987,7 +1015,8 @@ std::optional<QnRtspClient::SetupResult> QnRtspClient::sendSetupWithTransport(
         mikey = nx::streaming::rtsp::makeStandardMikey(*mikeyPayload, setupUrl);
         if (!mikey) //< Invalid mikey payload or unsupported crypto policy.
         {
-            NX_VERBOSE(this,
+            NX_VERBOSE(
+                this,
                 "Failed to create standard MIKEY data for SDP track %1, use client-managed",
                 trackIndex);
             mikey = nx::streaming::rtsp::makeClientManagedMikey(setupUrl);
@@ -1068,7 +1097,9 @@ bool QnRtspClient::sendSetup()
             if (audioNum++ != m_selectedAudioChannel)
                 continue;
         }
-        else if (track.sdpMedia.mediaType != nx::rtp::Sdp::MediaType::Video && !isAdditionalSupportedCodec)
+        else if (
+            track.sdpMedia.mediaType != nx::rtp::Sdp::MediaType::Video
+            && !isAdditionalSupportedCodec)
         {
             continue; // skip unknown metadata e.t.c
         }
@@ -1083,18 +1114,19 @@ bool QnRtspClient::sendSetup()
         {
             // SETUP postfix should be written after url query params. It's invalid url,
             // but it's required according to RTSP standard.
-            setupUrl = nx::Url(m_contentBase
+            setupUrl = nx::Url(
+                m_contentBase
                 + ((m_contentBase.endsWith(lit("/")) || relativeSetupUrl.isEmpty()) //
-                        ? lit("")
-                        : lit("/"))
+                       ? lit("")
+                       : lit("/"))
                 + relativeSetupUrl.toString());
         }
         const bool isTransportProbe =
             !m_actualTransport && m_transport == nx::vms::api::RtpTransportType::automatic;
-        auto setupTransport =
-            m_actualTransport.value_or(m_transport == nx::vms::api::RtpTransportType::automatic
-                    ? nx::vms::api::RtpTransportType::tcp
-                    : m_transport);
+        auto setupTransport = m_actualTransport.value_or(
+            m_transport == nx::vms::api::RtpTransportType::automatic
+                ? nx::vms::api::RtpTransportType::tcp
+                : m_transport);
         auto setupResult = sendSetupWithTransport(setupUrl, track, i, setupTransport);
 
         if (!setupResult && isTransportProbe)
@@ -1139,14 +1171,18 @@ bool QnRtspClient::parseSetupResponse(const QString& response, SDPTrackInfo* tra
             if (timeoutSec > 0 && timeoutSec < 5000)
             {
                 m_keepAliveTimeOut = seconds(timeoutSec);
-                NX_DEBUG(this,
-                    "Session timeout specified: %1", duration_cast<seconds>(m_keepAliveTimeOut));
+                NX_DEBUG(
+                    this,
+                    "Session timeout specified: %1",
+                    duration_cast<seconds>(m_keepAliveTimeOut));
             }
             else
             {
-                NX_DEBUG(this,
+                NX_DEBUG(
+                    this,
                     "Invalid session timeout specified: [%1], will used %2 seconds",
-                    value, duration_cast<seconds>(m_keepAliveTimeOut));
+                    value,
+                    duration_cast<seconds>(m_keepAliveTimeOut));
             }
         }
         else if (isFirstParam)
@@ -1168,18 +1204,20 @@ bool QnRtspClient::parseSetupResponse(const QString& response, SDPTrackInfo* tra
         if (key == "ssrc")
         {
             bool ok;
-            track->ioDevice->setSSRC((quint32)value.toLongLong(&ok, 16));
+            track->ioDevice->setSSRC((quint32) value.toLongLong(&ok, 16));
         }
         else if (key == "interleaved")
         {
-            track->interleaved = {part1.toInt(),
+            track->interleaved = {
+                part1.toInt(),
                 part2.isEmpty() ? part1.toInt() + 1 : part2.toInt()};
             registerRTPChannel(track->interleaved.first, track->interleaved.second, trackIndex);
         }
         else if (key == "server_port" || key == "port")
         {
-            if (!track->ioDevice->updateRemotePorts(part1.toUShort(),
-                part2.isEmpty() ? part1.toUShort() + 1 : part2.toUShort()))
+            if (!track->ioDevice->updateRemotePorts(
+                    part1.toUShort(),
+                    part2.isEmpty() ? part1.toUShort() + 1 : part2.toUShort()))
             {
                 return false;
             }
@@ -1192,9 +1230,11 @@ bool QnRtspClient::parseSetupResponse(const QString& response, SDPTrackInfo* tra
     return true;
 }
 
-void QnRtspClient::addAdditionAttrs( nx::network::http::Request* const request )
+void QnRtspClient::addAdditionAttrs(nx::network::http::Request* const request)
 {
-    for (QMap<QByteArray, QByteArray>::const_iterator i = m_additionAttrs.begin(); i != m_additionAttrs.end(); ++i)
+    for (QMap<QByteArray, QByteArray>::const_iterator i = m_additionAttrs.begin();
+         i != m_additionAttrs.end();
+         ++i)
         nx::network::http::insertOrReplaceHeader(
             &request->headers,
             nx::network::http::HttpHeader(i.key(), i.value()));
@@ -1214,44 +1254,49 @@ bool QnRtspClient::sendSetParameter(const QByteArray& paramName, const QByteArra
     request.requestLine.url = m_url;
     request.requestLine.version = nx::network::rtsp::rtsp_1_0;
     addCommonHeaders(request.headers);
-    request.headers.insert( nx::network::http::HttpHeader( "Session", m_SessionId.toLatin1() ) );
-    request.headers.insert( nx::network::http::HttpHeader( "Content-Length", nx::utils::to_string(request.messageBody.size()) ) );
+    request.headers.insert(nx::network::http::HttpHeader("Session", m_SessionId.toLatin1()));
+    request.headers.insert(
+        nx::network::http::HttpHeader(
+            "Content-Length",
+            nx::utils::to_string(request.messageBody.size())));
     return sendRequestInternal(std::move(request));
 }
 
-void QnRtspClient::addRangeHeader( nx::network::http::Request* const request, qint64 startPos, qint64 endPos )
+void QnRtspClient::addRangeHeader(
+    nx::network::http::Request* const request,
+    qint64 startPos,
+    qint64 endPos)
 {
     if (startPos != qint64(AV_NOPTS_VALUE))
     {
         nx::network::rtsp::header::Range range;
 
-        range.type =
-            [&]()
+        range.type = [&]()
+        {
+            if (m_additionAttrs.contains(Qn::EC2_INTERNAL_RTP_FORMAT))
+                return nx::network::rtsp::header::Range::Type::nxClock;
+
+            if (m_dateTimeFormat == DateTimeFormat::ISO)
             {
-                if (m_additionAttrs.contains(Qn::EC2_INTERNAL_RTP_FORMAT))
-                    return nx::network::rtsp::header::Range::Type::nxClock;
-
-                if (m_dateTimeFormat == DateTimeFormat::ISO)
-                {
-                    // For archive requests, explicitly use 'clock' regardless of the advertised
-                    // range type, since there is no straightforward way to convert a UTC timestamp
-                    // to NPT.
-                    return nx::network::rtsp::header::Range::Type::clock;
-                }
-
-                if (nx::utils::startsWith(m_sdp.range, "npt=", nx::utils::CaseSensitivity::off))
-                    return nx::network::rtsp::header::Range::Type::npt;
-                else if (nx::utils::startsWith(m_sdp.range, "clock=", nx::utils::CaseSensitivity::off))
-                    return nx::network::rtsp::header::Range::Type::clock;
-
-                if (startPos == DATETIME_NOW)
-                {
-                    // Use npt for Live if no range header from server.
-                    return nx::network::rtsp::header::Range::Type::npt;
-                }
-
+                // For archive requests, explicitly use 'clock' regardless of the advertised
+                // range type, since there is no straightforward way to convert a UTC timestamp
+                // to NPT.
                 return nx::network::rtsp::header::Range::Type::clock;
-            }();
+            }
+
+            if (nx::utils::startsWith(m_sdp.range, "npt=", nx::utils::CaseSensitivity::off))
+                return nx::network::rtsp::header::Range::Type::npt;
+            else if (nx::utils::startsWith(m_sdp.range, "clock=", nx::utils::CaseSensitivity::off))
+                return nx::network::rtsp::header::Range::Type::clock;
+
+            if (startPos == DATETIME_NOW)
+            {
+                // Use npt for Live if no range header from server.
+                return nx::network::rtsp::header::Range::Type::npt;
+            }
+
+            return nx::network::rtsp::header::Range::Type::clock;
+        }();
 
         range.startUs = startPos;
 
@@ -1271,7 +1316,7 @@ std::string QnRtspClient::getGuid()
     return s_guid;
 }
 
-nx::network::http::Request QnRtspClient::createPlayRequest( qint64 startPos, qint64 endPos )
+nx::network::http::Request QnRtspClient::createPlayRequest(qint64 startPos, qint64 endPos)
 {
     nx::network::http::Request request;
     request.requestLine.method = kPlayCommand;
@@ -1294,10 +1339,10 @@ nx::network::http::Request QnRtspClient::createPlayRequest( qint64 startPos, qin
         : nx::Url(m_contentBase);
     request.requestLine.version = nx::network::rtsp::rtsp_1_0;
     addCommonHeaders(request.headers);
-    request.headers.insert( nx::network::http::HttpHeader( "Session", m_SessionId.toLatin1() ) );
-    addRangeHeader( &request, startPos, endPos );
+    request.headers.insert(nx::network::http::HttpHeader("Session", m_SessionId.toLatin1()));
+    addRangeHeader(&request, startPos, endPos);
     addAdditionalHeaders(kPlayCommand, &request.headers);
-    request.headers.insert( nx::network::http::HttpHeader( "Scale", QByteArray::number(m_scale)) );
+    request.headers.insert(nx::network::http::HttpHeader("Scale", QByteArray::number(m_scale)));
     if (m_playNowMode)
     {
         nx::network::http::insertOrReplaceHeader(
@@ -1316,8 +1361,8 @@ bool QnRtspClient::sendPlay(qint64 startPos, qint64 endPos, double scale)
 
     m_scale = scale;
 
-    nx::network::http::Request request = createPlayRequest( startPos, endPos );
-    if( !sendRequestAndReceiveResponse( std::move(request), response ) )
+    nx::network::http::Request request = createPlayRequest(startPos, endPos);
+    if (!sendRequestAndReceiveResponse(std::move(request), response))
     {
         if (!m_SessionId.isEmpty())
             sendTeardown();
@@ -1328,7 +1373,7 @@ bool QnRtspClient::sendPlay(qint64 startPos, qint64 endPos, double scale)
     while (1)
     {
         QString cseq = extractRtspParam(QLatin1String(response), QLatin1String("CSeq:"));
-        if (cseq.toInt() == (int)m_csec-1)
+        if (cseq.toInt() == (int) m_csec - 1)
             break;
         else if (!readTextResponse(response))
             return false; // try next response
@@ -1359,7 +1404,7 @@ bool QnRtspClient::sendPause()
     request.requestLine.url = m_url;
     request.requestLine.version = nx::network::rtsp::rtsp_1_0;
     addCommonHeaders(request.headers);
-    request.headers.insert( nx::network::http::HttpHeader( "Session", m_SessionId.toLatin1() ) );
+    request.headers.insert(nx::network::http::HttpHeader("Session", m_SessionId.toLatin1()));
     return sendRequestInternal(std::move(request));
 }
 
@@ -1370,7 +1415,7 @@ bool QnRtspClient::sendTeardown()
     request.requestLine.url = m_url;
     request.requestLine.version = nx::network::rtsp::rtsp_1_0;
     addCommonHeaders(request.headers);
-    request.headers.insert( nx::network::http::HttpHeader( "Session", m_SessionId.toLatin1() ) );
+    request.headers.insert(nx::network::http::HttpHeader("Session", m_SessionId.toLatin1()));
     return sendRequestInternal(std::move(request));
 }
 
@@ -1390,14 +1435,17 @@ void QnRtspClient::sendKeepAliveIfNeeded()
 
 bool QnRtspClient::sendKeepAlive()
 {
-    NX_DEBUG(this, "Send keep alive message, keepAliveTimeOut: %1, url: %2",
-        m_keepAliveTimeOut, m_url);
+    NX_DEBUG(
+        this,
+        "Send keep alive message, keepAliveTimeOut: %1, url: %2",
+        m_keepAliveTimeOut,
+        m_url);
     nx::network::http::Request request;
     request.requestLine.method = kGetParameterCommand;
     request.requestLine.url = m_url;
     request.requestLine.version = nx::network::rtsp::rtsp_1_0;
     addCommonHeaders(request.headers);
-    request.headers.insert( nx::network::http::HttpHeader( "Session", m_SessionId.toLatin1() ) );
+    request.headers.insert(nx::network::http::HttpHeader("Session", m_SessionId.toLatin1()));
     return sendRequestInternal(std::move(request));
 }
 
@@ -1416,7 +1464,8 @@ void QnRtspClient::sendBinaryResponse(const quint8* buffer, int size)
 
             if (!srtpEncryptor->encryptPacket(&encrypted, sizeof(FrameHeader)))
             {
-                NX_WARNING(this,
+                NX_WARNING(
+                    this,
                     "Failed to encrypt outgoing RTSP interleaved packet on channel %1",
                     channelNumber);
                 return;
@@ -1427,7 +1476,8 @@ void QnRtspClient::sendBinaryResponse(const quint8* buffer, int size)
             data[2] = quint8((encryptedPayloadSize >> 8) & 0xff);
             data[3] = quint8(encryptedPayloadSize & 0xff);
 
-            NX_VERBOSE(this,
+            NX_VERBOSE(
+                this,
                 "Send encrypted RTSP packet channel=%1 size=%2",
                 channelNumber,
                 encrypted.size());
@@ -1491,7 +1541,9 @@ bool QnRtspClient::readAndProcessTextData()
 
     if (m_responseBufferLen >= kResponseBufferLength)
     {
-        NX_DEBUG(this, "Failed to read text interleaved packet(buffer overflow), buffer size: %1",
+        NX_DEBUG(
+            this,
+            "Failed to read text interleaved packet(buffer overflow), buffer size: %1",
             m_responseBufferLen);
         // NOTE: #skolesnik. The buffer contains data that never became a complete RTSP text
         // message and does not align to a valid '$' interleaved frame. nextRtspMessage() keeps
@@ -1502,7 +1554,8 @@ bool QnRtspClient::readAndProcessTextData()
         return false;
     }
 
-    const int bytesRead = readSocketWithBuffering(m_responseBuffer + m_responseBufferLen,
+    const int bytesRead = readSocketWithBuffering(
+        m_responseBuffer + m_responseBufferLen,
         /*bufSize*/ std::min<int>(1024, kResponseBufferLength - m_responseBufferLen),
         /*readSome*/ true);
     if (bytesRead <= 0)
@@ -1515,14 +1568,17 @@ bool QnRtspClient::readAndProcessTextData()
     int maxChannelNumber = m_rtpToTrack.size() - 1;
     while (true)
     {
-        const auto messageSize = nextRtspMessage(
-            m_responseBuffer, m_responseBufferLen, maxChannelNumber);
+        const auto messageSize =
+            nextRtspMessage(m_responseBuffer, m_responseBufferLen, maxChannelNumber);
 
         if (messageSize <= 0)
             return true;
 
         processTextData(QByteArray::fromRawData((const char*) m_responseBuffer, messageSize));
-        memmove(m_responseBuffer, m_responseBuffer + messageSize, m_responseBufferLen - messageSize);
+        memmove(
+            m_responseBuffer,
+            m_responseBuffer + messageSize,
+            m_responseBufferLen - messageSize);
         m_responseBufferLen -= messageSize;
     };
     return true;
@@ -1541,10 +1597,10 @@ int QnRtspClient::readBinaryResponse(quint8* data, int maxDataSize)
         {
             while (m_responseBufferLen < frameHeaderSize)
             {
-                const int bytesRead =
-                    readSocketWithBuffering(m_responseBuffer + m_responseBufferLen,
-                        /*bufSize*/ frameHeaderSize - m_responseBufferLen,
-                        /*readSome*/ true);
+                const int bytesRead = readSocketWithBuffering(
+                    m_responseBuffer + m_responseBufferLen,
+                    /*bufSize*/ frameHeaderSize - m_responseBufferLen,
+                    /*readSome*/ true);
                 if (bytesRead <= 0)
                     return bytesRead;
                 m_responseBufferLen += bytesRead;
@@ -1583,7 +1639,9 @@ int QnRtspClient::readBinaryResponse(quint8* data, int maxDataSize)
 
         int decryptedLen = dataLen;
         const auto decryptResult = decryptPacketIfNeeded(
-            srtpDecryptorForChannel(channelNumber).get(), packetStart, &decryptedLen);
+            srtpDecryptorForChannel(channelNumber).get(),
+            packetStart,
+            &decryptedLen);
         if (decryptResult == nx::rtsp::SrtpDecryptor::Result::packetRejected)
         {
             NX_VERBOSE(this, "Discard rejected SRTP TCP packet on channel %1", channelNumber);
@@ -1596,20 +1654,27 @@ int QnRtspClient::readBinaryResponse(quint8* data, int maxDataSize)
     }
 }
 
-quint8* QnRtspClient::prepareDemuxedData(std::vector<nx::utils::ByteArray*>& demuxedData, int channel, int reserve)
+quint8* QnRtspClient::prepareDemuxedData(
+    std::vector<nx::utils::ByteArray*>& demuxedData,
+    int channel,
+    int reserve)
 {
-    if (channel >= 0 && demuxedData.size() <= (size_t)channel)
-        demuxedData.resize(channel+1, nullptr);
+    if (channel >= 0 && demuxedData.size() <= (size_t) channel)
+        demuxedData.resize(channel + 1, nullptr);
     if (demuxedData[channel] == 0)
         demuxedData[channel] = new nx::utils::ByteArray(
-            /*capacity*/ 32, /*alignment*/ 16, AV_INPUT_BUFFER_PADDING_SIZE);
+            /*capacity*/ 32,
+            /*alignment*/ 16,
+            AV_INPUT_BUFFER_PADDING_SIZE);
     nx::utils::ByteArray* dataVect = demuxedData[channel];
-    //dataVect->resize(dataVect->size() + reserve);
+    // dataVect->resize(dataVect->size() + reserve);
     dataVect->reserve(dataVect->size() + reserve);
     return (quint8*) dataVect->data() + dataVect->size();
 }
 
-int QnRtspClient::readBinaryResponse(std::vector<nx::utils::ByteArray*>& demuxedData, int& channelNumber)
+int QnRtspClient::readBinaryResponse(
+    std::vector<nx::utils::ByteArray*>& demuxedData,
+    int& channelNumber)
 {
     constexpr int frameHeaderSize = sizeof(FrameHeader);
 
@@ -1622,10 +1687,10 @@ int QnRtspClient::readBinaryResponse(std::vector<nx::utils::ByteArray*>& demuxed
         {
             while (m_responseBufferLen < frameHeaderSize)
             {
-                const int bytesRead =
-                    readSocketWithBuffering(m_responseBuffer + m_responseBufferLen,
-                        /*bufSize*/ frameHeaderSize - m_responseBufferLen,
-                        /*readSome*/ true);
+                const int bytesRead = readSocketWithBuffering(
+                    m_responseBuffer + m_responseBufferLen,
+                    /*bufSize*/ frameHeaderSize - m_responseBufferLen,
+                    /*readSome*/ true);
                 if (bytesRead <= 0)
                     return bytesRead;
                 m_responseBufferLen += bytesRead;
@@ -1672,7 +1737,9 @@ int QnRtspClient::readBinaryResponse(std::vector<nx::utils::ByteArray*>& demuxed
         demuxedData[channelNumber]->finishWriting(dataLen);
         int decryptedLen = dataLen;
         const auto decryptResult = decryptPacketIfNeeded(
-            srtpDecryptorForChannel(channelNumber).get(), packetStart, &decryptedLen);
+            srtpDecryptorForChannel(channelNumber).get(),
+            packetStart,
+            &decryptedLen);
         if (decryptResult == nx::rtsp::SrtpDecryptor::Result::packetRejected)
         {
             NX_VERBOSE(this, "Discard rejected SRTP TCP packet on channel %1", channelNumber);
@@ -1717,7 +1784,9 @@ std::shared_ptr<nx::rtsp::SrtpDecryptor> QnRtspClient::srtpDecryptorForChannel(
 }
 
 nx::rtsp::SrtpDecryptor::Result QnRtspClient::decryptPacketIfNeeded(
-    nx::rtsp::SrtpDecryptor* srtpDecryptor, quint8* data, int* inOutSize)
+    nx::rtsp::SrtpDecryptor* srtpDecryptor,
+    quint8* data,
+    int* inOutSize)
 {
     constexpr int frameHeaderSize = sizeof(FrameHeader);
 
@@ -1747,7 +1816,7 @@ bool QnRtspClient::processTcpRtcpData(const quint8* data, int size)
         return false;
     int rtpChannelNum = data[1];
     int trackNum = getTrackNum(rtpChannelNum);
-    if (trackNum >= (int)m_sdpTracks.size())
+    if (trackNum >= (int) m_sdpTracks.size())
         return false;
     QnRtspIoDevice* ioDevice = m_sdpTracks[trackNum].ioDevice.get();
     if (!ioDevice)
@@ -1769,33 +1838,45 @@ bool QnRtspClient::readTextResponse(QByteArray& response)
         return false;
     int ignoreDataSize = 0;
     bool needMoreData = m_responseBufferLen == 0;
-    for (int i = 0; i < 1000 && ignoreDataSize < 1024*1024*3 && m_tcpSock->isConnected(); ++i)
+    for (int i = 0; i < 1000 && ignoreDataSize < 1024 * 1024 * 3 && m_tcpSock->isConnected(); ++i)
     {
-        if (needMoreData) {
-            int bytesRead = readSocketWithBuffering(m_responseBuffer + m_responseBufferLen, qMin(1024, kResponseBufferLength - m_responseBufferLen), true);
+        if (needMoreData)
+        {
+            int bytesRead = readSocketWithBuffering(
+                m_responseBuffer + m_responseBufferLen,
+                qMin(1024, kResponseBufferLength - m_responseBufferLen),
+                true);
             if (bytesRead <= 0)
             {
-                if( bytesRead == 0 )
+                if (bytesRead == 0)
                 {
-                    NX_DEBUG(this, "RTSP connection to %1 has been unexpectedly closed",
+                    NX_DEBUG(
+                        this,
+                        "RTSP connection to %1 has been unexpectedly closed",
                         m_tcpSock->getForeignAddress());
                 }
                 else if (!m_tcpSock->isClosed())
                 {
-                    NX_DEBUG(this, "Error reading RTSP response from %1. %2",
-                        m_tcpSock->getForeignAddress(), SystemError::getLastOSErrorText());
+                    NX_DEBUG(
+                        this,
+                        "Error reading RTSP response from %1. %2",
+                        m_tcpSock->getForeignAddress(),
+                        SystemError::getLastOSErrorText());
                 }
                 return false; //< error occurred or connection closed
             }
             m_responseBufferLen += bytesRead;
         }
-        if (m_responseBuffer[0] == '$') {
+        if (m_responseBuffer[0] == '$')
+        {
             // binary data
             quint8 tmpData[kResponseBufferLength];
             int bytesRead = readBinaryResponse(tmpData, sizeof(tmpData)); // skip binary data
             if (bytesRead < 0)
             {
-                NX_DEBUG(this, "Failed to read data from socket: %1",
+                NX_DEBUG(
+                    this,
+                    "Failed to read data from socket: %1",
                     m_tcpSock->getForeignAddress());
                 return false;
             }
@@ -1809,14 +1890,15 @@ bool QnRtspClient::readTextResponse(QByteArray& response)
 
             int oldIgnoreDataSize = ignoreDataSize;
             ignoreDataSize += bytesRead;
-            if (oldIgnoreDataSize / 64000 != ignoreDataSize/64000)
+            if (oldIgnoreDataSize / 64000 != ignoreDataSize / 64000)
                 QnSleep::msleep(1);
             needMoreData = m_responseBufferLen == 0;
         }
         else
         {
             // text data
-            int msgLen = QnTCPConnectionProcessor::isFullMessage(QByteArray::fromRawData((const char*)m_responseBuffer, m_responseBufferLen));
+            int msgLen = QnTCPConnectionProcessor::isFullMessage(
+                QByteArray::fromRawData((const char*) m_responseBuffer, m_responseBufferLen));
             if (msgLen < 0)
                 return false;
 
@@ -1831,8 +1913,11 @@ bool QnRtspClient::readTextResponse(QByteArray& response)
         }
         if (m_responseBufferLen == kResponseBufferLength)
         {
-            NX_DEBUG(this, "RTSP response from %1 has exceeded max response size (%2)",
-                m_tcpSock->getForeignAddress(), kResponseBufferLength);
+            NX_DEBUG(
+                this,
+                "RTSP response from %1 has exceeded max response size (%2)",
+                m_tcpSock->getForeignAddress(),
+                kResponseBufferLength);
             return false;
         }
     }
@@ -1884,7 +1969,7 @@ void QnRtspClient::setAdditionalSupportedCodecs(std::set<QString> additionalSupp
 
 QString QnRtspClient::getTrackCodec(int rtpChannelNum)
 {
-    if (rtpChannelNum < (int)m_rtpToTrack.size())
+    if (rtpChannelNum < (int) m_rtpToTrack.size())
         return m_sdpTracks[m_rtpToTrack[rtpChannelNum].trackIndex].sdpMedia.rtpmap.codecName;
 
     return QString();
@@ -1892,14 +1977,14 @@ QString QnRtspClient::getTrackCodec(int rtpChannelNum)
 
 bool QnRtspClient::isRtcp(int rtpChannelNum)
 {
-    if (rtpChannelNum < (int)m_rtpToTrack.size())
+    if (rtpChannelNum < (int) m_rtpToTrack.size())
         return m_rtpToTrack[rtpChannelNum].isRtcp;
     return false;
 }
 
 int QnRtspClient::getTrackNum(int rtpChannelNum)
 {
-    if (rtpChannelNum < (int)m_rtpToTrack.size())
+    if (rtpChannelNum < (int) m_rtpToTrack.size())
         return m_rtpToTrack[rtpChannelNum].trackIndex;
     return 0;
 }
@@ -1970,7 +2055,8 @@ void QnRtspClient::setUsernameAndPassword(
         defaultAuthScheme);
 }
 
-void QnRtspClient::setCredentials(const nx::network::http::Credentials& credentials,
+void QnRtspClient::setCredentials(
+    const nx::network::http::Credentials& credentials,
     nx::network::http::header::AuthScheme::Value defaultAuthScheme)
 {
     using namespace nx::network::http;
@@ -1981,7 +2067,8 @@ void QnRtspClient::setCredentials(const nx::network::http::Credentials& credenti
             m_defaultAuthScheme = nx::network::http::header::AuthScheme::none;
             return;
         case nx::network::http::AuthTokenType::password:
-            NX_ASSERT(defaultAuthScheme == header::AuthScheme::basic
+            NX_ASSERT(
+                defaultAuthScheme == header::AuthScheme::basic
                 || defaultAuthScheme == header::AuthScheme::digest);
             m_defaultAuthScheme = defaultAuthScheme;
             return;
@@ -2059,33 +2146,35 @@ void sleepIfEmptySocket(nx::network::AbstractStreamSocket* socket)
 {
     static const size_t ADDITIONAL_READ_BUFFER_CAPACITY = 64 * 1024;
     static const size_t MS_PER_SEC = 1000;
-    static const size_t MAX_BITRATE_BITS_PER_SECOND = 50*1024*1024;
+    static const size_t MAX_BITRATE_BITS_PER_SECOND = 50 * 1024 * 1024;
     static const size_t MAX_BITRATE_BYTES_PER_SECOND = MAX_BITRATE_BITS_PER_SECOND / CHAR_BIT;
     static_assert(
         MAX_BITRATE_BYTES_PER_SECOND > ADDITIONAL_READ_BUFFER_CAPACITY * 10,
         "MAX_BITRATE_BYTES_PER_SECOND MUST be 10 times greater than ADDITIONAL_READ_BUFFER_CAPACITY");
 
-    //TODO #akolesnikov Better to find other solution and remove this code.
-    //At least, move ioctl call to sockets, since socket->handle() is deprecated method
+    // TODO #akolesnikov Better to find other solution and remove this code.
+    // At least, move ioctl call to sockets, since socket->handle() is deprecated method
     //(with nat traversal introduced, not every socket will have handle)
     int bytesAv = 0;
-    if ((ioctl(socket->handle(), FIONREAD, &bytesAv) == 0) && //socket read buffer size is unknown to us
-        bytesAv == 0)    //socket read buffer is empty
+    if ((ioctl(socket->handle(), FIONREAD, &bytesAv) == 0)
+        && // socket read buffer size is unknown to us
+        bytesAv == 0) // socket read buffer is empty
     {
-        //This sleep somehow reduces CPU time spent by process in kernel space on arm platform
-        //Possibly, it is workaround of some other bug somewhere else
-        //This code works only on Raspberry and NX1
-        QThread::msleep(MS_PER_SEC / (MAX_BITRATE_BYTES_PER_SECOND / ADDITIONAL_READ_BUFFER_CAPACITY));
+        // This sleep somehow reduces CPU time spent by process in kernel space on arm platform
+        // Possibly, it is workaround of some other bug somewhere else
+        // This code works only on Raspberry and NX1
+        QThread::msleep(
+            MS_PER_SEC / (MAX_BITRATE_BYTES_PER_SECOND / ADDITIONAL_READ_BUFFER_CAPACITY));
     }
 }
 #endif // defined(Q_OS_LINUX)
 
 int QnRtspClient::readSocketWithBuffering(quint8* buf, size_t bufSize, bool readSome)
 {
-    #if defined(Q_OS_LINUX)
-        if (m_config.sleepIfEmptySocket)
-            sleepIfEmptySocket(m_tcpSock.get());
-    #endif
+#if defined(Q_OS_LINUX)
+    if (m_config.sleepIfEmptySocket)
+        sleepIfEmptySocket(m_tcpSock.get());
+#endif
 
     int bytesRead = m_tcpSock->recv(buf, (unsigned int) bufSize, readSome ? 0 : MSG_WAITALL);
     if (bytesRead > 0)
@@ -2101,20 +2190,22 @@ CameraDiagnostics::Result QnRtspClient::parseErrorResponse(
 {
     std::string allowValue = nx::network::http::getHeaderValue(response.headers, "Allow");
     std::transform(allowValue.begin(), allowValue.end(), allowValue.begin(), ::toupper);
-    if (!allowValue.empty()
-         && allowValue.find("GET") != std::string::npos
-         && allowValue.find("HEAD") != std::string::npos)
+    if (!allowValue.empty() && allowValue.find("GET") != std::string::npos
+        && allowValue.find("HEAD") != std::string::npos)
     {
         return CameraDiagnostics::UnsupportedProtocolResult(
-            m_url.toString(), nx::network::http::kUrlSchemeName);
+            m_url.toString(),
+            nx::network::http::kUrlSchemeName);
     }
 
     return CameraDiagnostics::RequestFailedResult(
-        m_url.toString(), nx::String(response.statusLine.reasonPhrase));
+        m_url.toString(),
+        nx::String(response.statusLine.reasonPhrase));
 }
 
 CameraDiagnostics::Result QnRtspClient::sendRequestAndReceiveResponse(
-    nx::network::http::Request&& request, QByteArray& responseBuf)
+    nx::network::http::Request&& request,
+    QByteArray& responseBuf)
 {
     nx::network::rtsp::StatusCodeValue prevStatusCode = nx::network::http::StatusCode::ok;
 
@@ -2134,36 +2225,44 @@ CameraDiagnostics::Result QnRtspClient::sendRequestAndReceiveResponse(
         fillRequestAuthorization(&request);
 
         nx::Buffer requestBuf;
-        request.serialize( &requestBuf );
-        if( m_tcpSock->send(requestBuf.data(), requestBuf.size()) <= 0 )
+        request.serialize(&requestBuf);
+        if (m_tcpSock->send(requestBuf.data(), requestBuf.size()) <= 0)
         {
             NX_DEBUG(this, "Failed to send request: %1", SystemError::getLastOSErrorText());
             return CameraDiagnostics::ConnectionClosedUnexpectedlyResult(m_url.host(), port);
         }
 
-        if( !readTextResponse(responseBuf) )
+        if (!readTextResponse(responseBuf))
         {
             NX_DEBUG(this, "Failed to read response");
             return CameraDiagnostics::ConnectionClosedUnexpectedlyResult(m_url.host(), port);
         }
 
-        // Workaround for some buggy cameras that send '\r\n' after SDP in addition to content-length.
+        // Workaround for some buggy cameras that send '\r\n' after SDP in addition to
+        // content-length.
         if (responseBuf.startsWith("\r\n") && request.requestLine.method == kSetupCommand)
             responseBuf.remove(0, 2);
 
         nx::network::rtsp::RtspResponse response;
         if (!response.parse(nx::ConstBufferRefType(responseBuf.data(), responseBuf.size())))
         {
-            NX_DEBUG(this, "Failed to parse response: '%1', method %2",
-                responseBuf, request.requestLine.method);
+            NX_DEBUG(
+                this,
+                "Failed to parse response: '%1', method %2",
+                responseBuf,
+                request.requestLine.method);
             return CameraDiagnostics::ConnectionClosedUnexpectedlyResult(m_url.host(), port);
         }
 
         m_serverInfo = nx::network::http::getHeaderValue(
-            response.headers, nx::network::http::header::Server::NAME);
+            response.headers,
+            nx::network::http::header::Server::NAME);
 
-        NX_VERBOSE(this, "Got response. url='%1', response= %2",
-            request.requestLine.url, responseBuf);
+        NX_VERBOSE(
+            this,
+            "Got response. url='%1', response= %2",
+            request.requestLine.url,
+            responseBuf);
 
         switch (response.statusLine.statusCode)
         {
@@ -2194,8 +2293,8 @@ CameraDiagnostics::Result QnRtspClient::sendRequestAndReceiveResponse(
 
         addCommonHeaders(request.headers); //< Update sequence after unauthorized response.
 
-        m_isProxyAuthorizationRequired =
-            response.statusLine.statusCode == nx::network::http::StatusCode::proxyAuthenticationRequired;
+        m_isProxyAuthorizationRequired = response.statusLine.statusCode
+            == nx::network::http::StatusCode::proxyAuthenticationRequired;
         const auto authenticateHeaderName =
             m_isProxyAuthorizationRequired ? "Proxy-Authenticate" : "WWW-Authenticate";
         m_responseAuthenticate.reset();
@@ -2205,9 +2304,12 @@ CameraDiagnostics::Result QnRtspClient::sendRequestAndReceiveResponse(
             nx::network::http::header::WWWAuthenticate authenticate;
             if (!authenticate.parse(it->second))
             {
-                NX_DEBUG(this,
+                NX_DEBUG(
+                    this,
                     "Authentication to %1 failed with wrong %2 header value \"%3\" in response.",
-                    m_url, authenticateHeaderName, it->second);
+                    m_url,
+                    authenticateHeaderName,
+                    it->second);
                 continue;
             }
             if (m_ignoreQopInDigest)
@@ -2215,12 +2317,15 @@ CameraDiagnostics::Result QnRtspClient::sendRequestAndReceiveResponse(
             if (authenticate.authScheme == nx::network::http::header::AuthScheme::digest)
             {
                 const auto algorithmIt = authenticate.params.find("algorithm");
-                const auto algorithm = algorithmIt != authenticate.params.end()
-                    ? algorithmIt->second : std::string();
+                const auto algorithm =
+                    algorithmIt != authenticate.params.end() ? algorithmIt->second : std::string();
                 if (!nx::network::http::isDigestAlgorithmSupported(algorithm))
                 {
-                    NX_DEBUG(this, "Skipping unsupported digest algorithm \"%1\" from %2",
-                        algorithm, m_url);
+                    NX_DEBUG(
+                        this,
+                        "Skipping unsupported digest algorithm \"%1\" from %2",
+                        algorithm,
+                        m_url);
                     continue;
                 }
             }
@@ -2255,9 +2360,12 @@ void QnRtspClient::setDateTimeFormat(const DateTimeFormat& format)
 }
 
 void QnRtspClient::addRequestHeader(
-    std::string_view requestName, const nx::network::http::HttpHeader& header)
+    std::string_view requestName,
+    const nx::network::http::HttpHeader& header)
 {
-    nx::network::http::insertOrReplaceHeader(&m_additionalHeaders[std::string(requestName)], header);
+    nx::network::http::insertOrReplaceHeader(
+        &m_additionalHeaders[std::string(requestName)],
+        header);
 }
 
 QElapsedTimer QnRtspClient::lastReceivedDataTimer() const
@@ -2267,9 +2375,8 @@ QElapsedTimer QnRtspClient::lastReceivedDataTimer() const
 
 void QnRtspClient::setCloudConnectEnabled(bool enabled)
 {
-    m_natTraversal = enabled
-        ? nx::network::NatTraversalSupport::enabled
-        : nx::network::NatTraversalSupport::disabled;
+    m_natTraversal = enabled ? nx::network::NatTraversalSupport::enabled
+                             : nx::network::NatTraversalSupport::disabled;
 }
 
 void QnRtspClient::setIgnoreQopInDigest(bool value)

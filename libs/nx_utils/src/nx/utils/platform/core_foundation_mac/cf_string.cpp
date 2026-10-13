@@ -1,27 +1,23 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-
 #include "cf_string.h"
 
-cf::QnCFString::QnCFString()
-    :
+cf::QnCFString::QnCFString():
     base_type()
 {
 }
 
-cf::QnCFString::QnCFString(const QnCFString& other)
-    : base_type(other)
+cf::QnCFString::QnCFString(const QnCFString& other):
+    base_type(other)
 {
 }
 
-cf::QnCFString::QnCFString(CFStringRef ref)
-    :
+cf::QnCFString::QnCFString(CFStringRef ref):
     base_type(ref)
 {
 }
 
-cf::QnCFString::QnCFString(const QString& value)
-    :
+cf::QnCFString::QnCFString(const QString& value):
     base_type(value.toCFString())
 {
 }

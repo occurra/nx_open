@@ -13,14 +13,12 @@ namespace {
 
 using nx::network::http::HttpHeaders;
 
-class HttpHeaderStrictTransportSecurity:
-    public ::testing::Test
+class HttpHeaderStrictTransportSecurity: public ::testing::Test
 {
 protected:
     void givenHeaderWithRandomValues()
     {
-        m_originalHeader.maxAge =
-            std::chrono::seconds(nx::utils::random::number<int>(1, 100000));
+        m_originalHeader.maxAge = std::chrono::seconds(nx::utils::random::number<int>(1, 100000));
         m_originalHeader.includeSubDomains = nx::utils::random::coin();
         m_originalHeader.preload = nx::utils::random::coin();
 
@@ -37,10 +35,7 @@ protected:
         ASSERT_TRUE(m_parsedHeader.parse(m_serializedHeader));
     }
 
-    void thenParsedHeaderMatchesOriginal()
-    {
-        ASSERT_EQ(m_originalHeader, m_parsedHeader);
-    }
+    void thenParsedHeaderMatchesOriginal() { ASSERT_EQ(m_originalHeader, m_parsedHeader); }
 
 private:
     StrictTransportSecurity m_originalHeader;
@@ -115,13 +110,10 @@ TEST(HttpHeaderXForwardedFor, serialize)
 
 //-------------------------------------------------------------------------------------------------
 
-class HttpHeaderForwarded:
-    public ::testing::Test
+class HttpHeaderForwarded: public ::testing::Test
 {
 protected:
-    void assertParseAndSerializeAreSymmetric(
-        const Forwarded& header,
-        const char* serializedActual)
+    void assertParseAndSerializeAreSymmetric(const Forwarded& header, const char* serializedActual)
     {
         assertParsedTo(header, serializedActual);
         assertSerializedTo(serializedActual, header);
@@ -133,18 +125,14 @@ protected:
         ASSERT_FALSE(actual.parse(str));
     }
 
-    void assertParsedTo(
-        const Forwarded& expected,
-        const char* serializedActual)
+    void assertParsedTo(const Forwarded& expected, const char* serializedActual)
     {
         Forwarded actual;
         ASSERT_TRUE(actual.parse(serializedActual));
         ASSERT_EQ(expected, actual);
     }
 
-    void assertSerializedTo(
-        const char* expected,
-        const Forwarded& header)
+    void assertSerializedTo(const char* expected, const Forwarded& header)
     {
         ASSERT_EQ(
             nx::utils::toLower(std::string_view(expected)),
@@ -154,9 +142,7 @@ protected:
 
 TEST_F(HttpHeaderForwarded, parse)
 {
-    assertParsedTo(
-        {{{ "", "_gazonk", "", "" }}},
-        "for=\"_gazonk\"");
+    assertParsedTo({{{"", "_gazonk", "", ""}}}, "for=\"_gazonk\"");
 
     assertParseFails("");
     assertParseFails(",");
@@ -164,20 +150,18 @@ TEST_F(HttpHeaderForwarded, parse)
 
 TEST_F(HttpHeaderForwarded, parse_and_serialize_are_symmetric)
 {
-    assertParseAndSerializeAreSymmetric(
-        {{{ "", "_gazonk", "", "" }}},
-        "for=_gazonk");
+    assertParseAndSerializeAreSymmetric({{{"", "_gazonk", "", ""}}}, "for=_gazonk");
 
     assertParseAndSerializeAreSymmetric(
-        {{{ "", "[2001:db8:cafe::17]:4711", "", "" }}},
+        {{{"", "[2001:db8:cafe::17]:4711", "", ""}}},
         "For=\"[2001:db8:cafe::17]:4711\"");
 
     assertParseAndSerializeAreSymmetric(
-        {{{ "203.0.113.43", "192.0.2.60", "example.com:1234", "http" }}},
+        {{{"203.0.113.43", "192.0.2.60", "example.com:1234", "http"}}},
         "by=203.0.113.43;for=192.0.2.60;host=\"example.com:1234\";proto=http");
 
     assertParseAndSerializeAreSymmetric(
-        {{{ "", "192.0.2.43", "", "" }, { "", "198.51.100.17", "", "" }}},
+        {{{"", "192.0.2.43", "", ""}, {"", "198.51.100.17", "", ""}}},
         "for=192.0.2.43, for=198.51.100.17");
 }
 
@@ -209,9 +193,8 @@ class CookieParseTest: public ::testing::TestWithParam<std::pair<HttpHeaders, Co
 TEST_P(CookieParseTest, cookiesView)
 {
     const auto& [headers, expected] = GetParam();
-    const std::vector parsed = headers
-        | nx::network::utils::cookiesView()
-        | nx::ranges::to<std::vector>();
+    const std::vector parsed =
+        headers | nx::network::utils::cookiesView() | nx::ranges::to<std::vector>();
 
     if (expected.first.empty() && expected.second.empty())
     {

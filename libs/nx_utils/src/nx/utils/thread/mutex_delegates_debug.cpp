@@ -63,19 +63,12 @@ bool MutexDebugDelegate::isRecursive() const
     return (bool) m_recursiveMutex;
 }
 
-
 void MutexDebugDelegate::afterLock(const char* sourceFile, int sourceLine, int lockId)
 {
     threadHoldingMutex = ::currentThreadSystemId();
     ++recursiveLockCount;
 
-    MutexLockKey lockKey(
-        sourceFile,
-        sourceLine,
-        this,
-        lockId,
-        threadHoldingMutex,
-        isRecursive());
+    MutexLockKey lockKey(sourceFile, sourceLine, this, lockId, threadHoldingMutex, isRecursive());
 
     if (m_isAnalyzerInUse)
         MutexLockAnalyzer::instance()->afterMutexLocked(lockKey);
@@ -97,12 +90,10 @@ void MutexDebugDelegate::beforeUnlock()
 //-------------------------------------------------------------------------------------------------
 
 ReadWriteLockDebugDelegate::ReadWriteLockDebugDelegate(
-    ReadWriteLock::RecursionMode mode, bool isAnalyzerInUse)
-:
+    ReadWriteLock::RecursionMode mode,
+    bool isAnalyzerInUse):
     m_delegate(
-        (mode == ReadWriteLock::Recursive)
-            ? Mutex::Recursive
-            : Mutex::NonRecursive,
+        (mode == ReadWriteLock::Recursive) ? Mutex::Recursive : Mutex::NonRecursive,
         isAnalyzerInUse)
 {
 }
@@ -122,7 +113,10 @@ bool ReadWriteLockDebugDelegate::tryLockForRead(const char* sourceFile, int sour
     return m_delegate.tryLock(sourceFile, sourceLine, lockId);
 }
 
-bool ReadWriteLockDebugDelegate::tryLockForWrite(const char* sourceFile, int sourceLine, int lockId)
+bool ReadWriteLockDebugDelegate::tryLockForWrite(
+    const char* sourceFile,
+    int sourceLine,
+    int lockId)
 {
     return m_delegate.tryLock(sourceFile, sourceLine, lockId);
 }
@@ -144,9 +138,8 @@ bool WaitConditionDebugDelegate::wait(MutexDelegate* mutex, std::chrono::millise
 
     const auto result = m_delegate.wait(
         mutexDelegate->m_mutex.get(),
-        (timeout == std::chrono::milliseconds::max())
-            ? ULONG_MAX
-            : (unsigned long) timeout.count());
+        (timeout == std::chrono::milliseconds::max()) ? ULONG_MAX
+                                                      : (unsigned long) timeout.count());
 
     //< Better to save current position than nothing.
     mutexDelegate->afterLock(__FILE__, __LINE__, 0);

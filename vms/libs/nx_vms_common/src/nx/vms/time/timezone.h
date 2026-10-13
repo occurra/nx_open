@@ -14,15 +14,13 @@ static constexpr std::chrono::milliseconds kInvalidUtcOffset{std::numeric_limits
 /**
  * Calculate timeZone based on its IANA id. Fallback to default value in case of failure.
  */
-NX_VMS_COMMON_API QTimeZone timeZone(
-    const QString& timeZoneId,
-    QTimeZone defaultValue = QTimeZone::LocalTime);
+NX_VMS_COMMON_API QTimeZone
+    timeZone(const QString& timeZoneId, QTimeZone defaultValue = QTimeZone::LocalTime);
 
 /**
  * Calculate timeZone based on its IANA id. Fallback to offset from UTC in case of failure.
  */
-NX_VMS_COMMON_API QTimeZone timeZone(
-    const QString& timeZoneId,
-    std::chrono::milliseconds offsetFromUtc);
+NX_VMS_COMMON_API QTimeZone
+    timeZone(const QString& timeZoneId, std::chrono::milliseconds offsetFromUtc);
 
 } // namespace nx::vms::time

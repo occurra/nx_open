@@ -12,14 +12,14 @@ constexpr int kMaxCacheSize = std::numeric_limits<uint16_t>::max() / 2;
 // Can't make any reorder with limit < 2.
 constexpr int kMinCacheSize = 2;
 
-ReorderingCache::ReorderingCache(int queueLimit)
-    :
+ReorderingCache::ReorderingCache(int queueLimit):
     m_queueLimit(std::min(queueLimit, kMaxCacheSize))
 {
 }
 
 ReorderingCache::Status ReorderingCache::pushPacket(
-    const nx::utils::ByteArray& packet, uint16_t seq)
+    const nx::utils::ByteArray& packet,
+    uint16_t seq)
 {
     if (m_queueLimit < kMinCacheSize) //< Always pass.
         return ReorderingCache::Status::pass;
@@ -33,12 +33,15 @@ ReorderingCache::Status ReorderingCache::pushPacket(
 
     if (linearized - *m_lastSeq > m_queueLimit) //< Unexpected case.
     {
-        NX_DEBUG(this, "Got sequence with too big distance: %1 vs %2", (uint16_t) *m_lastSeq, (uint16_t) linearized);
+        NX_DEBUG(
+            this,
+            "Got sequence with too big distance: %1 vs %2",
+            (uint16_t) *m_lastSeq,
+            (uint16_t) linearized);
         resetState(linearized);
         return ReorderingCache::Status::pass;
     }
-    if (linearized - *m_lastSeq == 1
-        && m_lostSequences.empty()) //< Normal case without any drops.
+    if (linearized - *m_lastSeq == 1 && m_lostSequences.empty()) //< Normal case without any drops.
     {
         NX_ASSERT(m_packets.empty());
         *m_lastSeq = linearized;
@@ -158,7 +161,8 @@ bool ReorderingCache::getNextPacket(nx::utils::ByteArray& outputPacket)
 }
 
 std::optional<RtcpNackReport> ReorderingCache::getNextNackPacket(
-    uint16_t sourceSsrc, uint16_t senderSsrc) const
+    uint16_t sourceSsrc,
+    uint16_t senderSsrc) const
 {
     if (m_lostSequences.empty())
         return std::nullopt;

@@ -14,10 +14,9 @@ class NX_RTP_API BaseMetadataRtpParserFactory: public nx::rtp::IRtpParserFactory
 public:
     BaseMetadataRtpParserFactory(std::set<QString> codecs);
 
-    virtual std::unique_ptr<nx::rtp::StreamParser>
-        createParser(const QString& codecName) const override;
-    virtual std::unique_ptr<nx::rtp::StreamParser>
-        createParser(int payloadType) const override;
+    virtual std::unique_ptr<nx::rtp::StreamParser> createParser(
+        const QString& codecName) const override;
+    virtual std::unique_ptr<nx::rtp::StreamParser> createParser(int payloadType) const override;
 
     virtual bool supportsCodec(const QString& codecName) const override;
     virtual bool supportsPayloadType(int payloadType) const override;

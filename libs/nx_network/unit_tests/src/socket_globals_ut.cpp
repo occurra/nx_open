@@ -11,8 +11,7 @@ namespace nx::network::test {
 
 namespace {
 
-class TestSocket:
-    public TCPSocket
+class TestSocket: public TCPSocket
 {
     using base_type = TCPSocket;
 
@@ -24,10 +23,7 @@ public:
         m_count->fetch_add(1);
     }
 
-    ~TestSocket()
-    {
-        m_count->fetch_add(-1);
-    }
+    ~TestSocket() { m_count->fetch_add(-1); }
 
 private:
     std::atomic<int>* m_count = nullptr;
@@ -37,8 +33,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class SocketGlobals:
-    public ::testing::Test
+class SocketGlobals: public ::testing::Test
 {
 public:
     SocketGlobals():
@@ -76,14 +71,11 @@ protected:
 
             ctx.socket->bindToAioThread(m_aioThread);
             ctx.readBuf.reserve(128);
-            ctx.socket->readSomeAsync(&ctx.readBuf, [](auto... /*args*/){});
+            ctx.socket->readSomeAsync(&ctx.readBuf, [](auto... /*args*/) {});
         }
     }
 
-    void passSocketsOwnershipToAio()
-    {
-        post(std::exchange(m_sockets, {}));
-    }
+    void passSocketsOwnershipToAio() { post(std::exchange(m_sockets, {})); }
 
     void whenDeinitialize()
     {
@@ -91,10 +83,7 @@ protected:
         m_deinitialized = true;
     }
 
-    void thenAllSocketsAreRemoved()
-    {
-        ASSERT_EQ(0, m_count);
-    }
+    void thenAllSocketsAreRemoved() { ASSERT_EQ(0, m_count); }
 
 private:
     struct SocketContext

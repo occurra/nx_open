@@ -21,8 +21,8 @@ public:
     {
     }
 
-    template<typename ... Args>
-    typename std::invoke_result_t<Function, Args...> create(Args&& ... args)
+    template<typename... Args>
+    typename std::invoke_result_t<Function, Args...> create(Args&&... args)
     {
         return m_func(std::forward<Args>(args)...);
     }
@@ -41,7 +41,10 @@ public:
     auto setCustomProduct()
     {
         return setCustomFunc(
-            [](auto&&... args) { return std::make_unique<Product>(std::move(args)...); });
+            [](auto&&... args)
+            {
+                return std::make_unique<Product>(std::move(args)...);
+            });
     }
 
 private:
@@ -50,11 +53,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-template<
-    typename AbstractType,
-    typename DefaultInstanceType,
-    typename... Args
->
+template<typename AbstractType, typename DefaultInstanceType, typename... Args>
 // requires std::is_base_of<AbstractType, DefaultInstanceType>::value
 class BasicAbstractObjectFactory:
     public nx::utils::BasicFactory<std::unique_ptr<AbstractType>(Args...)>
@@ -75,8 +74,7 @@ private:
     template<typename... LocalArgs>
     std::unique_ptr<AbstractType> defaultFactory(LocalArgs&&... args)
     {
-        return std::make_unique<DefaultInstanceType>(
-            std::forward<decltype(args)>(args)...);
+        return std::make_unique<DefaultInstanceType>(std::forward<decltype(args)>(args)...);
     }
 };
 

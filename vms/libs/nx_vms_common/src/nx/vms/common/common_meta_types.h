@@ -9,4 +9,4 @@ namespace nx::vms::common {
  */
 NX_VMS_COMMON_API void initializeMetaTypes();
 
-} //namespace nx::vms::common
+} // namespace nx::vms::common

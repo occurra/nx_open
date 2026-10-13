@@ -47,14 +47,13 @@ TranslationOverlay::~TranslationOverlay()
         {
             translators << t.release();
         }
-        const auto callback =
-            [translators]()
+        const auto callback = [translators]()
+        {
+            for (auto& translator: translators)
             {
-                for (auto& translator: translators)
-                {
-                    translator->setParent(qApp);
-                }
-            };
+                translator->setParent(qApp);
+            }
+        };
         QMetaObject::invokeMethod(qApp, callback, Qt::QueuedConnection);
     }
 }
@@ -142,12 +141,11 @@ void TranslationOverlay::handleTranslatorsUnderMutex()
     else
     {
         // Call the same method from the main thread.
-        const auto callback =
-            [this]()
-            {
-                NX_MUTEX_LOCKER lock(&m_mutex);
-                handleTranslatorsUnderMutex();
-            };
+        const auto callback = [this]()
+        {
+            NX_MUTEX_LOCKER lock(&m_mutex);
+            handleTranslatorsUnderMutex();
+        };
         QMetaObject::invokeMethod(qApp, callback, Qt::QueuedConnection);
     }
 }

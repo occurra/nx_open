@@ -39,10 +39,7 @@ struct C
 {
     std::string str;
 
-    bool operator==(const C& rhs) const
-    {
-        return str == rhs.str;
-    }
+    bool operator==(const C& rhs) const { return str == rhs.str; }
 };
 
 std::string toString(const C& c);
@@ -63,16 +60,14 @@ public:
 
     bool operator==(const B& rhs) const
     {
-        return num == rhs.num
-            && str == rhs.str
-            && numbers == rhs.numbers
+        return num == rhs.num && str == rhs.str && numbers == rhs.numbers
             && strings == rhs.strings;
     }
 };
 
 NX_REFLECTION_INSTRUMENT(B, (num)(str)(text)(numbers)(strings))
 
-} // namespace B
+} // namespace BB
 
 class A
 {
@@ -86,46 +81,32 @@ public:
 
     bool operator==(const A& rhs) const
     {
-        return num == rhs.num
-            && str == rhs.str
-            && b == rhs.b
-            && bs == rhs.bs
-            && c == rhs.c
+        return num == rhs.num && str == rhs.str && b == rhs.b && bs == rhs.bs && c == rhs.c
             && keyToValue == rhs.keyToValue;
     }
 };
 
 NX_REFLECTION_INSTRUMENT(A, (num)(str)(b)(bs)(c)(keyToValue))
 
-class D:
-    public A
+class D: public A
 {
 public:
     int ddd = 0;
 
-    bool operator==(const D& rhs) const
-    {
-        return this->A::operator==(rhs)
-            && ddd == rhs.ddd;
-    }
+    bool operator==(const D& rhs) const { return this->A::operator==(rhs) && ddd == rhs.ddd; }
 };
 
 // Repeating parent fields explicitly.
 NX_REFLECTION_INSTRUMENT(D, (num)(str)(b)(bs)(c)(keyToValue)(ddd))
 
-class E:
-    public D
+class E: public D
 {
 public:
     using base_type = D;
 
     int e = 0;
 
-    bool operator==(const E& rhs) const
-    {
-        return this->D::operator==(rhs)
-            && e == rhs.e;
-    }
+    bool operator==(const E& rhs) const { return this->D::operator==(rhs) && e == rhs.e; }
 };
 
 // Using E::base_type to include parent fields.

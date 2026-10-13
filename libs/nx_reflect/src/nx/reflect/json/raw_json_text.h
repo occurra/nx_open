@@ -27,7 +27,8 @@ struct RawJsonText
 NX_REFLECTION_INSTRUMENT(RawJsonText, (jsonText))
 
 // Providing custom functions for JSON to build in the jsonText into the output JSON document.
-NX_REFLECT_API DeserializationResult deserialize(const DeserializationContext& ctx, RawJsonText* data);
+NX_REFLECT_API DeserializationResult
+    deserialize(const DeserializationContext& ctx, RawJsonText* data);
 NX_REFLECT_API void serialize(SerializationContext* ctx, const RawJsonText& data);
 
 } // namespace nx::reflect::json

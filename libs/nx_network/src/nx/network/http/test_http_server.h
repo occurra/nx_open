@@ -72,7 +72,10 @@ public:
     {
         return m_httpMessageDispatcher.registerRequestProcessor(
             path,
-            []() { return std::make_unique<RequestHandlerType>(); },
+            []()
+            {
+                return std::make_unique<RequestHandlerType>();
+            },
             method);
     }
 
@@ -83,11 +86,8 @@ public:
         const Method& method = nx::network::http::kAnyMethod,
         MessageBodyDeliveryType type = MessageBodyDeliveryType::buffer)
     {
-        return m_httpMessageDispatcher.registerRequestProcessorFunc(
-            method,
-            path,
-            std::move(func),
-            type);
+        return m_httpMessageDispatcher
+            .registerRequestProcessorFunc(method, path, std::move(func), type);
     }
 
     bool registerStaticProcessor(
@@ -133,7 +133,9 @@ public:
     nx::network::http::HttpStreamSocketServer& server() { return *m_httpServer; }
     const nx::network::http::HttpStreamSocketServer& server() const { return *m_httpServer; }
     nx::network::http::server::rest::MessageDispatcher& httpMessageDispatcher()
-        { return m_httpMessageDispatcher; }
+    {
+        return m_httpMessageDispatcher;
+    }
 
     void terminateListener();
     void pleaseStopSync();
@@ -179,11 +181,11 @@ private:
 //-------------------------------------------------------------------------------------------------
 
 class NX_NETWORK_API RandomlyFailingHttpServer:
-    public nx::network::server::StreamSocketServer<
-        RandomlyFailingHttpServer, RandomlyFailingHttpConnection>
+    public nx::network::server::
+        StreamSocketServer<RandomlyFailingHttpServer, RandomlyFailingHttpConnection>
 {
-    using base_type = nx::network::server::StreamSocketServer<
-        RandomlyFailingHttpServer, RandomlyFailingHttpConnection>;
+    using base_type = nx::network::server::
+        StreamSocketServer<RandomlyFailingHttpServer, RandomlyFailingHttpConnection>;
 
 public:
     template<typename... Args>

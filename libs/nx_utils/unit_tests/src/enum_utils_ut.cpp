@@ -38,28 +38,36 @@ TEST(EnumUtils, enumToString)
 
 TEST(EnumUtils, enumToFullString)
 {
-    ASSERT_EQ(enumToFullString(EnumUtilsTest::EnumType::Value1),
+    ASSERT_EQ(
+        enumToFullString(EnumUtilsTest::EnumType::Value1),
         str("nx::utils::test::EnumUtilsTest::EnumType::Value1"));
 
-    ASSERT_EQ(enumToFullString(EnumUtilsTest::EnumClassType::value1),
+    ASSERT_EQ(
+        enumToFullString(EnumUtilsTest::EnumClassType::value1),
         str("nx::utils::test::EnumUtilsTest::EnumClassType::value1"));
 
-    ASSERT_EQ(enumToFullString(EnumUtilsTest::EnumFlag::Flag2),
+    ASSERT_EQ(
+        enumToFullString(EnumUtilsTest::EnumFlag::Flag2),
         str("nx::utils::test::EnumUtilsTest::EnumFlag::Flag2"));
 
-    ASSERT_EQ(enumToFullString(EnumUtilsTest::EnumClassFlag::flag2),
+    ASSERT_EQ(
+        enumToFullString(EnumUtilsTest::EnumClassFlag::flag2),
         str("nx::utils::test::EnumUtilsTest::EnumClassFlag::flag2"));
 
-    ASSERT_EQ(enumToFullString(enum_utils_test::EnumType::Value2),
+    ASSERT_EQ(
+        enumToFullString(enum_utils_test::EnumType::Value2),
         str("nx::utils::test::enum_utils_test::EnumType::Value2"));
 
-    ASSERT_EQ(enumToFullString(enum_utils_test::EnumClassType::value2),
+    ASSERT_EQ(
+        enumToFullString(enum_utils_test::EnumClassType::value2),
         str("nx::utils::test::enum_utils_test::EnumClassType::value2"));
 
-    ASSERT_EQ(enumToFullString(enum_utils_test::EnumFlag::Flag1),
+    ASSERT_EQ(
+        enumToFullString(enum_utils_test::EnumFlag::Flag1),
         str("nx::utils::test::enum_utils_test::EnumFlag::Flag1"));
 
-    ASSERT_EQ(enumToFullString(enum_utils_test::EnumClassFlag::flag1),
+    ASSERT_EQ(
+        enumToFullString(enum_utils_test::EnumClassFlag::flag1),
         str("nx::utils::test::enum_utils_test::EnumClassFlag::flag1"));
 }
 

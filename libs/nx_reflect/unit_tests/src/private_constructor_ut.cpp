@@ -11,13 +11,19 @@ namespace nx::reflect::test {
 struct PrivateConstructor
 {
     std::string dummy;
-    PrivateConstructor(std::string dummy): dummy(std::move(dummy)) {}
+    PrivateConstructor(std::string dummy):
+        dummy(std::move(dummy))
+    {
+    }
 
     template<typename T>
     friend constexpr T nx::reflect::createDefault();
 
 private:
-    PrivateConstructor(): dummy("") {}
+    PrivateConstructor():
+        dummy("")
+    {
+    }
 };
 NX_REFLECTION_INSTRUMENT(PrivateConstructor, (dummy))
 
@@ -27,13 +33,19 @@ struct PrivateConstructorField
     std::optional<PrivateConstructor> optionalField;
     std::vector<PrivateConstructor> vectorField;
     std::map<std::string, PrivateConstructor> mapField;
-    PrivateConstructorField(std::string dummy): field(std::move(dummy)) {}
+    PrivateConstructorField(std::string dummy):
+        field(std::move(dummy))
+    {
+    }
 
     template<typename T>
     friend constexpr T nx::reflect::createDefault();
 
 private:
-    PrivateConstructorField(): PrivateConstructorField("") {}
+    PrivateConstructorField():
+        PrivateConstructorField("")
+    {
+    }
 };
 NX_REFLECTION_INSTRUMENT(PrivateConstructorField, (field)(optionalField)(vectorField)(mapField))
 

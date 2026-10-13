@@ -8,10 +8,11 @@ namespace test {
 
 TEST(QnSettingsGroupReader, allArgs)
 {
-    QnSettings settings(nx::ArgumentParser(
-        {"-listener/port", "22", "-listener/backlog", "1024", "-a/b", "c", "-x/y", "z"}));
+    QnSettings settings(
+        nx::ArgumentParser(
+            {"-listener/port", "22", "-listener/backlog", "1024", "-a/b", "c", "-x/y", "z"}));
 
-    const std::multimap<QString, QString> expected{{"backlog", "1024"} , {"port", "22"}};
+    const std::multimap<QString, QString> expected{{"backlog", "1024"}, {"port", "22"}};
     ASSERT_EQ(expected, ::QnSettingsGroupReader(settings, "listener").allArgs());
 }
 

@@ -2,11 +2,11 @@
 
 #include "h264_utils.h"
 
-#include <nx/codec/h264/sequence_parameter_set.h>
 #include <nx/codec/h264/picture_parameter_set.h>
+#include <nx/codec/h264/sequence_parameter_set.h>
 #include <nx/codec/nal_units.h>
-#include <nx/utils/string.h>
 #include <nx/utils/log/log.h>
+#include <nx/utils/string.h>
 
 namespace nx::media::h264 {
 
@@ -25,8 +25,10 @@ int parseSpsId(const uint8_t* data, int size)
     sps.decodeBuffer(data, data + size);
     if (sps.deserialize() != 0)
     {
-        NX_DEBUG(NX_SCOPE_TAG,
-            "Failed to parse SPS: %1", nx::utils::toHex(data, std::min(size, kMaxHexDumpLength)));
+        NX_DEBUG(
+            NX_SCOPE_TAG,
+            "Failed to parse SPS: %1",
+            nx::utils::toHex(data, std::min(size, kMaxHexDumpLength)));
         return -1;
     }
     return sps.seq_parameter_set_id;
@@ -38,8 +40,10 @@ int parsePpsId(const uint8_t* data, int size)
     pps.decodeBuffer(data, data + size);
     if (pps.deserialize() != 0)
     {
-        NX_DEBUG(NX_SCOPE_TAG,
-            "Failed to parse PPS: %1", nx::utils::toHex(data, std::min(size, kMaxHexDumpLength)));
+        NX_DEBUG(
+            NX_SCOPE_TAG,
+            "Failed to parse PPS: %1",
+            nx::utils::toHex(data, std::min(size, kMaxHexDumpLength)));
         return -1;
     }
     return pps.pic_parameter_set_id;
@@ -49,8 +53,12 @@ void truncateMap(std::map<int, nal::NalUnitInfo>* nals, int maxSize, const char*
 {
     if (nals->size() > (size_t) maxSize)
     {
-        NX_WARNING(NX_SCOPE_TAG, "Truncating %1 map from %2 to %3 entries",
-            name, nals->size(), maxSize);
+        NX_WARNING(
+            NX_SCOPE_TAG,
+            "Truncating %1 map from %2 to %3 entries",
+            name,
+            nals->size(),
+            maxSize);
         auto it = nals->begin();
         std::advance(it, maxSize);
         nals->erase(it, nals->end());
@@ -64,19 +72,20 @@ void truncateMap(std::map<int, nal::NalUnitInfo>* nals, int maxSize, const char*
  * @param data data->context should not be null.
  */
 std::vector<nal::NalUnitInfo> readNalUnitsFromExtraData(
-    const uint8_t* extradata, int extradataSize)
+    const uint8_t* extradata,
+    int extradataSize)
 {
     std::vector<nal::NalUnitInfo> result;
     const uint8_t* p = extradata;
 
-    //sps & pps is in the extradata, parsing it...
-    //following code has been taken from libavcodec/h264.c
+    // sps & pps is in the extradata, parsing it...
+    // following code has been taken from libavcodec/h264.c
 
     // prefix is unit len
-    //const int reqUnitSize = (data->context->ctx()->extradata[4] & 0x03) + 1;
+    // const int reqUnitSize = (data->context->ctx()->extradata[4] & 0x03) + 1;
     /* sps and pps in the avcC always have length coded with 2 bytes,
-    * so put a fake nal_length_size = 2 while parsing them */
-    //int nal_length_size = 2;
+     * so put a fake nal_length_size = 2 while parsing them */
+    // int nal_length_size = 2;
 
     // Decode sps from avcC
     int cnt = *(p + 5) & 0x1f; // Number of sps
@@ -85,7 +94,7 @@ std::vector<nal::NalUnitInfo> readNalUnitsFromExtraData(
     for (int i = 0; i < cnt; i++)
     {
         const int nalsize = getNalSize(p);
-        p += 2; //skipping nalusize
+        p += 2; // skipping nalusize
         if (nalsize > extradataSize - (p - extradata))
             break;
         result.emplace_back(nal::NalUnitInfo{p, nalsize});
@@ -108,18 +117,19 @@ std::vector<nal::NalUnitInfo> readNalUnitsFromExtraData(
 
 bool isExtradataInMp4Format(const QnCompressedVideoData* data)
 {
-    return data->context &&
-        data->context->getExtradataSize() >= 7 &&
-        data->context->getExtradata()[0] == 1;
+    return data->context && data->context->getExtradataSize() >= 7
+        && data->context->getExtradata()[0] == 1;
 }
 
 bool extractSps(const QnCompressedVideoData* data, SequenceParameterSet& sps)
 {
     std::vector<nal::NalUnitInfo> nalUnits;
     if (isExtradataInMp4Format(data))
-        nalUnits = readNalUnitsFromExtraData(data->context->getExtradata(), data->context->getExtradataSize());
+        nalUnits = readNalUnitsFromExtraData(
+            data->context->getExtradata(),
+            data->context->getExtradataSize());
     else
-        nalUnits = nal::findNalUnitsAnnexB((const uint8_t*)data->data(), data->dataSize());
+        nalUnits = nal::findNalUnitsAnnexB((const uint8_t*) data->data(), data->dataSize());
 
     for (const auto& nalu: nalUnits)
     {
@@ -190,13 +200,13 @@ std::vector<uint8_t> buildExtraDataMp4(const std::vector<nal::NalUnitInfo>& nalU
     // Get extra data size.
     int extradataSize = 5; // Version, profile, profile compat, level, nal size length.
     extradataSize += 1; // Sps count.
-    for(const auto& sps: spsMap)
+    for (const auto& sps: spsMap)
     {
         extradataSize += sizeof(uint16_t); // Sps size.
         extradataSize += sps.second.size; // Sps data.
     }
     extradataSize += 1; // pps count
-    for(const auto& pps: ppsMap)
+    for (const auto& pps: ppsMap)
     {
         extradataSize += sizeof(uint16_t); // Pps size.
         extradataSize += pps.second.size; // Pps data.
@@ -223,20 +233,20 @@ std::vector<uint8_t> buildExtraDataMp4(const std::vector<nal::NalUnitInfo>& nalU
         uint8_t numSps = uint8_t(spsMap.size()) | 0xe0;
         bitstream.putBits(8, numSps); // 3 bits reserved (111) + 5 bits number of sps.
 
-        for(const auto& spsData: spsMap)
+        for (const auto& spsData: spsMap)
         {
             bitstream.putBits(16, spsData.second.size);
             bitstream.putBytes(spsData.second.data, spsData.second.size);
         }
         bitstream.putBits(8, ppsMap.size()); // Number of pps.
-        for(const auto& ppsData: ppsMap)
+        for (const auto& ppsData: ppsMap)
         {
             bitstream.putBits(16, ppsData.second.size);
             bitstream.putBytes(ppsData.second.data, ppsData.second.size);
         }
         bitstream.flushBits();
     }
-    catch(const nx::utils::BitStreamException&)
+    catch (const nx::utils::BitStreamException&)
     {
         NX_ERROR(NX_SCOPE_TAG, "Failed to write extra data");
         return std::vector<uint8_t>();

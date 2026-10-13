@@ -12,6 +12,7 @@
 #include <nx/vms/api/types/motion_types.h>
 
 namespace nx::vms::api {
+
 Q_NAMESPACE_EXPORT(NX_VMS_API)
 Q_CLASSINFO("RegisterEnumClassesUnscoped", "false")
 
@@ -73,15 +74,14 @@ constexpr auto nxReflectVisitAllEnumItems(ResourceStatus*, Visitor&& visitor)
         Item{ResourceStatus::recording, "Recording"},
         Item{ResourceStatus::undefined, "NotDefined"},
         Item{ResourceStatus::incompatible, "Incompatible"},
-        Item{ResourceStatus::mismatchedCertificate, "mismatchedCertificate"}
-    );
+        Item{ResourceStatus::mismatchedCertificate, "mismatchedCertificate"});
 }
 
-NX_REFLECTION_ENUM(CameraStatusFlag,
+NX_REFLECTION_ENUM(
+    CameraStatusFlag,
     CSF_NoFlags = 0,
     CSF_HasIssuesFlag = 1 << 0,
-    CSF_InvalidScheduleFlag = 1 << 1
-)
+    CSF_InvalidScheduleFlag = 1 << 1)
 Q_DECLARE_FLAGS(CameraStatusFlags, CameraStatusFlag)
 Q_DECLARE_OPERATORS_FOR_FLAGS(CameraStatusFlags)
 
@@ -110,8 +110,7 @@ constexpr auto nxReflectVisitAllEnumItems(RecordingType*, Visitor&& visitor)
         Item{RecordingType::never, "never"},
         Item{RecordingType::never, "RT_Never"},
         Item{RecordingType::metadataAndLowQuality, "metadataAndLowQuality"},
-        Item{RecordingType::metadataAndLowQuality, "RT_MotionAndLowQuality"}
-    );
+        Item{RecordingType::metadataAndLowQuality, "RT_MotionAndLowQuality"});
 }
 
 NX_VMS_API std::ostream& operator<<(std::ostream& os, RecordingType value);
@@ -145,8 +144,7 @@ constexpr auto nxReflectVisitAllEnumItems(StreamQuality*, Visitor&& visitor)
         Item{StreamQuality::preset, "present"},
         Item{StreamQuality::undefined, "undefined"},
         Item{StreamQuality::undefined, ""},
-        Item{StreamQuality::rapidReview, "rapidPreview"}
-    );
+        Item{StreamQuality::rapidReview, "rapidPreview"});
 }
 
 NX_VMS_API std::ostream& operator<<(std::ostream& os, StreamQuality value);
@@ -197,8 +195,7 @@ constexpr auto nxReflectVisitAllEnumItems(FailoverPriority*, Visitor&& visitor)
         Item{FailoverPriority::never, "Never"},
         Item{FailoverPriority::low, "Low"},
         Item{FailoverPriority::medium, "Medium"},
-        Item{FailoverPriority::high, "High"}
-    );
+        Item{FailoverPriority::high, "High"});
 }
 
 enum CameraBackupQuality
@@ -222,7 +219,8 @@ inline bool isLowQualityEnabled(const nx::vms::api::CameraBackupQuality& quality
 }
 
 inline bool isQualityEnabledForStream(
-    const nx::vms::api::CameraBackupQuality& quality, const nx::vms::api::StreamIndex& stream)
+    const nx::vms::api::CameraBackupQuality& quality,
+    const nx::vms::api::StreamIndex& stream)
 {
     if (stream == nx::vms::api::StreamIndex::primary)
         return isHiQualityEnabled(quality);
@@ -236,11 +234,10 @@ constexpr auto nxReflectVisitAllEnumItems(CameraBackupQuality*, Visitor&& visito
 {
     using Item = nx::reflect::enumeration::Item<CameraBackupQuality>;
     return visitor(
-        Item{ CameraBackupHighQuality, "CameraBackupHighQuality" },
-        Item{ CameraBackupLowQuality, "CameraBackupLowQuality" },
-        Item{ CameraBackupBoth, "CameraBackupBoth" },
-        Item{ CameraBackupDefault, "CameraBackupDefault" }
-    );
+        Item{CameraBackupHighQuality, "CameraBackupHighQuality"},
+        Item{CameraBackupLowQuality, "CameraBackupLowQuality"},
+        Item{CameraBackupBoth, "CameraBackupBoth"},
+        Item{CameraBackupDefault, "CameraBackupDefault"});
 }
 
 // TODO: #rvasilenko Write comments.
@@ -332,8 +329,7 @@ constexpr auto nxReflectVisitAllEnumItems(ServerFlag*, Visitor&& visitor)
         // "SF_OwnerApiForAdmins" by default.
         Item{ServerFlag::SF_AdminApiForPowerUsers, "SF_OwnerApiForAdmins"},
         Item{ServerFlag::SF_AdminApiForPowerUsers, "SF_AdminApiForPowerUsers"},
-        Item{ServerFlag::SF_Docker, "SF_Docker"}
-    );
+        Item{ServerFlag::SF_Docker, "SF_Docker"});
 }
 
 enum class IoModuleVisualStyle
@@ -355,8 +351,7 @@ constexpr auto nxReflectVisitAllEnumItems(IoModuleVisualStyle*, Visitor&& visito
     using Item = nx::reflect::enumeration::Item<IoModuleVisualStyle>;
     return visitor(
         Item{IoModuleVisualStyle::form, "Form"},
-        Item{IoModuleVisualStyle::tile, "Tile"}
-    );
+        Item{IoModuleVisualStyle::tile, "Tile"});
 }
 
 NX_REFLECTION_ENUM_CLASS(StreamDataFilter,

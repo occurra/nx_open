@@ -11,18 +11,12 @@ namespace nx::sql::detail::test {
 
 namespace {
 
-class DbConnectionStub:
-    public AbstractDbConnection
+class DbConnectionStub: public AbstractDbConnection
 {
 public:
-    virtual bool open() override
-    {
-        return true;
-    }
+    virtual bool open() override { return true; }
 
-    virtual void close() override
-    {
-    }
+    virtual void close() override {}
 
     virtual bool begin() override
     {
@@ -42,45 +36,21 @@ public:
         return true;
     }
 
-    virtual DBResult lastError() override
-    {
-        return {DBResultCode::ioError, ""};
-    }
+    virtual DBResult lastError() override { return {DBResultCode::ioError, ""}; }
 
-    virtual std::unique_ptr<AbstractSqlQuery> createQuery() override
-    {
-        return nullptr;
-    }
+    virtual std::unique_ptr<AbstractSqlQuery> createQuery() override { return nullptr; }
 
-    virtual RdbmsDriverType driverType() const override
-    {
-        return RdbmsDriverType::sqlite;
-    }
+    virtual RdbmsDriverType driverType() const override { return RdbmsDriverType::sqlite; }
 
-    virtual QSqlDatabase* qtSqlConnection() override
-    {
-        return nullptr;
-    }
+    virtual QSqlDatabase* qtSqlConnection() override { return nullptr; }
 
-    virtual bool tableExist(std::string_view) override
-    {
-        return true;
-    }
+    virtual bool tableExist(std::string_view) override { return true; }
 
-    int totalTransactionCount() const
-    {
-        return m_totalTransactionCount;
-    }
+    int totalTransactionCount() const { return m_totalTransactionCount; }
 
-    int committedTransactionCount() const
-    {
-        return m_committedTransactionCount;
-    }
+    int committedTransactionCount() const { return m_committedTransactionCount; }
 
-    int rolledBackTransactionCount() const
-    {
-        return m_rolledBackTransactionCount;
-    }
+    int rolledBackTransactionCount() const { return m_rolledBackTransactionCount; }
 
 private:
     int m_totalTransactionCount = 0;
@@ -90,8 +60,7 @@ private:
 
 } // namespace
 
-class MultipleQueryExecutor:
-    public ::testing::Test
+class MultipleQueryExecutor: public ::testing::Test
 {
 protected:
     void givenMultipleGoodQueries()
@@ -102,10 +71,14 @@ protected:
 
         for (int i = 0; i < queryCount; ++i)
         {
-            m_queries.push_back(std::make_unique<UpdateWithoutAnyDataExecutor>(
-                [](QueryContext*) { return DBResultCode::ok; },
-                std::bind(&MultipleQueryExecutor::saveQueryResult, this, _1),
-                std::string()));
+            m_queries.push_back(
+                std::make_unique<UpdateWithoutAnyDataExecutor>(
+                    [](QueryContext*)
+                    {
+                        return DBResultCode::ok;
+                    },
+                    std::bind(&MultipleQueryExecutor::saveQueryResult, this, _1),
+                    std::string()));
         }
     }
 
@@ -113,11 +86,14 @@ protected:
     {
         using namespace std::placeholders;
 
-        auto pos = nx::utils::random::number<std::size_t>(0, m_queries.size()-1);
+        auto pos = nx::utils::random::number<std::size_t>(0, m_queries.size() - 1);
         m_queries.insert(
             m_queries.begin() + pos,
             std::make_unique<UpdateWithoutAnyDataExecutor>(
-                [](QueryContext*) { return DBResultCode::ioError; },
+                [](QueryContext*)
+                {
+                    return DBResultCode::ioError;
+                },
                 std::bind(&MultipleQueryExecutor::saveQueryResult, this, _1),
                 std::string()));
     }
@@ -136,15 +112,9 @@ protected:
         multipleQueryExecutor.reportErrorWithoutExecution(DBResultCode::ioError);
     }
 
-    void thenExecuteSucceeded()
-    {
-        ASSERT_EQ(DBResultCode::ok, m_execResult);
-    }
+    void thenExecuteSucceeded() { ASSERT_EQ(DBResultCode::ok, m_execResult); }
 
-    void thenExecuteFailed()
-    {
-        ASSERT_NE(DBResultCode::ok, m_execResult);
-    }
+    void thenExecuteFailed() { ASSERT_NE(DBResultCode::ok, m_execResult); }
 
     void andEveryQueryHasReportedFailure()
     {
@@ -158,7 +128,7 @@ protected:
     void andEveryQueryHasReportedSuccess()
     {
         ASSERT_EQ(m_queryCount, m_queryResults.size());
-        for (const auto& queryResult : m_queryResults)
+        for (const auto& queryResult: m_queryResults)
         {
             ASSERT_EQ(DBResultCode::ok, queryResult);
         }
@@ -185,10 +155,7 @@ private:
     int m_queryCount = 0;
     DbConnectionStub m_dbConnection;
 
-    void saveQueryResult(DBResult dbResult)
-    {
-        m_queryResults.push_back(dbResult);
-    }
+    void saveQueryResult(DBResult dbResult) { m_queryResults.push_back(dbResult); }
 };
 
 TEST_F(MultipleQueryExecutor, every_query_is_executed)

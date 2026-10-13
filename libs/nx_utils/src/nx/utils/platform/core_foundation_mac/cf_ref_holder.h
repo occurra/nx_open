@@ -44,15 +44,13 @@ private:
 };
 
 template<typename CFRefType>
-QnCFRefHolder<CFRefType>::QnCFRefHolder()
-    :
+QnCFRefHolder<CFRefType>::QnCFRefHolder():
     m_ref(nullptr)
 {
 }
 
 template<typename CFRefType>
-QnCFRefHolder<CFRefType>::QnCFRefHolder(const QnCFRefHolder& other)
-    :
+QnCFRefHolder<CFRefType>::QnCFRefHolder(const QnCFRefHolder& other):
     m_ref(other.ref())
 {
     if (m_ref)
@@ -60,12 +58,10 @@ QnCFRefHolder<CFRefType>::QnCFRefHolder(const QnCFRefHolder& other)
 }
 
 template<typename CFRefType>
-QnCFRefHolder<CFRefType>::QnCFRefHolder(CFRefType ref)
-    :
+QnCFRefHolder<CFRefType>::QnCFRefHolder(CFRefType ref):
     m_ref(ref)
 {
 }
-
 
 template<typename CFRefType>
 template<typename Target, typename Source>

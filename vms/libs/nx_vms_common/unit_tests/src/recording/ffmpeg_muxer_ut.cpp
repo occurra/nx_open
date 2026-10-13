@@ -25,11 +25,13 @@ public:
 
     bool open(const std::string& container)
     {
-        int status = avformat_alloc_output_context2(
-            &m_formatContext, nullptr, container.c_str(), nullptr);
+        int status =
+            avformat_alloc_output_context2(&m_formatContext, nullptr, container.c_str(), nullptr);
         if (status < 0)
         {
-            NX_ERROR(this, "Failed to allocate format context: %1",
+            NX_ERROR(
+                this,
+                "Failed to allocate format context: %1",
                 nx::media::ffmpeg::avErrorToString(status));
             return false;
         }
@@ -49,7 +51,9 @@ public:
         int status = avcodec_parameters_copy(stream->codecpar, avCodecParams);
         if (status < 0)
         {
-            NX_ERROR(this, "Failed to copy codec parameters: %1",
+            NX_ERROR(
+                this,
+                "Failed to copy codec parameters: %1",
                 nx::media::ffmpeg::avErrorToString(status));
             return false;
         }
@@ -62,29 +66,32 @@ private:
 
 TEST(FfmpegMuxer, testTimeBase)
 {
-    auto testTimeBase =
-        [](const char* container)
-        {
-            AVFormatContext* formatContext;
-            ASSERT_EQ(avformat_alloc_output_context2(&formatContext, nullptr, container, nullptr), 0);
-            ASSERT_EQ(avio_open(&formatContext->pb, "test", AVIO_FLAG_WRITE), 0);
+    auto testTimeBase = [](const char* container)
+    {
+        AVFormatContext* formatContext;
+        ASSERT_EQ(avformat_alloc_output_context2(&formatContext, nullptr, container, nullptr), 0);
+        ASSERT_EQ(avio_open(&formatContext->pb, "test", AVIO_FLAG_WRITE), 0);
 
-            AVStream* stream = avformat_new_stream(formatContext, nullptr);
-            ASSERT_TRUE(stream != 0);
-            stream->id = formatContext->nb_streams - 1;
-            stream->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
-            stream->codecpar->codec_id = AV_CODEC_ID_MJPEG;
-            stream->codecpar->width = 640;
-            stream->codecpar->height = 480;
+        AVStream* stream = avformat_new_stream(formatContext, nullptr);
+        ASSERT_TRUE(stream != 0);
+        stream->id = formatContext->nb_streams - 1;
+        stream->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+        stream->codecpar->codec_id = AV_CODEC_ID_MJPEG;
+        stream->codecpar->width = 640;
+        stream->codecpar->height = 480;
 
-            ASSERT_EQ(avformat_write_header(formatContext, 0), 0);
-            NX_DEBUG(NX_SCOPE_TAG, "Stream '%1' time base: {%2, %3}",
-                container, stream->time_base.num, stream->time_base.den);
+        ASSERT_EQ(avformat_write_header(formatContext, 0), 0);
+        NX_DEBUG(
+            NX_SCOPE_TAG,
+            "Stream '%1' time base: {%2, %3}",
+            container,
+            stream->time_base.num,
+            stream->time_base.den);
 
-            ASSERT_EQ(av_write_trailer(formatContext), 0);
-            avio_close(formatContext->pb);
-            avformat_free_context(formatContext);
-        };
+        ASSERT_EQ(av_write_trailer(formatContext), 0);
+        avio_close(formatContext->pb);
+        avformat_free_context(formatContext);
+    };
     testTimeBase("matroska");
     testTimeBase("mov");
     testTimeBase("avi");
@@ -147,7 +154,7 @@ TEST(FfmpegAudioDecoder, decodingG726)
     audioData->compressionType = AV_CODEC_ID_ADPCM_G726;
     audioData->context = codecParameters;
     audioData->timestamp = 0;
-    audioData->m_data.write((const char*)data, sizeof(data));
+    audioData->m_data.write((const char*) data, sizeof(data));
 
     // Media player decoder.
     {
@@ -158,7 +165,6 @@ TEST(FfmpegAudioDecoder, decodingG726)
         for (int i = 0; i < 10; ++i)
             ASSERT_TRUE(decoder.decode(audioDataPtr, result));
     }
-
 
     // Transcoder.
     {

@@ -29,14 +29,16 @@ public:
     MediaTranscoder(const Config& config, nx::metric::Storage* metrics);
 
     /*
-    * Set ffmpeg video codec and params
-    * @return Returns OperationResult::Success if no error or error code otherwise
-    * @param codec codec to transcode
-    * @param method how to transcode: no transcode, software, GPU e.t.c
-    * @resolution output resolution. If not valid, than source resolution will be used. Not used if transcode method TM_NoTranscode
-    * @param bitrate Bitrate after transcode. By default bitrate is autodetected. Not used if transcode method TM_NoTranscode
-    * @param addition codec params. Not used if transcode method TM_NoTranscode
-    */
+     * Set ffmpeg video codec and params
+     * @return Returns OperationResult::Success if no error or error code otherwise
+     * @param codec codec to transcode
+     * @param method how to transcode: no transcode, software, GPU e.t.c
+     * @resolution output resolution. If not valid, than source resolution will be used. Not used
+     * if transcode method TM_NoTranscode
+     * @param bitrate Bitrate after transcode. By default bitrate is autodetected. Not used if
+     * transcode method TM_NoTranscode
+     * @param addition codec params. Not used if transcode method TM_NoTranscode
+     */
     bool setVideoCodec(
         AVCodecID codec,
         Qn::StreamQuality quality,
@@ -50,25 +52,27 @@ public:
         const nx::core::transcoding::Settings& transcodingSettings);
 
     /*
-    * Set ffmpeg audio codec and params
-    * @return Returns OperationResult::Success if no error or error code otherwise
-    * @param codec codec to transcode
-    * @param directStreamCopy if true - do not transcode audio data, only put it to destination container
-    * @param bitrate Bitrate after transcode. By default bitrate is autodetected
-    * @param addition codec params. Not used if directStreamCopy = true
-    */
+     * Set ffmpeg audio codec and params
+     * @return Returns OperationResult::Success if no error or error code otherwise
+     * @param codec codec to transcode
+     * @param directStreamCopy if true - do not transcode audio data, only put it to destination
+     * container
+     * @param bitrate Bitrate after transcode. By default bitrate is autodetected
+     * @param addition codec params. Not used if directStreamCopy = true
+     */
     bool setAudioCodec(AVCodecID codec);
 
     /*
-    * Prepare to transcode. If 'direct stream copy' is used, function got not empty video and audio data
-    * Destination codecs MUST be used from source data codecs. If 'direct stream copy' is false, video or audio may be empty
-    * @return Returns true if no error or false otherwise
-    */
+     * Prepare to transcode. If 'direct stream copy' is used, function got not empty video and
+     * audio data Destination codecs MUST be used from source data codecs. If 'direct stream copy'
+     * is false, video or audio may be empty
+     * @return Returns true if no error or false otherwise
+     */
     bool openVideo(const QnConstCompressedVideoDataPtr& video);
     bool openAudio(const QnConstCompressedAudioDataPtr& audio);
 
     // This Handler is sync, it will call in the same thread.
-    using OnDataHandler = std::function<void (const QnConstAbstractMediaDataPtr& packet)>;
+    using OnDataHandler = std::function<void(const QnConstAbstractMediaDataPtr& packet)>;
     bool transcodePacket(const QnConstAbstractMediaDataPtr& media, const OnDataHandler& handler);
     bool finalize(const OnDataHandler& handler);
 

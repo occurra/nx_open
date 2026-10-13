@@ -10,9 +10,21 @@ namespace math {
 
 namespace detail {
 
-template<typename T> struct LongType { using type = T; };
-template<> struct LongType<int> { using type = long long; };
-template<> struct LongType<unsigned int> { using type = unsigned long long; };
+template<typename T>
+struct LongType
+{
+    using type = T;
+};
+template<>
+struct LongType<int>
+{
+    using type = long long;
+};
+template<>
+struct LongType<unsigned int>
+{
+    using type = unsigned long long;
+};
 
 } // namespace detail
 

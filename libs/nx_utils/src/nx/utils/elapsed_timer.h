@@ -33,15 +33,9 @@ public:
             restart();
     }
 
-    void invalidate()
-    {
-        m_start = std::nullopt;
-    }
+    void invalidate() { m_start = std::nullopt; }
 
-    bool isValid() const
-    {
-        return static_cast<bool>(m_start);
-    }
+    bool isValid() const { return static_cast<bool>(m_start); }
 
     Duration elapsed() const
     {
@@ -87,6 +81,7 @@ using ElapsedTimer = BasicElapsedTimer<std::chrono::milliseconds>;
 class NX_UTILS_API SafeElapsedTimer: protected ElapsedTimer
 {
     using base_type = ElapsedTimer;
+
 public:
     SafeElapsedTimer(ElapsedTimerState state = ElapsedTimerState::invalid);
 
@@ -106,7 +101,6 @@ public:
 private:
     mutable Mutex m_mutex;
 };
-
 
 } // namespace utils
 } // namespace nx

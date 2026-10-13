@@ -6,11 +6,7 @@
 
 #include <nx/codec/nal_units.h>
 
-namespace {
-
-static const int kDefaultChunkContainerSize = 1024;
-
-} // namespace
+namespace { static const int kDefaultChunkContainerSize = 1024; } // namespace
 
 namespace nx::rtp {
 
@@ -52,13 +48,15 @@ void RtpChunkBuffer::backupCurrentData(const uint8_t* currentBufferBase)
     {
         memcpy(nextFrameBufRaw + offset, currentBufferBase + chunk.bufferOffset, chunk.size);
         chunk.bufferStart = nextFrameBufRaw;
-        chunk.bufferOffset = (int)offset;
+        chunk.bufferOffset = (int) offset;
         offset += chunk.size;
     }
 }
 
 QnWritableCompressedVideoDataPtr RtpChunkBuffer::buildFrame(
-    const uint8_t* rtpBuffer, const uint8_t* header, int headerSize)
+    const uint8_t* rtpBuffer,
+    const uint8_t* header,
+    int headerSize)
 {
     QnWritableCompressedVideoDataPtr result = QnWritableCompressedVideoDataPtr(
         new QnWritableCompressedVideoData(m_videoFrameSize + headerSize));

@@ -24,12 +24,18 @@ struct ItemValue
 {
     const Enum value;
 
-    constexpr ItemValue(Enum value): value(value) {}
+    constexpr ItemValue(Enum value):
+        value(value)
+    {
+    }
 
     // These operators let us swallow an assignment:
     // `(ItemValue) x = 1` => `ItemValue(x) = 1` => `ItemValue(x)` => `x`
     template<typename T>
-    constexpr Enum operator=(const T&) const { return value; }
+    constexpr Enum operator=(const T&) const
+    {
+        return value;
+    }
     constexpr Enum operator=(Enum) { return value; }
     constexpr operator Enum() const { return value; }
 };
@@ -37,9 +43,8 @@ struct ItemValue
 constexpr nx::reflect::detail::string_view itemName(const char* str)
 {
     int end = 0;
-    for (auto c = str[end];
-        c && c != ' ' && c != '\n' && c != '=' && c != '\t' && c != '\r';
-        c = str[++end])
+    for (auto c = str[end]; c && c != ' ' && c != '\n' && c != '=' && c != '\t' && c != '\r';
+         c = str[++end])
     {
     }
 
@@ -54,7 +59,9 @@ constexpr nx::reflect::detail::string_view itemName(const char* str)
 struct DummyVisitor
 {
     template<typename... Items>
-    void operator()(Items&&...) const {}
+    void operator()(Items&&...) const
+    {
+    }
 };
 constexpr DummyVisitor dummyVisitor;
 
@@ -70,7 +77,8 @@ constexpr auto apply(Visitor&& visitor, Items... items)
 template<typename Enum, typename Visitor>
 constexpr auto visitAllItems(Visitor&& visitor)
 {
-    return nxReflectVisitAllEnumItems((Enum*) nullptr,
+    return nxReflectVisitAllEnumItems(
+        (Enum*) nullptr,
         nx::reflect::detail::forward<Visitor>(visitor));
 }
 
@@ -95,10 +103,7 @@ struct EnumArray
     constexpr Enum* end() { return values + N; }
     constexpr const Enum* end() const { return values + N; }
 
-    constexpr void add(int index, Enum value)
-    {
-        values[index] = value;
-    }
+    constexpr void add(int index, Enum value) { values[index] = value; }
 };
 
 template<typename Enum>
@@ -133,7 +138,8 @@ template<typename T>
 struct IsInstrumentedEnum<
     T,
     detail::void_t<decltype(nxReflectVisitAllEnumItems(
-        (T*) nullptr, nx::reflect::enumeration::detail::dummyVisitor))>>
+        (T*) nullptr,
+        nx::reflect::enumeration::detail::dummyVisitor))>>
 {
     static constexpr bool value = true;
 };
@@ -150,14 +156,19 @@ inline constexpr bool IsInstrumentedEnumV = IsInstrumentedEnum<Args...>::value;
     template<typename Visitor> \
     PREFIX constexpr auto nxReflectVisitAllEnumItems(ENUM*, Visitor&& visitor) \
     { \
-        return nx::reflect::enumeration::detail::apply(visitor \
-            NX_PP_FOR_EACH(NX_REFLECTION_DETAIL_INSTRUMENT_ENUM_ITEM, ENUM, __VA_ARGS__)); \
+        return nx::reflect::enumeration::detail::apply( \
+            visitor NX_PP_FOR_EACH( \
+                NX_REFLECTION_DETAIL_INSTRUMENT_ENUM_ITEM, \
+                ENUM, \
+                __VA_ARGS__)); \
     }
 
 #define NX_REFLECTION_DETAIL_INSTRUMENT_ENUM_ITEM(ENUM, ITEM) \
-    , nx::reflect::enumeration::Item<ENUM>{ \
+    , nx::reflect::enumeration::Item<ENUM> \
+    { \
         (nx::reflect::enumeration::detail::ItemValue<ENUM>) ENUM::ITEM, \
-        nx::reflect::enumeration::detail::itemName(#ITEM)}
+            nx::reflect::enumeration::detail::itemName(#ITEM) \
+    }
 
 //-------------------------------------------------------------------------------------------------
 
@@ -186,7 +197,10 @@ inline constexpr bool IsInstrumentedEnumV = IsInstrumentedEnum<Args...>::value;
  * NX_REFLECTION_INSTRUMENT_ENUM(MyEnum, one = 0, two, three)
  */
 #define NX_REFLECTION_ENUM_CLASS(ENUM, ...) \
-    enum class ENUM { __VA_ARGS__ }; \
+    enum class ENUM \
+    { \
+        __VA_ARGS__ \
+    }; \
     NX_REFLECTION_INSTRUMENT_ENUM(ENUM, __VA_ARGS__)
 
 /**
@@ -195,15 +209,24 @@ inline constexpr bool IsInstrumentedEnumV = IsInstrumentedEnum<Args...>::value;
  * See NX_REFLECTION_ENUM_CLASS
  */
 #define NX_REFLECTION_ENUM(ENUM, ...) \
-    enum ENUM { __VA_ARGS__ }; \
+    enum ENUM \
+    { \
+        __VA_ARGS__ \
+    }; \
     NX_REFLECTION_INSTRUMENT_ENUM(ENUM, __VA_ARGS__)
 
 /** The same as NX_REFLECTION_ENUM_CLASS, but for usages inside a class scope. */
 #define NX_REFLECTION_ENUM_CLASS_IN_CLASS(ENUM, ...) \
-    enum class ENUM { __VA_ARGS__ }; \
+    enum class ENUM \
+    { \
+        __VA_ARGS__ \
+    }; \
     NX_REFLECTION_DETAIL_INSTRUMENT_ENUM(friend, ENUM, __VA_ARGS__)
 
 /** The same as NX_REFLECTION_ENUM, but for usages inside a class scope. */
 #define NX_REFLECTION_ENUM_IN_CLASS(ENUM, ...) \
-    enum ENUM { __VA_ARGS__ }; \
+    enum ENUM \
+    { \
+        __VA_ARGS__ \
+    }; \
     NX_REFLECTION_DETAIL_INSTRUMENT_ENUM(friend, ENUM, __VA_ARGS__)

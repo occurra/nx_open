@@ -12,8 +12,7 @@
 
 namespace nx::log {
 
-class NX_UTILS_API Logger:
-    public AbstractLogger
+class NX_UTILS_API Logger: public AbstractLogger
 {
 public:
     /** Initializes log with minimal level and writers, no writers means std out and err. */

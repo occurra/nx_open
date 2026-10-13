@@ -8,8 +8,7 @@
 
 namespace nx::utils::test {
 
-class ArgumentParser:
-    public ::testing::Test
+class ArgumentParser: public ::testing::Test
 {
 protected:
     void whenParseArgs(std::vector<const char*> args)

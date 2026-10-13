@@ -2,11 +2,12 @@
 
 #include <iostream>
 
+#include <nx/utils/system_network_headers.h>
+
 #include <gtest/gtest.h>
 
-#include <nx/network/stun/stun_attributes.h>
 #include <nx/network/stun/message_parser.h>
-#include <nx/utils/system_network_headers.h>
+#include <nx/network/stun/stun_attributes.h>
 
 namespace nx::network::stun::attrs::test {
 
@@ -14,13 +15,10 @@ namespace nx::network::stun::attrs::test {
 // StunAttributeCommonTest
 
 template<typename Attribute>
-class StunAttributeCommonTest:
-    public ::testing::Test
+class StunAttributeCommonTest: public ::testing::Test
 {
 protected:
-    void addTestValue(
-        const nx::Buffer& serializedRepresentation,
-        const Attribute& attributeValue)
+    void addTestValue(const nx::Buffer& serializedRepresentation, const Attribute& attributeValue)
     {
         m_testValues.push_back({serializedRepresentation, attributeValue});
     }
@@ -59,7 +57,7 @@ private:
             ASSERT_EQ(
                 nx::network::server::SerializerState::done,
                 testAttribute.serialize(&stream, &bytesWritten));
-            ASSERT_EQ((size_t)serializedPrototype.size(), bytesWritten);
+            ASSERT_EQ((size_t) serializedPrototype.size(), bytesWritten);
             ASSERT_EQ(serializedPrototype, serializedBuffer);
         }
     }
@@ -90,7 +88,7 @@ private:
             MessageSerializerBuffer serializationStream(&buffer);
             std::size_t bytesWritten = 0;
             while (originalAttribute.serialize(&serializationStream, &bytesWritten)
-                    != nx::network::server::SerializerState::done)
+                   != nx::network::server::SerializerState::done)
             {
                 buffer.resize(0);
                 buffer.reserve(buffer.capacity() * 2);
@@ -112,11 +110,14 @@ private:
 static const uint8_t serializedMappedAddress[] = {
     0, //< Reserved zero
     0x01, //< Family
-    0x10, 0x23, //< Port
-    0x12, 0x95, 0xA1, 0x0B }; //< Address
+    0x10,
+    0x23, //< Port
+    0x12,
+    0x95,
+    0xA1,
+    0x0B}; //< Address
 
-class StunAttributeMappedAddress:
-    public StunAttributeCommonTest<MappedAddress>
+class StunAttributeMappedAddress: public StunAttributeCommonTest<MappedAddress>
 {
 public:
     static constexpr const uint16_t portBigEndian = 0x1023;

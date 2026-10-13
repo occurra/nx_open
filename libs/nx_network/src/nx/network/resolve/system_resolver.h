@@ -11,8 +11,7 @@ namespace nx::network {
 /**
  * Resolves address using OS-provided API.
  */
-class NX_NETWORK_API SystemResolver:
-    public AbstractResolver
+class NX_NETWORK_API SystemResolver: public AbstractResolver
 {
 public:
     /**
@@ -31,8 +30,7 @@ private:
 
     SystemError::ErrorCode resolveStatusToErrno(int status);
 
-    void ensureLocalHostCompatibility(
-        std::deque<AddressEntry>* resolvedAddresses);
+    void ensureLocalHostCompatibility(std::deque<AddressEntry>* resolvedAddresses);
 };
 
 } // namespace nx::network

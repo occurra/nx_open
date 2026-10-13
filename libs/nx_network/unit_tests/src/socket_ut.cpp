@@ -41,14 +41,18 @@ static void runCancelAsyncIOTest()
     auto& dnsResolver = SocketGlobals::addressResolver().dnsResolver();
     dnsResolver.addEtcHost(kTestHost, kTestAddresses);
 
-    auto onExit = nx::utils::makeScopeGuard([&]() { dnsResolver.removeEtcHost(kTestHost); });
+    auto onExit = nx::utils::makeScopeGuard(
+        [&]()
+        {
+            dnsResolver.removeEtcHost(kTestHost);
+        });
 
     for (int i = 0; i < kTestRuns; ++i)
     {
         std::vector<HostAddress> kConnectAddresses;
         kConnectAddresses.push_back(HostAddress("localhost"));
         kConnectAddresses.push_back(kTestHost);
-        for (const auto& host : kConnectAddresses)
+        for (const auto& host: kConnectAddresses)
         {
             RandomDataTcpServer server(
                 TestTrafficLimitType::none,
@@ -71,7 +75,7 @@ static void runCancelAsyncIOTest()
         }
     }
 
-    //waiting for some calls to deleted objects
+    // waiting for some calls to deleted objects
     QThread::sleep(kSecondsToWaitAfterTest);
 }
 
@@ -111,16 +115,16 @@ TEST(Socket, postCancellation)
                     ptr = SocketFactory::createStreamSocket(ssl::kAcceptAnyCertificate);
                 });
 
-            for (const auto& sock : sockets)
+            for (const auto& sock: sockets)
                 sock->post(
                     [curCounterVal, &counter, &postCalls]()
                     {
-                        ASSERT_EQ(curCounterVal, (size_t)counter);
+                        ASSERT_EQ(curCounterVal, (size_t) counter);
                         ++postCalls;
                         QThread::usleep(10);
                     });
 
-            for (const auto& sock : sockets)
+            for (const auto& sock: sockets)
                 sock->pleaseStopSync();
         }
     };
@@ -129,7 +133,7 @@ TEST(Socket, postCancellation)
     for (int i = 0; i < kTestThreadCount; ++i)
         testThreads.emplace_back(std::thread(testFunctor));
 
-    for (auto& testThread : testThreads)
+    for (auto& testThread: testThreads)
         testThread.join();
 }
 

@@ -4,15 +4,12 @@
 
 #include <nx/utils/log/assert.h>
 
-namespace
-{
-    const QList<QnAspectRatio> standardRatios =
-            QList<QnAspectRatio>()
-                << QnAspectRatio(4, 3)
-                << QnAspectRatio(16, 9)
-                << QnAspectRatio(1, 1)
-                << QnAspectRatio(3, 4)
-                << QnAspectRatio(9, 16);
+namespace {
+
+const QList<QnAspectRatio> standardRatios = QList<QnAspectRatio>()
+    << QnAspectRatio(4, 3) << QnAspectRatio(16, 9) << QnAspectRatio(1, 1) << QnAspectRatio(3, 4)
+    << QnAspectRatio(9, 16);
+
 }
 
 QnAspectRatio::QnAspectRatio()
@@ -69,7 +66,7 @@ QString QnAspectRatio::toString() const
     return toString(QStringLiteral("%1:%2"));
 }
 
-QString QnAspectRatio::toString(const QString &format) const
+QString QnAspectRatio::toString(const QString& format) const
 {
     return format.arg(m_width).arg(m_height);
 }
@@ -84,7 +81,7 @@ QnAspectRatio QnAspectRatio::closestStandardRatio(float aspectRatio)
     QnAspectRatio closest = ::standardRatios.first();
     qreal diff = qAbs(aspectRatio - ::standardRatios.first().toFloat());
 
-    foreach (const QnAspectRatio &ratio, ::standardRatios)
+    foreach (const QnAspectRatio& ratio, ::standardRatios)
     {
         qreal d = qAbs(aspectRatio - ratio.toFloat());
         if (d < diff)
@@ -99,5 +96,5 @@ QnAspectRatio QnAspectRatio::closestStandardRatio(float aspectRatio)
 
 bool QnAspectRatio::isRotated90(qreal angle)
 {
-    return qAbs(90 - qAbs((int)angle % 180)) < 45;
+    return qAbs(90 - qAbs((int) angle % 180)) < 45;
 }

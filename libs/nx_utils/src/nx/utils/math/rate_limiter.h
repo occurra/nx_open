@@ -30,10 +30,7 @@ public:
      * which is used to calculate number of requests per period.
      * See nx::utils::math::SumPerPeriod for more details.
      */
-    RateLimiter(
-        std::chrono::milliseconds period,
-        int amountAllowed,
-        int subPeriodCount = 20);
+    RateLimiter(std::chrono::milliseconds period, int amountAllowed, int subPeriodCount = 20);
 
     /**
      * Returns true if one more operation does not exceed the rate allowed.

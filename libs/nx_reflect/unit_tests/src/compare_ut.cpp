@@ -9,7 +9,6 @@
 #include <nx/reflect/json/deserializer.h>
 #include <nx/reflect/json/serializer.h>
 
-
 namespace nx::reflect::test {
 
 struct Simple
@@ -38,17 +37,13 @@ TEST(Compare, equality)
     Simple f1{5, 1.0f, 0.0, "hello"};
     ASSERT_TRUE(nx::reflect::equals(f1, f1));
 
-    ASSERT_FALSE(nx::reflect::equals(f1,
-        Simple{6, 1.0f, 0.0, "hello"}));
+    ASSERT_FALSE(nx::reflect::equals(f1, Simple{6, 1.0f, 0.0, "hello"}));
 
-    ASSERT_FALSE(nx::reflect::equals(f1,
-        Simple{5, 2.0f, 0.0, "hello"}));
+    ASSERT_FALSE(nx::reflect::equals(f1, Simple{5, 2.0f, 0.0, "hello"}));
 
-    ASSERT_FALSE(nx::reflect::equals(f1,
-        Simple{5, 1.0f, 0.00000001, "hello"}));
+    ASSERT_FALSE(nx::reflect::equals(f1, Simple{5, 1.0f, 0.00000001, "hello"}));
 
-    ASSERT_FALSE(nx::reflect::equals(f1,
-        Simple{5, 1.0f, 0.0, "hello world"}));
+    ASSERT_FALSE(nx::reflect::equals(f1, Simple{5, 1.0f, 0.0, "hello world"}));
 }
 
 TEST(Compare, fuzzyEqualityFloat)

@@ -12,10 +12,8 @@ TEST(RotateImageFilter, onlyValidAngles)
     {
         QnRotateImageFilter filter(angle);
         ASSERT_TRUE(
-            filter.angle() == 0 ||
-            filter.angle() == 90 ||
-            filter.angle() == 180 ||
-            filter.angle() == 270);
+            filter.angle() == 0 || filter.angle() == 90 || filter.angle() == 180
+            || filter.angle() == 270);
     }
 }
 

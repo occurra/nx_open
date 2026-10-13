@@ -82,31 +82,49 @@ TEST(LogLevelSettings, Parse)
 
     testParsing("debug, verbose[nx::Class]", Level::debug, {{"nx::Class", Level::verbose}});
 
-    testParsing("verbose[nx::Class1, nx::Class2]", kDefaultLevel,
+    testParsing(
+        "verbose[nx::Class1, nx::Class2]",
+        kDefaultLevel,
         {{"nx::Class1", Level::verbose}, {"nx::Class2", Level::verbose}});
 
-    testParsing("verbose[nx::Class1,nx::Class2],warning", Level::warning,
+    testParsing(
+        "verbose[nx::Class1,nx::Class2],warning",
+        Level::warning,
         {{"nx::Class1", Level::verbose}, {"nx::Class2", Level::verbose}});
 
-    testParsing("i,d[aaa],v[bbb],i[ccc]", Level::info, {{"aaa", Level::debug},
-        {"bbb", Level::verbose}, {"ccc", Level::info}});
+    testParsing(
+        "i,d[aaa],v[bbb],i[ccc]",
+        Level::info,
+        {{"aaa", Level::debug}, {"bbb", Level::verbose}, {"ccc", Level::info}});
 
-    testParsing("info, info[ space::Class ], debug[ Class(0x123) ]", Level::info,
+    testParsing(
+        "info, info[ space::Class ], debug[ Class(0x123) ]",
+        Level::info,
         {{"space::Class", Level::info}, {"Class(0x123)", Level::debug}});
 
-    testParsing("info[x,y], verbose[a,b], none", Level::none,
+    testParsing(
+        "info[x,y], verbose[a,b], none",
+        Level::none,
         {{"x", Level::info}, {"y", Level::info}, {"a", Level::verbose}, {"b", Level::verbose}});
 
-    testParsing("verbose[First], WrongLevel[Second, Third], none[Forth]", kDefaultLevel,
+    testParsing(
+        "verbose[First], WrongLevel[Second, Third], none[Forth]",
+        kDefaultLevel,
         {{"First", Level::verbose}, {"Forth", Level::none}});
 
-    testParsing("info, verbose[First, NoBracket", Level::info,
+    testParsing(
+        "info, verbose[First, NoBracket",
+        Level::info,
         {{"First", Level::verbose}, {"NoBracket", Level::verbose}});
 
-    testParsing("info, verbose[First, NoBracket], ] wrongCloser, none[OneMore]", Level::info,
+    testParsing(
+        "info, verbose[First, NoBracket], ] wrongCloser, none[OneMore]",
+        Level::info,
         {{"First", Level::verbose}, {"NoBracket", Level::verbose}, {"OneMore", Level::none}});
 
-    testParsing("info, verbose[First [NestedBracket] Not], debug[X]", Level::info,
+    testParsing(
+        "info, verbose[First [NestedBracket] Not], debug[X]",
+        Level::info,
         {{"First", Level::verbose}, {"NestedBracket", Level::verbose}, {"X", Level::debug}});
 }
 

@@ -22,7 +22,12 @@ TEST(RunOrWait, Fixture)
         {
             std::array<std::future<int>, 5> futures;
             for (auto& f: futures)
-                f = std::async(std::launch::async, [&]() { return runOrWait(1); });
+                f = std::async(
+                    std::launch::async,
+                    [&]()
+                    {
+                        return runOrWait(1);
+                    });
         }
         ASSERT_EQ(calls, 1);
     }
@@ -37,7 +42,12 @@ TEST(RunOrWait, Fixture)
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 return 1;
             });
-        future = std::async(std::launch::async, [&]() { return runOrWait(1); });
+        future = std::async(
+            std::launch::async,
+            [&]()
+            {
+                return runOrWait(1);
+            });
         started.get_future().wait();
     }
 }

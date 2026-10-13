@@ -10,35 +10,25 @@ namespace nx::network::ssl {
 namespace detail {
 
 template<typename Delegate>
-class AcceptedSslStreamSocketWrapper:
-    public AbstractAcceptedSslStreamSocketWrapper
+class AcceptedSslStreamSocketWrapper: public AbstractAcceptedSslStreamSocketWrapper
 {
     using base_type = AbstractAcceptedSslStreamSocketWrapper;
 
 public:
-    AcceptedSslStreamSocketWrapper(
-        std::unique_ptr<Delegate> delegate)
-        :
+    AcceptedSslStreamSocketWrapper(std::unique_ptr<Delegate> delegate):
         base_type(delegate.get()),
         m_delegate(std::move(delegate))
     {
     }
 
-    virtual bool isEncryptionEnabled() const override
-    {
-        return m_delegate->isEncryptionEnabled();
-    }
+    virtual bool isEncryptionEnabled() const override { return m_delegate->isEncryptionEnabled(); }
 
-    virtual void handshakeAsync(
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler) override
+    virtual void handshakeAsync(nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler) override
     {
         m_delegate->handshakeAsync(std::move(handler));
     }
 
-    virtual std::string serverName() const override
-    {
-        return m_delegate->serverName();
-    }
+    virtual std::string serverName() const override { return m_delegate->serverName(); }
 
 private:
     std::unique_ptr<Delegate> m_delegate;
@@ -60,13 +50,15 @@ std::unique_ptr<AcceptedSslStreamSocketWrapper<SslSocket>> makeAcceptedSslStream
 StreamServerSocket::StreamServerSocket(
     Context* context,
     std::unique_ptr<AbstractStreamServerSocket> delegate,
-    EncryptionUse encryptionUse)
-    :
+    EncryptionUse encryptionUse):
     base_type(delegate.get()),
     m_context(context),
     m_acceptor(
         std::move(delegate),
-        [this](auto&&... args) { return createSocketWrapper(std::move(args)...); }),
+        [this](auto&&... args)
+        {
+            return createSocketWrapper(std::move(args)...);
+        }),
     m_encryptionUse(encryptionUse)
 {
     bindToAioThread(m_acceptor.getAioThread());
@@ -77,8 +69,7 @@ StreamServerSocket::~StreamServerSocket()
     m_acceptor.pleaseStopSync();
 }
 
-void StreamServerSocket::pleaseStop(
-    nx::MoveOnlyFunc<void()> completionHandler)
+void StreamServerSocket::pleaseStop(nx::MoveOnlyFunc<void()> completionHandler)
 {
     post(
         [this, completionHandler = std::move(completionHandler)]()
@@ -106,8 +97,7 @@ void StreamServerSocket::pleaseStopSync()
     }
 }
 
-void StreamServerSocket::bindToAioThread(
-    nx::network::aio::AbstractAioThread* aioThread)
+void StreamServerSocket::bindToAioThread(nx::network::aio::AbstractAioThread* aioThread)
 {
     base_type::bindToAioThread(aioThread);
     m_acceptor.bindToAioThread(aioThread);
@@ -129,8 +119,7 @@ bool StreamServerSocket::getNonBlockingMode(bool* value) const
 bool StreamServerSocket::listen(int backlog)
 {
     // Always switching underlying socket to non-blocking mode as required by m_acceptor.
-    if (!base_type::setNonBlockingMode(true) ||
-        !base_type::listen(backlog))
+    if (!base_type::setNonBlockingMode(true) || !base_type::listen(backlog))
     {
         return false;
     }
@@ -156,9 +145,7 @@ void StreamServerSocket::acceptAsync(AcceptCompletionHandler handler)
 
 std::unique_ptr<AbstractStreamSocket> StreamServerSocket::accept()
 {
-    auto connection = m_nonBlockingModeEnabled
-        ? acceptNonBlocking()
-        : acceptBlocking();
+    auto connection = m_nonBlockingModeEnabled ? acceptNonBlocking() : acceptBlocking();
 
     if (!connection || !connection->setNonBlockingMode(false))
         return nullptr;
@@ -174,9 +161,8 @@ void StreamServerSocket::cancelIoInAioThread()
     m_timer.cancelSync();
 }
 
-std::unique_ptr<detail::AbstractAcceptedSslStreamSocketWrapper>
-    StreamServerSocket::createSocketWrapper(
-        std::unique_ptr<AbstractStreamSocket> delegate)
+std::unique_ptr<detail::AbstractAcceptedSslStreamSocketWrapper> StreamServerSocket::
+    createSocketWrapper(std::unique_ptr<AbstractStreamSocket> delegate)
 {
     switch (m_encryptionUse)
     {
@@ -207,10 +193,8 @@ std::unique_ptr<AbstractStreamSocket> StreamServerSocket::acceptNonBlocking()
 
 std::unique_ptr<AbstractStreamSocket> StreamServerSocket::acceptBlocking()
 {
-    std::promise<std::tuple<
-        SystemError::ErrorCode,
-        std::unique_ptr<AbstractStreamSocket>>
-        > accepted;
+    std::promise<std::tuple<SystemError::ErrorCode, std::unique_ptr<AbstractStreamSocket>>>
+        accepted;
 
     acceptAsyncInternal(
         [&accepted](
@@ -243,8 +227,7 @@ void StreamServerSocket::acceptAsyncInternal(AcceptCompletionHandler handler)
             if (!getRecvTimeout(&timeout))
             {
                 return post(
-                    [handler = std::move(handler),
-                        errorCode = SystemError::getLastOSErrorCode()]()
+                    [handler = std::move(handler), errorCode = SystemError::getLastOSErrorCode()]()
                     {
                         handler(errorCode, nullptr);
                     });
@@ -258,7 +241,10 @@ void StreamServerSocket::acceptAsyncInternal(AcceptCompletionHandler handler)
                 m_timer.cancelSync();
 
             m_acceptor.acceptAsync(
-                [this](auto&&... args) { onAccepted(std::move(args)...); });
+                [this](auto&&... args)
+                {
+                    onAccepted(std::move(args)...);
+                });
         });
 }
 

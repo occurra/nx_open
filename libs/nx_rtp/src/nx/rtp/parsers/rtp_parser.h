@@ -4,11 +4,11 @@
 
 #include <optional>
 
-#include <nx/rtp/time_linearizer.h>
 #include <nx/rtp/parsers/rtp_stream_parser.h>
 #include <nx/rtp/result.h>
 #include <nx/rtp/rtcp.h>
 #include <nx/rtp/rtp.h>
+#include <nx/rtp/time_linearizer.h>
 
 namespace nx::rtp {
 
@@ -29,7 +29,9 @@ public:
 
 private:
     void processRtpExtension(
-        const RtpHeaderExtensionHeader& extensionHeader, quint8* data, int size);
+        const RtpHeaderExtensionHeader& extensionHeader,
+        quint8* data,
+        int size);
     int64_t getTimestamp(uint32_t rtpTime, const nx::rtp::RtcpSenderReport& senderReport);
 
 private:

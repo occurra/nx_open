@@ -36,7 +36,8 @@ public:
     Av1Parser();
 
     // Implementation of StreamParser::processData
-    virtual Result processData(const RtpHeader& rtpHeader,
+    virtual Result processData(
+        const RtpHeader& rtpHeader,
         quint8* rtpBufferBase,
         int bufferOffset,
         int bytesRead,
@@ -65,7 +66,9 @@ private:
     Result appendObu(const uint8_t* data, int size);
 
     void updateContext(
-        const nx::media::av1::ObuHeader& obuHeader, const uint8_t* payload, int size);
+        const nx::media::av1::ObuHeader& obuHeader,
+        const uint8_t* payload,
+        int size);
 
     void finishTemporalUnit(uint32_t rtpTimestamp, bool* gotData);
     /** The current temporal unit is damaged and will not be emitted. */

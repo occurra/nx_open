@@ -18,7 +18,10 @@ namespace {
 class TestRunnable: public QnLongRunnable
 {
 public:
-    TestRunnable(): QnLongRunnable("TestRunnable") {}
+    TestRunnable():
+        QnLongRunnable("TestRunnable")
+    {
+    }
     virtual ~TestRunnable() override { stop(); }
 
     void waitUntilRunning() { m_running.get_future().wait(); }
@@ -66,7 +69,8 @@ TEST(QnLongRunnablePool, destroyedRunnableDoesNotStayInTheRunningSet)
     const auto elapsed = std::chrono::steady_clock::now() - start;
     if (elapsed >= 9s)
     {
-        NX_WARNING(NX_SCOPE_TAG,
+        NX_WARNING(
+            NX_SCOPE_TAG,
             "waitAll() took %1, the runnable was likely left in the running set",
             std::chrono::duration_cast<std::chrono::milliseconds>(elapsed));
     }

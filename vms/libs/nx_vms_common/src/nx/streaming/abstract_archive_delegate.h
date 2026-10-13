@@ -4,9 +4,9 @@
 
 #include <memory>
 
+#include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtCore/QSize>
-#include <QtCore/QList>
 #include <QtGui/QRegion>
 
 #include <core/resource/avi/avi_archive_metadata.h>
@@ -48,20 +48,27 @@ signals:
 public:
     struct ArchiveChunkInfo
     {
-        qint64 startTimeUsec= -1;
+        qint64 startTimeUsec = -1;
         qint64 durationUsec = -1;
     };
 
     enum Flag
     {
-        Flag_CanProcessNegativeSpeed = 2,   // flag inform that delegate is going to process negative speed. If flag is not set, ArchiveReader is going to process negative speed
-        Flag_CanProcessMediaStep = 4,       // flag inform that delegate is going to process media step itself.
-        Flag_CanSendMetadata     = 8,       // supply metadata in the stream: motion, analytics e.t.c
-        Flag_CanOfflineRange     = 16,      // delegate can return range immediately without opening archive
-        Flag_CanSeekImmediatly   = 32,      // delegate can perform seek operation immediately, without 'open' function call
-        Flag_CanOfflineLayout    = 64,      // delegate can return audio/video layout immediately without opening archive
-        Flag_UnsyncTime          = 128,     // delegate may provide media data with not synced time (non equal to Server time)
-        Flag_CanOfflineHasVideo  = 256      // delegate may provide info if media has video stream without opening
+        Flag_CanProcessNegativeSpeed =
+            2, // flag inform that delegate is going to process negative speed. If flag is not set,
+               // ArchiveReader is going to process negative speed
+        Flag_CanProcessMediaStep =
+            4, // flag inform that delegate is going to process media step itself.
+        Flag_CanSendMetadata = 8, // supply metadata in the stream: motion, analytics e.t.c
+        Flag_CanOfflineRange = 16, // delegate can return range immediately without opening archive
+        Flag_CanSeekImmediatly =
+            32, // delegate can perform seek operation immediately, without 'open' function call
+        Flag_CanOfflineLayout =
+            64, // delegate can return audio/video layout immediately without opening archive
+        Flag_UnsyncTime =
+            128, // delegate may provide media data with not synced time (non equal to Server time)
+        Flag_CanOfflineHasVideo =
+            256 // delegate may provide info if media has video stream without opening
     };
     Q_DECLARE_FLAGS(Flags, Flag)
 
@@ -79,9 +86,10 @@ public:
     // If findIFrame=true, jump to position before time to a nearest IFrame.
     /*!
        \ param time UTC, usec
-        \param chunkInfo If not NULL, implementation fills this structure with info of chunk, containing found position
+        \param chunkInfo If not NULL, implementation fills this structure with info of chunk,
+       containing found position
     */
-    virtual qint64 seek (qint64 time, bool findIFrame) = 0;
+    virtual qint64 seek(qint64 time, bool findIFrame) = 0;
     virtual QnConstResourceVideoLayoutPtr getVideoLayout() = 0;
     virtual AudioLayoutConstPtr getAudioLayout() = 0;
     virtual bool hasVideo() const { return true; }
@@ -89,18 +97,26 @@ public:
     virtual bool setAudioChannel(unsigned /*num*/) { return false; }
 
     // this call inform delegate that reverse mode on/off
-    virtual void setSpeed(qint64 /*displayTime*/, double /*value*/) { }
+    virtual void setSpeed(qint64 /*displayTime*/, double /*value*/) {}
 
     // for optimization. Inform delegate to pause after sending 1 frame
     virtual void setSingleshotMode(bool /*value*/) {}
 
-    // MediaStreamQuality. By default, this function is not implemented. Return: true if need seek for change quality
+    // MediaStreamQuality. By default, this function is not implemented. Return: true if need seek
+    // for change quality
     /*!
-        \param fastSwitch Do not wait for next I-frame of new stream, but give data starting with previous I-frame
+        \param fastSwitch Do not wait for next I-frame of new stream, but give data starting with
+       previous I-frame
         \param resolution Is used only when quality == MEDIA_Quality_CustomResolution;
             width can be <= 0 which is treated as "auto".
     */
-    virtual bool setQuality(MediaQuality /*quality*/, bool /*fastSwitch*/, const QSize& /*resolution*/ ) {  return false; }
+    virtual bool setQuality(
+        MediaQuality /*quality*/,
+        bool /*fastSwitch*/,
+        const QSize& /*resolution*/)
+    {
+        return false;
+    }
 
     Flags getFlags() const { return m_flags; }
     virtual bool isRealTimeSource() const { return false; }
@@ -112,13 +128,20 @@ public:
     /** This function calls from reader */
     virtual void beforeChangeSpeed(double /*speed*/) {}
 
-    /** This function used for thumbnails loader. Get data with specified media step from specified time interval*/
+    /** This function used for thumbnails loader. Get data with specified media step from specified
+     * time interval*/
     virtual void setRange(qint64 /*startTime*/, qint64 /*endTime*/, qint64 /*frameStep*/) {}
 
-    virtual QnAbstractMotionArchiveConnectionPtr getMotionConnection(int /*channel*/) { return nullptr; }
-    virtual QnAbstractMotionArchiveConnectionPtr getAnalyticsConnection(int /*channel*/) { return nullptr; }
+    virtual QnAbstractMotionArchiveConnectionPtr getMotionConnection(int /*channel*/)
+    {
+        return nullptr;
+    }
+    virtual QnAbstractMotionArchiveConnectionPtr getAnalyticsConnection(int /*channel*/)
+    {
+        return nullptr;
+    }
 
-    virtual void setStreamDataFilter(nx::vms::api::StreamDataFilters /*filter*/) { }
+    virtual void setStreamDataFilter(nx::vms::api::StreamDataFilters /*filter*/) {}
     virtual nx::vms::api::StreamDataFilters streamDataFilter() const
     {
         return nx::vms::api::StreamDataFilter::media;
@@ -127,10 +150,12 @@ public:
 
     virtual void setMotionRegion(const QnMotionRegion& /*region*/) {}
 
-    /** This function used for multi-view delegate to help connect different streams together (VMAX) */
+    /** This function used for multi-view delegate to help connect different streams together
+     * (VMAX) */
     virtual void setGroupId(const nx::String& /*groupId*/) {}
 
-    //!Returns information of chunk, used by previous \a QnAbstractArchiveDelegate::seek or \a QnAbstractArchiveDelegate::getNextData call
+    //! Returns information of chunk, used by previous \a QnAbstractArchiveDelegate::seek or \a
+    //! QnAbstractArchiveDelegate::getNextData call
     virtual ArchiveChunkInfo getLastUsedChunkInfo() const { return ArchiveChunkInfo(); }
 
     /**
@@ -141,7 +166,7 @@ public:
      */
     virtual int protocol() const { return 0; }
 
-    virtual int getSequence() const { return 0;  }
+    virtual int getSequence() const { return 0; }
 
     virtual void setPlaybackMode(PlaybackMode /*value*/) {}
 

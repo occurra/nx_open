@@ -23,7 +23,8 @@ public:
     void setSdp(const std::string& sdp);
     bool processData(const char* data, size_t size);
     nx::Buffer getNextOutput(); //< Back to sender. Mostly it's RTCP NACKs.
-    nx::Buffer getRtcpFirPacket(uint32_t videoSsrc); //< Back to sender. RTCP for emitting keyframe.
+    nx::Buffer getRtcpFirPacket(
+        uint32_t videoSsrc); //< Back to sender. RTCP for emitting keyframe.
     QnAbstractMediaDataPtr getNextFrame(); //< From sender.
     void setSrtpEncryptionData(const rtsp::EncryptionData& data);
     bool hasVideo() const { return m_hasVideo; }
@@ -42,7 +43,8 @@ private:
 private:
     struct ParserContext
     {
-        ParserContext(nx::rtp::RtpParser&& parser,
+        ParserContext(
+            nx::rtp::RtpParser&& parser,
             uint32_t senderSsrc,
             std::unique_ptr<nx::streaming::rtp::CameraTimeHelper>&& timeHelper,
             int trackIdx,
@@ -52,7 +54,8 @@ private:
             timeHelper(std::move(timeHelper)),
             trackIdx(trackIdx),
             payloadType(payloadType)
-        {}
+        {
+        }
         nx::rtp::RtpParser parser;
         std::vector<uint8_t> buffer;
         nx::rtp::RtcpSenderReport senderReport;

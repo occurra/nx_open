@@ -21,7 +21,9 @@ bool LoggerSettings::parse(const QString& str)
 
     std::multimap<std::string, std::string> params;
     utils::splitNameValuePairs(
-        str.toStdString(), ',', '=',
+        str.toStdString(),
+        ',',
+        '=',
         std::inserter(params, params.end()),
         nx::utils::GroupToken::doubleQuotes | nx::utils::GroupToken::squareBrackets);
     for (const auto& param: params)
@@ -58,7 +60,8 @@ bool LoggerSettings::parse(const QString& str)
         {
             const auto duration = nx::utils::parseDuration(param.second);
             if (duration)
-                maxFileTimePeriodS = std::chrono::duration_cast<std::chrono::seconds>(duration.value());
+                maxFileTimePeriodS =
+                    std::chrono::duration_cast<std::chrono::seconds>(duration.value());
             parseSucceeded = parseSucceeded && duration;
         }
         else if (param.first == kLogArchivingEnabledSymbolicName)
@@ -81,30 +84,34 @@ void LoggerSettings::updateDirectoryIfEmpty(const QString& logDirectory)
 
 bool LoggerSettings::operator==(const LoggerSettings& right) const
 {
-    return level == right.level
-        && directory == right.directory
-        && maxFileSizeB == right.maxFileSizeB
-        && maxVolumeSizeB == right.maxVolumeSizeB
-        && maxFileTimePeriodS == right.maxFileTimePeriodS
-        && logBaseName == right.logBaseName;
+    return level == right.level && directory == right.directory
+        && maxFileSizeB == right.maxFileSizeB && maxVolumeSizeB == right.maxVolumeSizeB
+        && maxFileTimePeriodS == right.maxFileTimePeriodS && logBaseName == right.logBaseName;
 }
 
 //-------------------------------------------------------------------------------------------------
 
 static void readRotationParams(
-    QSettings* settings, LoggerSettings* target, const LoggerSettings& defaults)
+    QSettings* settings,
+    LoggerSettings* target,
+    const LoggerSettings& defaults)
 {
-    target->maxVolumeSizeB = settings->value(
-        kMaxLogVolumeSizeSymbolicName, defaults.maxVolumeSizeB).toLongLong();
-    target->maxFileSizeB = settings->value(
-        kMaxLogFileSizeSymbolicName, defaults.maxFileSizeB).toLongLong();
-    target->maxFileTimePeriodS = std::chrono::seconds((size_t) settings->value(
-        kMaxLogFileTimePeriodSymbolicName, (int) defaults.maxFileTimePeriodS.count()).toLongLong());
-    target->archivingEnabled = settings->value(
-        kLogArchivingEnabledSymbolicName, defaults.archivingEnabled).toBool();
+    target->maxVolumeSizeB =
+        settings->value(kMaxLogVolumeSizeSymbolicName, defaults.maxVolumeSizeB).toLongLong();
+    target->maxFileSizeB =
+        settings->value(kMaxLogFileSizeSymbolicName, defaults.maxFileSizeB).toLongLong();
+    target->maxFileTimePeriodS = std::chrono::seconds(
+        (size_t) settings
+            ->value(kMaxLogFileTimePeriodSymbolicName, (int) defaults.maxFileTimePeriodS.count())
+            .toLongLong());
+    target->archivingEnabled =
+        settings->value(kLogArchivingEnabledSymbolicName, defaults.archivingEnabled).toBool();
 
-    if (!NX_ASSERT(target->maxVolumeSizeB >= target->maxFileSizeB,
-        "Volume size %1 is less then file size %2", target->maxVolumeSizeB, target->maxFileSizeB))
+    if (!NX_ASSERT(
+            target->maxVolumeSizeB >= target->maxFileSizeB,
+            "Volume size %1 is less then file size %2",
+            target->maxVolumeSizeB,
+            target->maxFileSizeB))
     {
         target->maxVolumeSizeB = target->maxFileSizeB;
     }
@@ -202,14 +209,14 @@ void Settings::updateDirectoryIfEmpty(const QString& logDirectory)
         logger.updateDirectoryIfEmpty(logDirectory);
 }
 
-void Settings::loadCompatibilityLogger(
-    const QnSettings& settings,
-    const QString& prefix)
+void Settings::loadCompatibilityLogger(const QnSettings& settings, const QString& prefix)
 {
     LoggerSettings loggerSettings;
 
-    const auto makeKey =
-        [&prefix](const char* key) { return QString(nx::format("%1/%2").arg(prefix).arg(key)); };
+    const auto makeKey = [&prefix](const char* key)
+    {
+        return QString(nx::format("%1/%2").arg(prefix).arg(key));
+    };
 
     QString logLevelStr = settings.value(makeKey("logLevel")).toString();
     if (logLevelStr.isEmpty())
@@ -232,9 +239,11 @@ void Settings::loadCompatibilityLogger(
     const auto duration = nx::utils::parseDuration(
         settings.value(makeKey(kMaxLogFileTimePeriodSymbolicName)).toString().toStdString());
     if (duration)
-        loggerSettings.maxFileTimePeriodS = std::chrono::duration_cast<std::chrono::seconds>(duration.value());
+        loggerSettings.maxFileTimePeriodS =
+            std::chrono::duration_cast<std::chrono::seconds>(duration.value());
 
-    loggerSettings.archivingEnabled = settings.value(makeKey(kLogArchivingEnabledSymbolicName)).toBool();
+    loggerSettings.archivingEnabled =
+        settings.value(makeKey(kLogArchivingEnabledSymbolicName)).toBool();
 
     loggerSettings.logBaseName = settings.value(makeKey("baseName")).toString();
     if (loggerSettings.logBaseName.isEmpty())

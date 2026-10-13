@@ -4,11 +4,7 @@
 
 namespace nx::utils::math {
 
-RateLimiter::RateLimiter(
-    std::chrono::milliseconds period,
-    int amountAllowed,
-    int subPeriodCount)
-    :
+RateLimiter::RateLimiter(std::chrono::milliseconds period, int amountAllowed, int subPeriodCount):
     m_amountAllowed(amountAllowed),
     m_amountPerLastPeriod(period, subPeriodCount)
 {

@@ -28,7 +28,11 @@ class NX_NETWORK_API MultiBuffer
         Frame frame;
         bool locked;
 
-        LockableBuffer(Frame&& frame): frame(std::move(frame)), locked(false) {}
+        LockableBuffer(Frame&& frame):
+            frame(std::move(frame)),
+            locked(false)
+        {
+        }
     };
 
     using BuffersType = std::deque<LockableBuffer>;

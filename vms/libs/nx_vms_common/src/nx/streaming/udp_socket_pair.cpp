@@ -11,8 +11,8 @@ QString UdpSocketPair::getPortsString()
     if (!mediaSocket || !rtcpSocket)
         return QString();
 
-    return QString::number(mediaSocket->getLocalAddress().port) + "-" +
-        QString::number(rtcpSocket->getLocalAddress().port);
+    return QString::number(mediaSocket->getLocalAddress().port) + "-"
+        + QString::number(rtcpSocket->getLocalAddress().port);
 }
 
 bool UdpSocketPair::bind()
@@ -57,4 +57,4 @@ bool UdpSocketPair::bind()
     return mediaSocket && rtcpSocket;
 }
 
-}
+} // namespace nx::streaming::rtsp

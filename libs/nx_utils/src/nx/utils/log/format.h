@@ -39,28 +39,31 @@ public:
         return m_str.arg(nx::toString(value), width, fill);
     }
 
-    template<typename ... Values>
-    Formatter args(const Values& ... values) const
+    template<typename... Values>
+    Formatter args(const Values&... values) const
     {
         // Double toString() call is needed because some of toString() implementations (e.g. some
         // SDK toString() that convert their arguments to an std::string) don't return a QString
         // directly but something that can be converted to a QString with the second toString()
         // call.
-        return m_str.arg(nx::toString(nx::toString(values)) ...);
+        return m_str.arg(nx::toString(nx::toString(values))...);
     }
 
     template<typename... Values>
     Formatter args(const std::tuple<Values...>& values) const
     {
         return std::apply(
-            [this](auto&&... values) { return this->args(std::forward<decltype(values)>(values)...); },
+            [this](auto&&... values)
+            {
+                return this->args(std::forward<decltype(values)>(values)...);
+            },
             values);
     }
 
-    template<typename ... Arguments>
-    Formatter container(const Arguments& ... arguments) const
+    template<typename... Arguments>
+    Formatter container(const Arguments&... arguments) const
     {
-        return m_str.arg(containerString(arguments ...));
+        return m_str.arg(containerString(arguments...));
     }
 
     // QString number format compatibility.
@@ -70,32 +73,47 @@ public:
     Formatter arg(long value, int width = 0, int base = 10, const QChar& fill = kSpace) const;
     Formatter arg(ulong value, int width = 0, int base = 10, const QChar& fill = kSpace) const;
     Formatter arg(qlonglong value, int width = 0, int base = 10, const QChar& fill = kSpace) const;
-    Formatter arg(qulonglong value, int width = 0, int base = 10, const QChar& fill = kSpace) const;
+    Formatter arg(qulonglong value, int width = 0, int base = 10, const QChar& fill = kSpace)
+        const;
     Formatter arg(short value, int width = 0, int base = 10, const QChar& fill = kSpace) const;
     Formatter arg(ushort value, int width = 0, int base = 10, const QChar& fill = kSpace) const;
-    Formatter arg(double value, int width = 0, char format = 'g', int precision = -1, const QChar& fill = kSpace) const;
+    Formatter arg(
+        double value,
+        int width = 0,
+        char format = 'g',
+        int precision = -1,
+        const QChar& fill = kSpace) const;
 
 private:
     QString m_str;
 };
 
-inline Formatter format() { return Formatter{}; }
+inline Formatter format()
+{
+    return Formatter{};
+}
 
 template<typename Format>
-Formatter format(const Format& format) { return Formatter(nx::toString(format)); }
+Formatter format(const Format& format)
+{
+    return Formatter(nx::toString(format));
+}
 
 /** Use when the format string is not a literal: `return format(formatString, name, value);` */
-template<typename Format, typename ... Args>
-Formatter format(Format format, const Args& ... args)
+template<typename Format, typename... Args>
+Formatter format(Format format, const Args&... args)
 {
     return Formatter(std::forward<Format>(format)).args(args...);
 }
 
-inline
-void staticAssertLiteral() {}
+inline void staticAssertLiteral()
+{
+}
 
 template<int N>
-void staticAssertLiteral(const char (&)[N]) {}
+void staticAssertLiteral(const char (&)[N])
+{
+}
 
 } // namespace nx
 
@@ -115,11 +133,20 @@ void staticAssertLiteral(const char (&)[N]) {}
 #define NX_FMT(...) \
     /* Choose one of the two macros depending on the number of args supplied to this macro. */ \
     NX_MSVC_EXPAND(NX_GET_14TH_ARG( \
-        __VA_ARGS__, \
-        /* Repeat 12 times: allow for up to 11 args which are %N-substituted into the message. */ \
-        NX_DETAIL_FORMAT, NX_DETAIL_FORMAT, NX_DETAIL_FORMAT, NX_DETAIL_FORMAT, NX_DETAIL_FORMAT, \
-        NX_DETAIL_FORMAT, NX_DETAIL_FORMAT, NX_DETAIL_FORMAT, NX_DETAIL_FORMAT, NX_DETAIL_FORMAT, \
-        NX_DETAIL_FORMAT, NX_DETAIL_FORMAT, \
+        __VA_ARGS__, /* Repeat 12 times: allow for up to 11 args which are %N-substituted into \
+                        the message. */ \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
+        NX_DETAIL_FORMAT, \
         NX_DETAIL_FORMAT_LITERAL, /*< Chosen when called with message only. */ \
         args_required /*< Chosen when called without arguments; leads to an error. */ \
-    )(__VA_ARGS__))
+        )(__VA_ARGS__))

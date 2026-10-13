@@ -60,15 +60,14 @@ class StreamSocket;
  * @param socket The socket that wants to verify a certificate.
  * @return true if the chain has been verified, false otherwise.
  */
-using VerifyCertificateChainCallbackSync = nx::MoveOnlyFunc<
-    bool(CertificateChainView /*chain*/, StreamSocket* /*socket*/)>;
+using VerifyCertificateChainCallbackSync =
+    nx::MoveOnlyFunc<bool(CertificateChainView /*chain*/, StreamSocket* /*socket*/)>;
 
 /**
  * Type of function being called on the completion of asynchronous certificate chain verification.
  * @param result The result of the verification.
  */
-using VerifyCertificateCallbackAsyncCompletionHandler =
-    nx::MoveOnlyFunc<void(bool /*result*/)>;
+using VerifyCertificateCallbackAsyncCompletionHandler = nx::MoveOnlyFunc<void(bool /*result*/)>;
 
 /**
  * Type of the function being called on asynchronous certificate chain verification start.
@@ -76,18 +75,18 @@ using VerifyCertificateCallbackAsyncCompletionHandler =
  * @param socket The socket that wants to verify a certificate.
  * @param completionHandler The callback function which is called on completion.
  */
-using VerifyCertificateChainCallbackAsync = nx::MoveOnlyFunc<
-    void(
-        CertificateChainView /*chain*/,
-        StreamSocket* /*socket*/,
-        VerifyCertificateCallbackAsyncCompletionHandler /*completionHandler*/)>;
+using VerifyCertificateChainCallbackAsync = nx::MoveOnlyFunc<void(
+    CertificateChainView /*chain*/,
+    StreamSocket* /*socket*/,
+    VerifyCertificateCallbackAsyncCompletionHandler /*completionHandler*/)>;
 
 NX_NETWORK_API extern const std::function<
-    bool(CertificateChainView /*chain*/,
-        StreamSocket* /*socket*/)> kDefaultCertificateCheckCallback;
+    bool(CertificateChainView /*chain*/, StreamSocket* /*socket*/)>
+    kDefaultCertificateCheckCallback;
 
 NX_NETWORK_API extern const std::function<
-    bool(CertificateChainView /*chain*/, StreamSocket* /*socket*/)> kAcceptAnyCertificateCallback;
+    bool(CertificateChainView /*chain*/, StreamSocket* /*socket*/)>
+    kAcceptAnyCertificateCallback;
 
 class NX_NETWORK_API StreamSocket:
     public CustomStreamSocketDelegate<AbstractEncryptedStreamSocket, AbstractStreamSocket>
@@ -99,7 +98,7 @@ public:
     StreamSocket(
         Context* context,
         std::unique_ptr<AbstractStreamSocket> delegate,
-        bool isServerSide,  //< TODO: #akolesnikov Get rid of this argument.
+        bool isServerSide, //< TODO: #akolesnikov Get rid of this argument.
         VerifyCertificateChainCallbackSync verifyChainCallback);
 
     virtual ~StreamSocket() override;
@@ -124,20 +123,15 @@ public:
 
     virtual int send(const void* buffer, std::size_t bufferLen) override;
 
-    virtual void readSomeAsync(
-        nx::Buffer* const buffer,
-        IoCompletionHandler handler) override;
+    virtual void readSomeAsync(nx::Buffer* const buffer, IoCompletionHandler handler) override;
 
-    virtual void sendAsync(
-        const nx::Buffer* buffer,
-        IoCompletionHandler handler) override;
+    virtual void sendAsync(const nx::Buffer* buffer, IoCompletionHandler handler) override;
 
     virtual bool isConnected() const override;
 
     virtual bool isEncryptionEnabled() const override;
 
-    virtual void handshakeAsync(
-        nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler) override;
+    virtual void handshakeAsync(nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler) override;
 
     virtual std::string serverName() const override;
 
@@ -160,14 +154,15 @@ private:
     std::optional<unsigned int> m_recvTimeoutBak;
     std::optional<unsigned int> m_sendTimeoutBak;
     std::optional<std::string> m_serverName;
-    std::variant<VerifyCertificateChainCallbackSync,
-        VerifyCertificateChainCallbackAsync> m_verifyCertificateChainCallback;
+    std::variant<VerifyCertificateChainCallbackSync, VerifyCertificateChainCallbackAsync>
+        m_verifyCertificateChainCallback;
     nx::utils::AsyncOperationGuard m_asyncOperationGuard;
 
     void startHandshakeTimer(std::chrono::milliseconds timout);
     void doHandshake();
 
-    // TODO: #akolesnikov Make it virtual override after inheriting AbtractStreamSocket from aio::BasicPollable.
+    // TODO: #akolesnikov Make it virtual override after inheriting AbtractStreamSocket from
+    // aio::BasicPollable.
     void stopWhileInAioThread();
     void switchToSyncModeIfNeeded();
     void switchToAsyncModeIfNeeded();
@@ -182,17 +177,14 @@ private:
         T&& func,
         bool (StreamSocket::*method)(CertificateChainView));
 
-    bool syncVerifyCertificateChainCallbackHandler(
-        CertificateChainView chain);
+    bool syncVerifyCertificateChainCallbackHandler(CertificateChainView chain);
 
-    bool asyncVerifyCertificateChainCallbackHandler(
-        CertificateChainView chain);
+    bool asyncVerifyCertificateChainCallbackHandler(CertificateChainView chain);
 };
 
 //-------------------------------------------------------------------------------------------------
 
-class NX_NETWORK_API ClientStreamSocket:
-    public StreamSocket
+class NX_NETWORK_API ClientStreamSocket: public StreamSocket
 {
     using base_type = StreamSocket;
 
@@ -203,15 +195,12 @@ public:
         VerifyCertificateChainCallbackSync verifyChainCallback);
 };
 
-class NX_NETWORK_API ServerSideStreamSocket:
-    public StreamSocket
+class NX_NETWORK_API ServerSideStreamSocket: public StreamSocket
 {
     using base_type = StreamSocket;
 
 public:
-    ServerSideStreamSocket(
-        Context* context,
-        std::unique_ptr<AbstractStreamSocket> delegate);
+    ServerSideStreamSocket(Context* context, std::unique_ptr<AbstractStreamSocket> delegate);
 };
 
 } // namespace nx::network::ssl

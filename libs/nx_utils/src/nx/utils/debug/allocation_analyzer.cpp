@@ -2,22 +2,20 @@
 
 #ifndef __EMSCRIPTEN__
 
-#include "allocation_analyzer.h"
+    #include "allocation_analyzer.h"
 
-#include <chrono>
-#include <map>
-#include <mutex>
-#include <set>
-#include <sstream>
+    #include <chrono>
+    #include <map>
+    #include <mutex>
+    #include <set>
+    #include <sstream>
 
-#include <cpptrace/cpptrace.hpp>
-
-#include <nx/utils/log/assert.h>
+    #include <cpptrace/cpptrace.hpp>
+    #include <nx/utils/log/assert.h>
 
 namespace nx::utils::debug {
 
-using AllocationsByCount =
-    std::multimap<int /*count*/, cpptrace::raw_trace, std::greater<int>>;
+using AllocationsByCount = std::multimap<int /*count*/, cpptrace::raw_trace, std::greater<int>>;
 
 struct compareRawTrace
 {
@@ -133,9 +131,9 @@ std::optional<std::string> AllocationAnalyzer::generateReport() const
     for (const auto& [count, stack]: allocations)
     {
         report << std::endl
-            << number << "/" << allocations.size() << ". "
-            << count << " allocations done by the following stack:"<< std::endl
-            << stack.resolve() << std::endl;
+               << number << "/" << allocations.size() << ". " << count
+               << " allocations done by the following stack:" << std::endl
+               << stack.resolve() << std::endl;
         ++number;
     }
     report << "ALLOCATION REPORT END" << std::endl;

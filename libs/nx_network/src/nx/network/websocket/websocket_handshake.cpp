@@ -33,7 +33,7 @@ static nx::Buffer makeClientKey()
 static Error validateRequestLine(const nx::network::http::RequestLine& requestLine)
 {
     if ((requestLine.method != nx::network::http::Method::get
-            && requestLine.method != nx::network::http::Method::options)
+         && requestLine.method != nx::network::http::Method::options)
         || requestLine.version < nx::network::http::http_1_1)
     {
         return Error::handshakeError;
@@ -47,10 +47,12 @@ static Error validateHeaders(const nx::network::http::HttpHeaders& headers)
     nx::network::http::HttpHeaders::const_iterator headersIt;
 
     if (((headersIt = headers.find(kUpgrade)) == headers.cend()
-            || nx::utils::stricmp(headersIt->second, kWebsocketProtocolName) != 0)
+         || nx::utils::stricmp(headersIt->second, kWebsocketProtocolName) != 0)
         || ((headersIt = headers.find(kConnection)) == headers.cend()
-            || !nx::utils::contains(nx::utils::toLower(headersIt->second), nx::utils::toLower(kUpgrade))))
-            // ||!nx::utils::contains(headersIt->second, kUpgrade, nx::utils::ci_equal())
+            || !nx::utils::contains(
+                nx::utils::toLower(headersIt->second),
+                nx::utils::toLower(kUpgrade))))
+    // ||!nx::utils::contains(headersIt->second, kUpgrade, nx::utils::ci_equal())
     {
         return Error::handshakeError;
     }
@@ -71,7 +73,8 @@ static Error validateRequestHeaders(const nx::network::http::HttpHeaders& header
 
     if (headers.find(kHost) == headers.cend()
         || ((headersIt = headers.find(kKey)) == headers.cend() || headersIt->second.size() < 16)
-        || ((headersIt = headers.find(kVersion)) == headers.cend() || headersIt->second != kVersionNum))
+        || ((headersIt = headers.find(kVersion)) == headers.cend()
+            || headersIt->second != kVersionNum))
     {
         return Error::handshakeError;
     }
@@ -93,7 +96,10 @@ static Error validateResponseHeaders(
     if ((headersIt = headers.find(kAccept)) == headers.cend()
         || detail::makeAcceptKey(request.headers.find(kKey)->second) != headersIt->second)
     {
-        NX_DEBUG(kWebsocketTag, "Validation failed because accept key processing failed:", headers);
+        NX_DEBUG(
+            kWebsocketTag,
+            "Validation failed because accept key processing failed:",
+            headers);
         return Error::handshakeError;
     }
 
@@ -115,7 +121,8 @@ static Error validateResponseHeaders(
         {
             NX_DEBUG(
                 kWebsocketTag,
-                "Validation failed because of websocket protocol mismatch:", headers);
+                "Validation failed because of websocket protocol mismatch:",
+                headers);
             return Error::handshakeError;
         }
     }
@@ -123,7 +130,7 @@ static Error validateResponseHeaders(
     return Error::noError;
 }
 
-} // namespace <anonymous>
+} // namespace
 
 namespace detail {
 
@@ -153,7 +160,8 @@ Error validateRequest(
     nx::network::http::Response* response,
     bool disableCompression)
 {
-    const auto res = validateRequest(request, response ? &response->headers : nullptr, disableCompression);
+    const auto res =
+        validateRequest(request, response ? &response->headers : nullptr, disableCompression);
     if (response && res == Error::noError)
         response->statusLine.statusCode = nx::network::http::StatusCode::switchingProtocols;
     return res;
@@ -250,7 +258,8 @@ Error validateResponse(
     if (response.statusLine.statusCode != nx::network::http::StatusCode::switchingProtocols)
     {
         NX_DEBUG(
-            kWebsocketTag, "Validation failed because response code is not 'switchingProtocols'");
+            kWebsocketTag,
+            "Validation failed because response code is not 'switchingProtocols'");
         return Error::handshakeError;
     }
 

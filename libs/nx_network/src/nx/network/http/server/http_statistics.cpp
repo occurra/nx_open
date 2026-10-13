@@ -11,11 +11,14 @@ RequestStatisticsCalculator::RequestStatisticsCalculator():
     m_averageRequestProcessingTime(std::chrono::minutes(1))
 {
     m_requestProcessingTimePercentiles.emplace(
-        50, PercentilePerPeriod{0.5, std::chrono::minutes(1), 2});
+        50,
+        PercentilePerPeriod{0.5, std::chrono::minutes(1), 2});
     m_requestProcessingTimePercentiles.emplace(
-        95, PercentilePerPeriod{0.95, std::chrono::minutes(1), 2});
+        95,
+        PercentilePerPeriod{0.95, std::chrono::minutes(1), 2});
     m_requestProcessingTimePercentiles.emplace(
-        99, PercentilePerPeriod{0.99, std::chrono::minutes(1), 2});
+        99,
+        PercentilePerPeriod{0.99, std::chrono::minutes(1), 2});
 }
 
 void RequestStatisticsCalculator::processedRequest(
@@ -55,8 +58,7 @@ RequestStatistics RequestStatisticsCalculator::statistics() const
 // SummingStatisticsProvider
 
 SummingStatisticsProvider::SummingStatisticsProvider(
-    std::vector<const AbstractHttpStatisticsProvider*> providers)
-    :
+    std::vector<const AbstractHttpStatisticsProvider*> providers):
     m_providers(std::move(providers))
 {
 }
@@ -70,9 +72,8 @@ HttpStatistics SummingStatisticsProvider::httpStatistics() const
         HttpStatistics httpStats = provider->httpStatistics();
         total.add(httpStats);
 
-        total.maxRequestProcessingTimeUsec = std::max(
-            total.maxRequestProcessingTimeUsec,
-            httpStats.maxRequestProcessingTimeUsec);
+        total.maxRequestProcessingTimeUsec =
+            std::max(total.maxRequestProcessingTimeUsec, httpStats.maxRequestProcessingTimeUsec);
 
         total.averageRequestProcessingTimeUsec = std::max(
             total.averageRequestProcessingTimeUsec,

@@ -6,7 +6,6 @@
 
 #include <nx/network/aio/aio_task_queue.h>
 #include <nx/utils/random.h>
-
 #include <nx/utils/scope_guard.h>
 
 namespace nx::network::aio::detail::test {
@@ -52,8 +51,7 @@ static constexpr std::size_t kPollableCount = 7;
 
 } // namespace
 
-class AioTaskQueue:
-    public ::testing::Test
+class AioTaskQueue: public ::testing::Test
 {
 public:
     AioTaskQueue():
@@ -84,10 +82,10 @@ protected:
     void whenCancelledCallsOfARandomPollable()
     {
         PollableContext* pollableCtx =
-            m_pollables[nx::utils::random::number<std::size_t>(0, m_pollables.size()-1)].get();
+            m_pollables[nx::utils::random::number<std::size_t>(0, m_pollables.size() - 1)].get();
 
-        pollableCtx->cancelledTasks = m_aioTaskQueue.cancelPostedCalls(
-            pollableCtx->pollable.impl()->socketSequence);
+        pollableCtx->cancelledTasks =
+            m_aioTaskQueue.cancelPostedCalls(pollableCtx->pollable.impl()->socketSequence);
         pollableCtx->isCancelled = true;
     }
 
@@ -136,10 +134,8 @@ private:
     {
         m_aioTaskQueue.addTask(PostAsyncCallTask(
             &pollableContext->pollable,
-            [scopedIncrement = std::make_unique<ScopedIncrement>(
-                &pollableContext->postedCallCounter)]()
-            {
-            }));
+            [scopedIncrement =
+                 std::make_unique<ScopedIncrement>(&pollableContext->postedCallCounter)]() {}));
         ++pollableContext->expectedPostedCallCounter;
     }
 };

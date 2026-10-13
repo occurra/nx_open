@@ -32,13 +32,14 @@ class NX_VMS_COMMON_API QnSyncTime final: public QObject
     Q_OBJECT;
 
 public:
-    QnSyncTime(QObject *parent = NULL);
+    QnSyncTime(QObject* parent = NULL);
     ~QnSyncTime();
 
     static QnSyncTime* instance();
 
     void setTimeSyncManager(nx::vms::common::AbstractTimeSyncManagerPtr timeSyncManager);
-    void setTimeNotificationManager(ec2::AbstractTimeNotificationManagerPtr timeNotificationManager);
+    void setTimeNotificationManager(
+        ec2::AbstractTimeNotificationManagerPtr timeNotificationManager);
 
     /**
      * Synchronized time of the System in milliseconds since epoch. Can be taken from the Internet

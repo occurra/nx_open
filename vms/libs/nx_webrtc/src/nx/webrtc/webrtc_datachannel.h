@@ -19,7 +19,7 @@ public:
      * Messages for the DataChannel establishment protocol (RFC 8832).
      * See https://www.rfc-editor.org/rfc/rfc8832.html
      */
-    enum MessageType: uint8_t
+    enum MessageType : uint8_t
     {
         openRequest = 0x00, /**< Unused.*/
         openResponse = 0x01, /**< Unused.*/
@@ -28,7 +28,7 @@ public:
         close = 0x04,
     };
 
-    enum ChannelType: uint8_t
+    enum ChannelType : uint8_t
     {
         reliable = 0x00,
         partialReliableRexmit = 0x01,
@@ -40,7 +40,7 @@ private:
      * NOTE: The order seems to be wrong but these are the actual values.
      * See https://datatracker.ietf.org/doc/html/draft-ietf-rtcweb-data-channel-13#section-8
      */
-    enum PayloadId: uint32_t
+    enum PayloadId : uint32_t
     {
         control = 50,
         string = 51,
@@ -67,10 +67,7 @@ private:
     };
 
 public:
-    DataChannel(
-        AbstractDataChannelDelegate* ice,
-        uint16_t sctpPort,
-        const SessionConfig& config);
+    DataChannel(AbstractDataChannelDelegate* ice, uint16_t sctpPort, const SessionConfig& config);
     ~DataChannel();
     bool handlePacket(const uint8_t* data, int size); /**< Input from the lower transport. */
     bool writeString(

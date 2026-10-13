@@ -24,7 +24,8 @@ void TimestampAdjustmentHistory::record(
         m_records.erase(m_records.begin(), it);
 }
 
-std::optional<std::chrono::microseconds> TimestampAdjustmentHistory::getLatestSourceTimestamp() const
+std::optional<std::chrono::microseconds> TimestampAdjustmentHistory::getLatestSourceTimestamp()
+    const
 {
     std::optional<std::chrono::microseconds> timestamp;
 

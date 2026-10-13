@@ -11,7 +11,10 @@ namespace nx::utils::fs {
 class AbstractTask
 {
 public:
-    AbstractTask(IQnFile* file): m_file(file) {}
+    AbstractTask(IQnFile* file):
+        m_file(file)
+    {
+    }
     virtual ~AbstractTask() = default;
 
     virtual void run() = 0;
@@ -55,8 +58,7 @@ public:
         IQnFile* file,
         const QIODevice::OpenMode& mode,
         unsigned int systemDependentFlags,
-        OpenHandler handler)
-        :
+        OpenHandler handler):
         AbstractTask(file),
         m_mode(mode),
         m_systemDependentFlags(systemDependentFlags),
@@ -83,11 +85,7 @@ private:
 class Read: public AbstractTask
 {
 public:
-    Read(
-        IQnFile* file,
-        nx::Buffer* buf,
-        IoCompletionHandler handler)
-        :
+    Read(IQnFile* file, nx::Buffer* buf, IoCompletionHandler handler):
         AbstractTask(file),
         m_buf(buf),
         m_handler(std::move(handler))
@@ -104,8 +102,7 @@ public:
         auto bufSize = m_buf->size();
         m_buf->resize(m_buf->capacity());
 
-        const auto bytesRead = m_file->read(
-            m_buf->data() + bufSize, m_buf->size() - bufSize);
+        const auto bytesRead = m_file->read(m_buf->data() + bufSize, m_buf->size() - bufSize);
         if (bytesRead < 0)
         {
             m_buf->resize(bufSize);
@@ -127,10 +124,7 @@ private:
 class ReadAll: public AbstractTask
 {
 public:
-    ReadAll(
-        IQnFile* file,
-        ReadAllHandler handler)
-        :
+    ReadAll(IQnFile* file, ReadAllHandler handler):
         AbstractTask(file),
         m_handler(std::move(handler))
     {
@@ -208,10 +202,7 @@ public:
     {
     }
 
-    virtual void run() override
-    {
-        m_handler();
-    }
+    virtual void run() override { m_handler(); }
 
 private:
     nx::MoveOnlyFunc<void()> m_handler;
@@ -221,7 +212,11 @@ private:
 
 FileAsyncIoScheduler::FileAsyncIoScheduler()
 {
-    m_ioThread = std::thread([this]() { taskProcessingThread(); });
+    m_ioThread = std::thread(
+        [this]()
+        {
+            taskProcessingThread();
+        });
 }
 
 FileAsyncIoScheduler::~FileAsyncIoScheduler()
@@ -246,17 +241,12 @@ void FileAsyncIoScheduler::open(
     m_tasks.push(std::make_unique<Open>(file, mode, systemDependentFlags, std::move(handler)));
 }
 
-void FileAsyncIoScheduler::read(
-    IQnFile* file,
-    nx::Buffer* buf,
-    IoCompletionHandler handler)
+void FileAsyncIoScheduler::read(IQnFile* file, nx::Buffer* buf, IoCompletionHandler handler)
 {
     m_tasks.push(std::make_unique<Read>(file, buf, std::move(handler)));
 }
 
-void FileAsyncIoScheduler::readAll(
-    IQnFile* file,
-    ReadAllHandler handler)
+void FileAsyncIoScheduler::readAll(IQnFile* file, ReadAllHandler handler)
 {
     m_tasks.push(std::make_unique<ReadAll>(file, std::move(handler)));
 }

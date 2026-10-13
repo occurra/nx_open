@@ -28,7 +28,8 @@ signals:
  * registered as a Qt metatype. Also it provides easily subscriptable signal while dynamic property
  * changes in QObject could be observed only with an event handler.
  */
-template<typename T> requires(std::equality_comparable<T> && std::is_assignable_v<T, T>)
+template<typename T>
+    requires(std::equality_comparable<T> && std::is_assignable_v<T, T>)
 class VirtualProperty: public VirtualPropertyBase
 {
 public:
@@ -38,10 +39,7 @@ public:
     {
     }
 
-    const T& value() const
-    {
-        return m_value;
-    }
+    const T& value() const { return m_value; }
 
     void setValue(const T& value)
     {

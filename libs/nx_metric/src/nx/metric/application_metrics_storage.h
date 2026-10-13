@@ -12,4 +12,4 @@ struct ApplicationMetricsStorage: ParameterSet
     NX_METRICS_ADD(std::atomic<qint64>, totalServerRequests, "Total number of requests to server");
 };
 
-} // namespace nx::metric::
+} // namespace nx::metric

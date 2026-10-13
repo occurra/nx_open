@@ -78,7 +78,8 @@ std::unique_ptr<nx::rtp::AudioStreamParser> makeAudioParser(const QString& codec
 
 } // namespace
 
-Demuxer::Demuxer(const Tracks* tracks): m_tracks(tracks)
+Demuxer::Demuxer(const Tracks* tracks):
+    m_tracks(tracks)
 {
 }
 
@@ -111,7 +112,8 @@ void Demuxer::setSdp(const std::string& value)
     // Outer loop over media types, not over sdp.media: the recorder allocates all video streams
     // before the audio ones, and trackIdx has to end up matching that layout.
     constexpr std::array kTrackTypes = {
-        nx::rtp::Sdp::MediaType::Video, nx::rtp::Sdp::MediaType::Audio};
+        nx::rtp::Sdp::MediaType::Video,
+        nx::rtp::Sdp::MediaType::Audio};
     int trackIdx = 0;
     for (const auto trackType: kTrackTypes)
     {
@@ -162,12 +164,14 @@ void Demuxer::setSdp(const std::string& value)
             }
 
             NX_ASSERT(m_resource);
-            auto timeHelper =
-                std::make_unique<nx::streaming::rtp::CameraTimeHelper>(media.mediaType,
-                    m_resource->getPhysicalId().toStdString(),
-                    m_resource->getTimeOffset());
-            auto result = m_parsers.emplace(media.ssrc,
-                ParserContext(nx::rtp::RtpParser(media.payloadType, std::move(parser)),
+            auto timeHelper = std::make_unique<nx::streaming::rtp::CameraTimeHelper>(
+                media.mediaType,
+                m_resource->getPhysicalId().toStdString(),
+                m_resource->getTimeOffset());
+            auto result = m_parsers.emplace(
+                media.ssrc,
+                ParserContext(
+                    nx::rtp::RtpParser(media.payloadType, std::move(parser)),
                     senderSsrc,
                     std::move(timeHelper),
                     trackIdx,
@@ -178,7 +182,8 @@ void Demuxer::setSdp(const std::string& value)
                 // up with the recorder's streams. The publisher sends the payload type it listed
                 // first, so this is the only codec this track will carry.
                 ++trackIdx;
-                NX_DEBUG(this,
+                NX_DEBUG(
+                    this,
                     "Track ssrc: %1 index: %2 codec: %3 ptype: %4",
                     media.ssrc,
                     result.first->second.trackIdx,
@@ -187,7 +192,8 @@ void Demuxer::setSdp(const std::string& value)
             }
             else
             {
-                NX_DEBUG(this,
+                NX_DEBUG(
+                    this,
                     "Track with ssrc: %1 ptype: %2 codec: %3 is not inserted",
                     media.ssrc,
                     media.payloadType,
@@ -260,10 +266,10 @@ bool Demuxer::processRtp(const nx::utils::ByteArray& array)
         if (hd.read((const uint8_t*) array.data(), (int) array.size()) && hd.extension)
         {
             if (auto seq = parseTransportCcSeq(
-                hd.extension->header.id(),
-                (const uint8_t*) array.data() + hd.extension->extensionOffset,
-                hd.extension->extensionSize,
-                m_twcc.transportCcExtId()))
+                    hd.extension->header.id(),
+                    (const uint8_t*) array.data() + hd.extension->extensionOffset,
+                    hd.extension->extensionSize,
+                    m_twcc.transportCcExtId()))
             {
                 m_twcc.onRtpPacket(*seq, arrival);
             }
@@ -304,8 +310,9 @@ bool Demuxer::processRtp(const nx::utils::ByteArray& array)
             if (nack)
             {
                 nx::Buffer buffer(nack->serialized(), 0);
-                NX_ASSERT(nack->serialize((uint8_t*) buffer.data(), buffer.size()) ==
-                    (int) buffer.size());
+                NX_ASSERT(
+                    nack->serialize((uint8_t*) buffer.data(), buffer.size())
+                    == (int) buffer.size());
                 encryptPacket(buffer);
                 m_feedbacks.emplace_back(std::move(buffer));
             }
@@ -343,7 +350,9 @@ bool Demuxer::processRtcp(const nx::utils::ByteArray& array)
                 parser->second.senderReport = senderReport;
             nx::Buffer output(nx::rtp::kRtcpReceiverReportLength, 0);
             int outBufSize = nx::rtp::buildReceiverReport(
-                (uint8_t*) output.data(), output.size(), parser->second.senderSsrc);
+                (uint8_t*) output.data(),
+                output.size(),
+                parser->second.senderSsrc);
             NX_ASSERT(outBufSize == nx::rtp::kRtcpReceiverReportLength);
 
             encryptPacket(output);
@@ -380,7 +389,8 @@ bool Demuxer::demux(const char* data, size_t size)
         if (context.reportedUnexpectedPayloadType != header->payloadType)
         {
             context.reportedUnexpectedPayloadType = header->payloadType;
-            NX_WARNING(this,
+            NX_WARNING(
+                this,
                 "Dropping ssrc %1 packets with payload type %2: the track was negotiated as "
                 "payload type %3 and the codec cannot be changed mid-stream",
                 ssrc,
@@ -393,22 +403,20 @@ bool Demuxer::demux(const char* data, size_t size)
 
     auto& buffer = context.buffer;
     auto oldSize = buffer.size();
-    buffer.insert(
-        buffer.end(),
-        (const uint8_t*) data,
-        (const uint8_t*) data + size);
+    buffer.insert(buffer.end(), (const uint8_t*) data, (const uint8_t*) data + size);
 
     bool packetLoss = false, gotData = false;
 
-    context.parser.processData(
-        buffer.data(), oldSize, buffer.size() - oldSize, packetLoss, gotData);
+    context.parser
+        .processData(buffer.data(), oldSize, buffer.size() - oldSize, packetLoss, gotData);
     if (gotData)
     {
         nx::rtp::RtcpSenderReport senderReport;
         auto media = context.parser.nextData(senderReport);
         media->channelNumber = static_cast<uint32_t>(context.trackIdx);
         media->timestamp = context.timeHelper
-                               ->getTime(qnSyncTime->currentTimePoint(),
+                               ->getTime(
+                                   qnSyncTime->currentTimePoint(),
                                    std::chrono::microseconds(media->timestamp),
                                    context.parser.isUtcTime(),
                                    true)

@@ -1,9 +1,9 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <gtest/gtest.h>
-
 #include <array>
 #include <limits>
+
+#include <gtest/gtest.h>
 
 #include <nx/network/ssl/ssl_pipeline.h>
 #include <nx/utils/move_only_func.h>
@@ -17,8 +17,7 @@ class TestPipeline
 public:
     TestPipeline(
         std::unique_ptr<utils::bstream::AbstractTwoWayConverter> clientPipeline,
-        std::unique_ptr<utils::bstream::AbstractTwoWayConverter> serverPipeline)
-        :
+        std::unique_ptr<utils::bstream::AbstractTwoWayConverter> serverPipeline):
         m_clientPipeline(std::move(clientPipeline)),
         m_serverPipeline(std::move(serverPipeline))
     {
@@ -58,8 +57,9 @@ public:
             if (!senderActive && !receiverActive)
                 break;
 
-            if (m_clientToServerPipeline.totalBytesThrough() == m_clientToServerTotalBytesThrough &&
-                m_serverToClientPipeline.totalBytesThrough() == m_serverToClientTotalBytesThrough)
+            if (m_clientToServerPipeline.totalBytesThrough() == m_clientToServerTotalBytesThrough
+                && m_serverToClientPipeline.totalBytesThrough()
+                    == m_serverToClientTotalBytesThrough)
             {
                 // On error in handshake data SSL may not report error but keep asking for data.
                 // Another side will also be asking for data and as a result pipe will stuck.
@@ -78,7 +78,8 @@ public:
                     dataToSend.remove(0, bytesWritten);
                 else if (bytesWritten == 0)
                     ; // TODO
-                else if (bytesWritten != utils::bstream::StreamIoError::wouldBlock || !receiverActive)
+                else if (
+                    bytesWritten != utils::bstream::StreamIoError::wouldBlock || !receiverActive)
                     senderActive = false;
             }
 
@@ -113,15 +114,13 @@ private:
 /**
  * Invokes handler when pipelined wrapped writes any data to the output pipeline.
  */
-class NotifyingTwoWayPipelineWrapper:
-    public nx::utils::bstream::AbstractTwoWayConverter
+class NotifyingTwoWayPipelineWrapper: public nx::utils::bstream::AbstractTwoWayConverter
 {
 public:
     using DataWrittenEventHandler = nx::MoveOnlyFunc<void(const void*, size_t)>;
 
     NotifyingTwoWayPipelineWrapper(
-        std::unique_ptr<utils::bstream::AbstractTwoWayConverter> twoWayPipeline)
-        :
+        std::unique_ptr<utils::bstream::AbstractTwoWayConverter> twoWayPipeline):
         m_twoWayPipeline(std::move(twoWayPipeline))
     {
         using namespace std::placeholders;
@@ -141,18 +140,12 @@ public:
         return m_twoWayPipeline->write(data, count);
     }
 
-    virtual void setInput(AbstractInput* input) override
-    {
-        m_twoWayPipeline->setInput(input);
-    }
+    virtual void setInput(AbstractInput* input) override { m_twoWayPipeline->setInput(input); }
 
-    void setOnDataWritten(DataWrittenEventHandler func)
-    {
-        m_onDataWritten = std::move(func);
-    }
+    void setOnDataWritten(DataWrittenEventHandler func) { m_onDataWritten = std::move(func); }
 
 private:
-    //DataReadEventHandler m_onDataRead;
+    // DataReadEventHandler m_onDataRead;
     DataWrittenEventHandler m_onDataWritten;
     std::unique_ptr<utils::bstream::AbstractTwoWayConverter> m_twoWayPipeline;
     std::unique_ptr<AbstractOutput> m_customOutput;
@@ -166,16 +159,15 @@ private:
     }
 };
 
-class FailingOutputStream:
-    public nx::utils::bstream::AbstractOutputConverter
+class FailingOutputStream: public nx::utils::bstream::AbstractOutputConverter
 {
 public:
     int write(const void* data, size_t count)
     {
-        m_buffer.assign((const char*)data, (const char*)data + count);
+        m_buffer.assign((const char*) data, (const char*) data + count);
         // Corrupting buffer
-        const auto pos = nx::utils::random::number<std::size_t>(0U, m_buffer.size()-1);
-        m_buffer[pos] = (char)nx::utils::random::number<int>();
+        const auto pos = nx::utils::random::number<std::size_t>(0U, m_buffer.size() - 1);
+        m_buffer[pos] = (char) nx::utils::random::number<int>();
         return m_outputStream->write(m_buffer.data(), m_buffer.size());
     }
 
@@ -186,8 +178,7 @@ private:
 //-------------------------------------------------------------------------------------------------
 // Test fixture
 
-class SslPipeline:
-    public ::testing::Test
+class SslPipeline: public ::testing::Test
 {
 public:
     SslPipeline():
@@ -202,7 +193,13 @@ protected:
     void givenRandomData()
     {
         m_inputData.resize(nx::utils::random::number<size_t>(1024, 2048));
-        std::generate(m_inputData.data(), m_inputData.data() + m_inputData.size(), [](){ return 'a' + (rand() % 'z'); } );
+        std::generate(
+            m_inputData.data(),
+            m_inputData.data() + m_inputData.size(),
+            []()
+            {
+                return 'a' + (rand() % 'z');
+            });
     }
 
     void givenEncodeDecodePipeline()
@@ -216,15 +213,13 @@ protected:
                 m_encodedData.append(static_cast<const char*>(data), count);
             });
 
-        m_pipeline = std::make_unique<TestPipeline>(
-            createClientPipeline(),
-            std::move(notifyingPipeline));
+        m_pipeline =
+            std::make_unique<TestPipeline>(createClientPipeline(), std::move(notifyingPipeline));
     }
 
     void insertFailingElementIntoPipeChain()
     {
-        m_pipeline->insertBetweenClientAndServer(
-            std::make_unique<FailingOutputStream>());
+        m_pipeline->insertBetweenClientAndServer(std::make_unique<FailingOutputStream>());
     }
 
     void whenDataIsTransferredThroughPipeline()
@@ -247,25 +242,13 @@ protected:
         }
     }
 
-    void whenAnySideHasBeenShutDown()
-    {
-        m_clientPipeline->shutdown();
-    }
+    void whenAnySideHasBeenShutDown() { m_clientPipeline->shutdown(); }
 
-    void thenEncodedDataIsNotEmpty()
-    {
-        ASSERT_FALSE(m_encodedData.isEmpty());
-    }
+    void thenEncodedDataIsNotEmpty() { ASSERT_FALSE(m_encodedData.isEmpty()); }
 
-    void thenEncodedDataDiffersFromInitial()
-    {
-        ASSERT_NE(m_inputData, m_encodedData);
-    }
+    void thenEncodedDataDiffersFromInitial() { ASSERT_NE(m_inputData, m_encodedData); }
 
-    void thenOutputDataMatchesInput()
-    {
-        ASSERT_EQ(m_inputData, m_outputData);
-    }
+    void thenOutputDataMatchesInput() { ASSERT_EQ(m_inputData, m_outputData); }
 
     void thenServerPipelineHasFailed()
     {
@@ -273,10 +256,7 @@ protected:
         ASSERT_TRUE(m_serverPipeline->failed());
     }
 
-    void thenPartialDataHasBeenReceived()
-    {
-        ASSERT_TRUE(m_inputData.startsWith(m_outputData));
-    }
+    void thenPartialDataHasBeenReceived() { ASSERT_TRUE(m_inputData.startsWith(m_outputData)); }
 
     void thenBothSidesReportEof()
     {
@@ -309,15 +289,9 @@ protected:
         return serverPipeline;
     }
 
-    ConnectingPipeline* clientPipeline()
-    {
-        return m_clientPipeline;
-    }
+    ConnectingPipeline* clientPipeline() { return m_clientPipeline; }
 
-    AcceptingPipeline* serverPipeline()
-    {
-        return m_serverPipeline;
-    }
+    AcceptingPipeline* serverPipeline() { return m_serverPipeline; }
 
 private:
     const std::string m_serverName;
@@ -360,9 +334,9 @@ TEST_F(SslPipeline, partitioning_input_data)
     thenOutputDataMatchesInput();
 }
 
-//TEST_F(SslPipeline, partitioning_intermediate_input_data)
+// TEST_F(SslPipeline, partitioning_intermediate_input_data)
 
-//TEST_F(SslPipeline, partitioning_every_data)
+// TEST_F(SslPipeline, partitioning_every_data)
 
 TEST_F(SslPipeline, random_error_in_data)
 {
@@ -395,13 +369,11 @@ TEST_F(SslPipeline, ClientHello_contains_serverName)
     thenServerNameIsReceivedByAcceptingSide();
 }
 
-//TEST_F(SslPipeline, incompatible_algorithm)
+// TEST_F(SslPipeline, incompatible_algorithm)
 
-class SslPipelineThirstyFlags:
-    public SslPipeline
+class SslPipelineThirstyFlags: public SslPipeline
 {
 public:
-
 protected:
     void givenPipelineReadyForIo()
     {

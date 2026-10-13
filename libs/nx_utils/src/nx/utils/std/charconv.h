@@ -62,12 +62,14 @@ namespace nx::utils::charconv {
 
     #if defined(NX_CHARCONV_INTEGER)
 
-struct from_chars_result {
+struct from_chars_result
+{
     const char* ptr;
     std::errc ec;
 };
 
-struct to_chars_result {
+struct to_chars_result
+{
     char* ptr;
     std::errc ec;
 };
@@ -81,7 +83,8 @@ using std::to_chars_result;
 
     #if defined(NX_CHARCONV_FROM_FLOAT) || defined(NX_CHARCONV_TO_FLOAT)
 
-enum class chars_format {
+enum class chars_format
+{
     scientific = 1,
     fixed = 2,
     hex = 4,
@@ -101,7 +104,8 @@ namespace detail {
 template<typename T, typename Func, typename... Args>
 // requires std::is_arithmetic_v<T>
 from_chars_result from_chars(
-    const char* first, const char* last,
+    const char* first,
+    const char* last,
     T& value,
     Func func,
     Args... args)
@@ -110,9 +114,9 @@ from_chars_result from_chars(
     while (isspace(*realFirst) && realFirst < last)
         ++realFirst;
 
-    //NOTE: strtoll and similar do not support string end.
+    // NOTE: strtoll and similar do not support string end.
     char buf[32];
-    if ((std::size_t)(last - realFirst) > sizeof(buf) - 1)
+    if ((std::size_t) (last - realFirst) > sizeof(buf) - 1)
         return {first, std::errc::invalid_argument};
 
     memcpy(buf, realFirst, last - realFirst);
@@ -129,7 +133,8 @@ from_chars_result from_chars(
 template<typename T, typename Func, typename X = std::enable_if_t<std::is_integral_v<T>>>
 // requires std::is_integral_v<T>
 from_chars_result int_from_chars(
-    const char* first, const char* last,
+    const char* first,
+    const char* last,
     T& value,
     Func func,
     int base)
@@ -198,10 +203,7 @@ to_chars_result int_to_chars(char* first, char* last, T value, int base)
 
 template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 // requires std::is_floating_point_v<T>
-to_chars_result float_to_chars(
-    char* first, char* last,
-    T value,
-    chars_format fmt, int precision)
+to_chars_result float_to_chars(char* first, char* last, T value, chars_format fmt, int precision)
 {
     NX_ASSERT(fmt == chars_format::general);
 
@@ -221,49 +223,59 @@ to_chars_result float_to_chars(
     #if defined(NX_CHARCONV_INTEGER)
 
 inline from_chars_result from_chars(
-    const char* first, const char* last,
-    unsigned long long& value, int base = 10)
+    const char* first,
+    const char* last,
+    unsigned long long& value,
+    int base = 10)
 {
     return nx::utils::charconv::detail::int_from_chars(first, last, value, &strtoull, base);
 }
 
 inline from_chars_result from_chars(
-    const char* first, const char* last,
-    long long& value, int base = 10)
+    const char* first,
+    const char* last,
+    long long& value,
+    int base = 10)
 {
     return nx::utils::charconv::detail::int_from_chars(first, last, value, &strtoll, base);
 }
 
 inline from_chars_result from_chars(
-    const char* first, const char* last,
-    long& value, int base = 10)
+    const char* first,
+    const char* last,
+    long& value,
+    int base = 10)
 {
     return nx::utils::charconv::detail::int_from_chars(first, last, value, &strtol, base);
 }
 
 inline from_chars_result from_chars(
-    const char* first, const char* last,
-    unsigned long& value, int base = 10)
+    const char* first,
+    const char* last,
+    unsigned long& value,
+    int base = 10)
 {
     return nx::utils::charconv::detail::int_from_chars(first, last, value, &strtoul, base);
 }
 
-inline from_chars_result from_chars(
-    const char* first, const char* last,
-    int& value, int base = 10)
+inline from_chars_result from_chars(const char* first, const char* last, int& value, int base = 10)
 {
     long tmpValue = 0;
-    const auto result = nx::utils::charconv::detail::int_from_chars(first, last, tmpValue, &strtol, base);
+    const auto result =
+        nx::utils::charconv::detail::int_from_chars(first, last, tmpValue, &strtol, base);
     value = (int) tmpValue;
     return result;
 }
 
 inline from_chars_result from_chars(
-    const char* first, const char* last,
-    unsigned int& value, int base = 10)
+    const char* first,
+    const char* last,
+    unsigned int& value,
+    int base = 10)
 {
     unsigned long tmpValue = 0;
-    const auto result = nx::utils::charconv::detail::int_from_chars(first, last, tmpValue, &strtol, base);
+    const auto result =
+        nx::utils::charconv::detail::int_from_chars(first, last, tmpValue, &strtol, base);
     value = (unsigned int) tmpValue;
     return result;
 }
@@ -304,9 +316,7 @@ inline to_chars_result to_chars(char* first, char* last, unsigned int value, int
 
 template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
 // requires std::is_integral_v<T>
-inline from_chars_result from_chars(
-    const char* first, const char* last,
-    T& value, int base = 10)
+inline from_chars_result from_chars(const char* first, const char* last, T& value, int base = 10)
 {
     return std::from_chars(first, last, value, base);
 }
@@ -326,21 +336,27 @@ inline to_chars_result to_chars(char* first, char* last, T value, int base = 10)
 // float support.
 
 inline from_chars_result from_chars(
-    const char* first, const char* last, float& value,
+    const char* first,
+    const char* last,
+    float& value,
     chars_format /*fmt*/ = chars_format::general)
 {
     return nx::utils::charconv::detail::from_chars(first, last, value, &strtof);
 }
 
 inline from_chars_result from_chars(
-    const char* first, const char* last, double& value,
+    const char* first,
+    const char* last,
+    double& value,
     chars_format /*fmt*/ = chars_format::general)
 {
     return nx::utils::charconv::detail::from_chars(first, last, value, &strtod);
 }
 
 inline from_chars_result from_chars(
-    const char* first, const char* last, long double& value,
+    const char* first,
+    const char* last,
+    long double& value,
     chars_format /*fmt*/ = chars_format::general)
 {
     return nx::utils::charconv::detail::from_chars(first, last, value, &strtold);
@@ -351,7 +367,8 @@ inline from_chars_result from_chars(
 template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 // requires std::is_floating_point_v<T>
 inline from_chars_result from_chars(
-    const char* first, const char* last,
+    const char* first,
+    const char* last,
     T& value,
     chars_format fmt = chars_format::general)
 {
@@ -365,25 +382,31 @@ inline from_chars_result from_chars(
     #if defined(NX_CHARCONV_TO_FLOAT)
 
 inline to_chars_result to_chars(
-    char* first, char* last,
+    char* first,
+    char* last,
     float value,
-    chars_format fmt, int precision)
+    chars_format fmt,
+    int precision)
 {
     return nx::utils::charconv::detail::float_to_chars(first, last, value, fmt, precision);
 }
 
 inline to_chars_result to_chars(
-    char* first, char* last,
+    char* first,
+    char* last,
     double value,
-    chars_format fmt, int precision)
+    chars_format fmt,
+    int precision)
 {
     return nx::utils::charconv::detail::float_to_chars(first, last, value, fmt, precision);
 }
 
 inline to_chars_result to_chars(
-    char* first, char* last,
+    char* first,
+    char* last,
     long double value,
-    chars_format fmt, int precision)
+    chars_format fmt,
+    int precision)
 {
     return nx::utils::charconv::detail::float_to_chars(first, last, value, fmt, precision);
 }
@@ -392,10 +415,7 @@ inline to_chars_result to_chars(
 
 template<typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
 // requires std::is_floating_point_v<T>
-inline to_chars_result to_chars(
-    char* first, char* last,
-    T value,
-    chars_format fmt, int precision)
+inline to_chars_result to_chars(char* first, char* last, T value, chars_format fmt, int precision)
 {
     return std::to_chars(first, last, value, fmt, precision);
 }

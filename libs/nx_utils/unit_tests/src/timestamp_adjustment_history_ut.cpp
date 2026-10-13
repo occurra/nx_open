@@ -39,7 +39,9 @@ TEST_F(TimestampAdjustmentHistoryTest, timestamps_between_records_are_affected_b
     assertIsOffsetBy(410ms, -25ms);
 }
 
-TEST_F(TimestampAdjustmentHistoryTest, timestamps_exactly_on_records_are_affected_by_corresponding_records)
+TEST_F(
+    TimestampAdjustmentHistoryTest,
+    timestamps_exactly_on_records_are_affected_by_corresponding_records)
 {
     assertIsOffsetBy(100ms, 20ms);
     assertIsOffsetBy(400ms, 80ms);

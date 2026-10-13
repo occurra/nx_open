@@ -1,6 +1,7 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
 #include "crc16.h"
+
 #include <nx/utils/log/assert.h>
 
 namespace nx {
@@ -10,41 +11,41 @@ namespace {
 
 static uint16_t crc16ibmRev(const uint8_t* ptr, size_t count)
 {
-   uint16_t crc = 0;
-   while (count--)
-   {
-      crc ^= (uint16_t) *ptr++;
-      for (int i = 0; i < 8; ++i)
-      {
-         if ((crc & 0x01) != 0)
-            crc = (crc >> 1) ^ 0xA001;
-         else
-            crc >>= 1;
-      }
-   }
-   return crc;
+    uint16_t crc = 0;
+    while (count--)
+    {
+        crc ^= (uint16_t) *ptr++;
+        for (int i = 0; i < 8; ++i)
+        {
+            if ((crc & 0x01) != 0)
+                crc = (crc >> 1) ^ 0xA001;
+            else
+                crc >>= 1;
+        }
+    }
+    return crc;
 }
 
 constexpr uint16_t crc16xModem(const uint8_t* ptr, size_t count)
 {
-   uint16_t crc = 0;
-   while (count--)
-   {
-      crc ^= ((uint16_t) *ptr++ << 8);
-      for (int i = 0; i < 8; ++i)
-      {
-         if ((crc & 0x8000) != 0)
-            crc = (crc << 1) ^ 0x1021;
-         else
-            crc <<= 1;
-      }
-   }
-   return crc;
+    uint16_t crc = 0;
+    while (count--)
+    {
+        crc ^= ((uint16_t) *ptr++ << 8);
+        for (int i = 0; i < 8; ++i)
+        {
+            if ((crc & 0x8000) != 0)
+                crc = (crc << 1) ^ 0x1021;
+            else
+                crc <<= 1;
+        }
+    }
+    return crc;
 }
 
 static_assert(
-    crc16xModem(
-        std::array<uint8_t, 9>({'1', '2', '3', '4', '5', '6', '7', '8', '9'}).data(), 9) == 0x31C3,
+    crc16xModem(std::array<uint8_t, 9>({'1', '2', '3', '4', '5', '6', '7', '8', '9'}).data(), 9)
+        == 0x31C3,
     "Wrong CRC");
 
 } // namespace

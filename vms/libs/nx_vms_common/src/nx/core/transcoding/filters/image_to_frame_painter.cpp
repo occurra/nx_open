@@ -20,7 +20,8 @@ using AlignedBufferPtr = std::shared_ptr<quint8>;
 AlignedBufferPtr createAlignedBuffer(size_t size)
 {
     return AlignedBufferPtr(
-        reinterpret_cast<AlignedBufferPtr::element_type*>(qMallocAligned(size, CL_MEDIA_ALIGNMENT)),
+        reinterpret_cast<AlignedBufferPtr::element_type*>(
+            qMallocAligned(size, CL_MEDIA_ALIGNMENT)),
         [](AlignedBufferPtr::element_type* data)
         {
             qFreeAligned(data);
@@ -38,7 +39,7 @@ QPoint calculateFinalPosition(
         return result;
 
     if (alignment.testFlag(Qt::AlignHCenter))
-        result.setX((frameSize.width() - imageSize.width())/ 2 + offset.x());
+        result.setX((frameSize.width() - imageSize.width()) / 2 + offset.x());
     else if (alignment.testFlag(Qt::AlignRight) || alignment.testFlag(Qt::AlignTrailing))
         result.setX(frameSize.width() - offset.x() - imageSize.width());
     else
@@ -102,16 +103,30 @@ CLVideoDecoderOutputPtr ImageToFramePainter::drawToFfmpeg(const CLVideoDecoderOu
     if (!m_toImageContext)
     {
         m_toImageContext = sws_getContext(
-            m_finalImage.width(), m_finalImage.height(), (AVPixelFormat)frame->format,
-            m_finalImage.width(), m_finalImage.height(), AV_PIX_FMT_BGRA,
-            SWS_BILINEAR, nullptr, nullptr, nullptr);
+            m_finalImage.width(),
+            m_finalImage.height(),
+            (AVPixelFormat) frame->format,
+            m_finalImage.width(),
+            m_finalImage.height(),
+            AV_PIX_FMT_BGRA,
+            SWS_BILINEAR,
+            nullptr,
+            nullptr,
+            nullptr);
     }
     if (!m_fromImageContext)
     {
         m_fromImageContext = sws_getContext(
-            m_finalImage.width(), m_finalImage.height(), AV_PIX_FMT_BGRA,
-            m_finalImage.width(), m_finalImage.height(), (AVPixelFormat)frame->format,
-            SWS_BILINEAR, nullptr, nullptr, nullptr);
+            m_finalImage.width(),
+            m_finalImage.height(),
+            AV_PIX_FMT_BGRA,
+            m_finalImage.width(),
+            m_finalImage.height(),
+            (AVPixelFormat) frame->format,
+            SWS_BILINEAR,
+            nullptr,
+            nullptr,
+            nullptr);
     }
 
     if (!m_toImageContext || !m_fromImageContext)
@@ -124,24 +139,31 @@ CLVideoDecoderOutputPtr ImageToFramePainter::drawToFfmpeg(const CLVideoDecoderOu
         frame->data[0] + yPlaneOffset,
         frame->data[1] + uvPlaneOffset,
         frame->data[2] + uvPlaneOffset,
-        nullptr
-    };
+        nullptr};
 
-    quint8* dstData[4] = { (quint8*)m_finalImage.bits(), nullptr, nullptr, nullptr };
-    int dstStride[4] = { (int) m_finalImage.bytesPerLine(), 0, 0, 0 };
+    quint8* dstData[4] = {(quint8*) m_finalImage.bits(), nullptr, nullptr, nullptr};
+    int dstStride[4] = {(int) m_finalImage.bytesPerLine(), 0, 0, 0};
     sws_scale(
-        m_toImageContext, frameData, frame->linesize,
-        0, m_finalImage.height(),
-        dstData, dstStride);
+        m_toImageContext,
+        frameData,
+        frame->linesize,
+        0,
+        m_finalImage.height(),
+        dstData,
+        dstStride);
 
     QPainter painter(&m_finalImage);
     painter.drawImage(m_imageOffsetInBuffer, m_croppedImage);
     painter.end();
 
     sws_scale(
-        m_fromImageContext, dstData, dstStride,
-        0, m_finalImage.height(),
-        frameData, frame->linesize);
+        m_fromImageContext,
+        dstData,
+        dstStride,
+        0,
+        m_finalImage.height(),
+        frameData,
+        frame->linesize);
 
     return frame;
 }
@@ -163,19 +185,33 @@ CLVideoDecoderOutputPtr ImageToFramePainter::drawToSse(const CLVideoDecoderOutpu
     const auto targetHeight = m_finalImage.height();
     const auto targetStride = m_finalImage.bytesPerLine();
 
-    yuv420_argb32_simd_intr(m_finalImageBytes.get(),
-        yPlane, uPlane, vPlane,
-        targetWidth, targetHeight, targetStride,
-        yPlaneStride, uvPlaneStride, kOpaqueAlpha);
+    yuv420_argb32_simd_intr(
+        m_finalImageBytes.get(),
+        yPlane,
+        uPlane,
+        vPlane,
+        targetWidth,
+        targetHeight,
+        targetStride,
+        yPlaneStride,
+        uvPlaneStride,
+        kOpaqueAlpha);
 
     QPainter painter(&m_finalImage);
     painter.drawImage(m_imageOffsetInBuffer, m_croppedImage);
     painter.end();
 
-    bgra_to_yv12_simd_intr(m_finalImageBytes.get(), targetStride,
-        yPlane, uPlane, vPlane,
-        yPlaneStride, uvPlaneStride,
-        targetWidth, targetHeight, false /*don't flip*/);
+    bgra_to_yv12_simd_intr(
+        m_finalImageBytes.get(),
+        targetStride,
+        yPlane,
+        uPlane,
+        vPlane,
+        yPlaneStride,
+        uvPlaneStride,
+        targetWidth,
+        targetHeight,
+        false /*don't flip*/);
 
     return frame;
 }
@@ -213,11 +249,11 @@ void ImageToFramePainter::updateTargetImage()
         return;
     }
 
-    const auto finalPosition = calculateFinalPosition(
-        m_offset, m_alignment, m_image.size(), m_sourceSize);
+    const auto finalPosition =
+        calculateFinalPosition(m_offset, m_alignment, m_image.size(), m_sourceSize);
 
-    const auto correctedPos = QPoint(
-        std::max(finalPosition.x(), 0), std::max(finalPosition.y(), 0));
+    const auto correctedPos =
+        QPoint(std::max(finalPosition.x(), 0), std::max(finalPosition.y(), 0));
     m_bufferOffset = QPoint(
         qPower2Floor(correctedPos.x(), CL_MEDIA_ALIGNMENT),
         qPower2Floor(correctedPos.y(), 2));
@@ -237,16 +273,21 @@ void ImageToFramePainter::updateTargetImage()
         m_croppedImage = m_image.copy(sourceImageRect);
 
         const auto drawHeight = qPower2Ceil(
-            static_cast<unsigned int>(targetImageRect.height() + m_imageOffsetInBuffer.y()), 2);
+            static_cast<unsigned int>(targetImageRect.height() + m_imageOffsetInBuffer.y()),
+            2);
         const auto drawWidth = qPower2Ceil(
-            static_cast<unsigned int>(targetImageRect.width() + m_imageOffsetInBuffer.x()), CL_MEDIA_ALIGNMENT);
+            static_cast<unsigned int>(targetImageRect.width() + m_imageOffsetInBuffer.x()),
+            CL_MEDIA_ALIGNMENT);
 
-        m_finalImageBytes = createAlignedBuffer(
-            drawWidth * drawHeight * kARGBBytesCount);
+        m_finalImageBytes = createAlignedBuffer(drawWidth * drawHeight * kARGBBytesCount);
 
         const auto finalImageStride = drawWidth * kARGBBytesCount;
-        m_finalImage = QImage(m_finalImageBytes.get(),
-            drawWidth, drawHeight, finalImageStride, QImage::Format_ARGB32_Premultiplied);
+        m_finalImage = QImage(
+            m_finalImageBytes.get(),
+            drawWidth,
+            drawHeight,
+            finalImageStride,
+            QImage::Format_ARGB32_Premultiplied);
     }
     else
     {

@@ -19,9 +19,8 @@ void QueryQueue::push(value_type value)
         // Adding query to the m_preliminaryQueue first to minimize the mutex lock time.
         std::lock_guard<std::mutex> lock(m_preliminaryQueueMutex);
 
-        m_preliminaryQueue.push_back({
-            .value = std::move(value),
-            .enqueueTime = nx::utils::monotonicTime()});
+        m_preliminaryQueue.push_back(
+            {.value = std::move(value), .enqueueTime = nx::utils::monotonicTime()});
         ++m_preliminaryQueueSize;
 
         queueSize = m_preliminaryQueue.size();
@@ -50,7 +49,8 @@ QueryQueueStatistics QueryQueue::stats() const
     for (const auto& [p, q]: m_priorityToQueue)
     {
         if (!q.empty())
-            oldestQueryAge = std::max(oldestQueryAge, floor<milliseconds>(now - q.front().enqueueTime));
+            oldestQueryAge =
+                std::max(oldestQueryAge, floor<milliseconds>(now - q.front().enqueueTime));
         queueSize += q.size();
     }
 
@@ -67,9 +67,7 @@ std::size_t QueryQueue::pendingQueryCount() const
 std::optional<QueryQueue::value_type> QueryQueue::pop(
     std::optional<std::chrono::milliseconds> timeout)
 {
-    WaitConditionTimer waitTimer(
-        &m_cond,
-        timeout ? *timeout : std::chrono::milliseconds::max());
+    WaitConditionTimer waitTimer(&m_cond, timeout ? *timeout : std::chrono::milliseconds::max());
 
     QuerySelectionContext querySelectionContext;
 
@@ -178,9 +176,7 @@ void QueryQueue::moveFromPreliminaryToMainQueue()
 int QueryQueue::getPriority(const AbstractExecutor& value) const
 {
     const auto priorityIter = m_customPriorities.find(value.queryType());
-    return priorityIter == m_customPriorities.end()
-        ? 0
-        : priorityIter->second;
+    return priorityIter == m_customPriorities.end() ? 0 : priorityIter->second;
 }
 
 std::optional<QueryQueue::FoundQueryContext> QueryQueue::getNextSuitableQuery(
@@ -192,7 +188,9 @@ std::optional<QueryQueue::FoundQueryContext> QueryQueue::getNextSuitableQuery(
         {
             auto& query = it->value;
 
-            if (nx::utils::contains(querySelectionContext->forbiddenQueryTypes, query->queryType()))
+            if (nx::utils::contains(
+                    querySelectionContext->forbiddenQueryTypes,
+                    query->queryType()))
                 continue;
 
             if (!consumeLimits || checkAndUpdateQueryLimits(query))
@@ -200,8 +198,8 @@ std::optional<QueryQueue::FoundQueryContext> QueryQueue::getNextSuitableQuery(
 
             if (consumeLimits)
             {
-                // Limits check didn't pass. Making sure we are not selecting a query of the same type
-                // on this iteration since it will lead to query reordering.
+                // Limits check didn't pass. Making sure we are not selecting a query of the same
+                // type on this iteration since it will lead to query reordering.
                 querySelectionContext->forbiddenQueryTypes.push_back(query->queryType());
             }
         }
@@ -215,8 +213,7 @@ void QueryQueue::pop(const FoundQueryContext& queryContext)
     --m_pendingQueryCount;
 }
 
-bool QueryQueue::checkAndUpdateQueryLimits(
-    const std::unique_ptr<AbstractExecutor>& nextQuery)
+bool QueryQueue::checkAndUpdateQueryLimits(const std::unique_ptr<AbstractExecutor>& nextQuery)
 {
     if (nextQuery->queryType() == QueryType::lookup)
         return true;
@@ -227,7 +224,7 @@ bool QueryQueue::checkAndUpdateQueryLimits(
     for (;;)
     {
         int currentModificationCount = m_currentModificationCount.load();
-        const int newModificationCount = currentModificationCount+1;
+        const int newModificationCount = currentModificationCount + 1;
         if (!m_currentModificationCount.compare_exchange_strong(
                 currentModificationCount,
                 newModificationCount))
@@ -259,8 +256,7 @@ bool QueryQueue::canAggregate(
     if ((m_aggregationLimit >= 0) && ((int) queries.size() >= m_aggregationLimit))
         return false;
 
-    if (queries.back()->aggregationKey().empty() ||
-        query->aggregationKey().empty())
+    if (queries.back()->aggregationKey().empty() || query->aggregationKey().empty())
     {
         return false;
     }
@@ -273,8 +269,8 @@ bool QueryQueue::canAggregate(
 
 void QueryQueue::decreaseLimitCounters(AbstractExecutor* finishedQuery)
 {
-    if (m_concurrentModificationQueryLimit > 0 &&
-        finishedQuery->queryType() == QueryType::modification)
+    if (m_concurrentModificationQueryLimit > 0
+        && finishedQuery->queryType() == QueryType::modification)
     {
         if (--m_currentModificationCount < m_concurrentModificationQueryLimit)
             m_cond.wakeAll();
@@ -301,8 +297,7 @@ void QueryQueue::removeExpiredElements(nx::Locker<nx::Mutex>* lock)
     }
 }
 
-QueryQueue::value_type QueryQueue::aggregateQueries(
-    std::vector<QueryQueue::value_type> queries)
+QueryQueue::value_type QueryQueue::aggregateQueries(std::vector<QueryQueue::value_type> queries)
 {
     if (queries.size() == 1U)
         return std::move(queries.front());

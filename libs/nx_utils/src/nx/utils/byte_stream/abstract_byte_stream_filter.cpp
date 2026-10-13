@@ -5,8 +5,7 @@
 namespace nx::utils::bstream {
 
 AbstractByteStreamFilter::AbstractByteStreamFilter(
-    const std::shared_ptr<AbstractByteStreamFilter>& nextFilter)
-    :
+    const std::shared_ptr<AbstractByteStreamFilter>& nextFilter):
     m_nextFilter(nextFilter)
 {
 }
@@ -34,7 +33,7 @@ const std::shared_ptr<AbstractByteStreamFilter>& AbstractByteStreamFilter::nextF
 
 AbstractByteStreamFilterPtr last(const AbstractByteStreamFilterPtr& beginPtr)
 {
-    //using AbstractByteStreamFilterPtr* to avoid reference counter modifications
+    // using AbstractByteStreamFilterPtr* to avoid reference counter modifications
     const AbstractByteStreamFilterPtr* curElem = &beginPtr;
     while ((*curElem)->nextFilter())
         curElem = &((*curElem)->nextFilter());

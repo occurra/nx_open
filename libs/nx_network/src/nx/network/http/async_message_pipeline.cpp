@@ -51,8 +51,7 @@ void AsyncMessagePipeline::sendBodyAsync(
     std::unique_ptr<AbstractMsgBodySourceWithCache> msgBody,
     nx::MoveOnlyFunc<void(SystemError::ErrorCode)> handler)
 {
-    auto bridge = aio::makeAsyncChannelUnidirectionalBridge(
-        msgBody.get(), this);
+    auto bridge = aio::makeAsyncChannelUnidirectionalBridge(msgBody.get(), this);
 
     const int id = ++m_lastId;
     bridge->start(
@@ -68,8 +67,7 @@ void AsyncMessagePipeline::sendBodyAsync(
     m_sendBodyOperations.emplace(id, std::move(ctx));
 }
 
-void AsyncMessagePipeline::finishSendingBody(
-    int id, SystemError::ErrorCode result)
+void AsyncMessagePipeline::finishSendingBody(int id, SystemError::ErrorCode result)
 {
     auto it = m_sendBodyOperations.find(id);
     NX_CRITICAL(it != m_sendBodyOperations.end());

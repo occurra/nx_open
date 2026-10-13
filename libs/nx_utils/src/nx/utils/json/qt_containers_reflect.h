@@ -24,7 +24,7 @@
 // QSet
 
 template<typename SerializationContext, typename T>
-requires std::is_member_object_pointer_v<decltype(&SerializationContext::composer)>
+    requires std::is_member_object_pointer_v<decltype(&SerializationContext::composer)>
 void serialize(SerializationContext* context, const QSet<T>& value)
 {
     context->composer.startArray();
@@ -62,25 +62,39 @@ nx::reflect::DeserializationResult deserialize(
 // Qt associative containers (QMap/QHash)
 
 template<typename T, typename... Args>
-struct IsQtAssociativeContainer { static constexpr bool value = false; };
+struct IsQtAssociativeContainer
+{
+    static constexpr bool value = false;
+};
 
 template<typename... Args>
-struct IsQtAssociativeContainer<QMap<Args...>> { static constexpr bool value = true; };
+struct IsQtAssociativeContainer<QMap<Args...>>
+{
+    static constexpr bool value = true;
+};
 
 template<typename... Args>
-struct IsQtAssociativeContainer<QMultiMap<Args...>> { static constexpr bool value = true; };
+struct IsQtAssociativeContainer<QMultiMap<Args...>>
+{
+    static constexpr bool value = true;
+};
 
 template<typename... Args>
-struct IsQtAssociativeContainer<QHash<Args...>> { static constexpr bool value = true; };
+struct IsQtAssociativeContainer<QHash<Args...>>
+{
+    static constexpr bool value = true;
+};
 
 template<>
-struct IsQtAssociativeContainer<QVariantMap>: std::false_type {};
+struct IsQtAssociativeContainer<QVariantMap>: std::false_type
+{
+};
 
 template<typename... Args>
 inline constexpr bool IsQtAssociativeContainerV = IsQtAssociativeContainer<Args...>::value;
 
 template<typename SerializationContext, typename Container>
-requires IsQtAssociativeContainerV<Container>
+    requires IsQtAssociativeContainerV<Container>
 void serialize(SerializationContext* context, const Container& value)
 {
     context->composer.startObject();
@@ -94,7 +108,7 @@ void serialize(SerializationContext* context, const Container& value)
 }
 
 template<template<typename...> typename Container, typename Key, typename Value>
-requires IsQtAssociativeContainerV<Container<Key, Value>>
+    requires IsQtAssociativeContainerV<Container<Key, Value>>
 nx::reflect::DeserializationResult deserialize(
     const nx::reflect::json::DeserializationContext& context,
     Container<Key, Value>* value)
@@ -113,7 +127,8 @@ nx::reflect::DeserializationResult deserialize(
             return DeserializationResult(false, "QMap key must be a string", std::string(keyStr));
 
         Value val;
-        if (auto result = json::deserialize(json::DeserializationContext{it->value}, &val); !result)
+        if (auto result = json::deserialize(json::DeserializationContext{it->value}, &val);
+            !result)
             return result;
 
         value->insert(std::move(key), std::move(val));
@@ -133,12 +148,17 @@ bool filter(QSet<T>* data, const Filter& filter_)
     if (!filter_.values.empty() && !Matcher::matches(*data, filter_.values))
         return true;
 
-    erase_if(*data, [&filter_](auto& v) { return filter<Matcher>(&v, filter_); });
+    erase_if(
+        *data,
+        [&filter_](auto& v)
+        {
+            return filter<Matcher>(&v, filter_);
+        });
     return data->empty();
 }
 
 template<typename Matcher, template<typename...> typename Container, typename Key, typename Value>
-requires IsQtAssociativeContainerV<Container<Key, Value>>
+    requires IsQtAssociativeContainerV<Container<Key, Value>>
 bool filter(Container<Key, Value>* data, const Filter& filter_)
 {
     if (filter_.values.empty() && filter_.fields.empty())
@@ -154,7 +174,12 @@ bool filter(Container<Key, Value>* data, const Filter& filter_)
     {
         if (field.name == "*")
         {
-            erase_if(*data, [&field](auto& it) { return filter<Matcher>(&it.value(), field); });
+            erase_if(
+                *data,
+                [&field](auto& it)
+                {
+                    return filter<Matcher>(&it.value(), field);
+                });
             if (data->empty())
                 return true;
         }
@@ -177,7 +202,7 @@ bool filter(Container<Key, Value>* data, const Filter& filter_)
 }
 
 template<template<typename...> typename Container, typename Key, typename Value>
-requires IsQtAssociativeContainerV<Container<Key, Value>>
+    requires IsQtAssociativeContainerV<Container<Key, Value>>
 void order(Container<Key, Value>* data, const ArrayOrder& order_)
 {
     for (auto it = data->begin(); it != data->end(); ++it)
@@ -199,11 +224,11 @@ inline std::function<int(const QVariantMap&, const QVariantMap&)> makeComparator
 namespace std {
 
 template<template<typename...> typename Container, typename Key, typename Value>
-requires IsQtAssociativeContainerV<Container<Key, Value>>
+    requires IsQtAssociativeContainerV<Container<Key, Value>>
 struct less<Container<Key, Value>>
 {
-    constexpr inline bool operator()(
-        const Container<Key, Value>&, const Container<Key, Value>&) const
+    constexpr inline bool operator()(const Container<Key, Value>&, const Container<Key, Value>&)
+        const
     {
         return false;
     }

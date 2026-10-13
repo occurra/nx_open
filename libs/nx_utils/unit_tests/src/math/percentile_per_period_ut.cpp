@@ -9,14 +9,13 @@ namespace nx::utils::math::test {
 class PercentilePerPeriod: public ::testing::Test
 {
 public:
-    PercentilePerPeriod()
-        :
+    PercentilePerPeriod():
         m_time(std::chrono::steady_clock::time_point())
-        {
-        }
+    {
+    }
 
     template<typename ValueType>
-    void givenValues(math::PercentilePerPeriod<ValueType> * p, ValueType start, ValueType end)
+    void givenValues(math::PercentilePerPeriod<ValueType>* p, ValueType start, ValueType end)
     {
         while (start < end)
             p->add(start++);

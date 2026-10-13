@@ -21,10 +21,15 @@ class Interval
 public:
     Interval() = default;
     Interval(const Interval& other) = default;
-    Interval(T lower, T upper): m_lower(lower), m_upper(std::max(lower, upper)) {}
+    Interval(T lower, T upper):
+        m_lower(lower),
+        m_upper(std::max(lower, upper))
+    {
+    }
     virtual ~Interval() = default;
 
-    explicit Interval(T single): Interval(single, single + 1)
+    explicit Interval(T single):
+        Interval(single, single + 1)
     {
         NX_ASSERT(!isEmpty(), "Arithmetic overflow");
     }
@@ -45,10 +50,7 @@ public:
             || (isEmpty() && other.isEmpty());
     }
 
-    bool intersects(const Interval& other) const
-    {
-        return !intersected(other).isEmpty();
-    }
+    bool intersects(const Interval& other) const { return !intersected(other).isEmpty(); }
 
     Interval intersected(const Interval& other) const
     {
@@ -68,20 +70,13 @@ public:
 
     Interval expanded(T value) const
     {
-        return isEmpty()
-            ? Interval(value)
-            : Interval(std::min(m_lower, value), std::max(m_upper, value + 1));
+        return isEmpty() ? Interval(value)
+                         : Interval(std::min(m_lower, value), std::max(m_upper, value + 1));
     }
 
-    Interval truncatedLeft(T lower) const
-    {
-        return Interval(std::max(lower, m_lower), m_upper);
-    }
+    Interval truncatedLeft(T lower) const { return Interval(std::max(lower, m_lower), m_upper); }
 
-    Interval truncatedRight(T upper) const
-    {
-        return Interval(m_lower, std::min(m_upper, upper));
-    }
+    Interval truncatedRight(T upper) const { return Interval(m_lower, std::min(m_upper, upper)); }
 
     Interval shifted(T delta) const
     {

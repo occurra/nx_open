@@ -17,10 +17,11 @@ int serialize(long long value, QByteArray* buf)
     int bytesWritten = 0;
     do
     {
-        auto bitsToWrite = (std::uint8_t)(uValue & 0x7f);
+        auto bitsToWrite = (std::uint8_t) (uValue & 0x7f);
         uValue >>= 7;
 
-        // NOTE: Filling valueBuf in reverse order so that the most significant bits are in the beginning.
+        // NOTE: Filling valueBuf in reverse order so that the most significant bits are in the
+        // beginning.
         if (bytesWritten != 0)
             bitsToWrite |= 0x80; //< One more byte is needed.
         ++bytesWritten;
@@ -31,15 +32,16 @@ int serialize(long long value, QByteArray* buf)
     return bytesWritten;
 }
 
-int serialize(
-    const std::vector<long long>& numbers,
-    QByteArray* buf)
+int serialize(const std::vector<long long>& numbers, QByteArray* buf)
 {
     constexpr int kAverageSerializedNumberSize = 5;
 
     buf->reserve(buf->size() + (int) numbers.size() * kAverageSerializedNumberSize);
 
-    return (int) std::accumulate(numbers.begin(), numbers.end(), 0,
+    return (int) std::accumulate(
+        numbers.begin(),
+        numbers.end(),
+        0,
         [buf](long long bytesWritten, long long value)
         {
             return bytesWritten + serialize(value, buf);
@@ -63,7 +65,7 @@ bool deserialize(const char** begin, const char* end, long long* value)
         ++(*begin);
         if (endOfNumber)
         {
-            *value = (long long)uValue;
+            *value = (long long) uValue;
             return true;
         }
     }

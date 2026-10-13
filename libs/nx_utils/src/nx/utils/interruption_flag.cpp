@@ -20,11 +20,18 @@ void InterruptionFlag::interrupt()
     NX_ASSERT(
         m_watchers.empty() || m_lastWatchingThreadId == std::this_thread::get_id(),
         "m_watchers.size(): %1, m_lastWatchingThreadId: %2, std::this_thread id: %3, m_watchers: %4",
-        m_watchers.size(), m_lastWatchingThreadId, std::this_thread::get_id(), *this);
+        m_watchers.size(),
+        m_lastWatchingThreadId,
+        std::this_thread::get_id(),
+        *this);
 
     std::for_each(
-        m_watchers.begin(), m_watchers.end(),
-        [](Watcher* watcher) { watcher->m_interrupted = true; });
+        m_watchers.begin(),
+        m_watchers.end(),
+        [](Watcher* watcher)
+        {
+            watcher->m_interrupted = true;
+        });
     m_watchers.clear();
 }
 
@@ -33,7 +40,10 @@ void InterruptionFlag::push(Watcher* watcher)
     NX_ASSERT(
         m_watchers.empty() || m_lastWatchingThreadId == std::this_thread::get_id(),
         "m_watchers.size(): %1, m_lastWatchingThreadId: %2, std::this_thread id: %3, m_watchers: %4",
-        m_watchers.size(), m_lastWatchingThreadId, std::this_thread::get_id(), *this);
+        m_watchers.size(),
+        m_lastWatchingThreadId,
+        std::this_thread::get_id(),
+        *this);
 
     m_lastWatchingThreadId = std::this_thread::get_id();
     m_watchers.push_back(watcher);
@@ -43,16 +53,15 @@ void InterruptionFlag::pop(Watcher* watcher)
 {
     NX_ASSERT(
         m_watchers.back() == watcher,
-        "Expected watcher %1, got: %2", *watcher, *m_watchers.back());
+        "Expected watcher %1, got: %2",
+        *watcher,
+        *m_watchers.back());
     m_watchers.pop_back();
 }
 
 //-------------------------------------------------------------------------------------------------
 
-InterruptionFlag::Watcher::Watcher(
-    InterruptionFlag* const flag,
-    std::source_location location)
-    :
+InterruptionFlag::Watcher::Watcher(InterruptionFlag* const flag, std::source_location location):
     m_objectDestructionFlag(flag),
     m_location(std::move(location))
 {

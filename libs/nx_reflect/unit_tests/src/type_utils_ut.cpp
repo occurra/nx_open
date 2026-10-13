@@ -3,10 +3,10 @@
 #include <deque>
 #include <list>
 #include <map>
-#include <unordered_map>
-#include <unordered_set>
 #include <set>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -16,7 +16,9 @@
 
 namespace nx::reflect::detail::test {
 
-struct X {};
+struct X
+{
+};
 
 template<typename Expected, typename T>
 void assertForward(T&& t)
@@ -28,7 +30,7 @@ TEST(stl_forward, implements_standard_behavior)
 {
     X x;
     assertForward<X&>(x);
-    assertForward<const X&>((const X&)x);
+    assertForward<const X&>((const X&) x);
     assertForward<X&&>(std::move(x));
 
     const X constX;
@@ -95,9 +97,15 @@ static_assert(IsUnorderedAssociativeContainerV<std::unordered_multiset<int>>, ""
 //-------------------------------------------------------------------------------------------------
 
 static_assert(!IsSequenceContainerV<std::map<int, int>>, "!IsSequenceContainerV, std::map");
-static_assert(!IsSequenceContainerV<std::multimap<int, int>>, "!IsSequenceContainerV, std::multimap");
-static_assert(!IsSequenceContainerV<std::unordered_map<int, int>>, "!IsSequenceContainerV, std::unordered_map");
-static_assert(!IsSequenceContainerV<std::unordered_multimap<int, int>>, "!IsSequenceContainerV, std::unordered_map");
+static_assert(
+    !IsSequenceContainerV<std::multimap<int, int>>,
+    "!IsSequenceContainerV, std::multimap");
+static_assert(
+    !IsSequenceContainerV<std::unordered_map<int, int>>,
+    "!IsSequenceContainerV, std::unordered_map");
+static_assert(
+    !IsSequenceContainerV<std::unordered_multimap<int, int>>,
+    "!IsSequenceContainerV, std::unordered_map");
 static_assert(!IsSequenceContainerV<std::set<int>>, "!IsSequenceContainerV, std::set");
 static_assert(!IsSequenceContainerV<std::string>, "!IsSequenceContainerV, std::string");
 

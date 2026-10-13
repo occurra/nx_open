@@ -9,10 +9,10 @@
 #include <nx/network/aio/timer.h>
 #include <nx/network/deprecated/asynchttpclient.h>
 #include <nx/network/http/buffer_source.h>
-#include <nx/network/http/http_client.h>
 #include <nx/network/http/http_async_client.h>
-#include <nx/network/http/test_http_server.h>
+#include <nx/network/http/http_client.h>
 #include <nx/network/http/server/abstract_http_request_handler.h>
+#include <nx/network/http/test_http_server.h>
 #include <nx/network/system_socket.h>
 #include <nx/network/url/url_builder.h>
 
@@ -20,8 +20,7 @@ namespace nx::network::http {
 
 namespace {
 
-class HttpAsyncServerConnectionTest:
-    public ::testing::Test
+class HttpAsyncServerConnectionTest: public ::testing::Test
 {
 public:
     HttpAsyncServerConnectionTest():
@@ -33,8 +32,7 @@ protected:
     std::unique_ptr<TestHttpServer> m_testHttpServer;
 };
 
-class DelayingRequestHandler:
-    public nx::network::http::RequestHandlerWithContext
+class DelayingRequestHandler: public nx::network::http::RequestHandlerWithContext
 {
 public:
     static const std::string PATH;
@@ -63,7 +61,8 @@ TEST_F(HttpAsyncServerConnectionTest, connectionRemovedBeforeRequestHasBeenProce
 {
     m_testHttpServer->registerRequestProcessor(
         DelayingRequestHandler::PATH,
-        [&]()->std::unique_ptr<DelayingRequestHandler> {
+        [&]() -> std::unique_ptr<DelayingRequestHandler>
+        {
             return std::make_unique<DelayingRequestHandler>();
         });
 
@@ -71,11 +70,12 @@ TEST_F(HttpAsyncServerConnectionTest, connectionRemovedBeforeRequestHasBeenProce
 
     // Fetching mjpeg with async http client.
     const auto url = url::Builder("http://127.0.0.1/")
-        .setPort(m_testHttpServer->serverAddress().port)
-        .setPath(DelayingRequestHandler::PATH).toUrl();
+                         .setPort(m_testHttpServer->serverAddress().port)
+                         .setPath(DelayingRequestHandler::PATH)
+                         .toUrl();
 
-
-    auto client = nx::network::http::AsyncHttpClient::create(nx::network::ssl::kAcceptAnyCertificate);
+    auto client =
+        nx::network::http::AsyncHttpClient::create(nx::network::ssl::kAcceptAnyCertificate);
     client->doGet(url);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     client.reset();
@@ -115,19 +115,18 @@ TEST_F(HttpAsyncServerConnectionTest, multipleRequestsTest)
 
     ASSERT_TRUE(m_testHttpServer->bindAndListen());
 
-    const auto socket = std::make_unique<nx::network::TCPSocket>(
-        SocketFactory::tcpServerIpVersion());
+    const auto socket =
+        std::make_unique<nx::network::TCPSocket>(SocketFactory::tcpServerIpVersion());
 
     ASSERT_TRUE(socket->connect(m_testHttpServer->serverAddress(), nx::network::kNoTimeout));
-    ASSERT_EQ((int)sizeof(testData) - 1, socket->send(testData, sizeof(testData) - 1));
+    ASSERT_EQ((int) sizeof(testData) - 1, socket->send(testData, sizeof(testData) - 1));
 }
 
 //-------------------------------------------------------------------------------------------------
 
 namespace {
 
-class PipeliningTestHandler:
-    public nx::network::http::RequestHandlerWithContext
+class PipeliningTestHandler: public nx::network::http::RequestHandlerWithContext
 {
 public:
     static const std::string PATH;
@@ -140,9 +139,7 @@ public:
             http::StatusCode::ok,
             std::make_unique<http::BufferSource>("text/plain", "bla-bla-bla"));
 
-        result.headers.emplace(
-            "Seq",
-            http::getHeaderValue(requestContext.request.headers, "Seq"));
+        result.headers.emplace("Seq", http::getHeaderValue(requestContext.request.headers, "Seq"));
 
         completionHandler(std::move(result));
     }
@@ -152,8 +149,7 @@ const std::string PipeliningTestHandler::PATH = "/tst";
 
 } // namespace
 
-class HttpAsyncServerConnectionRequestPipelining:
-    public HttpAsyncServerConnectionTest
+class HttpAsyncServerConnectionRequestPipelining: public HttpAsyncServerConnectionTest
 {
     using base_type = HttpAsyncServerConnectionTest;
 
@@ -164,7 +160,7 @@ protected:
 
         m_testHttpServer->registerRequestProcessor(
             PipeliningTestHandler::PATH,
-            [&]()->std::unique_ptr<PipeliningTestHandler>
+            [&]() -> std::unique_ptr<PipeliningTestHandler>
             {
                 return std::make_unique<PipeliningTestHandler>();
             });
@@ -174,16 +170,15 @@ protected:
 
     void whenSendMultipleRequests(int count)
     {
-        //opening connection and sending multiple requests
+        // opening connection and sending multiple requests
         nx::network::http::Request request;
         request.requestLine.method = nx::network::http::Method::get;
         request.requestLine.version = nx::network::http::http_1_1;
         request.requestLine.url = PipeliningTestHandler::PATH;
 
         m_socket = SocketFactory::createStreamSocket(ssl::kAcceptAnyCertificate);
-        ASSERT_TRUE(m_socket->connect(SocketAddress(
-            HostAddress::localhost,
-            m_testHttpServer->serverAddress().port),
+        ASSERT_TRUE(m_socket->connect(
+            SocketAddress(HostAddress::localhost, m_testHttpServer->serverAddress().port),
             nx::network::kNoTimeout));
 
         int msgCounter = 0;
@@ -192,7 +187,7 @@ protected:
             nx::network::http::insertOrReplaceHeader(
                 &request.headers,
                 nx::network::http::HttpHeader("Seq", std::to_string(msgCounter)));
-            //sending request
+            // sending request
             auto serializedMessage = request.serialized();
             ASSERT_EQ(m_socket->send(serializedMessage), serializedMessage.size());
         }
@@ -234,11 +229,9 @@ private:
         if (m_readBuf.size() < 64 * 1024)
             m_readBuf.resize(64 * 1024);
 
-        const auto bytesRead = m_socket->recv(
-            m_readBuf.data() + m_dataSize,
-            m_readBuf.size() - m_dataSize);
-        ASSERT_TRUE(bytesRead > 0)
-            << SystemError::getLastOSErrorText();
+        const auto bytesRead =
+            m_socket->recv(m_readBuf.data() + m_dataSize, m_readBuf.size() - m_dataSize);
+        ASSERT_TRUE(bytesRead > 0) << SystemError::getLastOSErrorText();
         m_dataSize += bytesRead;
     }
 
@@ -253,9 +246,7 @@ private:
     }
 };
 
-TEST_F(
-    HttpAsyncServerConnectionRequestPipelining,
-    responses_are_delivered_in_the_correct_order)
+TEST_F(HttpAsyncServerConnectionRequestPipelining, responses_are_delivered_in_the_correct_order)
 {
     static constexpr int kRequestToSendCount = 17;
 
@@ -268,8 +259,7 @@ TEST_F(
 
 namespace {
 
-class HttpAsyncServerConnectionUpgrade:
-    public HttpAsyncServerConnectionTest
+class HttpAsyncServerConnectionUpgrade: public HttpAsyncServerConnectionTest
 {
 protected:
     static const std::string kTestPath;
@@ -281,15 +271,12 @@ protected:
 
         m_testHttpServer->registerRequestProcessorFunc(
             kTestPath,
-            std::bind(&HttpAsyncServerConnectionUpgrade::processRequest, this,
-                _1, _2));
+            std::bind(&HttpAsyncServerConnectionUpgrade::processRequest, this, _1, _2));
 
         ASSERT_TRUE(m_testHttpServer->bindAndListen());
     }
 
-    virtual void TearDown() override
-    {
-    }
+    virtual void TearDown() override {}
 
     void issueUpgradeRequest()
     {
@@ -297,7 +284,8 @@ protected:
 
         AsyncClient httpClient{ssl::kAcceptAnyCertificate};
         httpClient.doUpgrade(
-            nx::network::url::Builder().setScheme(nx::network::http::kUrlSchemeName)
+            nx::network::url::Builder()
+                .setScheme(nx::network::http::kUrlSchemeName)
                 .setHost(std::string("127.0.0.1"))
                 .setPort(m_testHttpServer->serverAddress().port)
                 .setPath(kTestPath),

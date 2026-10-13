@@ -13,7 +13,7 @@ public:
      * Whether to copy source data or perform in-place processing is up to implementation.
      * @param data Source data.
      * @return Modified data.
-    */
+     */
     virtual QnConstAbstractDataPacketPtr processData(const QnConstAbstractDataPacketPtr& data) = 0;
 };
 using AbstractMediaDataFilterPtr = std::shared_ptr<AbstractMediaDataFilter>;

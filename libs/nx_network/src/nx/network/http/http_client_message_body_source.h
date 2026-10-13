@@ -13,8 +13,7 @@ namespace nx::network::http {
 /**
  * Wraps HTTP response with a message body.
  */
-class NX_NETWORK_API HttpClientMessageBodySource:
-    public AbstractMsgBodySource
+class NX_NETWORK_API HttpClientMessageBodySource: public AbstractMsgBodySource
 {
     using base_type = AbstractMsgBodySource;
 

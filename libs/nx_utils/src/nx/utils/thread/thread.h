@@ -77,9 +77,9 @@ protected:
     std::atomic<bool> m_onPause = false;
     Semaphore m_semaphore;
     ThreadId m_systemThreadId = 0;
-    #if defined(_DEBUG)
-        const std::type_info* m_type = nullptr;
-    #endif
+#if defined(_DEBUG)
+    const std::type_info* m_type = nullptr;
+#endif
 
 private:
     static int s_threadStackSize /*= 0*/;

@@ -13,8 +13,7 @@ namespace nx::network::http {
  * Input: http multipart content stream.
  * Output: separate content frames.
  */
-class NX_NETWORK_API MultipartContentParser:
-    public nx::utils::bstream::AbstractByteStreamFilter
+class NX_NETWORK_API MultipartContentParser: public nx::utils::bstream::AbstractByteStreamFilter
 {
 public:
     virtual bool processData(const ConstBufferRefType& data) override;
@@ -33,8 +32,9 @@ public:
     /**
      * @param Expected to be similar to "multipart/x-mixed-replace;boundary=some_boundary".
      * @return False, if contentType does not specify multipart content.
-     * NOTE: After this method has been called, no MultipartContentParser::setBoundary call is needed.
-    */
+     * NOTE: After this method has been called, no MultipartContentParser::setBoundary call is
+     * needed.
+     */
     bool setContentType(const std::string& contentType);
     void setBoundary(std::string boundary);
     void setForceParseAsBinary(bool force);
@@ -92,9 +92,7 @@ private:
     void updateBoundaryDelimiters(std::string startBoundary);
     bool processLine(const ConstBufferRefType& lineBuffer);
 
-    bool readUnsizedBinaryData(
-        ConstBufferRefType data,
-        size_t* const offset);
+    bool readUnsizedBinaryData(ConstBufferRefType data, size_t* const offset);
 };
 
 } // namespace nx::network::http

@@ -11,21 +11,15 @@ namespace utils {
 static const std::chrono::minutes kTestSyncQueueTimeout(1);
 
 template<typename Base>
-class TestSyncQueueBase:
-    public Base
+class TestSyncQueueBase: public Base
 {
 public:
-    explicit TestSyncQueueBase(
-        std::chrono::milliseconds timeout = kTestSyncQueueTimeout)
-    :
+    explicit TestSyncQueueBase(std::chrono::milliseconds timeout = kTestSyncQueueTimeout):
         m_timeout(timeout)
     {
     }
 
-    void timedOut()
-    {
-        GTEST_FAIL() << "TestSyncQueue::pop() has timed out";
-    }
+    void timedOut() { GTEST_FAIL() << "TestSyncQueue::pop() has timed out"; }
 
     typename Base::ResultType pop() /* overlap */
     {
@@ -46,8 +40,8 @@ private:
 template<typename Result>
 using TestSyncQueue = TestSyncQueueBase<SyncQueue<Result>>;
 
-template<typename ... Results>
-using TestSyncMultiQueue = TestSyncQueueBase<SyncMultiQueue<Results ...>>;
+template<typename... Results>
+using TestSyncMultiQueue = TestSyncQueueBase<SyncMultiQueue<Results...>>;
 
 } // namespace utils
 } // namespace nx

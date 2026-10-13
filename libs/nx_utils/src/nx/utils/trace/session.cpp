@@ -2,16 +2,17 @@
 
 #ifndef __EMSCRIPTEN__
 
-#include "session.h"
+    #include "session.h"
 
-#include <nx/utils/log/log.h>
+    #include <nx/utils/log/log.h>
 
 PERFETTO_TRACK_EVENT_STATIC_STORAGE();
 
 namespace nx::utils::trace {
 
 Session::Session()
-{}
+{
+}
 
 std::unique_ptr<Session> Session::start(const QString& fileName)
 {
@@ -61,6 +62,6 @@ Session::~Session()
     tracingFile.close();
 }
 
-} // nx::utils::trace
+} // namespace nx::utils::trace
 
 #endif

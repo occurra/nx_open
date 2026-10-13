@@ -14,8 +14,7 @@ SqlFilterField::SqlFilterField(
     const std::string& name,
     const std::string& placeHolderName,
     QVariant value,
-    const std::string& comparisonOperator)
-    :
+    const std::string& comparisonOperator):
     m_name(name),
     m_placeHolderName(placeHolderName),
     m_value(std::move(value)),
@@ -25,10 +24,9 @@ SqlFilterField::SqlFilterField(
 
 std::string SqlFilterField::toString() const
 {
-    return nx::format("%1%2%3").args(
-        m_name,
-        m_comparisonOperator,
-        m_placeHolderName).toStdString();
+    return nx::format("%1%2%3")
+        .args(m_name, m_comparisonOperator, m_placeHolderName)
+        .toStdString();
 }
 
 void SqlFilterField::bindFields(QSqlQuery* query) const
@@ -54,17 +52,15 @@ const std::string& SqlFilterField::placeHolderName() const
 SqlFilterFieldEqual::SqlFilterFieldEqual(
     const std::string& name,
     const std::string& placeHolderName,
-    QVariant value)
-    :
-    SqlFilterField(name, placeHolderName, value, value.isNull() ?  " is " : "=")
+    QVariant value):
+    SqlFilterField(name, placeHolderName, value, value.isNull() ? " is " : "=")
 {
 }
 
 SqlFilterFieldNotEqual::SqlFilterFieldNotEqual(
     const std::string& name,
     const std::string& placeHolderName,
-    QVariant value)
-    :
+    QVariant value):
     SqlFilterField(name, placeHolderName, std::move(value), "<>")
 {
 }
@@ -72,8 +68,7 @@ SqlFilterFieldNotEqual::SqlFilterFieldNotEqual(
 SqlFilterFieldGreaterOrEqual::SqlFilterFieldGreaterOrEqual(
     const std::string& name,
     const std::string& placeHolderName,
-    QVariant value)
-    :
+    QVariant value):
     SqlFilterField(name, placeHolderName, std::move(value), ">=")
 {
 }
@@ -81,8 +76,7 @@ SqlFilterFieldGreaterOrEqual::SqlFilterFieldGreaterOrEqual(
 SqlFilterFieldLess::SqlFilterFieldLess(
     const std::string& name,
     const std::string& placeHolderName,
-    QVariant value)
-    :
+    QVariant value):
     SqlFilterField(name, placeHolderName, std::move(value), "<")
 {
 }
@@ -90,8 +84,7 @@ SqlFilterFieldLess::SqlFilterFieldLess(
 SqlFilterFieldLessOrEqual::SqlFilterFieldLessOrEqual(
     const std::string& name,
     const std::string& placeHolderName,
-    QVariant value)
-    :
+    QVariant value):
     SqlFilterField(name, placeHolderName, std::move(value), "<=")
 {
 }
@@ -100,8 +93,7 @@ SqlFilterFieldLessOrEqual::SqlFilterFieldLessOrEqual(
 
 SqlFilterFieldAnyOf::SqlFilterFieldAnyOf(
     const std::string& name,
-    const std::string& placeHolderName)
-    :
+    const std::string& placeHolderName):
     m_name(name),
     m_placeHolderName(placeHolderName)
 {
@@ -175,18 +167,14 @@ void Filter::bindFields(AbstractSqlQuery* query) const
 
 //-------------------------------------------------------------------------------------------------
 
-std::string joinFields(
-    const InnerJoinFilterFields& fields,
-    const std::string& separator)
+std::string joinFields(const InnerJoinFilterFields& fields, const std::string& separator)
 {
     std::vector<std::string> result;
     result.reserve(fields.size());
     for (const auto& field: fields)
         result.push_back(field.name() + '=' + field.placeHolderName());
 
-    return boost::join(
-        boost::make_iterator_range(result.begin(), result.end()),
-        separator);
+    return boost::join(boost::make_iterator_range(result.begin(), result.end()), separator);
 }
 
 void bindFields(QSqlQuery* query, const InnerJoinFilterFields& fields)

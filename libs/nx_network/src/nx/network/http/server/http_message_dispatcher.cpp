@@ -27,7 +27,8 @@ void AbstractMessageDispatcher::serve(
     RequestContext requestContext,
     nx::MoveOnlyFunc<void(RequestResult)> completionHandler)
 {
-    auto sharedHandler = std::make_shared<decltype(completionHandler)>(std::move(completionHandler));
+    auto sharedHandler =
+        std::make_shared<decltype(completionHandler)>(std::move(completionHandler));
 
     const bool handlerFound = dispatchRequest(
         std::move(requestContext),
@@ -69,13 +70,12 @@ bool AbstractMessageDispatcher::waitUntilAllRequestsCompleted(
     }
 }
 
-std::map<std::string, server::RequestStatistics>
-    AbstractMessageDispatcher::requestLineStatistics() const
+std::map<std::string, server::RequestStatistics> AbstractMessageDispatcher::requestLineStatistics()
+    const
 {
     std::map</*requestLine*/ std::string, server::RequestStatistics> result;
     m_requestStatisticsCalculators.forEach(
-        [&result](
-            const std::pair<const std::string, server::RequestStatisticsCalculator>& item)
+        [&result](const std::pair<const std::string, server::RequestStatisticsCalculator>& item)
         {
             auto requestStatistics = item.second.statistics();
             if (requestStatistics.requestsServedPerMinute > 0)
@@ -85,8 +85,7 @@ std::map<std::string, server::RequestStatistics>
     return result;
 }
 
-void AbstractMessageDispatcher::setLinger(
-    std::optional<std::chrono::milliseconds> timeout)
+void AbstractMessageDispatcher::setLinger(std::optional<std::chrono::milliseconds> timeout)
 {
     m_linger = timeout;
 }
@@ -98,8 +97,7 @@ void AbstractMessageDispatcher::recordStatistics(
 {
     m_requestStatisticsCalculators.modify(
         requestPathTemplate,
-        [processingTime, statusCode = result.statusCode](
-            server::RequestStatisticsCalculator& val)
+        [processingTime, statusCode = result.statusCode](server::RequestStatisticsCalculator& val)
         {
             val.processedRequest(processingTime, statusCode);
         });
@@ -112,14 +110,17 @@ void AbstractMessageDispatcher::printActiveRequests() const
 
     if (!activeRequests.empty())
     {
-        NX_INFO(this,
+        NX_INFO(
+            this,
             "Some requests are still running: %1",
-            nx::utils::join(activeRequests,
+            nx::utils::join(
+                activeRequests,
                 "; ",
                 [](const auto& val)
                 {
                     return nx::format("%1 - %2 [%3ms]")
-                        .args(val.second.traceId,
+                        .args(
+                            val.second.traceId,
                             val.second.requestLine,
                             duration_cast<milliseconds>(steady_clock::now() - val.second.startTime)
                                 .count())

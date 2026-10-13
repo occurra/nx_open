@@ -8,7 +8,7 @@ class QString;
 
 namespace cf {
 
-class NX_UTILS_API QnCFUrl : public QnCFRefHolder<CFURLRef>
+class NX_UTILS_API QnCFUrl: public QnCFRefHolder<CFURLRef>
 {
     typedef QnCFRefHolder<CFURLRef> base_type;
 
@@ -18,7 +18,6 @@ public:
     static QString toString(const CFURLRef ref);
 
     ~QnCFUrl();
-
 
 private:
     QnCFUrl();

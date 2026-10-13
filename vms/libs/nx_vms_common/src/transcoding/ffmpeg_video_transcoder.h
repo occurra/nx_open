@@ -63,20 +63,24 @@ public:
     // Should call before open
     void setFilterChain(nx::core::transcoding::FilterChainPtr filters);
 
-    virtual int transcodePacket(const QnConstAbstractMediaDataPtr& media, QnAbstractMediaDataPtr* const result) override;
+    virtual int transcodePacket(
+        const QnConstAbstractMediaDataPtr& media,
+        QnAbstractMediaDataPtr* const result) override;
     virtual bool open(const QnConstCompressedVideoDataPtr& video);
     void close();
     AVCodecContext* getCodecContext();
     AVCodecParameters* getCodecParameters();
 
-    //!Returns picture size (in pixels) of output video stream
+    //! Returns picture size (in pixels) of output video stream
     QSize getOutputResolution() const;
 
     // Process metadata, required for the pixelation filter, object info filter and motion filter.
     void processMetadata(const QnConstAbstractCompressedMetadataPtr& metadata);
 
 private:
-    int transcodePacketImpl(const QnConstCompressedVideoDataPtr& video, QnAbstractMediaDataPtr* const result);
+    int transcodePacketImpl(
+        const QnConstCompressedVideoDataPtr& video,
+        QnAbstractMediaDataPtr* const result);
     bool prepareFilters(AVCodecID dstCodec, const QnConstCompressedVideoDataPtr& video);
     std::pair<uint32_t, QnFfmpegVideoDecoder*> getDecoder(
         const QnConstCompressedVideoDataPtr& video);

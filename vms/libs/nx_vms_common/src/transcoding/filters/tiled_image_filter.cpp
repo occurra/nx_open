@@ -21,10 +21,12 @@ CLVideoDecoderOutputPtr QnTiledImageFilter::updateImage(const CLVideoDecoderOutp
     if (!m_tiledFrame || size != m_size)
     {
         m_size = size;
-        const QSize newSize(frame->width * m_layout->size().width(),
+        const QSize newSize(
+            frame->width * m_layout->size().width(),
             frame->height * m_layout->size().height());
         if (m_tiledFrame)
-            m_tiledFrame = m_tiledFrame->scaled(newSize, static_cast<AVPixelFormat>(frame->format));
+            m_tiledFrame =
+                m_tiledFrame->scaled(newSize, static_cast<AVPixelFormat>(frame->format));
 
         // Handling first channel of the camera. Also CLVideoDecoderOutput::scaled() function can
         // return nullptr in case of error, handling it here.
@@ -36,13 +38,17 @@ CLVideoDecoderOutputPtr QnTiledImageFilter::updateImage(const CLVideoDecoderOutp
         }
     }
     m_tiledFrame->assignMiscData(frame.data());
-    m_prevFrameTime = m_tiledFrame->pts = qMax(static_cast<qint64>(m_tiledFrame->pts),
-        m_prevFrameTime + MIN_FRAME_DURATION_USEC);
+    m_prevFrameTime = m_tiledFrame->pts =
+        qMax(static_cast<qint64>(m_tiledFrame->pts), m_prevFrameTime + MIN_FRAME_DURATION_USEC);
 
     const auto pos = m_layout->position(frame->channel);
-    const QRect rect(pos.x() * m_size.width(), pos.y() * m_size.height(),
-        m_size.width(), m_size.height());
-    auto croppedFrame = QnCropImageFilter(rect, /*alignSize*/ true, /*deepCopy*/ false).updateImage(m_tiledFrame);
+    const QRect rect(
+        pos.x() * m_size.width(),
+        pos.y() * m_size.height(),
+        m_size.width(),
+        m_size.height());
+    auto croppedFrame =
+        QnCropImageFilter(rect, /*alignSize*/ true, /*deepCopy*/ false).updateImage(m_tiledFrame);
     croppedFrame->copyFrom(frame.data());
 
     // Make sure overlays will be painter on frame copy, not on the combined frame itself.
@@ -53,6 +59,7 @@ CLVideoDecoderOutputPtr QnTiledImageFilter::updateImage(const CLVideoDecoderOutp
 
 QSize QnTiledImageFilter::updatedResolution(const QSize& srcSize)
 {
-    return QSize(srcSize.width() * m_layout->size().width(),
+    return QSize(
+        srcSize.width() * m_layout->size().width(),
         srcSize.height() * m_layout->size().height());
 }

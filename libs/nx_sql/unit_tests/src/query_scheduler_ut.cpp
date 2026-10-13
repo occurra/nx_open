@@ -12,8 +12,7 @@ namespace nx::sql::test {
 
 static constexpr auto kPeriodicDelay = std::chrono::milliseconds(100);
 
-class QueryScheduler:
-    public test::BaseDbTest
+class QueryScheduler: public test::BaseDbTest
 {
     using base_type = test::BaseDbTest;
 
@@ -31,23 +30,17 @@ protected:
 
         m_scheduler = std::make_unique<nx::sql::QueryScheduler>(
             &asyncSqlQueryExecutor(),
-            [this](auto&&... args) { runPeriodicQuery(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                runPeriodicQuery(std::forward<decltype(args)>(args)...);
+            });
     }
 
-    void setPeriodicDelay(std::chrono::milliseconds delay)
-    {
-        m_periodicDelay = delay;
-    }
+    void setPeriodicDelay(std::chrono::milliseconds delay) { m_periodicDelay = delay; }
 
-    void start()
-    {
-        m_scheduler->start(m_periodicDelay, m_periodicDelay);
-    }
+    void start() { m_scheduler->start(m_periodicDelay, m_periodicDelay); }
 
-    void requestExecuteImmediately()
-    {
-        m_scheduler->executeImmediately();
-    }
+    void requestExecuteImmediately() { m_scheduler->executeImmediately(); }
 
     void waitForPeriodicQueryInvokedAtLeast(int expected)
     {
@@ -56,10 +49,7 @@ protected:
     }
 
 private:
-    void runPeriodicQuery(nx::sql::QueryContext* /*ctx*/)
-    {
-        ++m_queryInvocationCount;
-    }
+    void runPeriodicQuery(nx::sql::QueryContext* /*ctx*/) { ++m_queryInvocationCount; }
 
 private:
     std::unique_ptr<nx::sql::QueryScheduler> m_scheduler;

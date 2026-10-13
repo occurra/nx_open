@@ -17,7 +17,8 @@ namespace random {
 QtDevice::QtDevice()
 {
     const auto time = std::chrono::steady_clock::now() - std::chrono::steady_clock::time_point();
-    QRandomGenerator::global()->seed((uint)std::chrono::duration_cast<std::chrono::milliseconds>(time).count());
+    QRandomGenerator::global()->seed(
+        (uint) std::chrono::duration_cast<std::chrono::milliseconds>(time).count());
 }
 
 QtDevice::result_type QtDevice::operator()()
@@ -32,23 +33,28 @@ double QtDevice::entropy() const
 
 QtDevice& QtDevice::instance()
 {
-    // There is a bug in OSX's clang and gcc, so thread_local is not supported :(
-    #if !defined(Q_OS_MAC)
-        thread_local QtDevice rd;
-        return rd;
-    #else
-        static pthread_key_t key;
-        static auto init = pthread_key_create(
-            &key, [](void* p) { if (p) delete static_cast<QtDevice*>(p); });
+// There is a bug in OSX's clang and gcc, so thread_local is not supported :(
+#if !defined(Q_OS_MAC)
+    thread_local QtDevice rd;
+    return rd;
+#else
+    static pthread_key_t key;
+    static auto init = pthread_key_create(
+        &key,
+        [](void* p)
+        {
+            if (p)
+                delete static_cast<QtDevice*>(p);
+        });
 
-        static_cast<void>(init);
-        if (auto rdp = static_cast<QtDevice*>(pthread_getspecific(key)))
-            return *rdp;
-
-        const auto rdp = new QtDevice();
-        pthread_setspecific(key, rdp);
+    static_cast<void>(init);
+    if (auto rdp = static_cast<QtDevice*>(pthread_getspecific(key)))
         return *rdp;
-    #endif
+
+    const auto rdp = new QtDevice();
+    pthread_setspecific(key, rdp);
+    return *rdp;
+#endif
 }
 
 } // namespace random

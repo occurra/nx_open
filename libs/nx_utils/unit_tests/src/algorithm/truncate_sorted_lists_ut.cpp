@@ -1,8 +1,9 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
+#include <vector>
+
 #include <gtest/gtest.h>
 
-#include <vector>
 #include <QtCore/QScopedValueRollback>
 
 #include <nx/utils/algorithm/truncate_sorted_lists.h>
@@ -52,10 +53,7 @@ protected:
             Vector({})};
     };
 
-    Vector singleTestVector()
-    {
-        return Vector({10, 20, 30, 40, 50});
-    }
+    Vector singleTestVector() { return Vector({10, 20, 30, 40, 50}); }
 
     Vector singleTestVectorTruncated(int limit)
     {
@@ -78,8 +76,14 @@ TEST_F(TruncateSortedLists, AscendingOrder)
 TEST_F(TruncateSortedLists, DescendingOrder)
 {
     auto lists = testLists();
-    int count = nx::utils::algorithm::truncate_sorted_lists(lists,
-        [](int value) { return -value; }, 10, Qt::DescendingOrder);
+    int count = nx::utils::algorithm::truncate_sorted_lists(
+        lists,
+        [](int value)
+        {
+            return -value;
+        },
+        10,
+        Qt::DescendingOrder);
     ASSERT_EQ(count, 10);
     ASSERT_EQ(lists, testResultFor10());
 }

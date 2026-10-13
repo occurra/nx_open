@@ -98,9 +98,7 @@ TEST(ranges, partition_sums_expected_from_strings)
 
     // drop before partitioning
     {
-        const auto [values, errors] = input
-            | std::views::drop(1)
-            | std::views::transform(identify)
+        const auto [values, errors] = input | std::views::drop(1) | std::views::transform(identify)
             | nx::actions::partitionSums;
 
         ASSERT_EQ(values, (std::vector{8, 15, 16, 23, 42}));
@@ -109,9 +107,7 @@ TEST(ranges, partition_sums_expected_from_strings)
 
     // take_n before partitioning
     {
-        const auto [values, errors] = input
-            | std::views::take(4)
-            | std::views::transform(identify)
+        const auto [values, errors] = input | std::views::take(4) | std::views::transform(identify)
             | nx::actions::partitionSums;
 
         ASSERT_EQ(values, (std::vector{4, 8, 15}));
@@ -137,10 +133,8 @@ TEST(ranges, partition_sums_expected_from_strings)
             return true;
         };
 
-        const auto [values, errors] = input
-            | std::views::transform(identify)
-            | std::views::take_while(takeUpToNErrors)
-            | nx::actions::partitionSums;
+        const auto [values, errors] = input | std::views::transform(identify)
+            | std::views::take_while(takeUpToNErrors) | nx::actions::partitionSums;
 
         ASSERT_EQ(values, (std::vector{4, 8}));
         ASSERT_EQ(errors, (std::vector<std::string>{"oceanic"}));
@@ -148,13 +142,12 @@ TEST(ranges, partition_sums_expected_from_strings)
 
     // filtered view before partitioning: keep only expected.has_value()
     {
-        const auto [values, errors] = input
-            | std::views::transform(identify)
+        const auto [values, errors] = input | std::views::transform(identify)
             | std::views::filter(
-                [](const std::expected<int, std::string>& e) -> bool
-                {
-                    return e.has_value();
-                })
+                                          [](const std::expected<int, std::string>& e) -> bool
+                                          {
+                                              return e.has_value();
+                                          })
             | nx::actions::partitionSums;
 
         ASSERT_EQ(values, (std::vector<int>{4, 8, 15, 16, 23, 42}));
@@ -174,16 +167,15 @@ TEST(ranges, partition_sums_variant_from_strings)
         "23",
     };
 
-    const auto identify =
-        [](const std::string& s) -> std::variant<int, std::string>
-        {
-            int v{};
-            const auto [p, ec] = std::from_chars(s.data(), s.data() + s.size(), v);
-            if (ec == std::errc{} && p == s.data() + s.size())
-                return v;
+    const auto identify = [](const std::string& s) -> std::variant<int, std::string>
+    {
+        int v{};
+        const auto [p, ec] = std::from_chars(s.data(), s.data() + s.size(), v);
+        if (ec == std::errc{} && p == s.data() + s.size())
+            return v;
 
-            return s;
-        };
+        return s;
+    };
 
     // baseline
     {
@@ -196,9 +188,7 @@ TEST(ranges, partition_sums_variant_from_strings)
 
     // drop before partitioning
     {
-        const auto [ints, strs] = input
-            | std::views::drop(2)
-            | std::views::transform(identify)
+        const auto [ints, strs] = input | std::views::drop(2) | std::views::transform(identify)
             | nx::actions::partitionSums;
 
         ASSERT_EQ(ints, (std::vector{15, 16, 23}));
@@ -207,9 +197,7 @@ TEST(ranges, partition_sums_variant_from_strings)
 
     // take_n before partitioning
     {
-        const auto [ints, strs] = input
-            | std::views::take(3)
-            | std::views::transform(identify)
+        const auto [ints, strs] = input | std::views::take(3) | std::views::transform(identify)
             | nx::actions::partitionSums;
 
         ASSERT_EQ(ints, (std::vector{4, 8}));
@@ -220,12 +208,11 @@ TEST(ranges, partition_sums_variant_from_strings)
     {
         const auto [ints, strs] = input
             | std::views::take_while(
-                [](const std::string& s) -> bool
-                {
-                    return s != "stop";
-                })
-            | std::views::transform(identify)
-            | nx::actions::partitionSums;
+                                      [](const std::string& s) -> bool
+                                      {
+                                          return s != "stop";
+                                      })
+            | std::views::transform(identify) | nx::actions::partitionSums;
 
         ASSERT_EQ(ints, (std::vector{4, 8, 15, 16}));
         ASSERT_EQ(strs, (std::vector<std::string>{"oceanic"}));
@@ -265,9 +252,7 @@ TEST(ranges, partition_sums_variant_custom_sum_types)
     // baseline
     {
         const auto [cars, people, errors] =
-            input
-            | std::views::transform(identify)
-            | nx::actions::partitionSums;
+            input | std::views::transform(identify) | nx::actions::partitionSums;
 
         ASSERT_EQ(cars, (std::vector<Car>{{"1"}, {"2"}, {"3"}}));
         ASSERT_EQ(people, (std::vector<Person>{{"alice"}, {"bob"}, {"JohnCena"}}));
@@ -275,10 +260,8 @@ TEST(ranges, partition_sums_variant_custom_sum_types)
     }
 
     {
-        const auto [cars, people, errors] = input
-            | std::views::drop(1)
-            | std::views::transform(identify)
-            | nx::actions::partitionSums;
+        const auto [cars, people, errors] = input | std::views::drop(1)
+            | std::views::transform(identify) | nx::actions::partitionSums;
 
         ASSERT_EQ(cars, (std::vector<Car>{{"2"}, {"3"}}));
         ASSERT_EQ(people, (std::vector<Person>{{"alice"}, {"bob"}, {"JohnCena"}}));
@@ -286,10 +269,8 @@ TEST(ranges, partition_sums_variant_custom_sum_types)
     }
 
     {
-        const auto [cars, people, errors] = input
-            | std::views::take(4)
-            | std::views::transform(identify)
-            | nx::actions::partitionSums;
+        const auto [cars, people, errors] = input | std::views::take(4)
+            | std::views::transform(identify) | nx::actions::partitionSums;
 
         ASSERT_EQ(cars, (std::vector<Car>{{"1"}}));
         ASSERT_EQ(people, (std::vector<Person>{{"alice"}, {"bob"}}));
@@ -305,20 +286,18 @@ TEST(ranges, partition_sums_variant_custom_sum_types)
         // pass).
         const std::function takeUpToNErrors =
             [&](const std::variant<Car, Person, Error>& v) -> bool
-            {
-                if (errorsSeen >= kMaxErrors)
-                    return false;
+        {
+            if (errorsSeen >= kMaxErrors)
+                return false;
 
-                if (std::holds_alternative<Error>(v))
-                    ++errorsSeen;
+            if (std::holds_alternative<Error>(v))
+                ++errorsSeen;
 
-                return true;
-            };
+            return true;
+        };
 
-        const auto [cars, people, errors] = input
-            | std::views::transform(identify)
-            | std::views::take_while(takeUpToNErrors)
-            | nx::actions::partitionSums;
+        const auto [cars, people, errors] = input | std::views::transform(identify)
+            | std::views::take_while(takeUpToNErrors) | nx::actions::partitionSums;
 
         ASSERT_EQ(cars, (std::vector<Car>{{"1"}}));
         ASSERT_EQ(people, (std::vector<Person>{{"alice"}}));
@@ -327,8 +306,7 @@ TEST(ranges, partition_sums_variant_custom_sum_types)
 
     {
         const auto [cars, people, errors] =
-            input
-            | std::views::transform(identify)
+            input | std::views::transform(identify)
             | std::views::filter(
                 [](const std::variant<Car, Person, Error>& v) -> bool
                 {
@@ -343,8 +321,7 @@ TEST(ranges, partition_sums_variant_custom_sum_types)
 
     {
         const auto [cars, people, errors] =
-            input
-            | std::views::transform(identify)
+            input | std::views::transform(identify)
             | std::views::filter(
                 [](const std::variant<Car, Person, Error>& v) -> bool
                 {

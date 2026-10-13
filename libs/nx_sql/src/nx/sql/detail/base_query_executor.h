@@ -25,9 +25,7 @@ enum class ConnectionState
 
 using QueryExecutorQueue = detail::QueryQueue;
 
-class NX_SQL_API BaseQueryExecutor:
-    public QnStoppable,
-    public QnJoinable
+class NX_SQL_API BaseQueryExecutor: public QnStoppable, public QnJoinable
 {
 public:
     BaseQueryExecutor(
@@ -41,7 +39,8 @@ public:
     /**
      * @param connectDelay Delay before connection to the DB.
      */
-    virtual void start(std::chrono::milliseconds connectDelay = std::chrono::milliseconds::zero()) = 0;
+    virtual void start(
+        std::chrono::milliseconds connectDelay = std::chrono::milliseconds::zero()) = 0;
 
     const ConnectionOptions& connectionOptions() const;
 

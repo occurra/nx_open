@@ -2,14 +2,13 @@
 
 #include "video_usability_information_parameters.h"
 
-namespace{
-static constexpr uint8_t kArExtendedSar = 255;
-}
+namespace { static constexpr uint8_t kArExtendedSar = 255; }
 
 namespace nx::media::h265 {
 
 bool VideoUsabilityInformationParameters::read(
-    nx::utils::BitStreamReader& reader, uint8_t sps_max_sub_layers_minus1)
+    nx::utils::BitStreamReader& reader,
+    uint8_t sps_max_sub_layers_minus1)
 {
     aspect_ratio_info_present_flag = reader.getBits(1);
     if (aspect_ratio_info_present_flag)

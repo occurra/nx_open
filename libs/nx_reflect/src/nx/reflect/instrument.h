@@ -22,12 +22,14 @@ class WrappedMemberVariableField
 public:
     using Type = Field;
 
-    constexpr WrappedMemberVariableField(const char* name, Field Class::*fieldPtr):
-        m_name(name), m_fieldPtr(fieldPtr)
+    constexpr WrappedMemberVariableField(const char* name, Field Class::* fieldPtr):
+        m_name(name),
+        m_fieldPtr(fieldPtr)
     {
     }
 
-    // The name of the property set in the constructor. Can be different from the member-variable name.
+    // The name of the property set in the constructor. Can be different from the member-variable
+    // name.
     constexpr const char* name() const { return m_name; }
 
     // Set the wrapped member-variable value of the object obj to arg.
@@ -42,7 +44,7 @@ public:
     decltype(auto) get(Class& obj) const { return obj.*m_fieldPtr; }
     Type& ref(Class* obj) const { return obj->*m_fieldPtr; }
 
-    Field Class::*ptr() const { return m_fieldPtr; }
+    Field Class::* ptr() const { return m_fieldPtr; }
 
 private:
     const char* m_name = nullptr;
@@ -62,18 +64,28 @@ public:
     using Type = typename detail::GetterReturnType<Getter>::Type;
 
     WrappedProperty(Getter getter, Setter setter, const char* name):
-        m_name(name), m_getter(getter), m_setter(setter) {}
+        m_name(name),
+        m_getter(getter),
+        m_setter(setter)
+    {
+    }
 
     // Get the name of the property set in the constructor.
     const char* name() const { return m_name; }
 
     // Assign value arg to the wrapped property of obj by invoking the corresponding setter method.
     template<typename Class, typename Arg>
-    void set(Class* obj, Arg&& arg) const { (obj->*m_setter)(detail::forward<Arg>(arg)); }
+    void set(Class* obj, Arg&& arg) const
+    {
+        (obj->*m_setter)(detail::forward<Arg>(arg));
+    }
 
     // Get wrapped property value of obj by invoking the corresponding getter method.
     template<typename Class>
-    auto get(const Class& obj) const { return (obj.*m_getter)(); }
+    auto get(const Class& obj) const
+    {
+        return (obj.*m_getter)();
+    }
 
 private:
     const char* m_name = nullptr;
@@ -85,7 +97,9 @@ private:
  * Can be used to specify and absent setter or getter.
  * It allows instrumenting structures with read-only or write-only properties.
  */
-struct None {};
+struct None
+{
+};
 static constexpr None none{};
 
 /**
@@ -98,12 +112,18 @@ public:
     using Type = typename detail::GetterReturnType<Getter>::Type;
 
     WrappedProperty(Getter getter, const None& /*dummy*/, const char* name):
-        m_name(name), m_getter(getter) {}
+        m_name(name),
+        m_getter(getter)
+    {
+    }
 
     const char* name() const { return m_name; }
 
     template<typename Class>
-    auto get(const Class& obj) const { return (obj.*m_getter)(); }
+    auto get(const Class& obj) const
+    {
+        return (obj.*m_getter)();
+    }
 
 private:
     const char* m_name = nullptr;
@@ -120,12 +140,18 @@ public:
     using Type = typename detail::SetterReturnType<Setter>::Type;
 
     WrappedProperty(const None& /*dummy*/, Setter setter, const char* name):
-        m_name(name), m_setter(setter) {}
+        m_name(name),
+        m_setter(setter)
+    {
+    }
 
     const char* name() const { return m_name; }
 
     template<typename Class, typename Arg>
-    void set(Class* obj, Arg&& arg) const { (obj->*m_setter)(detail::forward<Arg>(arg)); }
+    void set(Class* obj, Arg&& arg) const
+    {
+        (obj->*m_setter)(detail::forward<Arg>(arg));
+    }
 
 private:
     const char* m_name = nullptr;
@@ -136,7 +162,9 @@ private:
 
 namespace detail {
 
-struct NoBase {};
+struct NoBase
+{
+};
 
 template<typename Visitor, typename... Members>
 constexpr auto nxReflectVisitAllFields(NoBase*, Visitor&& visitor, Members&&... members)
@@ -177,7 +205,7 @@ namespace detail {
 
 struct DummyVisitor
 {
-    template <typename... Members>
+    template<typename... Members>
     void operator()(Members&&...) const
     {
     }
@@ -199,7 +227,9 @@ struct IsInstrumented
 };
 
 template<typename T>
-struct IsInstrumented<T, detail::void_t<decltype(nxReflectVisitAllFields((T*) nullptr, detail::dummyVisitor))>>
+struct IsInstrumented<
+    T,
+    detail::void_t<decltype(nxReflectVisitAllFields((T*) nullptr, detail::dummyVisitor))>>
 {
     static constexpr bool value = true;
 };
@@ -214,7 +244,10 @@ constexpr bool IsInstrumentedV = IsInstrumented<U...>::value;
  * friend constexpr T nx::reflect::createDefault();
  */
 template<typename T>
-constexpr T createDefault() { return T{}; }
+constexpr T createDefault()
+{
+    return T{};
+}
 
 } // namespace nx::reflect
 
@@ -242,8 +275,10 @@ constexpr T createDefault() { return T{}; }
         return nxReflectVisitAllFields( \
             ::nx::reflect::detail::toBase(tag), \
             ::nx::reflect::detail::forward<Visitor>(visit), \
-            BOOST_PP_SEQ_FOR_EACH(NX_REFLECTION_EXPAND_FIELDS, SELF, FIELDS) \
-            ::nx::reflect::detail::forward<Members>(members)...); \
+            BOOST_PP_SEQ_FOR_EACH( \
+                NX_REFLECTION_EXPAND_FIELDS, \
+                SELF, \
+                FIELDS)::nx::reflect::detail::forward<Members>(members)...); \
     }
 
 //-------------------------------------------------------------------------------------------------
@@ -269,14 +304,15 @@ constexpr T createDefault() { return T{}; }
         return nxReflectVisitAllFields( \
             ::nx::reflect::detail::toBase(tag), \
             ::nx::reflect::detail::forward<Visitor>(visit), \
-            BOOST_PP_SEQ_FOR_EACH(NX_REFLECTION_EXPAND_FIELDS, SELF<Args...>, FIELDS) \
-            ::nx::reflect::detail::forward<Members>(members)...); \
+            BOOST_PP_SEQ_FOR_EACH( \
+                NX_REFLECTION_EXPAND_FIELDS, \
+                SELF<Args...>, \
+                FIELDS)::nx::reflect::detail::forward<Members>(members)...); \
     }
 
 //-------------------------------------------------------------------------------------------------
 
-#define NX_REFLECTION_EXPAND_GSN_FIELDS(_1, _2, FIELD) \
-    ::nx::reflect::WrappedProperty FIELD,
+#define NX_REFLECTION_EXPAND_GSN_FIELDS(_1, _2, FIELD) ::nx::reflect::WrappedProperty FIELD,
 
 /**
  * Instruments class that promotes its fields using get/set functions.
@@ -304,8 +340,10 @@ constexpr T createDefault() { return T{}; }
         return nxReflectVisitAllFields( \
             ::nx::reflect::detail::toBase(tag), \
             ::nx::reflect::detail::forward<Visitor>(visit), \
-            BOOST_PP_SEQ_FOR_EACH(NX_REFLECTION_EXPAND_GSN_FIELDS, _, FIELDS) \
-            ::nx::reflect::detail::forward<Members>(members)...); \
+            BOOST_PP_SEQ_FOR_EACH( \
+                NX_REFLECTION_EXPAND_GSN_FIELDS, \
+                _, \
+                FIELDS)::nx::reflect::detail::forward<Members>(members)...); \
     }
 
 //-------------------------------------------------------------------------------------------------
@@ -325,8 +363,8 @@ constexpr T createDefault() { return T{}; }
  * Effectively, this macro defines the following function:
  * <pre><code>static constexpr bool TAG(const TYPE*) { return true; }</code></pre>
  * A default overload like
- * <pre><code>template<typename T> static constexpr bool TAG(const T*) { return false; }</code></pre>
- * should be defined for the ADL to work.
+ * <pre><code>template<typename T> static constexpr bool TAG(const T*) { return false;
+ * }</code></pre> should be defined for the ADL to work.
  *
  * Note: This macro MUST BE placed next to the NX_REFLECTION_INSTRUMENT macro. Otherwise,
  * an undefined behavior may result due to different scopes of NX_REFLECTION_INSTRUMENT and
@@ -334,11 +372,17 @@ constexpr T createDefault() { return T{}; }
  */
 #define NX_REFLECTION_TAG_TYPE(TYPE, TAG) NX_REFLECTION_TAG_TYPE_LOOKUP(TAG)(TAG, TYPE)
 #define NX_REFLECTION_TAG_TYPE_(TAG, TYPE) \
-    static constexpr bool TAG(const TYPE*) { return true; }
+    static constexpr bool TAG(const TYPE*) \
+    { \
+        return true; \
+    }
 
 /**
  * Similar to NX_REFLECTION_TAG_TYPE. But, works for template types.
  */
 #define NX_REFLECTION_TAG_TEMPLATE_TYPE(TEMPLATE_TYPE, TAG) \
     template<typename... Args> \
-    static constexpr bool TAG(const TEMPLATE_TYPE<Args...>*) { return true; }
+    static constexpr bool TAG(const TEMPLATE_TYPE<Args...>*) \
+    { \
+        return true; \
+    }

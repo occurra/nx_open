@@ -42,7 +42,9 @@ inline bool asBool(const QJsonValue& value, const QString& assertMessage = {})
 }
 
 inline QJsonValue getField(
-    const QJsonObject& object, const QString& key, const QString& assertMessage = {})
+    const QJsonObject& object,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     if (const auto it = object.find(key); it != object.end())
     {
@@ -54,106 +56,137 @@ inline QJsonValue getField(
 }
 
 inline QJsonObject getObject(
-    const QJsonObject& object, const QString& key, const QString& assertMessage = {})
+    const QJsonObject& object,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return asObject(getField(object, key, assertMessage), assertMessage);
 }
 
 inline QJsonObject getObject(
-    const QJsonValue& value, const QString& key, const QString& assertMessage = {})
+    const QJsonValue& value,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return getObject(asObject(value, assertMessage), key, assertMessage);
 }
 
 inline QJsonArray getArray(
-    const QJsonObject& object, const QString& key, const QString& assertMessage = {})
+    const QJsonObject& object,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return asArray(getField(object, key, assertMessage), assertMessage);
 }
 
 inline QJsonArray getArray(
-    const QJsonValue& value, const QString& key, const QString& assertMessage = {})
+    const QJsonValue& value,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return getArray(asObject(value, assertMessage), key, assertMessage);
 }
 
 inline QString getString(
-    const QJsonObject& object, const QString& key, const QString& assertMessage = {})
+    const QJsonObject& object,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return asString(getField(object, key, assertMessage), assertMessage);
 }
 
 inline QString getString(
-    const QJsonValue& value, const QString& key, const QString& assertMessage = {})
+    const QJsonValue& value,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return getString(asObject(value, assertMessage), key, assertMessage);
 }
 
 inline double getDouble(
-    const QJsonObject& object, const QString& key, const QString& assertMessage = {})
+    const QJsonObject& object,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return asDouble(getField(object, key, assertMessage), assertMessage);
 }
 
 inline double getDouble(
-    const QJsonValue& value, const QString& key, const QString& assertMessage = {})
+    const QJsonValue& value,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return getDouble(asObject(value, assertMessage), key, assertMessage);
 }
 
 inline bool getBool(
-    const QJsonObject& object, const QString& key, const QString& assertMessage = {})
+    const QJsonObject& object,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return asBool(getField(object, key, assertMessage), assertMessage);
 }
 
-inline bool getBool(
-    const QJsonValue& value, const QString& key, const QString& assertMessage = {})
+inline bool getBool(const QJsonValue& value, const QString& key, const QString& assertMessage = {})
 {
     return getBool(asObject(value, assertMessage), key, assertMessage);
 }
 
 inline QJsonObject optObject(
-    const QJsonObject& object, const QString& key, const QString& assertMessage = {})
+    const QJsonObject& object,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     const auto it = object.find(key);
     return it != object.end() ? asObject(it.value(), assertMessage) : QJsonObject();
 }
 
 inline QJsonObject optObject(
-    const QJsonValue& value, const QString& key, const QString& assertMessage = {})
+    const QJsonValue& value,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return optObject(asObject(value, assertMessage), key, assertMessage);
 }
 
 inline QJsonArray optArray(
-    const QJsonObject& object, const QString& key, const QString& assertMessage = {})
+    const QJsonObject& object,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     const auto it = object.find(key);
     return it != object.end() ? asArray(it.value(), assertMessage) : QJsonArray();
 }
 
 inline QJsonArray optArray(
-    const QJsonValue& value, const QString& key, const QString& assertMessage = {})
+    const QJsonValue& value,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return optArray(asObject(value, assertMessage), key, assertMessage);
 }
 
 inline QString optString(
-    const QJsonObject& object, const QString& key, const QString& assertMessage = {})
+    const QJsonObject& object,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     const auto it = object.find(key);
     return it != object.end() ? asString(it.value(), assertMessage) : QString();
 }
 
 inline QString optString(
-    const QJsonValue& value, const QString& key, const QString& assertMessage = {})
+    const QJsonValue& value,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     return optString(asObject(value, assertMessage), key, assertMessage);
 }
 
 inline bool optBool(
-    const QJsonObject& object, const QString& key, const QString& assertMessage = {})
+    const QJsonObject& object,
+    const QString& key,
+    const QString& assertMessage = {})
 {
     const auto it = object.find(key);
     return it != object.end() ? asBool(it.value(), assertMessage) : false;

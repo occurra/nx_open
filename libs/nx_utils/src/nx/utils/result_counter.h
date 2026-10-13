@@ -86,7 +86,9 @@ std::string ResultCounter<Result>::stringStatus() const
         for (const auto& c: m_counters)
         {
             returnCodes.push_back(
-                nx::format("%1 [%2 times]").args(m_stringConvertor(c.first), c.second).toStdString());
+                nx::format("%1 [%2 times]")
+                    .args(m_stringConvertor(c.first), c.second)
+                    .toStdString());
         }
     }
 

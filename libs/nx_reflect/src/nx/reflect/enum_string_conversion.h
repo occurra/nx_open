@@ -17,7 +17,10 @@ namespace detail {
 
 template<typename Iterator, typename T, typename BinaryPredicate>
 constexpr Iterator lowerBound(
-    Iterator first, Iterator last, const T& value, const BinaryPredicate& comp)
+    Iterator first,
+    Iterator last,
+    const T& value,
+    const BinaryPredicate& comp)
 {
     auto count = last - first;
 
@@ -43,7 +46,10 @@ constexpr Iterator lowerBound(
 
 template<typename Iterator, typename T, typename BinaryPredicate>
 constexpr Iterator dumbLowerBound(
-    Iterator first, Iterator last, const T& value, const BinaryPredicate& comp)
+    Iterator first,
+    Iterator last,
+    const T& value,
+    const BinaryPredicate& comp)
 {
     auto count = last - first;
 
@@ -61,20 +67,19 @@ constexpr auto getSortedItems(BinaryPredicate&& comp, bool dumbSorting, Items&&.
     std::array<Item<Enum>, sizeof...(items)> result{};
     auto insert =
         [end = result.begin(), &result, &comp, dumbSorting](const Item<Enum>& item) mutable
-        {
-            // Get insertion position to `i`.
-            auto it = dumbSorting
-                ? dumbLowerBound(result.begin(), end, item, comp)
-                : lowerBound(result.begin(), end, item, comp);
+    {
+        // Get insertion position to `i`.
+        auto it = dumbSorting ? dumbLowerBound(result.begin(), end, item, comp)
+                              : lowerBound(result.begin(), end, item, comp);
 
-            // Shift items right from the insertion position.
-            for (auto jt = end; jt > it; --jt)
-                *jt = *(jt - 1);
+        // Shift items right from the insertion position.
+        for (auto jt = end; jt > it; --jt)
+            *jt = *(jt - 1);
 
-            *it = item;
+        *it = item;
 
-            ++end;
-        };
+        ++end;
+    };
 
     (insert(items), ...);
 
@@ -107,7 +112,8 @@ bool parseNumber(std::string_view str, T* value)
         str.remove_prefix(2);
 
     const auto [ptr, ec] = std::from_chars(
-        str.data(), str.data() + str.size(),
+        str.data(),
+        str.data() + str.size(),
         *value,
         /* base*/ isHex ? 16 : 10);
 
@@ -119,7 +125,10 @@ bool parseNumber(std::string_view str, T* value)
 template<typename Enum>
 std::string toString(Enum value)
 {
-    auto cmp = [](const Item<Enum>& a, const Item<Enum>& b) { return a.value < b.value; };
+    auto cmp = [](const Item<Enum>& a, const Item<Enum>& b)
+    {
+        return a.value < b.value;
+    };
 
     constexpr auto items = visitAllItems<Enum>(
         [&cmp](auto&&... items)
@@ -137,7 +146,10 @@ std::string toString(Enum value)
 template<typename Enum>
 bool isValidEnumValue(Enum value)
 {
-    auto cmp = [](const Item<Enum>& a, const Item<Enum>& b) { return a.value < b.value; };
+    auto cmp = [](const Item<Enum>& a, const Item<Enum>& b)
+    {
+        return a.value < b.value;
+    };
 
     constexpr auto items = visitAllItems<Enum>(
         [&cmp](auto&&... items)
@@ -153,18 +165,22 @@ bool fromString(std::string_view str, Enum* value)
 {
     static constexpr auto caseInsensitiveLess =
         [](const nx::reflect::detail::string_view& a, const nx::reflect::detail::string_view& b)
-        {
-            return std::lexicographical_compare(
-                a.data(), a.data() + a.length(),
-                b.data(), b.data() + b.length(),
-                [](char a, char b) { return detail::toAsciiLower(a) < detail::toAsciiLower(b); });
-        };
+    {
+        return std::lexicographical_compare(
+            a.data(),
+            a.data() + a.length(),
+            b.data(),
+            b.data() + b.length(),
+            [](char a, char b)
+            {
+                return detail::toAsciiLower(a) < detail::toAsciiLower(b);
+            });
+    };
 
-    auto cmp =
-        [](const Item<Enum>& a, const Item<Enum>& b)
-        {
-            return caseInsensitiveLess(a.name, b.name);
-        };
+    auto cmp = [](const Item<Enum>& a, const Item<Enum>& b)
+    {
+        return caseInsensitiveLess(a.name, b.name);
+    };
 
     constexpr auto items = visitAllItems<Enum>(
         [&cmp](auto&&... items)

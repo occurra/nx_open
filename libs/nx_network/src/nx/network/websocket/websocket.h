@@ -20,7 +20,7 @@
 namespace nx::network {
 namespace websocket {
 
-class NX_NETWORK_API WebSocket : public aio::AbstractAsyncChannel
+class NX_NETWORK_API WebSocket: public aio::AbstractAsyncChannel
 {
 public:
     /**
@@ -59,8 +59,8 @@ public:
     virtual void bindToAioThread(aio::AbstractAioThread* aioThread) override;
 
     /**
-     * Should be called before first read/send. Typically after instantiation and bindToAioThread().
-     * If you need to call it on working socket, first call cancelIOSync().
+     * Should be called before first read/send. Typically after instantiation and
+     * bindToAioThread(). If you need to call it on working socket, first call cancelIOSync().
      */
     void start();
 
@@ -107,11 +107,15 @@ private:
         nx::Buffer* const bufferPtr;
         Frame* const framePtr;
 
-        UserReadContext(IoCompletionHandler handler, nx::Buffer* const bufferPtr, Frame* const framePtr):
+        UserReadContext(
+            IoCompletionHandler handler,
+            nx::Buffer* const bufferPtr,
+            Frame* const framePtr):
             handler(std::move(handler)),
             bufferPtr(bufferPtr),
             framePtr(framePtr)
-        {}
+        {
+        }
     };
     using UserReadContextPtr = std::unique_ptr<UserReadContext>;
 
@@ -151,8 +155,7 @@ private:
     void onPingTimer();
     void onRead(SystemError::ErrorCode ecode, size_t transferred);
     void onWrite(SystemError::ErrorCode ecode, size_t transferred);
-    void readAnyAsync(
-        nx::Buffer* const buffer, Frame* const frame, IoCompletionHandler handler);
+    void readAnyAsync(nx::Buffer* const buffer, Frame* const frame, IoCompletionHandler handler);
     size_t handleRead(nx::Buffer* const bufferPtr, Frame* const framePtr);
     void callOnReadhandler(SystemError::ErrorCode error, size_t transferred);
     void callOnWriteHandler(SystemError::ErrorCode error, size_t transferred);

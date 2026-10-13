@@ -12,9 +12,7 @@ namespace nx::network::url {
 
 namespace detail {
 
-NX_NETWORK_API std::string joinPath(
-    std::string_view left,
-    std::string_view right);
+NX_NETWORK_API std::string joinPath(std::string_view left, std::string_view right);
 
 } // namespace detail
 
@@ -29,14 +27,11 @@ NX_NETWORK_API SocketAddress getEndpoint(const nx::Url& url);
 NX_NETWORK_API std::string normalizePath(std::string_view);
 
 // TODO: #akolesnikov Merge this function with the previous one.
-NX_NETWORK_API QString normalizedPath(
-    const QString& path, const QString& pathIgnorePrefix = QString());
+NX_NETWORK_API QString
+    normalizedPath(const QString& path, const QString& pathIgnorePrefix = QString());
 
 template<typename... Path>
-std::string joinPath(
-    std::string_view first,
-    std::string_view second,
-    const Path&... other)
+std::string joinPath(std::string_view first, std::string_view second, const Path&... other)
 {
     if constexpr (sizeof...(other) == 0)
         return detail::joinPath(first, second);

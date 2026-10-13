@@ -44,10 +44,7 @@ public:
      * Creates edge between two vertices. If either vertice does not exists, it is added first.
      * @return true if added, false if edge already exists
      */
-    template<
-        class VerticeOneRef,
-        class VerticeTwoRef,
-        class EdgeDataRef>
+    template<class VerticeOneRef, class VerticeTwoRef, class EdgeDataRef>
     std::pair<edge_data_type*, bool> addEdge(
         VerticeOneRef&& startVerticeKey,
         VerticeTwoRef&& endVerticeKey,
@@ -58,7 +55,7 @@ public:
 
         auto edgeInsertionPair = vFrom->edges.emplace(vTo, std::forward<EdgeDataRef>(edgeData));
         if (edgeInsertionPair.second)
-            vTo->incomingEdges.insert(vFrom); //added new edge, adding back path
+            vTo->incomingEdges.insert(vFrom); // added new edge, adding back path
 
         return std::pair<edge_data_type*, bool>(
             &edgeInsertionPair.first->second,
@@ -101,11 +98,15 @@ public:
             to,
             foundPath,
             edgesTravelled,
-            [](const edge_data_type&) { return true; });
+            [](const edge_data_type&)
+            {
+                return true;
+            });
     }
 
     /**
-     * Finds any path between two vertices using only edges for which edgeSelectionPred returns true.
+     * Finds any path between two vertices using only edges for which edgeSelectionPred returns
+     * true.
      */
     template<class EdgeSelectionPredicateType>
     bool findAnyPathIf(
@@ -124,9 +125,15 @@ public:
 
         std::deque<const Vertice*> pathTravelled;
         const bool res = findAnyPathInternal(
-            vFrom, vTo, foundPath, edgesTravelled, &pathTravelled, edgeSelectionPred);
+            vFrom,
+            vTo,
+            foundPath,
+            edgesTravelled,
+            &pathTravelled,
+            edgeSelectionPred);
         if (res && foundPath)
-            foundPath->push_front(vFrom->key);  //findAnyPathInternal does not add start vertice to the path
+            foundPath->push_front(
+                vFrom->key); // findAnyPathInternal does not add start vertice to the path
         return res;
     }
 
@@ -168,17 +175,13 @@ private:
     const Vertice* findVertice(const vertice_key_type& vKey) const
     {
         auto iter = m_keyToVertice.find(vKey);
-        return iter != m_keyToVertice.end()
-            ? iter->second.get()
-            : nullptr;
+        return iter != m_keyToVertice.end() ? iter->second.get() : nullptr;
     }
 
     template<class VerticeKeyRef>
     Vertice* getOrAddVertice(VerticeKeyRef&& vKey)
     {
-        auto it = m_keyToVertice.emplace(
-            vKey,
-            std::unique_ptr<Vertice>()).first;
+        auto it = m_keyToVertice.emplace(vKey, std::unique_ptr<Vertice>()).first;
         if (!it->second)
             it->second.reset(new Vertice(std::forward<VerticeKeyRef>(vKey)));
         return it->second.get();
@@ -203,20 +206,23 @@ private:
             bool result = false;
             if (edge.first == to)
             {
-                result = true;  //found path
+                result = true; // found path
             }
             else if (std::find(     //detecting path loops to prevent infinite recursion
                 pathTravelled->cbegin(),
                 pathTravelled->cend(),
                 edge.first) != pathTravelled->cend())
             {
-                result = false;   //loop detected, not found
+                result = false; // loop detected, not found
             }
             else
             {
                 result = findAnyPathInternal(
-                    edge.first, to,
-                    foundPath, edgesTravelled, pathTravelled,
+                    edge.first,
+                    to,
+                    foundPath,
+                    edgesTravelled,
+                    pathTravelled,
                     edgeSelectionPred);
             }
 

@@ -1,11 +1,10 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include <sstream>
-#include <iomanip>
-
 #include "totp.h"
 
 #include <QMessageAuthenticationCode>
+#include <iomanip>
+#include <sstream>
 
 #include <nx/utils/time.h>
 
@@ -14,7 +13,8 @@
 namespace nx::utils::auth {
 
 TotpGenerator::TotpGenerator(std::chrono::seconds passwordUpdateInterval, int codeLength):
-    m_passwordUpdateInterval(passwordUpdateInterval), m_codeLength(codeLength)
+    m_passwordUpdateInterval(passwordUpdateInterval),
+    m_codeLength(codeLength)
 {
 }
 
@@ -25,8 +25,8 @@ std::string TotpGenerator::getTotp(const std::string& key) const
     return serializeHotp(hotp);
 }
 
-bool TotpGenerator::validateTotp(
-    const std::string& key, const std::string& totp, size_t counters) const
+bool TotpGenerator::validateTotp(const std::string& key, const std::string& totp, size_t counters)
+    const
 {
     const int64_t timeValue = getCurrentTimeValue();
     bool isValid = validateHotp(key, timeValue, totp);
@@ -43,8 +43,8 @@ bool TotpGenerator::validateTotpRelaxed(const std::string& key, const std::strin
     return validateTotp(key, totp, 2);
 }
 
-bool TotpGenerator::validateHotp(const std::string& key, int64_t counter,
-    const std::string& hotp) const
+bool TotpGenerator::validateHotp(const std::string& key, int64_t counter, const std::string& hotp)
+    const
 {
     int calculatedHotp = getHotp(key, counter);
     return serializeHotp(calculatedHotp) == hotp;

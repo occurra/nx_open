@@ -25,10 +25,14 @@ SystemContextAware::SystemContextAware(SystemContext* systemContext):
 
     if (auto qobject = dynamic_cast<const QObject*>(this))
     {
-        QObject::connect(systemContext, &QObject::destroyed, qobject,
+        QObject::connect(
+            systemContext,
+            &QObject::destroyed,
+            qobject,
             []()
             {
-                NX_ASSERT(false,
+                NX_ASSERT(
+                    false,
                     "Context-aware object must be destroyed before the corresponding context is.");
             });
     }
@@ -37,7 +41,8 @@ SystemContextAware::SystemContextAware(SystemContext* systemContext):
 SystemContextAware::~SystemContextAware()
 {
     // Make sure context was not ever initialized or still exists.
-    NX_ASSERT(d->systemContext,
+    NX_ASSERT(
+        d->systemContext,
         "Context-aware object must be destroyed before the corresponding context is.");
 }
 
@@ -126,8 +131,8 @@ QnResourceStatusDictionary* SystemContextAware::resourceStatusDictionary() const
     return systemContext()->resourceStatusDictionary();
 }
 
-QnServerAdditionalAddressesDictionary*
-    SystemContextAware::serverAdditionalAddressesDictionary() const
+QnServerAdditionalAddressesDictionary* SystemContextAware::serverAdditionalAddressesDictionary()
+    const
 {
     return systemContext()->serverAdditionalAddressesDictionary();
 }
@@ -137,8 +142,8 @@ saas::ServiceManager* SystemContextAware::saasServiceManager() const
     return systemContext()->saasServiceManager();
 }
 
-std::shared_ptr<nx::analytics::taxonomy::AbstractState>
-    SystemContextAware::analyticsTaxonomyState() const
+std::shared_ptr<nx::analytics::taxonomy::AbstractState> SystemContextAware::
+    analyticsTaxonomyState() const
 {
     return systemContext()->analyticsTaxonomyState();
 }

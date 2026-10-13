@@ -18,14 +18,17 @@ using namespace nx::core::access;
 
 SystemContext::SystemContext(Mode mode, nx::Uuid peerId, QObject* parent):
     QObject(parent),
-    d(new Private{.mode=mode, .peerId=peerId})
+    d(new Private{.mode = mode, .peerId = peerId})
 {
     d->licensePool = std::make_unique<QnLicensePool>(this);
     d->resourcePool = std::make_unique<QnResourcePool>(this);
     d->resourceDataPool = std::make_unique<QnResourceDataPool>();
     d->resourceStatusDictionary = std::make_unique<QnResourceStatusDictionary>();
     d->resourcePropertyDictionary = std::make_unique<QnResourcePropertyDictionary>(
-        [this]() -> ec2::AbstractECConnectionPtr { return messageBusConnection(); });
+        [this]() -> ec2::AbstractECConnectionPtr
+        {
+            return messageBusConnection();
+        });
 
     d->serverAdditionalAddressesDictionary =
         std::make_unique<QnServerAdditionalAddressesDictionary>();
@@ -51,7 +54,10 @@ SystemContext::SystemContext(Mode mode, nx::Uuid peerId, QObject* parent):
     d->showreelManager = std::make_unique<ShowreelManager>();
     d->eventRuleManager = std::make_unique<nx::vms::event::RuleManager>();
     d->analyticsDescriptorContainer = std::make_unique<taxonomy::DescriptorContainer>(this);
-    d->analyticsTaxonomyStateWatcher = std::make_unique<taxonomy::StateWatcher>(d->analyticsDescriptorContainer.get(), d->resourcePool.get(), d->resourcePropertyDictionary.get());
+    d->analyticsTaxonomyStateWatcher = std::make_unique<taxonomy::StateWatcher>(
+        d->analyticsDescriptorContainer.get(),
+        d->resourcePool.get(),
+        d->resourcePropertyDictionary.get());
 
     d->metrics = std::make_shared<nx::metric::Storage>();
     d->lookupListManager = std::make_unique<LookupListManager>();
@@ -70,18 +76,24 @@ SystemContext::SystemContext(Mode mode, nx::Uuid peerId, QObject* parent):
 
         case Mode::client:
         case Mode::unitTests:
-            d->deviceLicenseUsageWatcher = std::make_unique<DeviceLicenseUsageWatcher>(d->licensePool.get(), d->runtimeInfoManager.get(), d->resourcePool.get());
-            d->videoWallLicenseUsageWatcher = std::make_unique<VideoWallLicenseUsageWatcher>(d->licensePool.get(), d->runtimeInfoManager.get(), d->resourcePool.get());
+            d->deviceLicenseUsageWatcher = std::make_unique<DeviceLicenseUsageWatcher>(
+                d->licensePool.get(),
+                d->runtimeInfoManager.get(),
+                d->resourcePool.get());
+            d->videoWallLicenseUsageWatcher = std::make_unique<VideoWallLicenseUsageWatcher>(
+                d->licensePool.get(),
+                d->runtimeInfoManager.get(),
+                d->resourcePool.get());
             break;
     }
 
     if (d->httpClientPool)
     {
-        d->httpClientPool->setDefaultTimeouts(nx::network::http::AsyncClient::Timeouts{
-            .sendTimeout = ::rest::kDefaultVmsApiTimeout,
-            .responseReadTimeout = ::rest::kDefaultVmsApiTimeout,
-            .messageBodyReadTimeout = ::rest::kDefaultVmsApiTimeout
-        });
+        d->httpClientPool->setDefaultTimeouts(
+            nx::network::http::AsyncClient::Timeouts{
+                .sendTimeout = ::rest::kDefaultVmsApiTimeout,
+                .responseReadTimeout = ::rest::kDefaultVmsApiTimeout,
+                .messageBodyReadTimeout = ::rest::kDefaultVmsApiTimeout});
     }
 
     d->cameraNamesWatcher = std::make_unique<QnCameraNamesWatcher>(d->resourcePool.get());
@@ -254,7 +266,7 @@ LookupListManager* SystemContext::lookupListManager() const
     return d->lookupListManager.get();
 }
 
-//FIXME: #sivanov Old rules engine, should be cleaned up also.
+// FIXME: #sivanov Old rules engine, should be cleaned up also.
 nx::vms::event::RuleManager* SystemContext::eventRuleManager() const
 {
     return d->eventRuleManager.get();

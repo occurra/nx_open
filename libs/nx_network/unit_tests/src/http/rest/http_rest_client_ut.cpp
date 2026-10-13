@@ -21,17 +21,14 @@ TEST(HttpRest_substituteParameters, bad_input)
 {
     std::string resultPath;
 
-    ASSERT_FALSE(substituteParameters(
-        "/account/dummy/systems", &resultPath, {"ak"}));
-    ASSERT_FALSE(substituteParameters(
-        "/account/{accId}/systems/sys1", &resultPath, {"ak", "sys1"}));
+    ASSERT_FALSE(substituteParameters("/account/dummy/systems", &resultPath, {"ak"}));
+    ASSERT_FALSE(
+        substituteParameters("/account/{accId}/systems/sys1", &resultPath, {"ak", "sys1"}));
 }
 
 TEST(HttpRest_toRegex, toRegex)
 {
-    ASSERT_EQ(
-        "/accounts/.*/systems/.*",
-        toRegex("/accounts/{accountId}/systems/{systemId}"));
+    ASSERT_EQ("/accounts/.*/systems/.*", toRegex("/accounts/{accountId}/systems/{systemId}"));
 }
 
 } // namespace nx::network::http::rest::test

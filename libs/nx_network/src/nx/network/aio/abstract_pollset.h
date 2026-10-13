@@ -33,12 +33,12 @@ public:
 /**
  * Wrapper on top of OS provided epoll, select or kqueue.
  * Allows to wait for state change on multiple sockets.
- * If AbstractPollSet::poll() returns positive value, then AbstractPollSet::getSocketEventsIterator()
- *   returns iterator pointing just before the first socket which state has been changed.
- * NOTE: Every socket is always monitored for error and all errors are reported.
- * NOTE: This class is not thread-safe.
- * NOTE: If multiple event occurred on same socket each event will be presented separately.
- * NOTE: Polling same socket with two PollSet instances results in undefined behavior.
+ * If AbstractPollSet::poll() returns positive value, then
+ * AbstractPollSet::getSocketEventsIterator() returns iterator pointing just before the first
+ * socket which state has been changed. NOTE: Every socket is always monitored for error and all
+ * errors are reported. NOTE: This class is not thread-safe. NOTE: If multiple event occurred on
+ * same socket each event will be presented separately. NOTE: Polling same socket with two PollSet
+ * instances results in undefined behavior.
  */
 class AbstractPollSet
 {
@@ -80,15 +80,17 @@ public:
      */
     virtual size_t size() const = 0;
     /**
-     * @param millisToWait if 0, method returns immediately. If > 0, returns on event or after millisToWait milliseconds.
-     *   If < 0, method blocks till event.
-     * @return -1 on error, 0 if millisToWait timeout has expired, > 0 - number of socket whose state has been changed.
-     * NOTE: If multiple event occurred on same socket each event will be present as a single element.
+     * @param millisToWait if 0, method returns immediately. If > 0, returns on event or after
+     * millisToWait milliseconds. If < 0, method blocks till event.
+     * @return -1 on error, 0 if millisToWait timeout has expired, > 0 - number of socket whose
+     * state has been changed. NOTE: If multiple event occurred on same socket each event will be
+     * present as a single element.
      */
     virtual int poll(int millisToWait = kInfiniteTimeout) = 0;
     /**
      * Returns iterator pointing just before first socket event read with AbstractPollSet::poll.
-     * NOTE: One has to call AbstractPollSetIterator::next() to move iterator to the first position.
+     * NOTE: One has to call AbstractPollSetIterator::next() to move iterator to the first
+     * position.
      */
     virtual std::unique_ptr<AbstractPollSetIterator> getSocketEventsIterator() = 0;
 };

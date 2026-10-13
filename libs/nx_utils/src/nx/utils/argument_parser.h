@@ -38,11 +38,14 @@ public:
      */
     bool read(const QString& name, bool* const value) const;
 
-    template<typename ValueType = QString, typename MainName, typename ... AltNames>
-    std::optional<ValueType> get(MainName mainName, AltNames ... altNames) const;
+    template<typename ValueType = QString, typename MainName, typename... AltNames>
+    std::optional<ValueType> get(MainName mainName, AltNames... altNames) const;
 
     template<typename ValueType = QString>
-    std::optional<ValueType> get() const { return std::nullopt; }
+    std::optional<ValueType> get() const
+    {
+        return std::nullopt;
+    }
 
     bool contains(const QString& name) const;
 
@@ -67,13 +70,13 @@ private:
     std::vector<QString> m_positionalArgs;
 };
 
-template<typename ValueType, typename MainName, typename ... AltNames>
-std::optional<ValueType> ArgumentParser::get(MainName mainName, AltNames ... altNames) const
+template<typename ValueType, typename MainName, typename... AltNames>
+std::optional<ValueType> ArgumentParser::get(MainName mainName, AltNames... altNames) const
 {
     if (const auto value = getImpl<ValueType>(std::forward<MainName>(mainName)))
         return value;
 
-    return get<ValueType>(std::forward<AltNames>(altNames) ...);
+    return get<ValueType>(std::forward<AltNames>(altNames)...);
 }
 
 template<typename Handler>

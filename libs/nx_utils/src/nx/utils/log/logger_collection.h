@@ -24,10 +24,7 @@ public:
         {
         }
 
-        bool operator <(const Context& rhs) const
-        {
-            return id < rhs.id;
-        }
+        bool operator<(const Context& rhs) const { return id < rhs.id; }
     };
 
     using LoggersByFilter = std::map<Filter, Context>;

@@ -4,23 +4,24 @@
 #include <nx/utils/system_network_headers.h>
 /////////////////////////////////////////////////////////////////////////////////////////
 
-#include "websocket_parser.h"
-
 #include <algorithm>
 #include <cstring>
 
 #include <nx/utils/gzip/gzip_compressor.h>
+
+#include "websocket_parser.h"
 
 namespace nx::network::websocket {
 
 Parser::Parser(Role role, GotFrameHandler handler):
     m_role(role),
     m_frameHandler(std::move(handler)),
-    m_uncompressor(nx::utils::bstream::makeCustomOutputStream(
-        [this] (const nx::Buffer& data)
-        {
-            this->m_uncompressed += data;
-        }),
+    m_uncompressor(
+        nx::utils::bstream::makeCustomOutputStream(
+            [this](const nx::Buffer& data)
+            {
+                this->m_uncompressed += data;
+            }),
         nx::utils::bstream::gzip::Uncompressor::Method::deflate)
 {
 }
@@ -30,7 +31,7 @@ Parser::BufferedState Parser::bufferDataIfNeeded(const char* data, int len, int 
     if (neededLen < len && m_buf.empty())
         return BufferedState::notNeeded;
 
-    auto appendLen = std::min(neededLen - (int)m_buf.size(), len);
+    auto appendLen = std::min(neededLen - (int) m_buf.size(), len);
     m_buf.append(data, appendLen);
     m_pos += appendLen;
 
@@ -47,7 +48,7 @@ Parser::ParseState Parser::processPayload(char* data, int len)
     {
         for (int i = 0; i < outLen; i++)
         {
-            data[i] = data[i] ^ ((unsigned char*)(&m_mask))[m_maskPos % 4];
+            data[i] = data[i] ^ ((unsigned char*) (&m_mask))[m_maskPos % 4];
             m_maskPos++;
         }
     }
@@ -63,20 +64,23 @@ Parser::ParseState Parser::processPayload(char* data, int len)
 }
 
 void Parser::processPart(
-    char* data, int len, int neededLen, ParseState (Parser::*processFunc)(char* data))
+    char* data,
+    int len,
+    int neededLen,
+    ParseState (Parser::*processFunc)(char* data))
 {
     switch (bufferDataIfNeeded(data, len, neededLen))
     {
-    case BufferedState::needMore:
-        break;
-    case BufferedState::notNeeded:
-        m_state = (this->*processFunc)(data);
-        m_pos += neededLen;
-        break;
-    case BufferedState::enough:
-        m_state = (this->*processFunc)(m_buf.data());
-        m_buf.clear();
-        break;
+        case BufferedState::needMore:
+            break;
+        case BufferedState::notNeeded:
+            m_state = (this->*processFunc)(data);
+            m_pos += neededLen;
+            break;
+        case BufferedState::enough:
+            m_state = (this->*processFunc)(m_buf.data());
+            m_buf.clear();
+            break;
     }
 }
 
@@ -84,23 +88,15 @@ void Parser::parse(char* data, int len)
 {
     switch (m_state)
     {
-    case ParseState::readingHeaderFixedPart:
-        processPart(
-            data,
-            len,
-            kFixedHeaderLen,
-            &Parser::readHeaderFixed);
-        break;
-    case ParseState::readingHeaderExtension:
-        processPart(
-            data,
-            len,
-            m_headerExtLen,
-            &Parser::readHeaderExtension);
-        break;
-    case ParseState::readingPayload:
-        m_state = processPayload(data, len);
-        break;
+        case ParseState::readingHeaderFixedPart:
+            processPart(data, len, kFixedHeaderLen, &Parser::readHeaderFixed);
+            break;
+        case ParseState::readingHeaderExtension:
+            processPart(data, len, m_headerExtLen, &Parser::readHeaderExtension);
+            break;
+        case ParseState::readingPayload:
+            m_state = processPayload(data, len);
+            break;
     }
 }
 
@@ -123,7 +119,7 @@ void Parser::setRole(Role role)
 
 Parser::ParseState Parser::readHeaderFixed(char* data)
 {
-    m_opCode = (FrameType)(*data & 0x0F);
+    m_opCode = (FrameType) (*data & 0x0F);
     m_fin = (*data >> 7) & 0x01;
 
     if (m_firstFrame)
@@ -135,14 +131,14 @@ Parser::ParseState Parser::readHeaderFixed(char* data)
     data++;
     m_masked = (*data >> 7) & 0x01;
 
-    m_payloadLen = (unsigned char)(*data & (~0x80));
+    m_payloadLen = (unsigned char) (*data & (~0x80));
     m_headerExtLen = (m_payloadLen <= 125 ? 0 : m_payloadLen == 126 ? 2 : 8) + (m_masked ? 4 : 0);
     if (m_headerExtLen == 0 && m_payloadLen == 0)
     {
         handleFrame();
         return ParseState::readingHeaderFixedPart;
     }
-    return m_headerExtLen == 0 ? ParseState::readingPayload: ParseState::readingHeaderExtension;
+    return m_headerExtLen == 0 ? ParseState::readingPayload : ParseState::readingHeaderExtension;
 }
 
 void Parser::handleFrame()
@@ -165,7 +161,10 @@ void Parser::handleFrame()
         }
     }
 
-    m_frameHandler(m_firstFrame ? m_opCode : FrameType::continuation, std::move(m_frameBuffer), m_fin);
+    m_frameHandler(
+        m_firstFrame ? m_opCode : FrameType::continuation,
+        std::move(m_frameBuffer),
+        m_fin);
     m_frameBuffer.clear();
 
     if (m_firstFrame)
@@ -193,7 +192,7 @@ Parser::ParseState Parser::readHeaderExtension(char* data)
 
     if (m_masked)
     {
-        m_mask = *((unsigned int*)(data));
+        m_mask = *((unsigned int*) (data));
         m_maskPos = 0;
     }
 

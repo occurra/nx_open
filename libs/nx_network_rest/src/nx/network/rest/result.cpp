@@ -125,9 +125,9 @@ Result Result::missingParameter(const QString& name)
 
 Result Result::cantProcessRequest(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::cantProcessRequest, customMessage
-        ? *customMessage
-        : tr("Failed to process request.")};
+    return Result{
+        ErrorId::cantProcessRequest,
+        customMessage ? *customMessage : tr("Failed to process request.")};
 }
 
 Result Result::forbidden(std::optional<QString> customMessage)
@@ -139,7 +139,8 @@ Result Result::forbidden(std::optional<QString> customMessage)
 
 Result Result::conflict(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::conflict,
+    return Result{
+        ErrorId::conflict,
         customMessage ? *customMessage : tr("Conflict.", /*comment*/ "Generic HTTP response")};
 }
 
@@ -147,50 +148,57 @@ Result Result::badRequest(std::optional<QString> customMessage)
 {
     return Result{
         ErrorId::badRequest,
-        customMessage ? *customMessage : tr("Bad request.",/*comment*/ "Generic HTTP response")};
+        customMessage ? *customMessage : tr("Bad request.", /*comment*/ "Generic HTTP response")};
 }
 
 Result Result::notAllowed(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::notAllowed,
+    return Result{
+        ErrorId::notAllowed,
         customMessage ? *customMessage : tr("Not allowed.", /*comment*/ "Generic HTTP response")};
 }
 
 Result Result::notImplemented(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::notImplemented,
-        customMessage ? *customMessage : tr("Not implemented.",/*comment*/ "Generic HTTP response")};
+    return Result{
+        ErrorId::notImplemented,
+        customMessage ? *customMessage
+                      : tr("Not implemented.", /*comment*/ "Generic HTTP response")};
 }
 
 Result Result::notFound(std::optional<QString> customMessage)
 {
     return Result{
         ErrorId::notFound,
-        customMessage ? *customMessage : tr("Not found.",/*comment*/ "Generic HTTP response")};
+        customMessage ? *customMessage : tr("Not found.", /*comment*/ "Generic HTTP response")};
 }
 
 Result Result::internalServerError(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::internalServerError, customMessage
-        ? *customMessage
-        : tr("Internal error.")};
+    return Result{
+        ErrorId::internalServerError,
+        customMessage ? *customMessage : tr("Internal error.")};
 }
 
 Result Result::unsupportedMediaType(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::unsupportedMediaType, customMessage
-        ? *customMessage
-        : tr("Unsupported media type.")};
+    return Result{
+        ErrorId::unsupportedMediaType,
+        customMessage ? *customMessage : tr("Unsupported media type.")};
 }
 
 Result Result::serviceUnavailable(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::serviceUnavailable, customMessage ? *customMessage : tr("Service unavailable.")};
+    return Result{
+        ErrorId::serviceUnavailable,
+        customMessage ? *customMessage : tr("Service unavailable.")};
 }
 
 Result Result::serviceUnauthorized(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::serviceUnauthorized, customMessage ? *customMessage : tr("Service unauthorized.")};
+    return Result{
+        ErrorId::serviceUnauthorized,
+        customMessage ? *customMessage : tr("Service unauthorized.")};
 }
 
 Result Result::unauthorized(std::optional<QString> customMessage)
@@ -200,31 +208,35 @@ Result Result::unauthorized(std::optional<QString> customMessage)
 
 Result Result::sessionExpired(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::sessionExpired, customMessage ? *customMessage : tr("Session expired.")};
+    return Result{
+        ErrorId::sessionExpired,
+        customMessage ? *customMessage : tr("Session expired.")};
 }
 
 Result Result::sessionRequired(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::sessionRequired,
+    return Result{
+        ErrorId::sessionRequired,
         customMessage ? *customMessage : tr("Session authorization required.")};
 }
 
 Result Result::sessionTruncated(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::sessionTruncated,
+    return Result{
+        ErrorId::sessionTruncated,
         customMessage ? *customMessage : tr("Session is too old according to the Site config.")};
 }
 
 Result Result::gone(std::optional<QString> customMessage)
 {
-    return Result{ErrorId::gone,
+    return Result{
+        ErrorId::gone,
         customMessage ? *customMessage : tr("Resource no longer present on server.")};
 }
 
 Result Result::insufficientStorage(std::optional<QString> customMessage)
 {
-    return {ErrorId::insufficientStorage,
-        customMessage.value_or(tr("Insufficient storage."))};
+    return {ErrorId::insufficientStorage, customMessage.value_or(tr("Insufficient storage."))};
 }
 
 void serialize(QnJsonContext* /*context*/, const Result& value, QJsonValue* outTarget)
@@ -287,15 +299,17 @@ bool deserialize(QnJsonContext* context, QnConversionWrapper<QJsonValue> value, 
 }
 
 nx::reflect::DeserializationResult deserialize(
-    const nx::reflect::json::DeserializationContext& context, Result* data)
+    const nx::reflect::json::DeserializationContext& context,
+    Result* data)
 {
     return nx::reflect::json_detail::Deserializer{
-        nx::reflect::json::DeserializationContext{context.value}, data}(
+        nx::reflect::json::DeserializationContext{context.value},
+        data}(
         nx::reflect::WrappedMemberVariableField("errorId", &Result::errorId),
         nx::reflect::WrappedMemberVariableField("errorString", &Result::errorString));
 }
 
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(Result, (ubjson)(xml)(csv_record), Result_Fields)
+QN_FUSION_ADAPT_STRUCT_FUNCTIONS(Result, (ubjson) (xml) (csv_record), Result_Fields)
 
 JsonResult::JsonResult(const Result& result):
     Result(result)
@@ -325,7 +339,9 @@ void serialize(QnJsonContext* context, const JsonResult& value, QJsonValue* outT
 }
 
 bool deserialize(
-    QnJsonContext* context, QnConversionWrapper<QJsonValue> value, JsonResult* outTarget)
+    QnJsonContext* context,
+    QnConversionWrapper<QJsonValue> value,
+    JsonResult* outTarget)
 {
     if (!deserialize(context, value, (Result*) outTarget))
         return false;

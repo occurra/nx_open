@@ -12,8 +12,7 @@ namespace bstream {
  * Passes input data to specified function.
  */
 template<class Func>
-class CustomOutputStream:
-    public AbstractByteStreamFilter
+class CustomOutputStream: public AbstractByteStreamFilter
 {
 public:
     CustomOutputStream(const Func& func):
@@ -44,8 +43,7 @@ std::shared_ptr<CustomOutputStream<Func>> makeCustomOutputStream(Func func)
  * Calls specified func and passes all input data to the next filter.
  */
 template<class Func>
-class FilterWithFunc:
-    public AbstractByteStreamFilter
+class FilterWithFunc: public AbstractByteStreamFilter
 {
 public:
     FilterWithFunc(const Func& func):
@@ -59,10 +57,7 @@ public:
         return nextFilter()->processData(data);
     }
 
-    virtual size_t flush()
-    {
-        return nextFilter()->flush();
-    }
+    virtual size_t flush() { return nextFilter()->flush(); }
 
 private:
     Func m_func;
@@ -89,7 +84,10 @@ nx::Buffer runBytesThroughFilter(const nx::Buffer& data)
     nx::Buffer result;
 
     auto saveResultFilter = makeCustomOutputStream(
-        [&result](const auto& data) { result += data; });
+        [&result](const auto& data)
+        {
+            result += data;
+        });
 
     Filter filter(saveResultFilter);
     filter.processData(data);

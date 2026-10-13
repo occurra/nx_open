@@ -5,7 +5,7 @@
 #include <time.h>
 
 #if defined(__clang__) && defined(_MSC_VER)
-#include <comdef.h>
+    #include <comdef.h>
 #endif
 
 #include <boost/algorithm/string.hpp>
@@ -33,48 +33,48 @@ namespace nx {
 
 QString demangleTypeName(const char* type)
 {
-    #if defined(_MSC_VER)
-        static constexpr const char* kTypePrefixes[] = {"struct ", "class "};
-        static const size_t kTypePrefixesSize[] = {
-            strlen(kTypePrefixes[0]),
-            strlen(kTypePrefixes[1]),
-        };
+#if defined(_MSC_VER)
+    static constexpr const char* kTypePrefixes[] = {"struct ", "class "};
+    static const size_t kTypePrefixesSize[] = {
+        strlen(kTypePrefixes[0]),
+        strlen(kTypePrefixes[1]),
+    };
 
-        QString result;
-        result.reserve(strlen(type)); //< Result is not shorter than the input.
+    QString result;
+    result.reserve(strlen(type)); //< Result is not shorter than the input.
 
-        const char* p = type;
-        for (int i = 0; i < (int) (sizeof(kTypePrefixes) / sizeof(kTypePrefixes[0])); ++i)
+    const char* p = type;
+    for (int i = 0; i < (int) (sizeof(kTypePrefixes) / sizeof(kTypePrefixes[0])); ++i)
+    {
+        if (strncmp(type, kTypePrefixes[i], kTypePrefixesSize[i]) == 0)
         {
-            if (strncmp(type, kTypePrefixes[i], kTypePrefixesSize[i]) == 0)
-            {
-                p += kTypePrefixesSize[i];
-                break;
-            }
+            p += kTypePrefixesSize[i];
+            break;
         }
+    }
 
-        while (*p != '\0')
+    while (*p != '\0')
+    {
+        const char c = *p;
+        result += c;
+        if (c == '<' || c == ' ' || c == ',')
         {
-            const char c = *p;
-            result += c;
-            if (c == '<' || c == ' ' || c == ',')
+            for (int i = 0; i < (int) (sizeof(kTypePrefixes) / sizeof(kTypePrefixes[0])); ++i)
             {
-                for (int i = 0; i < (int) (sizeof(kTypePrefixes) / sizeof(kTypePrefixes[0])); ++i)
+                if (strncmp(p + 1, kTypePrefixes[i], kTypePrefixesSize[i]) == 0)
                 {
-                     if (strncmp(p + 1, kTypePrefixes[i], kTypePrefixesSize[i]) == 0)
-                     {
-                         p += kTypePrefixesSize[i];
-                         break;
-                     }
+                    p += kTypePrefixesSize[i];
+                    break;
                 }
             }
-            ++p;
         }
+        ++p;
+    }
 
-        return result;
-    #else
-        return QString::fromStdString(boost::core::demangle(type));
-    #endif
+    return result;
+#else
+    return QString::fromStdString(boost::core::demangle(type));
+#endif
 }
 
 std::string unwrapNestedErrors(const std::exception& e, std::string whats)
@@ -89,7 +89,7 @@ std::string unwrapNestedErrors(const std::exception& e, std::string whats)
     }
     catch (const std::exception& e)
     {
-       return unwrapNestedErrors(e, std::move(whats));
+        return unwrapNestedErrors(e, std::move(whats));
     }
     return whats;
 }
@@ -98,26 +98,26 @@ namespace detail {
 
 QString toString(const std::type_info& value)
 {
-    #if defined NX_UTILS_TO_STRING_CACHE
-        static QReadWriteLock mutex;
-        static std::unordered_map<std::type_index, QString> cache;
+#if defined NX_UTILS_TO_STRING_CACHE
+    static QReadWriteLock mutex;
+    static std::unordered_map<std::type_index, QString> cache;
 
-        {
-            QReadLocker lock(&mutex);
-            const auto it = cache.find(value);
-            if (it != cache.end())
-                return it->second;
-        }
+    {
+        QReadLocker lock(&mutex);
+        const auto it = cache.find(value);
+        if (it != cache.end())
+            return it->second;
+    }
 
-        QWriteLocker lock(&mutex);
-        auto& s = cache[value];
-        if (s.isEmpty())
-            s = demangleTypeName(value.name());
+    QWriteLocker lock(&mutex);
+    auto& s = cache[value];
+    if (s.isEmpty())
+        s = demangleTypeName(value.name());
 
-        return s;
-    #else
-        return demangleTypeName(value.name());
-    #endif
+    return s;
+#else
+    return demangleTypeName(value.name());
+#endif
 }
 
 QString toString(char value)
@@ -251,7 +251,7 @@ QString toString(const std::chrono::microseconds& value)
     return QString(QLatin1String("%1us")).arg(value.count());
 }
 
-QString toString(const std::chrono::nanoseconds &value)
+QString toString(const std::chrono::nanoseconds& value)
 {
     if (value.count() % 1000 == 0)
         return toString(std::chrono::duration_cast<std::chrono::microseconds>(value));
@@ -264,7 +264,8 @@ QString toString(const std::chrono::system_clock::time_point& value)
     using namespace std::chrono;
 
     return QDateTime::fromMSecsSinceEpoch(
-        duration_cast<milliseconds>(value.time_since_epoch()).count()).toString(Qt::ISODate);
+               duration_cast<milliseconds>(value.time_since_epoch()).count())
+        .toString(Qt::ISODate);
 }
 
 QString toString(const std::chrono::steady_clock::time_point& value)
@@ -293,7 +294,9 @@ QString pointerTypeName(const void* /*value*/)
  * @param outScopeAfterEndPos Set to -1 if the scope is global (the scope string is empty).
  */
 static void findFunctionScope(
-    const std::string& demangledType, int* outScopeStartPos, int* outScopeAfterEndPos)
+    const std::string& demangledType,
+    int* outScopeStartPos,
+    int* outScopeAfterEndPos)
 {
     // The scope ends before the last "::" which appears before the first "(" outside "<...>"
     // (this "(" denotes the start of the function arguments), or, for lambdas on MSVC, before the
@@ -351,30 +354,31 @@ static void findFunctionScope(
  *     not included.
  */
 std::string scopeOfFunction(
-    const std::type_info& scopeTagTypeInfo, [[maybe_unused]] const char* functionMacro)
+    const std::type_info& scopeTagTypeInfo,
+    [[maybe_unused]] const char* functionMacro)
 {
     std::string demangledType;
-    #if defined(_MSC_VER)
-        if (boost::ends_with(functionMacro, "::operator ()")) //< MSVC lambda.
-        {
-            // On MSVC, type_info::name() for types defined in a lambda does not contain the scope
-            // of the lambda, thus, we have to use __FUNCTION__ instead.
-            demangledType = functionMacro;
-        }
-        else
-        {
-            // Convert the type from the form of type_info::name() to the form of __FUNCTION__.
-            demangledType = scopeTagTypeInfo.name();
-            boost::replace_all(demangledType, "* __ptr64", "*");
-        }
+#if defined(_MSC_VER)
+    if (boost::ends_with(functionMacro, "::operator ()")) //< MSVC lambda.
+    {
+        // On MSVC, type_info::name() for types defined in a lambda does not contain the scope
+        // of the lambda, thus, we have to use __FUNCTION__ instead.
+        demangledType = functionMacro;
+    }
+    else
+    {
+        // Convert the type from the form of type_info::name() to the form of __FUNCTION__.
+        demangledType = scopeTagTypeInfo.name();
+        boost::replace_all(demangledType, "* __ptr64", "*");
+    }
 
-        // Remove unnamed namespaces from the scope.
-        boost::replace_all(demangledType, "`anonymous namespace'::", "");
-    #else
-        demangledType = boost::core::demangle(scopeTagTypeInfo.name());
-        // Remove unnamed namespaces from the scope.
-        boost::replace_all(demangledType, "(anonymous namespace)::", "");
-    #endif
+    // Remove unnamed namespaces from the scope.
+    boost::replace_all(demangledType, "`anonymous namespace'::", "");
+#else
+    demangledType = boost::core::demangle(scopeTagTypeInfo.name());
+    // Remove unnamed namespaces from the scope.
+    boost::replace_all(demangledType, "(anonymous namespace)::", "");
+#endif
 
     int scopeAfterEndPos = -1; //< Used to trim the function name, keeping the scope.
     int scopeStartPos = 0;

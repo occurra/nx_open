@@ -35,7 +35,8 @@ enum class TaskType
 };
 
 /**
- * Used as userdata in PollSet. One AioEventHandlingData object corresponds to pair (socket, eventType).
+ * Used as userdata in PollSet. One AioEventHandlingData object corresponds to pair (socket,
+ * eventType).
  */
 class AioEventHandlingData
 {
@@ -55,7 +56,8 @@ public:
     }
 };
 
-// TODO: #akolesnikov It makes sense to split this class to multiple ones containing only desired data.
+// TODO: #akolesnikov It makes sense to split this class to multiple ones containing only desired
+// data.
 class SocketAddRemoveTask
 {
 public:
@@ -82,8 +84,7 @@ public:
         AIOEventHandler* const _eventHandler,
         std::chrono::milliseconds _timeout = std::chrono::milliseconds::zero(),
         std::atomic<int>* const _taskCompletionEvent = nullptr,
-        nx::MoveOnlyFunc<void()> _taskCompletionHandler = nx::MoveOnlyFunc<void()>())
-        :
+        nx::MoveOnlyFunc<void()> _taskCompletionHandler = nx::MoveOnlyFunc<void()>()):
         type(_type),
         socket(_socket),
         socketSequence(_socket ? _socket->impl()->socketSequence : 0),
@@ -100,14 +101,10 @@ public:
     SocketAddRemoveTask& operator=(SocketAddRemoveTask&&) = default;
 };
 
-class PostAsyncCallTask:
-    public SocketAddRemoveTask
+class PostAsyncCallTask: public SocketAddRemoveTask
 {
 public:
-    PostAsyncCallTask(
-        Pollable* const _socket,
-        nx::MoveOnlyFunc<void()> _postHandler)
-        :
+    PostAsyncCallTask(Pollable* const _socket, nx::MoveOnlyFunc<void()> _postHandler):
         SocketAddRemoveTask(
             TaskType::tCallFunc,
             _socket,
@@ -122,14 +119,12 @@ public:
     }
 };
 
-class CancelPostedCallsTask:
-    public SocketAddRemoveTask
+class CancelPostedCallsTask: public SocketAddRemoveTask
 {
 public:
     CancelPostedCallsTask(
         SocketSequence socketSequence,
-        std::atomic<int>* const _taskCompletionEvent = nullptr)
-        :
+        std::atomic<int>* const _taskCompletionEvent = nullptr):
         SocketAddRemoveTask(
             TaskType::tCancelPostedCalls,
             nullptr,
@@ -154,8 +149,7 @@ public:
     PeriodicTaskData(
         const std::shared_ptr<AioEventHandlingData>& _data,
         Pollable* _socket,
-        aio::EventType _eventType)
-        :
+        aio::EventType _eventType):
         data(_data),
         socket(_socket),
         eventType(_eventType)
@@ -168,7 +162,8 @@ public:
 /**
  * This class used to be AioThread private impl class,
  * so it contains different and unrelated data.
- * TODO: #akolesnikov Should split this class to multiple clear classes with a single responsibility.
+ * TODO: #akolesnikov Should split this class to multiple clear classes with a single
+ * responsibility.
  */
 class NX_NETWORK_API AioTaskQueue
 {
@@ -183,10 +178,7 @@ public:
 
     void addTask(SocketAddRemoveTask task);
 
-    bool taskExists(
-        Pollable* const sock,
-        aio::EventType eventType,
-        TaskType taskType) const;
+    bool taskExists(Pollable* const sock, aio::EventType eventType, TaskType taskType) const;
 
     /**
      * This method introduced for optimization: if we fast call startMonitoring then removeSocket
@@ -231,14 +223,12 @@ public:
     /**
      * Install a callback to be executed right before invoking a function.
      */
-    void setAboutToInvoke(
-        nx::MoveOnlyFunc<void(const char* /*functionType*/)> handler);
+    void setAboutToInvoke(nx::MoveOnlyFunc<void(const char* /*functionType*/)> handler);
 
     /**
      * Install a callback to be executed right after invoking a function.
      */
-    void setDoneInvoking(
-        nx::MoveOnlyFunc<void(std::chrono::microseconds /*average*/)> handler);
+    void setDoneInvoking(nx::MoveOnlyFunc<void(std::chrono::microseconds /*average*/)> handler);
 
     //---------------------------------------------------------------------------------------------
     // Methods that are called within the corresponding AIO thread only.
@@ -266,8 +256,7 @@ public:
      * Elements may contain functor which may contain aio objects (sockets) which will be removed
      * when removing functor. This may lead to a deadlock if we not release lock.
      */
-    std::vector<SocketAddRemoveTask> cancelPostedCalls(
-        SocketSequence socketSequence);
+    std::vector<SocketAddRemoveTask> cancelPostedCalls(SocketSequence socketSequence);
 
     std::size_t postedCallCount() const;
 
@@ -276,7 +265,8 @@ public:
     //---------------------------------------------------------------------------------------------
 
     /**
-     * Used as a clock for periodic events. Function introduced since implementation can be changed.
+     * Used as a clock for periodic events. Function introduced since implementation can be
+     * changed.
      * @return Milliseconds since some unspecified system event.
      */
     static qint64 getMonotonicTime();
@@ -292,17 +282,15 @@ private:
     // TODO: #akolesnikov Get rid of map here to avoid undesired allocations.
     std::multimap<qint64, PeriodicTaskData> m_periodicTasksByClock;
     mutable nx::Mutex m_mutex;
-    nx::utils::math::AbnormalValueDetector<
-    std::chrono::microseconds, int, const char*> m_abnormalProcessingTimeDetector;
+    nx::utils::math::AbnormalValueDetector<std::chrono::microseconds, int, const char*>
+        m_abnormalProcessingTimeDetector;
     std::atomic<std::size_t> m_newReadMonitorTaskCount = 0;
     std::atomic<std::size_t> m_newWriteMonitorTaskCount = 0;
     std::atomic<std::chrono::microseconds> m_averageExecutionTimePerLastPeriod;
     nx::MoveOnlyFunc<void(const char* /*functionType*/)> m_aboutToInvokeHandler;
     nx::MoveOnlyFunc<void(std::chrono::microseconds /*average*/)> m_doneInvokingHandler;
 
-    void addTask(
-        const nx::Locker<nx::Mutex>&,
-        SocketAddRemoveTask task);
+    void addTask(const nx::Locker<nx::Mutex>&, SocketAddRemoveTask task);
 
     bool taskExists(
         const nx::Locker<nx::Mutex>&,
@@ -323,21 +311,13 @@ private:
         AIOEventHandler* eventHandler,
         std::chrono::milliseconds newTimeout);
 
-    void processAddTask(
-        const nx::Locker<nx::Mutex>& lock,
-        SocketAddRemoveTask& task);
+    void processAddTask(const nx::Locker<nx::Mutex>& lock, SocketAddRemoveTask& task);
 
-    void processChangeTimeoutTask(
-        const nx::Locker<nx::Mutex>& lock,
-        SocketAddRemoveTask& task);
+    void processChangeTimeoutTask(const nx::Locker<nx::Mutex>& lock, SocketAddRemoveTask& task);
 
-    void processRemoveTask(
-        const nx::Locker<nx::Mutex>& lock,
-        SocketAddRemoveTask& task);
+    void processRemoveTask(const nx::Locker<nx::Mutex>& lock, SocketAddRemoveTask& task);
 
-    void processCallFuncTask(
-        const nx::Locker<nx::Mutex>& lock,
-        SocketAddRemoveTask& task);
+    void processCallFuncTask(const nx::Locker<nx::Mutex>& lock, SocketAddRemoveTask& task);
 
     std::vector<SocketAddRemoveTask> processCancelPostedCallTask(
         const nx::Locker<nx::Mutex>& lock,

@@ -18,10 +18,7 @@ public:
     nx::Buffer msgBody;
     bool chunked = false;
 
-    TestMessageData(
-        nx::Buffer headers,
-        nx::Buffer msgBody)
-        :
+    TestMessageData(nx::Buffer headers, nx::Buffer msgBody):
         headers(std::move(headers)),
         msgBody(std::move(msgBody))
     {
@@ -29,17 +26,12 @@ public:
     }
 };
 
-class TestRequestData:
-    public TestMessageData
+class TestRequestData: public TestMessageData
 {
 public:
     Method method;
 
-    TestRequestData(
-        std::string_view method,
-        nx::Buffer headers,
-        nx::Buffer msgBody)
-        :
+    TestRequestData(std::string_view method, nx::Buffer headers, nx::Buffer msgBody):
         TestMessageData(std::move(headers), std::move(msgBody)),
         method(method)
     {
@@ -48,17 +40,12 @@ public:
 
 //-------------------------------------------------------------------------------------------------
 
-class TestResponseData:
-    public TestMessageData
+class TestResponseData: public TestMessageData
 {
 public:
     int statusCode;
 
-    TestResponseData(
-        int statusCode,
-        nx::Buffer headers,
-        nx::Buffer msgBody)
-        :
+    TestResponseData(int statusCode, nx::Buffer headers, nx::Buffer msgBody):
         TestMessageData(std::move(headers), std::move(msgBody)),
         statusCode(statusCode)
     {
@@ -67,8 +54,7 @@ public:
 
 //-------------------------------------------------------------------------------------------------
 
-class HttpStreamReader:
-    public ::testing::Test
+class HttpStreamReader: public ::testing::Test
 {
 protected:
     struct RequestDescriptor
@@ -162,15 +148,9 @@ protected:
         }
     }
 
-    void assertParseSucceeds()
-    {
-        ASSERT_TRUE(m_parseResult);
-    }
+    void assertParseSucceeds() { ASSERT_TRUE(m_parseResult); }
 
-    void assertParsedMessageStreamMathesInput()
-    {
-        ASSERT_EQ(m_inputMessages, m_outputMessages);
-    }
+    void assertParsedMessageStreamMathesInput() { ASSERT_EQ(m_inputMessages, m_outputMessages); }
 
     nx::Buffer serializeMessages(const std::vector<TestRequestData>& messages)
     {
@@ -199,7 +179,8 @@ protected:
         int requestNumber = 0;
         for (const auto& msgData: messages)
         {
-            buf += "HTTP/1.1 " + std::to_string(msgData.statusCode) + " " + StatusCode::toString(msgData.statusCode) + "\r\n";
+            buf += "HTTP/1.1 " + std::to_string(msgData.statusCode) + " "
+                + StatusCode::toString(msgData.statusCode) + "\r\n";
             buf += msgData.headers;
             buf += "Test-Request-Number: " + std::to_string(requestNumber++) + "\r\n";
             if (!msgData.msgBody.empty() && !msgData.chunked)
@@ -267,7 +248,7 @@ TEST_F(HttpStreamReader, parsingRequest)
     for (std::size_t dataStep = 1; dataStep < 16 * 1024; dataStep <<= 1)
     {
         http::HttpStreamReader streamReader;
-        for (std::size_t pos = 0; pos < sourceDataStream.size(); )
+        for (std::size_t pos = 0; pos < sourceDataStream.size();)
         {
             size_t bytesProcessed = 0;
             ASSERT_TRUE(streamReader.parseBytes(
@@ -275,12 +256,12 @@ TEST_F(HttpStreamReader, parsingRequest)
                     sourceDataStream.data() + pos,
                     std::min(dataStep, sourceDataStream.size() - pos)),
                 &bytesProcessed));
-            //ASSERT_TRUE( bytesProcessed > 0 );
+            // ASSERT_TRUE( bytesProcessed > 0 );
             pos += bytesProcessed;
             ASSERT_TRUE(bytesProcessed != 0);
         }
 
-        //TODO #akolesnikov validate parsed request
+        // TODO #akolesnikov validate parsed request
         ASSERT_EQ(streamReader.state(), http::HttpStreamReader::ReadState::messageDone);
         ASSERT_EQ(streamReader.message().type, nx::network::http::MessageType::request);
         ASSERT_TRUE(streamReader.message().request->messageBody.empty());
@@ -289,15 +270,14 @@ TEST_F(HttpStreamReader, parsingRequest)
 
 TEST_F(HttpStreamReader, parsingInvalidHeaderResponse)
 {
-    const char invalidHeaderResponse[] =
-        "HTTP/1.1 200 OK\r\n"
-        "Date: Wed, 15 Nov 1995 06:25:24 GMT\r\n"
-        "Last-Modified: Wed, 15 Nov 1995 04:58:08 GMT\r\n"
-        "invalid header\r\n"
-        "Content-Type: application/text\r\n"
-        "Content-Length: 4\r\n"
-        "\r\n"
-        "test";
+    const char invalidHeaderResponse[] = "HTTP/1.1 200 OK\r\n"
+                                         "Date: Wed, 15 Nov 1995 06:25:24 GMT\r\n"
+                                         "Last-Modified: Wed, 15 Nov 1995 04:58:08 GMT\r\n"
+                                         "invalid header\r\n"
+                                         "Content-Type: application/text\r\n"
+                                         "Content-Length: 4\r\n"
+                                         "\r\n"
+                                         "test";
 
     const auto invalidHeaderData =
         QByteArray::fromRawData(invalidHeaderResponse, sizeof(invalidHeaderResponse) - 1);
@@ -320,7 +300,7 @@ TEST_F(HttpStreamReader, parsingInvalidHeaderResponse)
 
 TEST_F(HttpStreamReader, MultipleMessages)
 {
-    //vector<pair<message, message body>>
+    // vector<pair<message, message body>>
     std::vector<TestResponseData> messagesToParse;
 
     messagesToParse.push_back(TestResponseData(
@@ -330,8 +310,7 @@ TEST_F(HttpStreamReader, MultipleMessages)
         "Last-Modified: Wed, 15 Nov 1995 04:58:08 GMT\r\n"
         "Content-Type: application/text\r\n",
 
-        nx::utils::buildString<nx::Buffer>("1", std::string(400, 'x'), "2")
-    ));
+        nx::utils::buildString<nx::Buffer>("1", std::string(400, 'x'), "2")));
 
     messagesToParse.push_back(TestResponseData(
         200,
@@ -339,8 +318,7 @@ TEST_F(HttpStreamReader, MultipleMessages)
         "Last-Modified: Wed, 15 Nov 1995 04:58:08 GMT\r\n"
         "Content-Type: application/text\r\n",
 
-        nx::utils::buildString<nx::Buffer>("3", std::string(200, 'h'), "4")
-    ));
+        nx::utils::buildString<nx::Buffer>("3", std::string(200, 'h'), "4")));
 
     messagesToParse.push_back(TestResponseData(
         451,
@@ -349,8 +327,7 @@ TEST_F(HttpStreamReader, MultipleMessages)
         "Content-Type: application/text\r\n"
         "Content-Length: 0\r\n",
 
-        ""
-    ));
+        ""));
 
     messagesToParse.push_back(TestResponseData(
         200,
@@ -358,80 +335,7 @@ TEST_F(HttpStreamReader, MultipleMessages)
         "Last-Modified: Wed, 15 Nov 1995 04:58:08 GMT\r\n"
         "Content-Type: application/text\r\n",
 
-        nx::utils::buildString<nx::Buffer>("5", std::string(120, 'h'), "6")
-    ));
-
-
-    messagesToParse.push_back(TestResponseData(
-        200,
-        "guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
-        "Content-Type: application/octet-stream\r\n"
-        "runtime-guid: {cff70ae1-01af-4e84-ab4d-ed8a28fab3bb}\r\n"
-        "Content-Length: 0\r\n"
-        "NX-EC-SYSTEM-NAME: ak_ec_2.3\r\n"
-        "NX-EC-PROTO-VERSION: 1008\r\n"
-        "system-identity-time: 0\r\n"
-        "Access-Control-Allow-Origin: *\r\n",
-
-        ""
-    ));
-
-    messagesToParse.push_back(TestResponseData(
-        200,
-        "guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
-        "Content-Type: application/octet-stream\r\n"
-        "runtime-guid: {cff70ae1-01af-4e84-ab4d-ed8a28fab3bb}\r\n"
-        "NX-EC-SYSTEM-NAME: ak_ec_2.3\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "NX-EC-PROTO-VERSION: 1008\r\n"
-        "system-identity-time: 0\r\n"
-        "Access-Control-Allow-Origin: *\r\n",
-
-        "0000020\r\n"
-        "1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2"
-        "\r\n"
-        "0000040\r\n"
-        "3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx4"
-        "5xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx6"
-        "\r\n"
-        "0000060\r\n"
-        "7xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx8"
-        "9xxxxxxxxxxxxxxxxxxxxxxxxxxxxx10"
-        "11xxxxxxxxxxxxxxxxxxxxxxxxxxxx12"
-        "\r\n"
-        "0\r\n"
-        "\r\n"
-    ));
-
-    messagesToParse.push_back(TestResponseData(
-        401,
-        "Content-Type: text/html\r\n"
-        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
-        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2a378\"\r\n"
-        "Access-Control-Allow-Origin: *\r\n",
-
-        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")
-    ));
-
-    messagesToParse.push_back(TestResponseData(
-        401,
-        "Content-Type: text/html\r\n"
-        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
-        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2b700\"\r\n"
-        "Access-Control-Allow-Origin: *\r\n",
-
-        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")
-    ));
-
-    messagesToParse.push_back(TestResponseData(
-        401,
-        "Content-Type: text/html\r\n"
-        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
-        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2ca88\"\r\n"
-        "Access-Control-Allow-Origin: *\r\n",
-
-        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")
-    ));
+        nx::utils::buildString<nx::Buffer>("5", std::string(120, 'h'), "6")));
 
     messagesToParse.push_back(TestResponseData(
         200,
@@ -457,6 +361,71 @@ TEST_F(HttpStreamReader, MultipleMessages)
         "system-identity-time: 0\r\n"
         "Access-Control-Allow-Origin: *\r\n",
 
+        "0000020\r\n"
+        "1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2"
+        "\r\n"
+        "0000040\r\n"
+        "3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx4"
+        "5xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx6"
+        "\r\n"
+        "0000060\r\n"
+        "7xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx8"
+        "9xxxxxxxxxxxxxxxxxxxxxxxxxxxxx10"
+        "11xxxxxxxxxxxxxxxxxxxxxxxxxxxx12"
+        "\r\n"
+        "0\r\n"
+        "\r\n"));
+
+    messagesToParse.push_back(TestResponseData(
+        401,
+        "Content-Type: text/html\r\n"
+        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
+        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2a378\"\r\n"
+        "Access-Control-Allow-Origin: *\r\n",
+
+        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")));
+
+    messagesToParse.push_back(TestResponseData(
+        401,
+        "Content-Type: text/html\r\n"
+        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
+        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2b700\"\r\n"
+        "Access-Control-Allow-Origin: *\r\n",
+
+        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")));
+
+    messagesToParse.push_back(TestResponseData(
+        401,
+        "Content-Type: text/html\r\n"
+        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
+        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2ca88\"\r\n"
+        "Access-Control-Allow-Origin: *\r\n",
+
+        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")));
+
+    messagesToParse.push_back(TestResponseData(
+        200,
+        "guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
+        "Content-Type: application/octet-stream\r\n"
+        "runtime-guid: {cff70ae1-01af-4e84-ab4d-ed8a28fab3bb}\r\n"
+        "Content-Length: 0\r\n"
+        "NX-EC-SYSTEM-NAME: ak_ec_2.3\r\n"
+        "NX-EC-PROTO-VERSION: 1008\r\n"
+        "system-identity-time: 0\r\n"
+        "Access-Control-Allow-Origin: *\r\n",
+
+        ""));
+
+    messagesToParse.push_back(TestResponseData(
+        200,
+        "guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
+        "Content-Type: application/octet-stream\r\n"
+        "runtime-guid: {cff70ae1-01af-4e84-ab4d-ed8a28fab3bb}\r\n"
+        "NX-EC-SYSTEM-NAME: ak_ec_2.3\r\n"
+        "Transfer-Encoding: chunked\r\n"
+        "NX-EC-PROTO-VERSION: 1008\r\n"
+        "system-identity-time: 0\r\n"
+        "Access-Control-Allow-Origin: *\r\n",
 
         "0000020;time_sync_6248_1422706690167_17640391744334\r\n"
         "1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2"
@@ -471,8 +440,7 @@ TEST_F(HttpStreamReader, MultipleMessages)
         "11xxxxxxxxxxxxxxxxxxxxxxxxxxxx12"
         "\r\n"
         "0\r\n"
-        "\r\n"
-    ));
+        "\r\n"));
 
     nx::Buffer sourceDataStream = serializeMessages(messagesToParse);
 
@@ -481,14 +449,17 @@ TEST_F(HttpStreamReader, MultipleMessages)
         int messageNumber = 0;
 
         parseBufWithFixedReadStep(
-            sourceDataStream, dataStep,
+            sourceDataStream,
+            dataStep,
             [&messageNumber, &messagesToParse](auto& reader, const auto& msg)
             {
                 ASSERT_EQ(messageNumber, reader.currentMessageNumber());
                 ASSERT_EQ(nx::network::http::MessageType::response, msg.type);
                 ASSERT_NE(nullptr, msg.response);
                 ASSERT_EQ("HTTP", msg.response->statusLine.version.protocol);
-                ASSERT_EQ(messagesToParse[messageNumber].statusCode, msg.response->statusLine.statusCode);
+                ASSERT_EQ(
+                    messagesToParse[messageNumber].statusCode,
+                    msg.response->statusLine.statusCode);
 
                 const auto msgBody = reader.fetchMessageBody();
                 if (!messagesToParse[messageNumber].chunked)
@@ -512,7 +483,7 @@ TEST_F(HttpStreamReader, MultipleMessages)
 
 TEST_F(HttpStreamReader, MultipleRequests)
 {
-    //vector<pair<message, message body>>
+    // vector<pair<message, message body>>
     std::vector<TestRequestData> messagesToParse;
 
     messagesToParse.push_back(TestRequestData(
@@ -521,8 +492,7 @@ TEST_F(HttpStreamReader, MultipleRequests)
         "Last-Modified: Wed, 15 Nov 1995 04:58:08 GMT\r\n"
         "Content-Type: application/text\r\n",
 
-        nx::utils::buildString<nx::Buffer>("1", std::string(420, 'x'), "2")
-    ));
+        nx::utils::buildString<nx::Buffer>("1", std::string(420, 'x'), "2")));
 
     messagesToParse.push_back(TestRequestData(
         nx::network::http::Method::post,
@@ -531,8 +501,7 @@ TEST_F(HttpStreamReader, MultipleRequests)
         "Content-Type: application/text\r\n"
         "Content-Length: 0\r\n",
 
-        ""
-    ));
+        ""));
 
     messagesToParse.push_back(TestRequestData(
         nx::network::http::Method::post,
@@ -540,8 +509,7 @@ TEST_F(HttpStreamReader, MultipleRequests)
         "Last-Modified: Wed, 15 Nov 1995 04:58:08 GMT\r\n"
         "Content-Type: application/text\r\n",
 
-        nx::utils::buildString<nx::Buffer>("3", std::string(200, 'h'), "4")
-    ));
+        nx::utils::buildString<nx::Buffer>("3", std::string(200, 'h'), "4")));
 
     messagesToParse.push_back(TestRequestData(
         nx::network::http::Method::post,
@@ -550,8 +518,7 @@ TEST_F(HttpStreamReader, MultipleRequests)
         "Content-Type: application/text\r\n"
         "Content-Length: 0\r\n",
 
-        ""
-    ));
+        ""));
 
     messagesToParse.push_back(TestRequestData(
         nx::network::http::Method::post,
@@ -559,79 +526,7 @@ TEST_F(HttpStreamReader, MultipleRequests)
         "Last-Modified: Wed, 15 Nov 1995 04:58:08 GMT\r\n"
         "Content-Type: application/text\r\n",
 
-        nx::utils::buildString<nx::Buffer>("5", std::string(120, 'h'), "6")
-    ));
-
-    messagesToParse.push_back(TestRequestData(
-        nx::network::http::Method::post,
-        "guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
-        "Content-Type: application/octet-stream\r\n"
-        "runtime-guid: {cff70ae1-01af-4e84-ab4d-ed8a28fab3bb}\r\n"
-        "Content-Length: 0\r\n"
-        "NX-EC-SYSTEM-NAME: ak_ec_2.3\r\n"
-        "NX-EC-PROTO-VERSION: 1008\r\n"
-        "system-identity-time: 0\r\n"
-        "Access-Control-Allow-Origin: *\r\n",
-
-        ""
-    ));
-
-    messagesToParse.push_back(TestRequestData(
-        nx::network::http::Method::post,
-        "guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
-        "Content-Type: application/octet-stream\r\n"
-        "runtime-guid: {cff70ae1-01af-4e84-ab4d-ed8a28fab3bb}\r\n"
-        "NX-EC-SYSTEM-NAME: ak_ec_2.3\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "NX-EC-PROTO-VERSION: 1008\r\n"
-        "system-identity-time: 0\r\n"
-        "Access-Control-Allow-Origin: *\r\n",
-
-        "0000020\r\n"
-        "1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2"
-        "\r\n"
-        "0000040\r\n"
-        "3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx4"
-        "5xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx6"
-        "\r\n"
-        "0000060\r\n"
-        "7xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx8"
-        "9xxxxxxxxxxxxxxxxxxxxxxxxxxxxx10"
-        "11xxxxxxxxxxxxxxxxxxxxxxxxxxxx12"
-        "\r\n"
-        "0\r\n"
-        "\r\n"
-    ));
-
-    messagesToParse.push_back(TestRequestData(
-        nx::network::http::Method::post,
-        "Content-Type: text/html\r\n"
-        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
-        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2a378\"\r\n"
-        "Access-Control-Allow-Origin: *\r\n",
-
-        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")
-    ));
-
-    messagesToParse.push_back(TestRequestData(
-        nx::network::http::Method::post,
-        "Content-Type: text/html\r\n"
-        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
-        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2b700\"\r\n"
-        "Access-Control-Allow-Origin: *\r\n",
-
-        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")
-    ));
-
-    messagesToParse.push_back(TestRequestData(
-        nx::network::http::Method::post,
-        "Content-Type: text/html\r\n"
-        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
-        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2ca88\"\r\n"
-        "Access-Control-Allow-Origin: *\r\n",
-
-        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")
-    ));
+        nx::utils::buildString<nx::Buffer>("5", std::string(120, 'h'), "6")));
 
     messagesToParse.push_back(TestRequestData(
         nx::network::http::Method::post,
@@ -657,6 +552,71 @@ TEST_F(HttpStreamReader, MultipleRequests)
         "system-identity-time: 0\r\n"
         "Access-Control-Allow-Origin: *\r\n",
 
+        "0000020\r\n"
+        "1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2"
+        "\r\n"
+        "0000040\r\n"
+        "3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx4"
+        "5xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx6"
+        "\r\n"
+        "0000060\r\n"
+        "7xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx8"
+        "9xxxxxxxxxxxxxxxxxxxxxxxxxxxxx10"
+        "11xxxxxxxxxxxxxxxxxxxxxxxxxxxx12"
+        "\r\n"
+        "0\r\n"
+        "\r\n"));
+
+    messagesToParse.push_back(TestRequestData(
+        nx::network::http::Method::post,
+        "Content-Type: text/html\r\n"
+        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
+        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2a378\"\r\n"
+        "Access-Control-Allow-Origin: *\r\n",
+
+        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")));
+
+    messagesToParse.push_back(TestRequestData(
+        nx::network::http::Method::post,
+        "Content-Type: text/html\r\n"
+        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
+        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2b700\"\r\n"
+        "Access-Control-Allow-Origin: *\r\n",
+
+        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")));
+
+    messagesToParse.push_back(TestRequestData(
+        nx::network::http::Method::post,
+        "Content-Type: text/html\r\n"
+        "x-server-guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
+        "WWW-Authenticate: Digest realm=\"example.com\",nonce=\"50df1b6e2ca88\"\r\n"
+        "Access-Control-Allow-Origin: *\r\n",
+
+        nx::utils::buildString<nx::Buffer>("1", std::string(2500, 'x'), "2")));
+
+    messagesToParse.push_back(TestRequestData(
+        nx::network::http::Method::post,
+        "guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
+        "Content-Type: application/octet-stream\r\n"
+        "runtime-guid: {cff70ae1-01af-4e84-ab4d-ed8a28fab3bb}\r\n"
+        "Content-Length: 0\r\n"
+        "NX-EC-SYSTEM-NAME: ak_ec_2.3\r\n"
+        "NX-EC-PROTO-VERSION: 1008\r\n"
+        "system-identity-time: 0\r\n"
+        "Access-Control-Allow-Origin: *\r\n",
+
+        ""));
+
+    messagesToParse.push_back(TestRequestData(
+        nx::network::http::Method::post,
+        "guid: {47bf37a0-72a6-2890-b967-5da9c390d28a}\r\n"
+        "Content-Type: application/octet-stream\r\n"
+        "runtime-guid: {cff70ae1-01af-4e84-ab4d-ed8a28fab3bb}\r\n"
+        "NX-EC-SYSTEM-NAME: ak_ec_2.3\r\n"
+        "Transfer-Encoding: chunked\r\n"
+        "NX-EC-PROTO-VERSION: 1008\r\n"
+        "system-identity-time: 0\r\n"
+        "Access-Control-Allow-Origin: *\r\n",
 
         "0000020;time_sync_6248_1422706690167_17640391744334\r\n"
         "1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2"
@@ -671,18 +631,18 @@ TEST_F(HttpStreamReader, MultipleRequests)
         "11xxxxxxxxxxxxxxxxxxxxxxxxxxxx12"
         "\r\n"
         "0\r\n"
-        "\r\n"
-    ));
+        "\r\n"));
 
     nx::Buffer sourceDataStream = serializeMessages(messagesToParse);
 
     for (std::size_t dataStep = 1; dataStep < (sourceDataStream.size() * 2); dataStep <<= 1)
-        //for( int dataStep = 1; dataStep < sourceDataStream.size(); ++dataStep )
+    // for( int dataStep = 1; dataStep < sourceDataStream.size(); ++dataStep )
     {
         int messageNumber = 0;
 
         parseBufWithFixedReadStep(
-            sourceDataStream, dataStep,
+            sourceDataStream,
+            dataStep,
             [&messageNumber, &messagesToParse](auto& reader, const auto& msg)
             {
                 ASSERT_EQ(MessageType::request, reader.message().type);
@@ -694,7 +654,10 @@ TEST_F(HttpStreamReader, MultipleRequests)
                 {
                     ASSERT_EQ(
                         messagesToParse[messageNumber].msgBody.size(),
-                        nx::utils::stoi(nx::network::http::getHeaderValue(msg.request->headers, "Content-Length")));
+                        nx::utils::stoi(
+                            nx::network::http::getHeaderValue(
+                                msg.request->headers,
+                                "Content-Length")));
                     ASSERT_TRUE(msgBody == messagesToParse[messageNumber].msgBody);
                 }
                 else
@@ -705,7 +668,7 @@ TEST_F(HttpStreamReader, MultipleRequests)
                 ++messageNumber;
             });
 
-        ASSERT_EQ((size_t)messageNumber, messagesToParse.size());
+        ASSERT_EQ((size_t) messageNumber, messagesToParse.size());
     }
 }
 
@@ -713,10 +676,9 @@ TEST_F(
     HttpStreamReader,
     moves_to_reading_message_body_state_after_reading_full_headers_body_separator)
 {
-    static const nx::Buffer kMessage =
-        "HTTP/1.0 200 OK\r\n"
-        "Content-Type: text/plain\r\n"
-        "\r\n";
+    static const nx::Buffer kMessage = "HTTP/1.0 200 OK\r\n"
+                                       "Content-Type: text/plain\r\n"
+                                       "\r\n";
 
     http::HttpStreamReader reader;
 
@@ -727,14 +689,11 @@ TEST_F(
     ASSERT_EQ(http::HttpStreamReader::ReadState::readingMessageBody, reader.state());
 }
 
-TEST_F(
-    HttpStreamReader,
-    moves_to_intermediate_state_after_reading_partial_headers_body_separator)
+TEST_F(HttpStreamReader, moves_to_intermediate_state_after_reading_partial_headers_body_separator)
 {
-    static const nx::Buffer kMessage =
-        "HTTP/1.0 200 OK\r\n"
-        "Content-Type: text/plain\r\n"
-        "\r";
+    static const nx::Buffer kMessage = "HTTP/1.0 200 OK\r\n"
+                                       "Content-Type: text/plain\r\n"
+                                       "\r";
 
     http::HttpStreamReader reader;
 
@@ -742,7 +701,9 @@ TEST_F(
     ASSERT_TRUE(reader.parseBytes(kMessage, &bytesParsed));
 
     ASSERT_EQ(kMessage.size(), bytesParsed);
-    ASSERT_EQ(http::HttpStreamReader::ReadState::pullingLineEndingBeforeMessageBody, reader.state());
+    ASSERT_EQ(
+        http::HttpStreamReader::ReadState::pullingLineEndingBeforeMessageBody,
+        reader.state());
 
     ASSERT_TRUE(reader.parseBytes(nx::Buffer("\n"), &bytesParsed));
     ASSERT_EQ(1, bytesParsed);
@@ -751,18 +712,14 @@ TEST_F(
 
 TEST_F(HttpStreamReader, interrupts_before_parsing_message_body)
 {
-    static const nx::Buffer kHeaders =
-        "HTTP/1.0 200 OK\r\n"
-        "Content-Type: text/plain\r\n"
-        "Connection: close\r\n"
-        "\r\n";
+    static const nx::Buffer kHeaders = "HTTP/1.0 200 OK\r\n"
+                                       "Content-Type: text/plain\r\n"
+                                       "Connection: close\r\n"
+                                       "\r\n";
 
-    static const nx::Buffer kMessageBody =
-        "The message body";
+    static const nx::Buffer kMessageBody = "The message body";
 
-    static const nx::Buffer kMessage =
-        kHeaders +
-        kMessageBody;
+    static const nx::Buffer kMessage = kHeaders + kMessageBody;
 
     http::HttpStreamReader reader;
     reader.setBreakAfterReadingHeaders(true);
@@ -808,21 +765,26 @@ TEST_F(HttpStreamReader, body_in_response_of_any_status_is_parsed_properly)
 
 TEST_F(HttpStreamReader, parsing_can_be_resumed_after_failure)
 {
-    const nx::Buffer data =
-        "INVALID_REQUEST\r\n"
-        "GET /abc/def/ghi/jkl/mn/oi/prs/tquv/wxyz HTTP/1.1\r\n"
-        "Content-Length: 0\r\n"
-        "X-Req: 1\r\n"
-        "\r\n";
+    const nx::Buffer data = "INVALID_REQUEST\r\n"
+                            "GET /abc/def/ghi/jkl/mn/oi/prs/tquv/wxyz HTTP/1.1\r\n"
+                            "Content-Length: 0\r\n"
+                            "X-Req: 1\r\n"
+                            "\r\n";
 
     std::vector<Message> messages;
     parseBufWithFixedReadStep(
-        data, 5, [&messages](auto& /*reader*/, const auto& msg) { messages.push_back(msg); },
+        data,
+        5,
+        [&messages](auto& /*reader*/, const auto& msg)
+        {
+            messages.push_back(msg);
+        },
         /*ignoreParseErrors*/ true);
 
     ASSERT_EQ(1, messages.size());
     ASSERT_EQ(Method::get, messages[0].request->requestLine.method);
-    ASSERT_EQ(nx::Url("/abc/def/ghi/jkl/mn/oi/prs/tquv/wxyz"),
+    ASSERT_EQ(
+        nx::Url("/abc/def/ghi/jkl/mn/oi/prs/tquv/wxyz"),
         messages[0].request->requestLine.url);
     ASSERT_EQ(http_1_1, messages[0].request->requestLine.version);
     ASSERT_EQ(2, messages[0].request->headers.size());
@@ -832,10 +794,9 @@ TEST_F(HttpStreamReader, parsing_can_be_resumed_after_failure)
 
 TEST_F(HttpStreamReader, message_body_size_cap_is_enforced_for_identity_encoding)
 {
-    static const nx::Buffer kHeaders =
-        "POST / HTTP/1.1\r\n"
-        "Content-Length: 1000\r\n"
-        "\r\n";
+    static const nx::Buffer kHeaders = "POST / HTTP/1.1\r\n"
+                                       "Content-Length: 1000\r\n"
+                                       "\r\n";
 
     http::HttpStreamReader reader;
     reader.setMaxMessageBodySize(10);
@@ -851,10 +812,9 @@ TEST_F(HttpStreamReader, message_body_size_cap_is_enforced_for_identity_encoding
 
 TEST_F(HttpStreamReader, message_body_size_cap_is_enforced_for_chunked_encoding)
 {
-    static const nx::Buffer kHeaders =
-        "POST / HTTP/1.1\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "\r\n";
+    static const nx::Buffer kHeaders = "POST / HTTP/1.1\r\n"
+                                       "Transfer-Encoding: chunked\r\n"
+                                       "\r\n";
 
     http::HttpStreamReader reader;
     reader.setMaxMessageBodySize(10);
@@ -873,10 +833,9 @@ TEST_F(HttpStreamReader, message_body_size_cap_is_enforced_for_chunked_encoding)
 
 TEST_F(HttpStreamReader, chunked_trailer_line_with_no_terminator_fails_parsing)
 {
-    static const nx::Buffer kHeaders =
-        "POST / HTTP/1.1\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "\r\n";
+    static const nx::Buffer kHeaders = "POST / HTTP/1.1\r\n"
+                                       "Transfer-Encoding: chunked\r\n"
+                                       "\r\n";
 
     http::HttpStreamReader reader;
 
@@ -949,10 +908,9 @@ TEST_F(HttpStreamReader, headers_size_cap_does_not_reject_a_large_but_legal_head
 
 TEST_F(HttpStreamReader, parsing_recovers_after_an_over_long_chunked_trailer_line)
 {
-    static const nx::Buffer kHeaders =
-        "POST / HTTP/1.1\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "\r\n";
+    static const nx::Buffer kHeaders = "POST / HTTP/1.1\r\n"
+                                       "Transfer-Encoding: chunked\r\n"
+                                       "\r\n";
 
     http::HttpStreamReader reader;
 
@@ -967,14 +925,13 @@ TEST_F(HttpStreamReader, parsing_recovers_after_an_over_long_chunked_trailer_lin
     // message stays poisoned by the sticky overflow flag.
     reader.resetState();
 
-    static const nx::Buffer kValidMessage =
-        "POST / HTTP/1.1\r\n"
-        "Transfer-Encoding: chunked\r\n"
-        "\r\n"
-        "4\r\n"
-        "test\r\n"
-        "0\r\n"
-        "\r\n";
+    static const nx::Buffer kValidMessage = "POST / HTTP/1.1\r\n"
+                                            "Transfer-Encoding: chunked\r\n"
+                                            "\r\n"
+                                            "4\r\n"
+                                            "test\r\n"
+                                            "0\r\n"
+                                            "\r\n";
 
     nx::ConstBufferRefType data(kValidMessage);
     for (int i = 0; !data.empty() && i < 100; ++i) //< Protecting from a dead loop.
@@ -990,10 +947,9 @@ TEST_F(HttpStreamReader, parsing_recovers_after_an_over_long_chunked_trailer_lin
 
 TEST_F(HttpStreamReader, headers_size_cap_is_reset_for_each_message_of_a_persistent_connection)
 {
-    static const nx::Buffer kRequest =
-        "GET / HTTP/1.1\r\n"
-        "Content-Length: 0\r\n"
-        "\r\n";
+    static const nx::Buffer kRequest = "GET / HTTP/1.1\r\n"
+                                       "Content-Length: 0\r\n"
+                                       "\r\n";
 
     static constexpr int kRequestCount = 5;
 

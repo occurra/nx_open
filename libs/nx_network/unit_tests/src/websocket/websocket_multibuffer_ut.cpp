@@ -6,8 +6,7 @@
 
 namespace nx::network::websocket::test {
 
-class WebsocketMultibuffer:
-    public ::testing::Test
+class WebsocketMultibuffer: public ::testing::Test
 {
 protected:
     enum class Locked
@@ -55,7 +54,7 @@ TEST_F(WebsocketMultibuffer, SingleBuffer_lockLast)
     ASSERT_EQ(buffer.size(), 1);
 
     auto popResult = buffer.popFront();
-    ASSERT_EQ(popResult.buffer.size(), kPerBufferWrites * (int)strlen(kPattern));
+    ASSERT_EQ(popResult.buffer.size(), kPerBufferWrites * (int) strlen(kPattern));
 
     assertCorrectEmptyState();
 }
@@ -72,7 +71,7 @@ TEST_F(WebsocketMultibuffer, MultipleBuffer_lockLast)
     ASSERT_EQ(buffer.size(), 10);
 
     auto popResult = buffer.popFront();
-    ASSERT_EQ(popResult.buffer.size(), kPerBufferWrites * (int)strlen(kPattern));
+    ASSERT_EQ(popResult.buffer.size(), kPerBufferWrites * (int) strlen(kPattern));
     ASSERT_EQ(buffer.size(), 9);
 }
 

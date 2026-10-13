@@ -19,8 +19,8 @@ public:
 
         for (int i = 0; i < count; ++i)
         {
-            result.emplace_back(nx::utils::random::number<ValueType>(
-                0, std::numeric_limits<ValueType>::max()));
+            result.emplace_back(
+                nx::utils::random::number<ValueType>(0, std::numeric_limits<ValueType>::max()));
         }
 
         return result;
@@ -29,7 +29,7 @@ public:
     template<typename ValueType>
     void addNumbersAndAssertPercentileReturnsExpected(
         double percentile,
-        math::Percentile<ValueType> * p,
+        math::Percentile<ValueType>* p,
         const std::vector<ValueType>& input)
     {
         std::vector<ValueType> sorted;
@@ -45,21 +45,20 @@ public:
             ASSERT_EQ(sorted[sorted.size() * percentile], p->get());
         }
     }
-
 };
 
 TEST_F(Percentile, p50)
 {
     const auto input = randomNumbers<int>(15);
 
-    nx::utils::math::Percentile<int>p(0.5);
+    nx::utils::math::Percentile<int> p(0.5);
 
     addNumbersAndAssertPercentileReturnsExpected(0.5, &p, input);
 }
 
 TEST_F(Percentile, p30_contrived_example)
 {
-    const std::vector<int> input {5, 9, 7, 12, 3, 11, 20, 4};
+    const std::vector<int> input{5, 9, 7, 12, 3, 11, 20, 4};
 
     nx::utils::math::Percentile<int> p(0.3);
 

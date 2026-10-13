@@ -2,10 +2,10 @@
 
 #include "webrtc_turn_info_fetcher.h"
 
-#include "nx_webrtc_ini.h"
-
 #include <nx/network/cloud/cloud_connect_controller.h>
 #include <nx/vms/common/system_settings.h>
+
+#include "nx_webrtc_ini.h"
 
 namespace nx::webrtc {
 
@@ -160,8 +160,9 @@ void TurnInfoFetcher::fetchThirdPartyAuthorization(
     if (fetching)
         return;
 
-    if (m_oauthInfo && m_oauthInfo->expires_at >
-        std::chrono::duration_cast<std::chrono::seconds>(nx::utils::utcTime().time_since_epoch()))
+    if (m_oauthInfo
+        && m_oauthInfo->expires_at > std::chrono::duration_cast<std::chrono::seconds>(
+               nx::utils::utcTime().time_since_epoch()))
     {
         onOauthInfoUnsafe();
         return;
@@ -196,23 +197,21 @@ void TurnInfoFetcher::fetchThirdPartyAuthorization(
             else
             {
                 constexpr auto kOauthExpiratinGap = std::chrono::seconds(5);
-                auto expiresAt =
-                    std::chrono::duration_cast<std::chrono::seconds>(
-                        nx::utils::utcTime().time_since_epoch())
+                auto expiresAt = std::chrono::duration_cast<std::chrono::seconds>(
+                                     nx::utils::utcTime().time_since_epoch())
                     + response.expires_in
-                    - (response.expires_in > kOauthExpiratinGap
-                        ? kOauthExpiratinGap
-                        : std::chrono::seconds(0));
-                m_oauthInfo =
-                    OauthInfo{
-                        .kid = response.kid,
-                        .lifetime = static_cast<int>(response.expires_in.count()), // Actually unused.
-                        .expires_at = expiresAt,
-                        .sessionKey = nx::utils::fromBase64(response.mac_code),
-                        .accessToken = nx::utils::fromBase64(response.token)
-                    };
+                    - (response.expires_in > kOauthExpiratinGap ? kOauthExpiratinGap
+                                                                : std::chrono::seconds(0));
+                m_oauthInfo = OauthInfo{
+                    .kid = response.kid,
+                    .lifetime = static_cast<int>(response.expires_in.count()), // Actually unused.
+                    .expires_at = expiresAt,
+                    .sessionKey = nx::utils::fromBase64(response.mac_code),
+                    .accessToken = nx::utils::fromBase64(response.token)};
 
-                NX_DEBUG(this, "Oauth: got token with kid %1 and lifetime %2",
+                NX_DEBUG(
+                    this,
+                    "Oauth: got token with kid %1 and lifetime %2",
                     m_oauthInfo->kid,
                     m_oauthInfo->lifetime);
             }
@@ -223,7 +222,8 @@ void TurnInfoFetcher::fetchThirdPartyAuthorization(
 } // namespace nx::webrtc
 
 // turnutils_oauth -e --server-name blackdow.carleon.gov --auth-key-id oldempire
-//    --auth-key MTIzNDU2Nzg5MDEyMzQ1Njc4OTA= --auth-key-timestamp 1664203748 --auth-key-lifetime 21600
+//    --auth-key MTIzNDU2Nzg5MDEyMzQ1Njc4OTA= --auth-key-timestamp 1664203748 --auth-key-lifetime
+//    21600
 //    --token-mac-key MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=  --token-timestamp `expr $(date +%s) \* 65536`
 //    --token-lifetime=3600 --auth-key-as-rs-alg A256GCM
 // , where:

@@ -23,7 +23,7 @@ std::string ObjectCounters::toJson() const
     }
 
     std::string json = "{";
-    for (const auto& val : values)
+    for (const auto& val: values)
         json += "\"" + val.first + "\":" + std::to_string(val.second) + ",";
     json.pop_back();
     json += "}";

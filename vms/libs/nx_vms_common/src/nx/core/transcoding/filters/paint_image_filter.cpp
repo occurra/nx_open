@@ -28,10 +28,7 @@ QSize PaintImageFilter::updatedResolution(const QSize& sourceSize)
     return sourceSize;
 }
 
-void PaintImageFilter::setImage(
-    const QImage& image,
-    const QPoint& offset,
-    Qt::Alignment alignment)
+void PaintImageFilter::setImage(const QImage& image, const QPoint& offset, Qt::Alignment alignment)
 {
     m_painter->setImage(image, offset, alignment);
 }

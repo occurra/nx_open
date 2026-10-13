@@ -10,8 +10,8 @@
 #include <nx/media/ffmpeg_helper.h>
 #include <nx/utils/byte_array.h>
 #include <transcoding/abstract_codec_transcoder.h>
-#include <transcoding/ffmpeg_audio_resampler.h>
 #include <transcoding/audio_encoder.h>
+#include <transcoding/ffmpeg_audio_resampler.h>
 
 //< Minimal supported sample rate in mp4(with mp3), see ffmpeg(7.0.1) movenc.c:7579
 constexpr int kMinMp4Mp3SampleRate = 16000;
@@ -52,8 +52,8 @@ public:
 
     /**
      * \brief Sets up decoder context and opens it.
-     * \param[in] audio Encoded audio packet. It's required that proper decoding context was set for
-     * that packet.
+     * \param[in] audio Encoded audio packet. It's required that proper decoding context was set
+     * for that packet.
      * \return true on success, false in case of error
      */
     bool open(const QnConstCompressedAudioDataPtr& audio);

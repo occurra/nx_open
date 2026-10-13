@@ -46,26 +46,27 @@ QSize downscaleByWidth(const QSize& source, int newWidth);
 } // namespace nx::transcoding
 
 /*!
-    \note All constants (except \a quality) in this namespace refer to libavcodec CodecContex field names
+    \note All constants (except \a quality) in this namespace refer to libavcodec CodecContex field
+   names
 */
-namespace QnCodecParams
-{
-    typedef QMap<QByteArray, QVariant> Value;
+namespace QnCodecParams {
 
-    static const QByteArray quality( "quality" );
-    static const QByteArray qmin( "qmin" );
-    static const QByteArray qmax( "qmax" );
-    static const QByteArray qscale( "qscale" );
-    static const QByteArray global_quality( "global_quality" );
-    static const QByteArray gop_size( "gop_size" );
-}
+typedef QMap<QByteArray, QVariant> Value;
+
+static const QByteArray quality("quality");
+static const QByteArray qmin("qmin");
+static const QByteArray qmax("qmax");
+static const QByteArray qscale("qscale");
+static const QByteArray global_quality("global_quality");
+static const QByteArray gop_size("gop_size");
+
+} // namespace QnCodecParams
 
 /**
  * Selects media stream parameters based on codec, resolution and quality
  */
-QnCodecParams::Value NX_VMS_COMMON_API suggestMediaStreamParams(
-    AVCodecID codec,
-    Qn::StreamQuality quality);
+QnCodecParams::Value NX_VMS_COMMON_API
+    suggestMediaStreamParams(AVCodecID codec, Qn::StreamQuality quality);
 
 /**
  * Suggest media bitrate based on codec, resolution and quality

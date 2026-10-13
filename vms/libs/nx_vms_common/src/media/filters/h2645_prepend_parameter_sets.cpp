@@ -79,15 +79,15 @@ QnConstAbstractDataPacketPtr H2645PrependParameterSets::processData(
         return data;
 
     const bool isAnnexB = nx::media::nal::isStartCode(extraData, extraDataSize);
-    const auto units = isAnnexB
-        ? nx::media::nal::findNalUnitsAnnexB(
-            (const uint8_t*)videoData->data(), (int32_t)videoData->dataSize())
-        : nx::media::nal::findNalUnitsMp4(
-            (const uint8_t*)videoData->data(), (int32_t)videoData->dataSize());
+    const auto units = isAnnexB ? nx::media::nal::findNalUnitsAnnexB(
+                                      (const uint8_t*) videoData->data(),
+                                      (int32_t) videoData->dataSize())
+                                : nx::media::nal::findNalUnitsMp4(
+                                      (const uint8_t*) videoData->data(),
+                                      (int32_t) videoData->dataSize());
 
-    const bool needsPrepend = isH264
-        ? h264HasKeyframeWithoutParamSets(units)
-        : h265HasKeyframeWithoutParamSets(units);
+    const bool needsPrepend =
+        isH264 ? h264HasKeyframeWithoutParamSets(units) : h265HasKeyframeWithoutParamSets(units);
 
     if (!needsPrepend)
         return data;
@@ -108,8 +108,8 @@ QnConstAbstractDataPacketPtr H2645PrependParameterSets::processData(
             NX_WARNING(this, "Failed to read parameter sets from extradata");
             return data;
         }
-        header = nx::media::nal::convertStartCodesToSizes(
-            headerAnnexB.data(), headerAnnexB.size());
+        header =
+            nx::media::nal::convertStartCodesToSizes(headerAnnexB.data(), headerAnnexB.size());
     }
 
     return cloneWithPrependedHeader(videoData, header);

@@ -40,8 +40,13 @@ struct TranslationManager::Private
 
     std::optional<Translation> findTranslation(const QString& localeCode)
     {
-        auto iter = std::find_if(translations.cbegin(), translations.cend(),
-            [&](const auto& translation) { return translation.localeCode == localeCode; });
+        auto iter = std::find_if(
+            translations.cbegin(),
+            translations.cend(),
+            [&](const auto& translation)
+            {
+                return translation.localeCode == localeCode;
+            });
 
         if (iter == translations.cend())
             return std::nullopt;
@@ -56,7 +61,7 @@ struct TranslationManager::Private
     }
 
 private:
-    Translation loadTranslation(const QString &locale)
+    Translation loadTranslation(const QString& locale)
     {
         Translation result;
         result.localeCode = locale;
@@ -77,7 +82,10 @@ private:
         QList<Translation> result;
 
         QDir dir(kSearchPath);
-        NX_ASSERT(dir.exists(), "Translations could not be loaded from resources: %1", kSearchPath);
+        NX_ASSERT(
+            dir.exists(),
+            "Translations could not be loaded from resources: %1",
+            kSearchPath);
 
         for (const QString& locale: dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot))
             result.push_back(loadTranslation(locale));
@@ -87,7 +95,7 @@ private:
     }
 };
 
-TranslationManager::TranslationManager(QObject *parent):
+TranslationManager::TranslationManager(QObject* parent):
     QObject(parent),
     d(new Private())
 {
@@ -154,8 +162,7 @@ void TranslationManager::installTranslation(const Translation& translation)
     }
 }
 
-PreloadedTranslationReference TranslationManager::preloadTranslation(
-    const QString& locale)
+PreloadedTranslationReference TranslationManager::preloadTranslation(const QString& locale)
 {
     {
         NX_MUTEX_LOCKER lock(&d->mutex);
@@ -182,13 +189,13 @@ PreloadedTranslationReference TranslationManager::preloadTranslation(
 }
 
 ScopedLocale TranslationManager::installScopedLocale(
-    const PreloadedTranslationReference& locale, std::chrono::milliseconds maxWaitTime)
+    const PreloadedTranslationReference& locale,
+    std::chrono::milliseconds maxWaitTime)
 {
     return {locale, maxWaitTime};
 }
 
-ScopedLocale TranslationManager::installScopedLocale(
-    const QString& locale)
+ScopedLocale TranslationManager::installScopedLocale(const QString& locale)
 {
     return installScopedLocale(std::vector<QString>{locale});
 }
@@ -214,8 +221,8 @@ ScopedLocale TranslationManager::installScopedLocale(const std::vector<QString>&
         {
             static const auto kMinInstallationTime = 100ms;
             // It's possible that translation loading itself would take more than maxWaitingTime.
-            // In this case lets spend some more time trying to install the new locale, since we've already
-            // failed to fit into the given interval.
+            // In this case lets spend some more time trying to install the new locale, since we've
+            // already failed to fit into the given interval.
             return {translationRef, qMax(d->maxWaitTime - timer.elapsed(), kMinInstallationTime)};
         }
     }
@@ -300,8 +307,11 @@ bool TranslationManager::setCurrentThreadTranslationLocale(
             // cases, therefore installation failure could be expected here.
             if (d->assertOnOverlayInstallationFailure)
             {
-                NX_ASSERT(overlayIsInstalled,
-                    "Translation is not installed for locale '%1' within %2", locale, maxWaitTime);
+                NX_ASSERT(
+                    overlayIsInstalled,
+                    "Translation is not installed for locale '%1' within %2",
+                    locale,
+                    maxWaitTime);
             }
             if (overlayIsInstalled)
             {

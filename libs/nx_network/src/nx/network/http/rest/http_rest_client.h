@@ -14,24 +14,18 @@ namespace nx::network::http::rest {
  * @return true if replaced a token. false if nothing was found.
  */
 template<typename ArgumentType>
-bool substituteNextParameter(
-    std::string* path,
-    const ArgumentType& argument)
+bool substituteNextParameter(std::string* path, const ArgumentType& argument)
 {
     const auto openingBracketPos = path->find('{');
     const auto closingBracketPos = path->find('}');
 
-    if (openingBracketPos == std::string::npos ||
-        closingBracketPos == std::string::npos ||
-        closingBracketPos < openingBracketPos)
+    if (openingBracketPos == std::string::npos || closingBracketPos == std::string::npos
+        || closingBracketPos < openingBracketPos)
     {
         return false;
     }
 
-    path->replace(
-        openingBracketPos,
-        closingBracketPos - openingBracketPos + 1,
-        argument);
+    path->replace(openingBracketPos, closingBracketPos - openingBracketPos + 1, argument);
     return true;
 }
 
@@ -73,10 +67,7 @@ bool substituteParameter(
     const auto pos = path->find(name);
     if (pos == std::string::npos)
         return false;
-    path->replace(
-        pos,
-        name.length(),
-        argument);
+    path->replace(pos, name.length(), argument);
     return true;
 }
 
@@ -87,7 +78,9 @@ bool substituteParameter(
  */
 inline std::string toRegex(std::string pathTemplate)
 {
-    while (substituteNextParameter(&pathTemplate, ".*")) {}
+    while (substituteNextParameter(&pathTemplate, ".*"))
+    {
+    }
     return pathTemplate;
 }
 

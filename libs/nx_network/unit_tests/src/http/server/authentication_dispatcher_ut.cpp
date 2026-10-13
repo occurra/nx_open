@@ -2,29 +2,24 @@
 
 #include <gtest/gtest.h>
 
-#include <nx/network/http/server/authentication_dispatcher.h>
-
-#include <nx/network/http/http_client.h>
 #include <nx/network/http/buffer_source.h>
+#include <nx/network/http/http_client.h>
+#include <nx/network/http/server/authentication_dispatcher.h>
 #include <nx/network/http/test_http_server.h>
+#include <nx/network/test_support/dummy_socket.h>
 #include <nx/network/url/url_builder.h>
 #include <nx/network/url/url_parse_helper.h>
-
-#include <nx/network/test_support/dummy_socket.h>
 
 namespace nx::network::http::server::test {
 
 namespace {
 
-static const std::vector<const char*> kTestPaths =
-{
+static const std::vector<const char*> kTestPaths = {
     "/test/get",
     "/test/delete",
-    "/test/unregisteredput"
-};
+    "/test/unregisteredput"};
 
-class TestAuthenticator:
-    public AbstractAuthenticationManager
+class TestAuthenticator: public AbstractAuthenticationManager
 {
     using base_type = AbstractAuthenticationManager;
 
@@ -39,10 +34,7 @@ public:
         completionHandler(nx::network::http::server::SuccessfulAuthenticationResult());
     }
 
-    bool authenticateCalled() const
-    {
-        return m_authenticateCalled;
-    }
+    bool authenticateCalled() const { return m_authenticateCalled; }
 
     virtual void pleaseStopSync() override {}
 
@@ -53,41 +45,22 @@ private:
 class TestSocket: public DummySocket
 {
 public:
-      virtual bool close() override
-      {
-          return true;
-      }
+    virtual bool close() override { return true; }
 
-      virtual bool isClosed() const override
-      {
-          return true;
-      }
+    virtual bool isClosed() const override { return true; }
 
-      virtual bool shutdown() override
-      {
-          return true;
-      }
+    virtual bool shutdown() override { return true; }
 
-      virtual int recv(void*, std::size_t, int) override
-      {
-          return 0;
-      }
+    virtual int recv(void*, std::size_t, int) override { return 0; }
 
-      virtual int send(const void*, std::size_t) override
-      {
-          return 0;
-      }
+    virtual int send(const void*, std::size_t) override { return 0; }
 
-      virtual bool isConnected() const override
-      {
-          return true;
-      }
+    virtual bool isConnected() const override { return true; }
 };
 
 } // namespace
 
-class AuthenticationDispatcher:
-    public ::testing::Test
+class AuthenticationDispatcher: public ::testing::Test
 {
 public:
     AuthenticationDispatcher():
@@ -96,10 +69,7 @@ public:
     }
 
 protected:
-    void SetUp() override
-    {
-        initializeAndRegisterAuthenticators();
-    }
+    void SetUp() override { initializeAndRegisterAuthenticators(); }
 
     void whenAuthenticateRegisteredPath()
     {
@@ -108,10 +78,7 @@ protected:
         m_lastInvokedPath = kTestPaths[0];
     }
 
-    void whenAuthenticateUnregisteredPath()
-    {
-        invokeDispatcher("/foo/bar");
-    }
+    void whenAuthenticateUnregisteredPath() { invokeDispatcher("/foo/bar"); }
 
     void thenCorrespondingAuthenticatorIsInvoked()
     {
@@ -154,8 +121,7 @@ private:
         requestContext.conn = serverConnection;
         m_dispatcher.serve(
             std::move(requestContext),
-            [this, serverConnection = std::move(serverConnection)](
-                RequestResult result)
+            [this, serverConnection = std::move(serverConnection)](RequestResult result)
             {
                 m_requestCompletionStatuses.push_back(result.statusCode);
             });

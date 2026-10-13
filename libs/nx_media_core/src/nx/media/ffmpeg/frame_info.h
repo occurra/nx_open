@@ -56,7 +56,7 @@ using CLConstVideoDecoderOutputPtr = QSharedPointer<const CLVideoDecoderOutput>;
 class NX_MEDIA_CORE_API CLVideoDecoderOutput: public AVFrame
 {
 public:
-    //!Stores picture data. If NULL, picture data is stored in \a AVFrame fields
+    //! Stores picture data. If NULL, picture data is stored in \a AVFrame fields
 
     CLVideoDecoderOutput();
     CLVideoDecoderOutput(int targetWidth, int targetHeight, int targetFormat);
@@ -112,7 +112,6 @@ public:
     QByteArray rawData() const;
 
 public:
-
     QnAbstractMediaData::MediaFlags flags = QnAbstractMediaData::MediaFlags_None;
 
     /** Pixel width to pixel height ratio. Some videos have non-square pixels, we support that. */
@@ -134,7 +133,12 @@ private:
 private:
     bool invalidScaleParameters(const QSize& size) const;
     static void copyPlane(
-        uint8_t* dst, const uint8_t* src, int width, int dstStride, int srcStride, int height);
+        uint8_t* dst,
+        const uint8_t* src,
+        int width,
+        int dstStride,
+        int srcStride,
+        int height);
 
     CLVideoDecoderOutput(const CLVideoDecoderOutput&) = delete;
     const CLVideoDecoderOutput& operator=(const CLVideoDecoderOutput&) = delete;

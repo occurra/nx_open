@@ -18,11 +18,14 @@ namespace nx::utils::flags_detail {
 NX_UTILS_API std::string_view trim(std::string_view str);
 
 NX_UTILS_API void assertInvalidFlagValue(
-    const std::type_info& type, int value, int unrecognizedFlags);
+    const std::type_info& type,
+    int value,
+    int unrecognizedFlags);
 NX_UTILS_API void logInvalidFlagValue(
-    const std::type_info& type, int value, int unrecognizedFlags);
-NX_UTILS_API void logInvalidFlagRepresentation(
-    const std::type_info& type, std::string_view flag);
+    const std::type_info& type,
+    int value,
+    int unrecognizedFlags);
+NX_UTILS_API void logInvalidFlagRepresentation(const std::type_info& type, std::string_view flag);
 
 template<typename T, typename Visitor>
 void processBits(const QFlags<T>& value, const Visitor& visitor)
@@ -32,9 +35,9 @@ void processBits(const QFlags<T>& value, const Visitor& visitor)
     constexpr int kBitCount = sizeof(Int) * 8 - (std::is_signed_v<Int> ? 1 : 0);
     for (int i = 0; i < kBitCount; ++i)
     {
-         const auto flag = (Int) 1 << i;
-         if (value & flag)
-             visitor(flag);
+        const auto flag = (Int) 1 << i;
+        if (value & flag)
+            visitor(flag);
     }
 }
 
@@ -55,20 +58,19 @@ std::string toString(const QFlags<T>& value)
 
     Int unrecognizedFlags = 0;
 
-    const auto processFlag =
-        [&unrecognizedFlags, &result](Int flag)
+    const auto processFlag = [&unrecognizedFlags, &result](Int flag)
+    {
+        const auto flagStr = nx::reflect::enumeration::toString((T) flag);
+        if (flagStr.empty() || std::isdigit((unsigned char) flagStr[0]))
         {
-            const auto flagStr = nx::reflect::enumeration::toString((T) flag);
-            if (flagStr.empty() || std::isdigit((unsigned char) flagStr[0]))
-            {
-                unrecognizedFlags |= flag;
-                return;
-            }
+            unrecognizedFlags |= flag;
+            return;
+        }
 
-            if (!result.empty())
-                result += '|';
-            result += flagStr;
-        };
+        if (!result.empty())
+            result += '|';
+        result += flagStr;
+    };
 
     nx::utils::flags_detail::processBits(value, processFlag);
 
@@ -119,15 +121,14 @@ bool fromString(std::string_view str, QFlags<T>* result)
             {
                 Int unrecognizedFlags = 0;
 
-                const auto processFlag =
-                    [&unrecognizedFlags, &number](Int flag)
+                const auto processFlag = [&unrecognizedFlags, &number](Int flag)
+                {
+                    if (!nx::reflect::enumeration::isValidEnumValue((T) flag))
                     {
-                        if (!nx::reflect::enumeration::isValidEnumValue((T) flag))
-                        {
-                            unrecognizedFlags |= flag;
-                            number |= ~flag;
-                        }
-                    };
+                        unrecognizedFlags |= flag;
+                        number |= ~flag;
+                    }
+                };
 
                 nx::utils::flags_detail::processBits(QFlags<T>(number), processFlag);
 
@@ -138,7 +139,9 @@ bool fromString(std::string_view str, QFlags<T>* result)
                 else
                 {
                     nx::utils::flags_detail::logInvalidFlagValue(
-                        typeid(T), number, unrecognizedFlags);
+                        typeid(T),
+                        number,
+                        unrecognizedFlags);
                     valid = false;
                 }
             }

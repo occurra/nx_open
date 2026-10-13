@@ -9,8 +9,7 @@
 
 namespace nx::network::http::test {
 
-class HttpWritableMessageBody:
-    public ::testing::Test
+class HttpWritableMessageBody: public ::testing::Test
 {
 public:
     ~HttpWritableMessageBody()
@@ -22,9 +21,7 @@ public:
 protected:
     virtual void SetUp() override
     {
-        m_messageBody = std::make_unique<http::WritableMessageBody>(
-            "text/plain",
-            std::nullopt);
+        m_messageBody = std::make_unique<http::WritableMessageBody>("text/plain", std::nullopt);
     }
 
     void writeRandomData()
@@ -35,10 +32,7 @@ protected:
         m_dataWritten.append(data);
     }
 
-    void writeEof(SystemError::ErrorCode resultCode)
-    {
-        m_messageBody->writeEof(resultCode);
-    }
+    void writeEof(SystemError::ErrorCode resultCode) { m_messageBody->writeEof(resultCode); }
 
     void startReadingMessageBodyAsync()
     {
@@ -61,10 +55,7 @@ protected:
         m_readQueue.push(done.get_future().get());
     }
 
-    void cancelRead()
-    {
-        m_messageBody->cancelRead();
-    }
+    void cancelRead() { m_messageBody->cancelRead(); }
 
     void assertTheWholeDataIsReported()
     {

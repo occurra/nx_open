@@ -56,12 +56,12 @@ Result SimpleAudioParser::processData(
     if (curPtr >= end)
         return {false, "Malformed audio packet"};
 
-    QnWritableCompressedAudioDataPtr audioData = QnWritableCompressedAudioDataPtr(
-        new QnWritableCompressedAudioData(end - curPtr));
-    audioData->compressionType = !m_context? AV_CODEC_ID_NONE : m_context->getCodecId();
+    QnWritableCompressedAudioDataPtr audioData =
+        QnWritableCompressedAudioDataPtr(new QnWritableCompressedAudioData(end - curPtr));
+    audioData->compressionType = !m_context ? AV_CODEC_ID_NONE : m_context->getCodecId();
     audioData->context = m_context;
     audioData->timestamp = rtpHeader.getTimestamp();
-    audioData->m_data.write((const char*)curPtr, end - curPtr);
+    audioData->m_data.write((const char*) curPtr, end - curPtr);
     m_audioData.push_back(audioData);
     gotData = true;
     return {true};

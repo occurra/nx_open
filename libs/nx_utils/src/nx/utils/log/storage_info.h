@@ -17,4 +17,5 @@ NX_UTILS_API std::optional<VolumeInfo> getVolumeInfo(const QString& path);
 
 // Only for tests!
 NX_UTILS_API void setVolumeInfoGetter(VolumeInfoGetter getter);
+
 } // namespace nx::log::detail

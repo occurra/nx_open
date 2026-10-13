@@ -9,32 +9,34 @@ namespace {
 const static uint32_t INT_BIT = CHAR_BIT * sizeof(uint32_t);
 
 constexpr uint32_t kMask[] = {
-    0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f,
-    0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff,
-    0x0000ffff, 0x0001ffff, 0x0003ffff, 0x0007ffff, 0x000fffff, 0x001fffff, 0x003fffff, 0x007fffff,
-    0x00ffffff, 0x01ffffff, 0x03ffffff, 0x07ffffff, 0x0fffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff,
-    0xffffffff};
+    0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000f, 0x0000001f, 0x0000003f,
+    0x0000007f, 0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 0x00001fff,
+    0x00003fff, 0x00007fff, 0x0000ffff, 0x0001ffff, 0x0003ffff, 0x0007ffff, 0x000fffff,
+    0x001fffff, 0x003fffff, 0x007fffff, 0x00ffffff, 0x01ffffff, 0x03ffffff, 0x07ffffff,
+    0x0fffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff};
 
 } // namespace
 
 void updateBits(const uint8_t* buffer, int bitOffset, int bitLen, int value)
 {
-    uint8_t* ptr = (uint8_t*) buffer + bitOffset/8;
+    uint8_t* ptr = (uint8_t*) buffer + bitOffset / 8;
     BitStreamWriter bitWriter;
     int byteOffset = bitOffset % 8;
     bitWriter.setBuffer(ptr, ptr + (bitLen / 8 + 5));
 
-    uint8_t* ptr_end = (uint8_t*) buffer + (bitOffset + bitLen)/8;
+    uint8_t* ptr_end = (uint8_t*) buffer + (bitOffset + bitLen) / 8;
     int endBitsPostfix = 8 - ((bitOffset + bitLen) % 8);
 
-    if (byteOffset > 0) {
-        int prefix = *ptr >> (8-byteOffset);
+    if (byteOffset > 0)
+    {
+        int prefix = *ptr >> (8 - byteOffset);
         bitWriter.putBits(byteOffset, prefix);
     }
     bitWriter.putBits(bitLen, value);
 
-    if (endBitsPostfix < 8) {
-        int postfix = *ptr_end & (( 1 << endBitsPostfix) - 1);
+    if (endBitsPostfix < 8)
+    {
+        int postfix = *ptr_end & ((1 << endBitsPostfix) - 1);
         bitWriter.putBits(endBitsPostfix, postfix);
     }
     bitWriter.flushBits();
@@ -42,14 +44,14 @@ void updateBits(const uint8_t* buffer, int bitOffset, int bitLen, int value)
 
 void moveBits(uint8_t* buffer, int oldBitOffset, int newBitOffset, int len)
 {
-    int increaseInBytes = qMax(0, (newBitOffset - oldBitOffset)/8+1);
+    int increaseInBytes = qMax(0, (newBitOffset - oldBitOffset) / 8 + 1);
 
     uint8_t* src = (uint8_t*) buffer + (oldBitOffset >> 3);
     BitStreamReader reader;
-    reader.setBuffer(src, src + len/8 + 1);
+    reader.setBuffer(src, src + len / 8 + 1);
     uint8_t* dst = (uint8_t*) buffer + (newBitOffset >> 3);
     BitStreamWriter writer;
-    writer.setBuffer(dst, dst + len/8 + 1 + increaseInBytes);
+    writer.setBuffer(dst, dst + len / 8 + 1 + increaseInBytes);
     writer.skipBits(newBitOffset % 8);
     if (oldBitOffset % 8)
     {
@@ -59,13 +61,15 @@ void moveBits(uint8_t* buffer, int oldBitOffset, int newBitOffset, int len)
         len -= c;
         src++;
     }
-    for (; len >= 8 && ((intptr_t) src % sizeof(uint32_t)) != 0; len -= 8) {
+    for (; len >= 8 && ((intptr_t) src % sizeof(uint32_t)) != 0; len -= 8)
+    {
         writer.putBits(8, *src);
         src++;
     }
 
-    for (; len >= (int)INT_BIT; len -= INT_BIT) {
-        writer.putBits(INT_BIT, ntohl(*((uint32_t*)src)));
+    for (; len >= (int) INT_BIT; len -= INT_BIT)
+    {
+        writer.putBits(INT_BIT, ntohl(*((uint32_t*) src)));
         src += sizeof(uint32_t);
     }
     reader.setBuffer(src, src + sizeof(uint32_t));
@@ -77,7 +81,7 @@ void BitStream::setBuffer(const uint8_t* buffer, const uint8_t* end)
 {
     if (buffer >= end)
         throw BitStreamException();
-    m_totalBits = (uint32_t)(end - buffer) * 8;
+    m_totalBits = (uint32_t) (end - buffer) * 8;
     m_initBuffer = m_buffer = (uint32_t*) buffer;
 }
 
@@ -127,7 +131,7 @@ void BitStreamReader::readData(uint8_t* data, int size)
         throw BitStreamException();
 
     int bytesUsed = (INT_BIT - m_bitLeft) / 8;
-    uint8_t* buffer = (uint8_t*)m_buffer + bytesUsed;
+    uint8_t* buffer = (uint8_t*) m_buffer + bytesUsed;
     memcpy(data, buffer, size);
     skipBytes(size);
 }
@@ -141,8 +145,9 @@ uint32_t BitStreamReader::getBits(uint32_t num)
     uint32_t prevVal = 0;
     if (num <= m_bitLeft)
         m_bitLeft -= num;
-    else {
-        prevVal = (m_curVal &  kMask[m_bitLeft]) << (num - m_bitLeft);
+    else
+    {
+        prevVal = (m_curVal & kMask[m_bitLeft]) << (num - m_bitLeft);
         m_totalBits -= m_bitLeft;
         num -= m_bitLeft;
         m_buffer++;
@@ -163,10 +168,11 @@ uint32_t BitStreamReader::showBits(uint32_t num)
     uint32_t curVal = m_curVal;
     if (num <= bitLeft)
         bitLeft -= num;
-    else {
-        prevVal = (curVal &  kMask[bitLeft]) << (num - bitLeft);
-        //curVal = ntohl(m_buffer[1]);
-        curVal = getCurVal(m_buffer+1);
+    else
+    {
+        prevVal = (curVal & kMask[bitLeft]) << (num - bitLeft);
+        // curVal = ntohl(m_buffer[1]);
+        curVal = getCurVal(m_buffer + 1);
         bitLeft = INT_BIT - num + bitLeft;
     }
     return (prevVal + (curVal >> bitLeft)) & kMask[num];
@@ -178,7 +184,8 @@ uint32_t BitStreamReader::getBit()
         throw BitStreamException();
     if (m_bitLeft > 0)
         m_bitLeft--;
-    else {
+    else
+    {
         m_buffer++;
         m_curVal = getCurVal(m_buffer);
         m_bitLeft = INT_BIT - 1;
@@ -194,7 +201,8 @@ void BitStreamReader::skipBits(uint32_t num)
     NX_ASSERT(num <= INT_BIT);
     if (num <= m_bitLeft)
         m_bitLeft -= num;
-    else {
+    else
+    {
         m_buffer++;
         m_curVal = getCurVal(m_buffer);
         m_bitLeft = INT_BIT - num + m_bitLeft;
@@ -224,7 +232,8 @@ void BitStreamReader::skipBit()
         throw BitStreamException();
     if (m_bitLeft > 0)
         m_bitLeft--;
-    else {
+    else
+    {
         m_buffer++;
         m_curVal = getCurVal(m_buffer);
         m_bitLeft = INT_BIT - 1;
@@ -235,24 +244,29 @@ void BitStreamReader::skipBit()
 int BitStreamReader::getGolomb()
 {
     int cnt = 0;
-    for ( ; getBits(1) == 0; cnt++) {}
-    return (1 << cnt)-1 + getBits(cnt);
+    for (; getBits(1) == 0; cnt++)
+    {
+    }
+    return (1 << cnt) - 1 + getBits(cnt);
 }
 
 int BitStreamReader::getSignedGolomb()
 {
     int value = getGolomb();
 
-    if (value % 2) {
+    if (value % 2)
+    {
         return value / 2 + 1;
-    } else {
+    }
+    else
+    {
         return -value / 2;
     }
 }
 
 uint32_t BitStreamReader::getBitsCount() const
 {
-    return (uint32_t)(m_buffer - m_initBuffer) * INT_BIT + INT_BIT - m_bitLeft;
+    return (uint32_t) (m_buffer - m_initBuffer) * INT_BIT + INT_BIT - m_bitLeft;
 }
 
 void BitStreamWriter::putBits(uint32_t num, uint32_t value)
@@ -260,12 +274,14 @@ void BitStreamWriter::putBits(uint32_t num, uint32_t value)
     if (m_totalBits < num)
         throw BitStreamException();
     value &= kMask[num];
-    if (m_bitsWritten + num < INT_BIT) {
+    if (m_bitsWritten + num < INT_BIT)
+    {
         m_bitsWritten += num;
         m_curVal <<= num;
         m_curVal += value;
     }
-    else {
+    else
+    {
         m_curVal <<= (INT_BIT - m_bitsWritten);
         m_bitsWritten = m_bitsWritten + num - INT_BIT;
         m_curVal += value >> m_bitsWritten;
@@ -303,7 +319,7 @@ void BitStreamWriter::skipBits(uint32_t cnt)
 {
     NX_ASSERT(m_bitsWritten % INT_BIT == 0);
     BitStreamReader reader;
-    reader.setBuffer((uint8_t*)m_buffer, (uint8_t*) (m_buffer + 1));
+    reader.setBuffer((uint8_t*) m_buffer, (uint8_t*) (m_buffer + 1));
     putBits(cnt, reader.getBits(cnt));
 }
 
@@ -344,7 +360,7 @@ void BitStreamWriter::putSignedGolomb(int32_t value)
     if (value <= 0)
         putGolomb(-value * 2);
     else
-        putGolomb(value * 2-1);
+        putGolomb(value * 2 - 1);
 }
 
 void BitStreamWriter::putGolomb(uint32_t value)
@@ -352,15 +368,15 @@ void BitStreamWriter::putGolomb(uint32_t value)
     unsigned maxVal = 0;
     int x = 1;
     int nBit = 0;
-    for ( ; maxVal < value; maxVal += x) {
+    for (; maxVal < value; maxVal += x)
+    {
         x <<= 1;
         nBit++;
     }
 
-    putBits(nBit+1, 1);
-    putBits(nBit, value - (x-1));
+    putBits(nBit + 1, 1);
+    putBits(nBit, value - (x - 1));
 }
-
 
 void BitStreamWriter::flushBits(bool finishLastByte)
 {
@@ -374,7 +390,7 @@ void BitStreamWriter::flushBits(bool finishLastByte)
     m_curVal <<= INT_BIT - m_bitsWritten;
     int bitOffset = 24;
     int bitsLeft = m_bitsWritten;
-    uint8_t* buffer = (uint8_t*)m_buffer;
+    uint8_t* buffer = (uint8_t*) m_buffer;
     while (bitsLeft >= 8)
     {
         *buffer++ = m_curVal >> bitOffset;

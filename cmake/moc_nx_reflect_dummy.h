@@ -12,13 +12,25 @@
  */
 
 #define NX_REFLECTION_ENUM_CLASS(ENUM, ...) \
-    enum class ENUM { __VA_ARGS__ };
+    enum class ENUM \
+    { \
+        __VA_ARGS__ \
+    };
 
 #define NX_REFLECTION_ENUM(ENUM, ...) \
-    enum ENUM { __VA_ARGS__ };
+    enum ENUM \
+    { \
+        __VA_ARGS__ \
+    };
 
 #define NX_REFLECTION_ENUM_CLASS_IN_CLASS(ENUM, ...) \
-    enum class ENUM { __VA_ARGS__ };
+    enum class ENUM \
+    { \
+        __VA_ARGS__ \
+    };
 
 #define NX_REFLECTION_ENUM_IN_CLASS(ENUM, ...) \
-    enum ENUM { __VA_ARGS__ };
+    enum ENUM \
+    { \
+        __VA_ARGS__ \
+    };

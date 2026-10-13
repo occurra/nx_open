@@ -31,7 +31,11 @@ TEST(StunMessage, attribute_order_is_preserved)
     msg.addAttribute(std::make_unique<attrs::Unknown>(523, "523"));
 
     std::vector<int> order;
-    msg.forEachAttribute([&order](const attrs::Attribute* attr) { order.push_back(attr->getType()); });
+    msg.forEachAttribute(
+        [&order](const attrs::Attribute* attr)
+        {
+            order.push_back(attr->getType());
+        });
 
     std::vector<int> expectedOrder{123, 11, 523};
     ASSERT_EQ(expectedOrder, order);

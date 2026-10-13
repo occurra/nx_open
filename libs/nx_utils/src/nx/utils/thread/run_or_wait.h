@@ -18,7 +18,10 @@ template<typename Parameter, typename Result, typename Hasher = std::hash<Parame
 class RunOrWait
 {
 public:
-    RunOrWait(std::function<Result(const Parameter&)> func): m_function(std::move(func)) {}
+    RunOrWait(std::function<Result(const Parameter&)> func):
+        m_function(std::move(func))
+    {
+    }
     ~RunOrWait()
     {
         std::vector<std::shared_future<Result>> futures;

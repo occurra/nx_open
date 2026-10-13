@@ -2,8 +2,8 @@
 
 #pragma once
 
-// TODO: #akolesnikov Most (if not all) of these strings are not relevant for nx_network and should be moved
-// to vms.
+// TODO: #akolesnikov Most (if not all) of these strings are not relevant for nx_network and should
+// be moved to vms.
 namespace Qn {
 
 static constexpr char GUID_HEADER_NAME[] = "X-guid";
@@ -70,8 +70,10 @@ static constexpr char VIDEOWALL_INSTANCE_HEADER_NAME[] = "videoWallInstanceGuid"
 
 static constexpr char MERGE_ID_HEADER_NAME[] = "Nx-Merge-Id";
 
-/** Header is added to all requests produced by the VMS Rules Engine. Contains ID of the source Rule. */
+/** Header is added to all requests produced by the VMS Rules Engine. Contains ID of the source
+ * Rule. */
 static constexpr char CREATED_BY_RULE_HEADER_NAME[] = "Nx-Created-By-Rule";
 
 static constexpr char kNxAuthSignHeaderName[] = "Nx-Auth-Sign";
+
 } // namespace Qn

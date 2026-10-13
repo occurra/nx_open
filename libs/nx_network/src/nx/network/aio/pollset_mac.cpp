@@ -2,20 +2,19 @@
 
 #if defined(__APPLE__) || defined(__FreeBSD__)
 
-#include "pollset.h"
+    #include <limits>
+    #include <set>
 
-#include <limits>
-#include <set>
+    #include <sys/event.h>
+    #include <sys/time.h>
+    #include <sys/types.h>
+    #include <unistd.h>
 
-#include <sys/types.h>
-#include <sys/event.h>
-#include <sys/time.h>
-#include <unistd.h>
+    #include "../common_socket_impl.h"
+    #include "../system_socket.h"
+    #include "pollset.h"
 
-#include "../common_socket_impl.h"
-#include "../system_socket.h"
-
-//TODO #akolesnikov get rid of PollSetImpl::monitoredEvents due to performance cosiderations
+// TODO #akolesnikov get rid of PollSetImpl::monitoredEvents due to performance cosiderations
 
 using namespace std;
 
@@ -107,9 +106,10 @@ PollSet::const_iterator PollSet::const_iterator::operator++(int) //< it++
 PollSet::const_iterator& PollSet::const_iterator::operator++() //< ++it
 {
     m_impl->currentIndex++;
-    while (m_impl->currentIndex < m_impl->pollSetImpl->receivedEventCount &&
-        (m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].filter == EVFILT_USER ||
-            m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].ident == (uintptr_t)-1))  //socket has been removed
+    while (m_impl->currentIndex < m_impl->pollSetImpl->receivedEventCount
+           && (m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].filter == EVFILT_USER
+               || m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].ident
+                   == (uintptr_t) -1)) // socket has been removed
     {
         m_impl->currentIndex++;
     }
@@ -131,22 +131,26 @@ const Pollable* PollSet::const_iterator::socket() const
 aio::EventType PollSet::const_iterator::eventType() const
 {
     const int filterType = m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].filter;
-    const bool failure = (m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].flags & EV_ERROR) > 0;
-    const bool eof = (m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].flags & EV_EOF) > 0;
+    const bool failure =
+        (m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].flags & EV_ERROR) > 0;
+    const bool eof =
+        (m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].flags & EV_EOF) > 0;
 
     aio::EventType revents = aio::etNone;
-    if( filterType == EVFILT_READ )
+    if (filterType == EVFILT_READ)
         revents = failure ? aio::etError : aio::etRead;
-    else if( filterType == EVFILT_WRITE )
+    else if (filterType == EVFILT_WRITE)
         revents = (failure || eof) ? aio::etError : aio::etWrite;
     return revents;
 }
 
 void* PollSet::const_iterator::userData()
 {
-    return
-        static_cast<Pollable*>(m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].udata)
-        ->impl()->monitoredEvents[eventType()].userData;
+    return static_cast<Pollable*>(
+               m_impl->pollSetImpl->receivedEventlist[m_impl->currentIndex].udata)
+        ->impl()
+        ->monitoredEvents[eventType()]
+        .userData;
 }
 
 bool PollSet::const_iterator::operator==(const const_iterator& right) const
@@ -229,17 +233,23 @@ void PollSet::remove(Pollable* const sock, EventType eventType)
 
     struct kevent _eventChange;
     EV_SET(&_eventChange, sock->handle(), kfilterType, EV_DELETE, 0, 0, NULL);
-    kevent(m_impl->kqueueFd, &_eventChange, 1, NULL, 0, NULL); //< Ignoring return code, since event is removed in any case.
+    kevent(
+        m_impl->kqueueFd,
+        &_eventChange,
+        1,
+        NULL,
+        0,
+        NULL); //< Ignoring return code, since event is removed in any case.
     m_impl->monitoredEvents.erase(it);
 
     // Erasing socket from occured events array.
     // TODO: #akolesnikov Better remove this linear run.
     for (int i = 0; i < m_impl->receivedEventCount; ++i)
     {
-        if ((AbstractSocket::SOCKET_HANDLE)m_impl->receivedEventlist[i].ident == sock->handle() &&
-            m_impl->receivedEventlist[i].filter == kfilterType)
+        if ((AbstractSocket::SOCKET_HANDLE) m_impl->receivedEventlist[i].ident == sock->handle()
+            && m_impl->receivedEventlist[i].filter == kfilterType)
         {
-            m_impl->receivedEventlist[i].ident = (uintptr_t)-1;
+            m_impl->receivedEventlist[i].ident = (uintptr_t) -1;
         }
     }
 
@@ -278,7 +288,9 @@ int PollSet::poll(int millisToWait)
     if (result == 0) //< Timed out.
         return 0;
     if (result < 0)
-        return errno == EINTR ? 0 : result; //< Not reporting EINTR as an error since it is quite normal.
+        return errno == EINTR
+            ? 0
+            : result; //< Not reporting EINTR as an error since it is quite normal.
 
     m_impl->receivedEventCount = result;
     // Not reporting event used to interrupt blocking poll.
@@ -312,4 +324,4 @@ PollSet::const_iterator PollSet::end() const
 } // namespace network
 } // namespace nx
 
-#endif  //defined(__APPLE__) || defined(__FreeBSD__)
+#endif // defined(__APPLE__) || defined(__FreeBSD__)

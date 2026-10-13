@@ -8,8 +8,7 @@ extern "C" {
 
 #include <QtCore/QString>
 
-namespace nx::media::jpeg
-{
+namespace nx::media::jpeg {
 
 struct ImageInfo
 {
@@ -27,9 +26,9 @@ enum ResultCode
     failed
 };
 
-QString toString( ResultCode resCode );
+QString toString(ResultCode resCode);
 
-//!Event-driven jpg parser. Quite simple due to performance considerations and current use case
+//! Event-driven jpg parser. Quite simple due to performance considerations and current use case
 class NX_CODEC_API JpegParser
 {
 public:
@@ -37,18 +36,20 @@ public:
     static constexpr size_t kMarkerLengthSize = 2;
 
 public:
-    //!bool( int markerType, size_t markerLength, size_t currentOffset )
+    //! bool( int markerType, size_t markerLength, size_t currentOffset )
     /*!
-        \param markerLength Length of marker, including 2-byte marker length field, but not including entropy-coded data
+        \param markerLength Length of marker, including 2-byte marker length field, but not
+       including entropy-coded data
         \param currentOffset Offset of start of marker (points to 0xff)
-        If handler returns \a false, parsing stops and \a JpegParser::parse returns \a nx::media::jpeg::interrupted
+        If handler returns \a false, parsing stops and \a JpegParser::parse returns \a
+       nx::media::jpeg::interrupted
     */
-    typedef bool ParseHandlerFuncType( int, size_t, size_t );
-    //!void( int error, size_t currentOffset )
+    typedef bool ParseHandlerFuncType(int, size_t, size_t);
+    //! void( int error, size_t currentOffset )
     /*!
         \param currentOffset Offset of start of marker (points to 0xff)
     */
-    typedef void ErrorHandlerFuncType( int, size_t );
+    typedef void ErrorHandlerFuncType(int, size_t);
 
     JpegParser();
     /*!
@@ -58,8 +59,9 @@ public:
         If \a parseHandler returns \a true
     */
     template<class T>
-    void setParseHandler( const T& parseHandler ) {
-        m_parseHandler = std::function<ParseHandlerFuncType>( parseHandler );
+    void setParseHandler(const T& parseHandler)
+    {
+        m_parseHandler = std::function<ParseHandlerFuncType>(parseHandler);
     }
     /*!
         \code{cpp}
@@ -67,11 +69,12 @@ public:
         \endcode
     */
     template<class T>
-    void setErrorHandler( const T& errorHandler ) {
-        m_errorHandler = std::function<ErrorHandlerFuncType>( errorHandler );
+    void setErrorHandler(const T& errorHandler)
+    {
+        m_errorHandler = std::function<ErrorHandlerFuncType>(errorHandler);
     }
 
-    ResultCode parse( const quint8* data, size_t size );
+    ResultCode parse(const quint8* data, size_t size);
 
 private:
     enum ParsingState
@@ -88,9 +91,6 @@ private:
     int m_currentMarkerCode;
 };
 
-NX_CODEC_API bool readJpegImageInfo(
-    const quint8* data,
-    size_t size,
-    ImageInfo* const imgInfo);
+NX_CODEC_API bool readJpegImageInfo(const quint8* data, size_t size, ImageInfo* const imgInfo);
 
 } // namespace nx::media::jpeg

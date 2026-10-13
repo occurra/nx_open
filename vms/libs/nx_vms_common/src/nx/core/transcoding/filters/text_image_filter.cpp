@@ -26,15 +26,11 @@ using DocumentPtr = QSharedPointer<QTextDocument>;
 
 Qt::Alignment getAlignFromCorner(Qt::Corner corner)
 {
-    return (corner == Qt::BottomLeftCorner || corner == Qt::TopLeftCorner)
-        ? Qt::AlignLeft
-        : Qt::AlignRight;
+    return (corner == Qt::BottomLeftCorner || corner == Qt::TopLeftCorner) ? Qt::AlignLeft
+                                                                           : Qt::AlignRight;
 }
 
-int getBufferYOffset(
-    Qt::Corner corner,
-    int frameHeight,
-    int textHeight)
+int getBufferYOffset(Qt::Corner corner, int frameHeight, int textHeight)
 {
     return (corner == Qt::TopLeftCorner || corner == Qt::TopRightCorner)
         ? 0
@@ -43,7 +39,7 @@ int getBufferYOffset(
 
 QTextCharFormat getCharFormat()
 {
-    static const QColor kTextOutlineColor(32,32,32,80);
+    static const QColor kTextOutlineColor(32, 32, 32, 80);
 
     QTextCharFormat result;
     result.setTextOutline(QPen(kTextOutlineColor));
@@ -159,18 +155,14 @@ struct TextImageFilter::Private
 
     void updateTextData(const CLVideoDecoderOutputPtr& frame);
 
-    qint64 calculateHash(
-        const quint8* data,
-        const QSize& size,
-        int linesize);
+    qint64 calculateHash(const quint8* data, const QSize& size, int linesize);
 };
 
 TextImageFilter::Private::Private(
     const VideoLayoutPtr& videoLayout,
     const Qt::Corner corner,
     const TextGetter& textGetter,
-    const Factor sizeFactor)
-    :
+    const Factor sizeFactor):
     textGetter(textGetter),
     corner(corner),
     checkHash(videoLayout && videoLayout->channelCount() > 1),
@@ -200,15 +192,17 @@ void TextImageFilter::Private::updateTextData(const CLVideoDecoderOutputPtr& fra
     const auto drawWidth = qPower2Ceil(textWidth, CL_MEDIA_ALIGNMENT);
     const int bufferSize = drawWidth * textHeight * 4;
     imageBuffer.reset(
-        static_cast<quint8*>(qMallocAligned(bufferSize, CL_MEDIA_ALIGNMENT)), &qFreeAligned);
-    textImage.reset(new QImage(imageBuffer.data(), drawWidth, textHeight, drawWidth * 4,
+        static_cast<quint8*>(qMallocAligned(bufferSize, CL_MEDIA_ALIGNMENT)),
+        &qFreeAligned);
+    textImage.reset(new QImage(
+        imageBuffer.data(),
+        drawWidth,
+        textHeight,
+        drawWidth * 4,
         QImage::Format_ARGB32_Premultiplied));
 }
 
-qint64 TextImageFilter::Private::calculateHash(
-    const quint8* data,
-    const QSize& size,
-    int linesize)
+qint64 TextImageFilter::Private::calculateHash(const quint8* data, const QSize& size, int linesize)
 {
     qint64 result = 0;
     const qint64* data64 = reinterpret_cast<const qint64*>(data);
@@ -230,16 +224,14 @@ QnAbstractImageFilterPtr TextImageFilter::create(
     const TextGetter& textGetter,
     const Factor& factor)
 {
-    return QnAbstractImageFilterPtr(
-        new TextImageFilter(videoLayout, corner, textGetter, factor));
+    return QnAbstractImageFilterPtr(new TextImageFilter(videoLayout, corner, textGetter, factor));
 }
 
 TextImageFilter::TextImageFilter(
     const VideoLayoutPtr& videoLayout,
     const Qt::Corner corner,
     const TextGetter& textGetter,
-    const Factor& factor)
-    :
+    const Factor& factor):
     d(new Private(videoLayout, corner, textGetter, factor))
 {
 }
@@ -284,31 +276,35 @@ CLVideoDecoderOutputPtr TextImageFilter::updateImage(const CLVideoDecoderOutputP
         frame->data[0] + bufferPlaneYOffset,
         frame->data[1] + bufferUVOffset,
         frame->data[2] + bufferUVOffset,
-        d->textImage->width(), d->textImage->height(),
+        d->textImage->width(),
+        d->textImage->height(),
         d->textImage->bytesPerLine(),
-        frame->linesize[0], frame->linesize[1], 255);
+        frame->linesize[0],
+        frame->linesize[1],
+        255);
 
     QPainter p(d->textImage.data());
-    p.setRenderHints(
-        QPainter::Antialiasing | QPainter::TextAntialiasing);
+    p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
     d->document->drawContents(&p);
 
     // Copy and convert RGBA32 image back to frame buffer.
     bgra_to_yv12_simd_intr(
         d->imageBuffer.data(),
         d->textImage->bytesPerLine(),
-        frame->data[0]+bufferPlaneYOffset,
-        frame->data[1]+bufferUVOffset,
-        frame->data[2]+bufferUVOffset,
-        frame->linesize[0], frame->linesize[1],
-        d->textImage->width(), d->textImage->height(),
+        frame->data[0] + bufferPlaneYOffset,
+        frame->data[1] + bufferUVOffset,
+        frame->data[2] + bufferUVOffset,
+        frame->linesize[0],
+        frame->linesize[1],
+        d->textImage->width(),
+        d->textImage->height(),
         false);
 
     if (!d->checkHash)
         return frame;
 
     d->hash = d->calculateHash(
-        frame->data[0]+bufferPlaneYOffset,
+        frame->data[0] + bufferPlaneYOffset,
         d->textImage->size(),
         frame->linesize[0]);
 

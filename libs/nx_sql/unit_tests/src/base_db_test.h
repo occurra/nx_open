@@ -17,9 +17,7 @@ namespace nx::sql::test {
 
 // TODO: #akolesnikov Fix weird class names in this file.
 
-class BasicFixture:
-    public ::testing::Test,
-    public nx::utils::test::TestWithTemporaryDirectory
+class BasicFixture: public ::testing::Test, public nx::utils::test::TestWithTemporaryDirectory
 {
 public:
     BasicFixture();
@@ -43,8 +41,7 @@ protected:
         std::vector<RecordStructure> records;
 
         asyncSqlQueryExecutor().executeSelect(
-            [queryText, &records](
-                nx::sql::QueryContext* queryContext)
+            [queryText, &records](nx::sql::QueryContext* queryContext)
             {
                 sql::SqlQuery query(queryContext->connection());
                 query.prepare(queryText);
@@ -74,7 +71,7 @@ protected:
     {
         std::promise<nx::sql::DBResult> queryCompletedPromise;
 
-        //starting async operation
+        // starting async operation
         asyncSqlQueryExecutor().executeUpdate(
             dbQueryFunc,
             [&queryCompletedPromise](DBResult dbResult)
@@ -99,8 +96,7 @@ private:
 /**
  * This fixture prepares DB struct for updates, tunes DB.
  */
-class BaseDbTest:
-    public BasicFixture
+class BaseDbTest: public BasicFixture
 {
     using base_type = BasicFixture;
 
@@ -122,8 +118,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class FixtureWithQueryExecutorOnly:
-    public BasicFixture
+class FixtureWithQueryExecutorOnly: public BasicFixture
 {
     using base_type = BasicFixture;
 

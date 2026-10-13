@@ -12,8 +12,7 @@
 
 namespace nx::utils::compact_int::test {
 
-class CompactInt:
-    public ::testing::Test
+class CompactInt: public ::testing::Test
 {
 protected:
     long long generateRandomInteger()
@@ -26,8 +25,13 @@ protected:
     std::vector<long long> generateRandomIntegerSequence()
     {
         std::vector<long long> sequence(101, 0);
-        std::generate(sequence.begin(), sequence.end(),
-            [this]() { return generateRandomInteger(); });
+        std::generate(
+            sequence.begin(),
+            sequence.end(),
+            [this]()
+            {
+                return generateRandomInteger();
+            });
 
         if (nx::utils::random::number<int>(0, 1))
             sequence.insert(sequence.begin(), 0);
@@ -120,7 +124,8 @@ TEST_F(CompactInt, DISABLED_performance)
     std::vector<Data> items;
     items.resize(count);
     std::for_each(
-        items.begin(), items.end(),
+        items.begin(),
+        items.end(),
         [](auto& item)
         {
             item.f1 = rand();
@@ -134,7 +139,8 @@ TEST_F(CompactInt, DISABLED_performance)
     const auto t0 = std::chrono::steady_clock::now();
 
     std::for_each(
-        items.begin(), items.end(),
+        items.begin(),
+        items.end(),
         [&data](const auto& item)
         {
             item.serialize(&data);
@@ -142,9 +148,9 @@ TEST_F(CompactInt, DISABLED_performance)
 
     const auto t1 = std::chrono::steady_clock::now();
 
-    std::cout << "Serializing " << items.size() << " items took " <<
-        duration_cast<milliseconds>(t1 - t0).count() << "ms, " <<
-        data.size() << " bytes written" << std::endl;
+    std::cout << "Serializing " << items.size() << " items took "
+              << duration_cast<milliseconds>(t1 - t0).count() << "ms, " << data.size()
+              << " bytes written" << std::endl;
 
     const auto t2 = std::chrono::steady_clock::now();
 
@@ -153,7 +159,8 @@ TEST_F(CompactInt, DISABLED_performance)
     bool result = true;
 
     std::for_each(
-        items.begin(), items.end(),
+        items.begin(),
+        items.end(),
         [&begin, end, &result](auto& item)
         {
             result &= item.deserialize(&begin, end);
@@ -163,8 +170,8 @@ TEST_F(CompactInt, DISABLED_performance)
 
     const auto t3 = std::chrono::steady_clock::now();
 
-    std::cout << "Deserializing " << items.size() << " items took " <<
-        duration_cast<milliseconds>(t3 - t2).count() << "ms" << std::endl;
+    std::cout << "Deserializing " << items.size() << " items took "
+              << duration_cast<milliseconds>(t3 - t2).count() << "ms" << std::endl;
 
     std::this_thread::sleep_for(std::chrono::minutes(1));
 }

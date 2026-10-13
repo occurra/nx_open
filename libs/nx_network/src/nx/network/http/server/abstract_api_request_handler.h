@@ -13,9 +13,9 @@ namespace nx::network::http {
 
 /**
  * HTTP server request handler which deserializes input/serializes output data using nx::reflect.
- * Reads format query parameter from incoming request and deserializes request/serializes response accordingly.
- * Request that returns some data should pass it to requestCompleted function.
- * NOTE: Input  may be void. If Input is void, AbstractApiRequestHandler::processRequest have no
+ * Reads format query parameter from incoming request and deserializes request/serializes response
+ * accordingly. Request that returns some data should pass it to requestCompleted function. NOTE:
+ * Input  may be void. If Input is void, AbstractApiRequestHandler::processRequest have no
  * inputData argument.
  * NOTE: GET request input data is always deserialized from url query.
  * NOTE: POST request output data is ignored.
@@ -61,8 +61,7 @@ public:
 //-------------------------------------------------------------------------------------------------
 
 template<typename Func>
-class CustomApiRequestHandler:
-    public AbstractApiRequestHandler<void>
+class CustomApiRequestHandler: public AbstractApiRequestHandler<void>
 {
 public:
     CustomApiRequestHandler() = default;
@@ -71,8 +70,7 @@ public:
     {
     }
 
-    virtual void processRequest(
-        http::RequestContext /*requestContext*/)
+    virtual void processRequest(http::RequestContext /*requestContext*/)
     {
         this->requestCompleted(ApiRequestResult(), m_func());
     }
@@ -93,7 +91,10 @@ void registerApiRequestHandler(
 
     dispatcher->registerRequestProcessor(
         path,
-        [func]() { return std::make_unique<Handler>(func); },
+        [func]()
+        {
+            return std::make_unique<Handler>(func);
+        },
         method);
 }
 

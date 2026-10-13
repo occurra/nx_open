@@ -12,14 +12,10 @@
 
 namespace nx::utils::test {
 
-class Counter:
-    public ::testing::Test
+class Counter: public ::testing::Test
 {
 public:
-    Counter()
-    {
-        m_counter = std::make_unique<utils::Counter>();
-    }
+    Counter() { m_counter = std::make_unique<utils::Counter>(); }
 
     ~Counter()
     {
@@ -28,10 +24,7 @@ public:
     }
 
 protected:
-    void increaseCounter()
-    {
-        m_counter->increment();
-    }
+    void increaseCounter() { m_counter->increment(); }
 
     void whenDecrementedAsynchronously()
     {
@@ -49,8 +42,7 @@ protected:
 
     void whenWaitForRandomShortTime()
     {
-        std::this_thread::sleep_for(
-            std::chrono::microseconds(random::number<int>(0, 10)));
+        std::this_thread::sleep_for(std::chrono::microseconds(random::number<int>(0, 10)));
     }
 
     void thenCounterCanBeRemovedAsap()

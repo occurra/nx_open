@@ -10,6 +10,7 @@
 #include <nx/reflect/enum_instrument.h>
 
 namespace nx::vms::api::dewarping {
+
 Q_NAMESPACE_EXPORT(NX_VMS_API)
 Q_CLASSINFO("RegisterEnumClassesUnscoped", "false")
 
@@ -31,9 +32,8 @@ constexpr auto nxReflectVisitAllEnumItems(FisheyeCameraMount*, Visitor&& visitor
         Item{FisheyeCameraMount::table, "table"},
         // Compatibility section.
         Item{FisheyeCameraMount::wall, "Horizontal"},
-        Item{FisheyeCameraMount::table , "VerticalUp"},
-        Item{FisheyeCameraMount::ceiling, "VerticalDown"}
-    );
+        Item{FisheyeCameraMount::table, "VerticalUp"},
+        Item{FisheyeCameraMount::ceiling, "VerticalDown"});
 }
 
 NX_VMS_API std::ostream& operator<<(std::ostream& os, FisheyeCameraMount value);

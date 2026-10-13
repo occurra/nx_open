@@ -2,9 +2,10 @@
 
 #include "predefined_host_resolver.h"
 
+#include <nx/utils/system_network_headers.h>
+
 #include <nx/utils/std/algorithm.h>
 #include <nx/utils/string.h>
-#include <nx/utils/system_network_headers.h>
 
 namespace nx::network {
 
@@ -23,8 +24,8 @@ SystemError::ErrorCode PredefinedHostResolver::resolve(
     if (it == m_etcHosts.end() || !nx::utils::startsWith(it->first, reversedName))
         return SystemError::hostNotFound;
 
-    if (reversedName != it->first &&
-        !(reversedName.size() < it->first.size() && it->first[reversedName.size()] == '.'))
+    if (reversedName != it->first
+        && !(reversedName.size() < it->first.size() && it->first[reversedName.size()] == '.'))
     {
         // Suitable name must start with "originalName."
         return SystemError::hostNotFound;
@@ -37,14 +38,10 @@ SystemError::ErrorCode PredefinedHostResolver::resolve(
         resolveResult->entries.push_back(entry);
     }
 
-    return resolveResult->entries.empty()
-        ? SystemError::hostNotFound
-        : SystemError::noError;
+    return resolveResult->entries.empty() ? SystemError::hostNotFound : SystemError::noError;
 }
 
-void PredefinedHostResolver::addMapping(
-    const std::string& name,
-    std::deque<AddressEntry> entries)
+void PredefinedHostResolver::addMapping(const std::string& name, std::deque<AddressEntry> entries)
 {
     auto reversedName = nx::utils::reverseWords(name, '.');
     nx::utils::toLower(&reversedName);

@@ -47,10 +47,7 @@ std::uint8_t MessageParserBuffer::NextByte(bool* ok)
     return value;
 }
 
-void MessageParserBuffer::readNextBytesToBuffer(
-    char* bytes,
-    std::size_t sz,
-    bool* ok)
+void MessageParserBuffer::readNextBytesToBuffer(char* bytes, std::size_t sz, bool* ok)
 {
     if (!read(sz, bytes))
     {

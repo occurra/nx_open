@@ -19,12 +19,13 @@ namespace Qt {
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #elif defined(_MSC_VER)
     #pragma warning(push)
-    #pragma warning(disable: 4996)
+    #pragma warning(disable : 4996)
 #endif
 
 NX_REFLECTION_INSTRUMENT_ENUM(Orientation, Horizontal, Vertical)
 
-NX_REFLECTION_INSTRUMENT_ENUM(AlignmentFlag,
+NX_REFLECTION_INSTRUMENT_ENUM(
+    AlignmentFlag,
     AlignLeft,
     AlignLeading,
     AlignRight,
@@ -38,15 +39,9 @@ NX_REFLECTION_INSTRUMENT_ENUM(AlignmentFlag,
     AlignVCenter,
     AlignBaseline,
     AlignVertical_Mask,
-    AlignCenter
-)
+    AlignCenter)
 
-NX_REFLECTION_INSTRUMENT_ENUM(DateFormat,
-    TextDate,
-    ISODate,
-    RFC2822Date,
-    ISODateWithMs
-)
+NX_REFLECTION_INSTRUMENT_ENUM(DateFormat, TextDate, ISODate, RFC2822Date, ISODateWithMs)
 
 template<typename Visitor>
 constexpr auto nxReflectVisitAllEnumItems(Qt::SortOrder*, Visitor&& visitor)
@@ -54,16 +49,15 @@ constexpr auto nxReflectVisitAllEnumItems(Qt::SortOrder*, Visitor&& visitor)
     using Item = nx::reflect::enumeration::Item<Qt::SortOrder>;
     return visitor(
         Item{Qt::SortOrder::AscendingOrder, "asc"},
-        Item{Qt::SortOrder::DescendingOrder, "desc"}
-    );
+        Item{Qt::SortOrder::DescendingOrder, "desc"});
 }
 
-NX_REFLECTION_INSTRUMENT_ENUM(Corner,
+NX_REFLECTION_INSTRUMENT_ENUM(
+    Corner,
     TopLeftCorner,
     TopRightCorner,
     BottomLeftCorner,
-    BottomRightCorner
-)
+    BottomRightCorner)
 
 #if defined(__GNUC__)
     #pragma GCC diagnostic pop

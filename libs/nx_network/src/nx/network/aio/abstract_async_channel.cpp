@@ -3,8 +3,8 @@
 #include "abstract_async_channel.h"
 
 #include <future>
-#include <utility>
 #include <system_error>
+#include <utility>
 
 #include <nx/utils/general_macros.h>
 #include <nx/utils/system_error.h>
@@ -13,13 +13,15 @@ namespace nx::network::aio {
 
 namespace {
 
-template <typename Func, typename Buffer>
+template<typename Func, typename Buffer>
 cf::future<std::size_t> futurizeIo(Func func, AbstractAsyncChannel* channel, const Buffer& buffer)
 {
     cf::promise<std::pair<SystemError::ErrorCode, std::size_t>> promise;
     auto future = promise.get_future();
 
-    func(*channel, buffer,
+    func(
+        *channel,
+        buffer,
         [channel, promise = std::move(promise)](auto errorCode, auto transferredSize) mutable
         {
             channel->post(
@@ -29,8 +31,7 @@ cf::future<std::size_t> futurizeIo(Func func, AbstractAsyncChannel* channel, con
                 });
         });
 
-    return future
-        .then(cf::translate_broken_promise_to_operation_canceled)
+    return future.then(cf::translate_broken_promise_to_operation_canceled)
         .then_unwrap(
             [](auto result) mutable
             {
@@ -38,17 +39,17 @@ cf::future<std::size_t> futurizeIo(Func func, AbstractAsyncChannel* channel, con
 
                 if (errorCode)
                 {
-                    throw std::system_error(errorCode,
-                        // TODO: Remove special case when we upgrade gcc.
-                        // See: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60555
-                        #if defined(__linux__) && defined(__GNUC__) && ( \
-                            __GNUC__ < 8 \
-                            || __GNUC__ == 8 && __GNUC_MINOR__ < 3 \
-                            || __GNUC__ == 9 && __GNUC_MINOR__ < 1)
-                            std::generic_category()
-                        #else
-                            std::system_category()
-                        #endif
+                    throw std::system_error(
+                        errorCode,
+// TODO: Remove special case when we upgrade gcc.
+// See: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60555
+#if defined(__linux__) && defined(__GNUC__) \
+    && (__GNUC__ < 8 || __GNUC__ == 8 && __GNUC_MINOR__ < 3 \
+        || __GNUC__ == 9 && __GNUC_MINOR__ < 1)
+                        std::generic_category()
+#else
+                        std::system_category()
+#endif
                     );
                 }
 
@@ -84,10 +85,13 @@ cf::future<cf::unit> AbstractAsyncChannel::cancelIO(EventType eventType)
 {
     cf::promise<cf::unit> promise;
     auto future = promise.get_future();
-    cancelIOAsync(eventType,
-        [promise = std::move(promise)]() mutable { promise.set_value(cf::unit()); });
-    return future
-        .then(cf::translate_broken_promise_to_operation_canceled);
+    cancelIOAsync(
+        eventType,
+        [promise = std::move(promise)]() mutable
+        {
+            promise.set_value(cf::unit());
+        });
+    return future.then(cf::translate_broken_promise_to_operation_canceled);
 }
 
 void AbstractAsyncChannel::cancelIOSync(nx::network::aio::EventType eventType)

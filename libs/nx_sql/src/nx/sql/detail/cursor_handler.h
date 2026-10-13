@@ -24,8 +24,7 @@ public:
 };
 
 template<typename Record>
-class CursorHandler:
-    public AbstractCursorHandler
+class CursorHandler: public AbstractCursorHandler
 {
 public:
     using PrepareCursorFunc = nx::MoveOnlyFunc<void(SqlQuery*)>;
@@ -35,8 +34,7 @@ public:
     CursorHandler(
         PrepareCursorFunc prepareCursorFunc,
         ReadRecordFunc readRecordFunc,
-        CursorCreatedHandler cursorCreatedHandler)
-        :
+        CursorCreatedHandler cursorCreatedHandler):
         m_id(nx::Uuid::createUuid()),
         m_prepareCursorFunc(std::move(prepareCursorFunc)),
         m_readRecordFunc(std::move(readRecordFunc)),
@@ -44,10 +42,7 @@ public:
     {
     }
 
-    virtual nx::Uuid id() const override
-    {
-        return m_id;
-    }
+    virtual nx::Uuid id() const override { return m_id; }
 
     virtual void initialize(AbstractDbConnection* const connection) override
     {
@@ -109,8 +104,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class NX_SQL_API BasicCursorOperationExecutor:
-    public BaseExecutor
+class NX_SQL_API BasicCursorOperationExecutor: public BaseExecutor
 {
     using base_type = BaseExecutor;
 
@@ -130,8 +124,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class NX_SQL_API CursorCreator:
-    public BasicCursorOperationExecutor
+class NX_SQL_API CursorCreator: public BasicCursorOperationExecutor
 {
     using base_type = BasicCursorOperationExecutor;
 
@@ -164,23 +157,18 @@ public:
 };
 
 template<typename Record>
-class FetchNextRecordFromCursorTask:
-    public AbstractFetchNextRecordFromCursorTask
+class FetchNextRecordFromCursorTask: public AbstractFetchNextRecordFromCursorTask
 {
 public:
     FetchNextRecordFromCursorTask(
         nx::Uuid cursorId,
-        nx::MoveOnlyFunc<void(DBResult, Record)> completionHandler)
-        :
+        nx::MoveOnlyFunc<void(DBResult, Record)> completionHandler):
         m_cursorId(std::move(cursorId)),
         m_completionHandler(std::move(completionHandler))
     {
     }
 
-    virtual nx::Uuid cursorId() const override
-    {
-        return m_cursorId;
-    }
+    virtual nx::Uuid cursorId() const override { return m_cursorId; }
 
     virtual void fetchNextRecordFrom(AbstractCursorHandler* cursorHandler) override
     {
@@ -206,16 +194,14 @@ private:
     std::optional<Record> m_record;
 };
 
-class FetchCursorDataExecutor:
-    public BasicCursorOperationExecutor
+class FetchCursorDataExecutor: public BasicCursorOperationExecutor
 {
     using base_type = BasicCursorOperationExecutor;
 
 public:
     FetchCursorDataExecutor(
         CursorHandlerPool* cursorContextPool,
-        std::unique_ptr<AbstractFetchNextRecordFromCursorTask> task)
-        :
+        std::unique_ptr<AbstractFetchNextRecordFromCursorTask> task):
         base_type(cursorContextPool),
         m_task(std::move(task))
     {
@@ -227,9 +213,7 @@ public:
         m_task->reportError(errorCode);
     }
 
-    virtual void setExternalTransaction(Transaction* /*transaction*/) override
-    {
-    }
+    virtual void setExternalTransaction(Transaction* /*transaction*/) override {}
 
 protected:
     virtual void executeCursor(AbstractDbConnection* const /*connection*/) override
@@ -251,7 +235,8 @@ protected:
         {
             cursorContextPool()->remove(m_task->cursorId());
             m_task->reportError(e.dbResult());
-            if (e.dbResult() != DBResultCode::endOfData) //< End of cursor data is not an error actually.
+            if (e.dbResult()
+                != DBResultCode::endOfData) //< End of cursor data is not an error actually.
                 throw;
         }
     }
@@ -262,8 +247,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class CleanUpDroppedCursorsExecutor:
-    public BasicCursorOperationExecutor
+class CleanUpDroppedCursorsExecutor: public BasicCursorOperationExecutor
 {
     using base_type = BasicCursorOperationExecutor;
 

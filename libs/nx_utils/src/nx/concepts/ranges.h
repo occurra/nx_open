@@ -13,12 +13,10 @@ concept RangeOf =
 
 template<typename Range, typename Element>
 concept ViewOf =
-    std::ranges::view<Range>
-    && std::same_as<std::ranges::range_value_t<Range>, Element>;
+    std::ranges::view<Range> && std::same_as<std::ranges::range_value_t<Range>, Element>;
 
 template<typename R>
-concept PairLikeRange = std::ranges::range<R>
-    && requires(R& r) {
+concept PairLikeRange = std::ranges::range<R> && requires(R& r) {
     { std::get<0>(*std::ranges::begin(r)) };
     { std::get<1>(*std::ranges::begin(r)) };
 };
@@ -61,4 +59,4 @@ template<typename C, typename T>
 concept CanAppendOne =
     CanEmplaceBack<C, T> || CanPushBack<C, T> || CanEmplace<C, T> || CanInsert<C, T>;
 
-}
+} // namespace nx::ranges

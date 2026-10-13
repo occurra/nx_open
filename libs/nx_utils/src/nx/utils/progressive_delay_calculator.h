@@ -23,13 +23,13 @@ public:
     std::chrono::milliseconds initialDelay = kDefaultInitialDelay;
 
     /**
-    * Value of 0 means no multiplier (actually, same as 1).
-    */
+     * Value of 0 means no multiplier (actually, same as 1).
+     */
     unsigned int delayMultiplier = kDefaultDelayMultiplier;
 
     /**
-    * std::chrono::milliseconds::zero is treated as no limit.
-    */
+     * std::chrono::milliseconds::zero is treated as no limit.
+     */
     std::chrono::milliseconds maxDelay = kDefaultMaxDelay;
 
     /**
@@ -45,15 +45,14 @@ public:
         std::chrono::milliseconds initialDelay,
         unsigned int delayMultiplier,
         std::chrono::milliseconds maxDelay,
-        double randomRatio)
-	    :
-    	initialDelay(initialDelay),
-	    delayMultiplier(delayMultiplier),
-    	maxDelay(maxDelay),
-	    randomRatio(randomRatio)
-	{
-    	NX_ASSERT(randomRatio >= 0 && randomRatio <= 1);
-	}
+        double randomRatio):
+        initialDelay(initialDelay),
+        delayMultiplier(delayMultiplier),
+        maxDelay(maxDelay),
+        randomRatio(randomRatio)
+    {
+        NX_ASSERT(randomRatio >= 0 && randomRatio <= 1);
+    }
 
     bool operator==(const ProgressiveDelayPolicy& rhs) const;
 };

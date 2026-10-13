@@ -19,8 +19,8 @@
  * } while (!end_of_number)
  * {code}
  *
- * NOTE: No conversion to the network byte order is done so that small numbers consume small number of bytes.
- * But, the serialization format is still architecture-independent.
+ * NOTE: No conversion to the network byte order is done so that small numbers consume small number
+ * of bytes. But, the serialization format is still architecture-independent.
  */
 namespace nx::utils::compact_int {
 
@@ -33,9 +33,7 @@ NX_UTILS_API int serialize(long long value, QByteArray* buf);
  * Serializes the array of numbers into buf. No array size is written!
  * @return Bytes written.
  */
-NX_UTILS_API int serialize(
-    const std::vector<long long>& numbers,
-    QByteArray* buf);
+NX_UTILS_API int serialize(const std::vector<long long>& numbers, QByteArray* buf);
 
 template<typename T>
 QByteArray serialized(const T& value)

@@ -2,15 +2,14 @@
 
 #include "webrtc_tracker.h"
 
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
-
 #include <network/tcp_connection_priv.h>
 #include <nx/network/http/custom_headers.h>
 #include <nx/network/websocket/websocket_handshake.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
-#include "webrtc_session_pool.h"
 #include "nx_webrtc_ini.h"
+#include "webrtc_session_pool.h"
 
 namespace nx::webrtc {
 
@@ -56,12 +55,11 @@ void Tracker::start(
     socket->setNonBlockingMode(true);
     socket->bindToAioThread(m_pollable.getAioThread());
 
-    m_webSocket.reset(
-        new WebSocket(
-            std::move(socket),
-            nx::network::websocket::Role::server,
-            nx::network::websocket::FrameType::text,
-            websocket::compressionType(headers)));
+    m_webSocket.reset(new WebSocket(
+        std::move(socket),
+        nx::network::websocket::Role::server,
+        nx::network::websocket::FrameType::text,
+        websocket::compressionType(headers)));
     m_pollable.post(
         [this]()
         {
@@ -112,7 +110,7 @@ void Tracker::sendJson(const rapidjson::Document& doc)
     memcpy(buf.begin(), s.data(), s.size());
     m_webSocket->sendAsync(
         &buf,
-        [this] (SystemError::ErrorCode error, size_t /*size*/)
+        [this](SystemError::ErrorCode error, size_t /*size*/)
         {
             if (error != SystemError::noError)
             {
@@ -206,7 +204,7 @@ bool Tracker::processMessages()
      */
 
     AnswerResult result = examineAnswer();
-    NX_VERBOSE(this, "Answer examination result: %1", (int)result);
+    NX_VERBOSE(this, "Answer examination result: %1", (int) result);
     if (result == AnswerResult::again)
     {
         sendOffer();

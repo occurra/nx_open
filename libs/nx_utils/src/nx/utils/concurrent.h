@@ -24,8 +24,10 @@ namespace utils {
  */
 namespace concurrent {
 
-// TODO: #akolesnikov nx::utils::concurrent::mapped must accept member function pointer without std::mem_fn.
-// TODO: #akolesnikov nx::utils::concurrent::run must accept any number of arguments (requires msvc2013).
+// TODO: #akolesnikov nx::utils::concurrent::mapped must accept member function pointer without
+// std::mem_fn.
+// TODO: #akolesnikov nx::utils::concurrent::run must accept any number of arguments (requires
+// msvc2013).
 
 namespace detail {
 
@@ -33,7 +35,11 @@ template<typename Function>
 class RunnableTask: public QRunnable
 {
 public:
-    RunnableTask(Function function): m_function(std::move(function)) { setAutoDelete(true); }
+    RunnableTask(Function function):
+        m_function(std::move(function))
+    {
+        setAutoDelete(true);
+    }
     virtual void run() override { m_function(); }
 
 private:
@@ -71,8 +77,8 @@ public:
     void waitForFinished()
     {
         NX_MUTEX_LOCKER lock(&m_mutex);
-        while ((!m_isCancelled && m_tasksCompleted < m_totalTasksToRun) ||
-            (m_isCancelled && m_startedTaskCount > 0))
+        while ((!m_isCancelled && m_tasksCompleted < m_totalTasksToRun)
+               || (m_isCancelled && m_startedTaskCount > 0))
         {
             m_cond.wait(lock.mutex());
         }
@@ -87,8 +93,8 @@ public:
     bool isInProgress() const
     {
         NX_MUTEX_LOCKER lock(&m_mutex);
-        return (!m_isCancelled && (m_tasksCompleted < m_totalTasksToRun)) ||
-            (m_isCancelled && (m_startedTaskCount > 0));
+        return (!m_isCancelled && (m_tasksCompleted < m_totalTasksToRun))
+            || (m_isCancelled && (m_startedTaskCount > 0));
     }
 
     bool isCanceled() const
@@ -136,10 +142,7 @@ public:
         return true;
     }
 
-    void setCleanupFunc(std::function<void()> cleanupFunc)
-    {
-        m_cleanupFunc = cleanupFunc;
-    }
+    void setCleanupFunc(std::function<void()> cleanupFunc) { m_cleanupFunc = cleanupFunc; }
 
 protected:
     mutable nx::Mutex m_mutex;
@@ -169,8 +172,7 @@ private:
 };
 
 template<class T>
-class QnFutureImpl:
-    public FutureImplBase<T>
+class QnFutureImpl: public FutureImplBase<T>
 {
     typedef FutureImplBase<T> base_type;
 
@@ -228,8 +230,7 @@ private:
 };
 
 template<>
-class QnFutureImpl<void>:
-    public FutureImplBase<void>
+class QnFutureImpl<void>: public FutureImplBase<void>
 {
     typedef FutureImplBase<void> base_type;
 
@@ -277,7 +278,7 @@ public:
     {
         NX_MUTEX_LOCKER lock(&m_mutex);
 
-        //TODO #akolesnikov is int appropriate here?
+        // TODO #akolesnikov is int appropriate here?
         std::pair<typename Container::iterator, int> curVal(m_currentIter, (int) m_currentIndex);
         if (m_currentIter != m_container.end())
         {
@@ -318,8 +319,7 @@ public:
         Container& container,
         Function function,
         QSharedPointer<FutureImplType> futureImpl,
-        QSharedPointer<detail::safe_forward_iterator<Container>> safeIter)
-        :
+        QSharedPointer<detail::safe_forward_iterator<Container>> safeIter):
         m_threadPool(threadPool),
         m_priority(priority),
         m_container(container),
@@ -337,11 +337,13 @@ public:
         // Launching next task.
         const typename std::pair<typename Container::iterator, int>& nextElement =
             m_safeIter->fetchAndMoveToNextPos();
-        if (nextElement.first != m_container.end() &&
-            futureImplStrongRef->incStartedTaskCountIfAllowed())
+        if (nextElement.first != m_container.end()
+            && futureImplStrongRef->incStartedTaskCountIfAllowed())
         {
             auto functor = std::bind(
-                &detail::TaskExecuter<Container, Function>::operator(), this, nextElement);
+                &detail::TaskExecuter<Container, Function>::operator(),
+                this,
+                nextElement);
             m_threadPool.start(
                 new detail::RunnableTask<decltype(functor)>(std::move(functor)),
                 m_priority);
@@ -391,13 +393,13 @@ protected:
 
 /**
  * Result of concurrent task execution.
- * Provides methods to wait for concurrent computation completion, get computation progress and get results.
+ * Provides methods to wait for concurrent computation completion, get computation progress and get
+ * results.
  *
  * NOTE: Contains array of T elements.
  */
 template<class T>
-class Future:
-    public QnFutureBase<T>
+class Future: public QnFutureBase<T>
 {
     typedef QnFutureBase<T> base_type;
 
@@ -411,15 +413,9 @@ public:
     {
     }
 
-    reference resultAt(size_type index)
-    {
-        return this->m_impl->resultAt(index);
-    }
+    reference resultAt(size_type index) { return this->m_impl->resultAt(index); }
 
-    const_reference resultAt(size_type index) const
-    {
-        return this->m_impl->resultAt(index);
-    }
+    const_reference resultAt(size_type index) const { return this->m_impl->resultAt(index); }
 
     template<class ResultType>
     void setResultAt(size_type index, ResultType&& result)
@@ -429,8 +425,7 @@ public:
 };
 
 template<>
-class Future<void>:
-    public QnFutureBase<void>
+class Future<void>: public QnFutureBase<void>
 {
     typedef QnFutureBase<void> base_type;
 
@@ -440,10 +435,7 @@ public:
     {
     }
 
-    void setResultAt(size_type index)
-    {
-        this->m_impl->setResultAt(index);
-    }
+    void setResultAt(size_type index) { this->m_impl->setResultAt(index); }
 };
 
 static constexpr int kDefaultTaskPriority = 0;
@@ -470,27 +462,37 @@ Future<typename std::invoke_result_t<Function, typename Container::value_type>> 
 
     typename detail::TaskExecuter<Container, Function>* taskExecutor =
         new detail::TaskExecuter<Container, Function>(
-            *threadPool, priority, container, function, futureImpl, safeIter);
+            *threadPool,
+            priority,
+            container,
+            function,
+            futureImpl,
+            safeIter);
     futureImpl->setCleanupFunc(
-        std::function<void()>([taskExecutor]() { delete taskExecutor; }));    //TODO #akolesnikov not good! Think over again
+        std::function<void()>(
+            [taskExecutor]()
+            {
+                delete taskExecutor;
+            })); // TODO #akolesnikov not good! Think over again
 
     // Launching maximum threadPool->maxThreadCount() tasks,
     // other tasks added to threadPool's queue after completion of added tasks.
     const int maxTasksToLaunch = threadPool->maxThreadCount();
-    for (int tasksLaunched = 0;
-        tasksLaunched < maxTasksToLaunch;
-        ++tasksLaunched)
+    for (int tasksLaunched = 0; tasksLaunched < maxTasksToLaunch; ++tasksLaunched)
     {
-        const typename std::pair<typename Container::iterator, int>&
-            nextElement = safeIter->fetchAndMoveToNextPos();
+        const typename std::pair<typename Container::iterator, int>& nextElement =
+            safeIter->fetchAndMoveToNextPos();
         if (nextElement.first == container.end())
-            break;  //all tasks processed
+            break; // all tasks processed
 
         if (!futureImpl->incStartedTaskCountIfAllowed())
         {
             NX_ASSERT(false);
         }
-        auto functor = std::bind(&detail::TaskExecuter<Container, Function>::operator(), taskExecutor, nextElement);
+        auto functor = std::bind(
+            &detail::TaskExecuter<Container, Function>::operator(),
+            taskExecutor,
+            nextElement);
         threadPool->start(
             new detail::RunnableTask<decltype(functor)>(std::move(functor)),
             priority);
@@ -536,11 +538,10 @@ Future<typename std::invoke_result_t<Function>> run(
     Future<typename std::invoke_result_t<Function>> future;
     auto futureImpl = future.impl();
     futureImpl->setTotalTasksToRun(1);
-    auto taskRunFunction =
-        [function = std::move(function), futureImpl]() mutable
-        {
-            futureImpl->executeFunctionOnDataAtPos(0, std::move(function));
-        };
+    auto taskRunFunction = [function = std::move(function), futureImpl]() mutable
+    {
+        futureImpl->executeFunctionOnDataAtPos(0, std::move(function));
+    };
     if (!futureImpl->incStartedTaskCountIfAllowed())
     {
         NX_ASSERT(false);
@@ -555,9 +556,7 @@ Future<typename std::invoke_result_t<Function>> run(
  * Runs function in threadPool with default priority.
  */
 template<typename Function>
-Future<typename std::invoke_result_t<Function>> run(
-    QThreadPool* threadPool,
-    Function function)
+Future<typename std::invoke_result_t<Function>> run(QThreadPool* threadPool, Function function)
 {
     return run(threadPool, kDefaultTaskPriority, std::move(function));
 }

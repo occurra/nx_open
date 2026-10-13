@@ -47,15 +47,15 @@ enum TestRunFlag
     throwOnFailure = 1,
 };
 
-class ThrowListener:
-    public testing::EmptyTestEventListener
+class ThrowListener: public testing::EmptyTestEventListener
 {
     virtual void OnTestPartResult(const testing::TestPartResult& result) override
     {
         using namespace ::testing;
 
-        if (result.type() == TestPartResult::kFatalFailure &&
-            !GTEST_FLAG(break_on_failure))  //< Throwing exception would cancel the interrupt signal.
+        if (result.type() == TestPartResult::kFatalFailure
+            && !GTEST_FLAG(
+                break_on_failure)) //< Throwing exception would cancel the interrupt signal.
         {
             throw AssertionException(result);
         }
@@ -69,7 +69,10 @@ public:
     {
         NX_INFO(this, "Timeout %1 is set", timeout);
         m_thread = std::thread(
-            [=, this]{ NX_CRITICAL(m_cancel.pop(timeout), "Timeout %1 has expired", timeout); });
+            [=, this]
+            {
+                NX_CRITICAL(m_cancel.pop(timeout), "Timeout %1 has expired", timeout);
+            });
     }
 
     ~TimeoutThread()
@@ -98,7 +101,11 @@ inline int runTest(
 {
     nx::TestOptions::setModuleName(QFileInfo(QString::fromLocal8Bit(argv[0])).baseName());
 
-    nx::setOnAssertHandler([&](const QString& m) { FAIL() << m.toStdString(); });
+    nx::setOnAssertHandler(
+        [&](const QString& m)
+        {
+            FAIL() << m.toStdString();
+        });
     nx::enableQtMessageAsserts();
     nx::kit::IniConfig::setOutput(nullptr);
 
@@ -107,25 +114,32 @@ inline int runTest(
         extendedArgs.push_back(argv[i]);
 
     /* Disable log rotation for unit tests. */
-    if (std::find_if(extendedArgs.begin(), extendedArgs.end(),
-        [](const auto& elem) { return QString(elem).startsWith("--log"); }) != extendedArgs.end())
+    if (std::find_if(
+            extendedArgs.begin(),
+            extendedArgs.end(),
+            [](const auto& elem)
+            {
+                return QString(elem).startsWith("--log");
+            })
+        != extendedArgs.end())
     {
-        extendedArgs.insert(extendedArgs.end(),
+        extendedArgs.insert(
+            extendedArgs.end(),
             {"--log/maxLogVolumeSizeB=10737418240", "--log/maxLogFileSizeB=10737418240"});
     }
 
     if (gtestRunFlags & TestRunFlag::throwOnFailure)
         testing::UnitTest::GetInstance()->listeners().Append(new ThrowListener);
-    argc = (int)extendedArgs.size();
+    argc = (int) extendedArgs.size();
     extendedArgs.push_back(nullptr);
 
     // NOTE: On osx InitGoogleTest(...) should be called independent of InitGoogleMock(...).
     ::testing::InitGoogleTest(&argc, (char**) extendedArgs.data());
     ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
-    #if defined(USE_GMOCK)
-        ::testing::InitGoogleMock(&argc, (char**) extendedArgs.data());
-    #endif
+#if defined(USE_GMOCK)
+    ::testing::InitGoogleMock(&argc, (char**) extendedArgs.data());
+#endif
 
     ArgumentParser args(argc, extendedArgs.data());
 
@@ -156,17 +170,9 @@ inline int runTest(
     return result;
 }
 
-inline int runTest(
-    int argc,
-    char* argv[],
-    InitFunction extraInit = nullptr,
-    int gtestRunFlags = 0)
+inline int runTest(int argc, char* argv[], InitFunction extraInit = nullptr, int gtestRunFlags = 0)
 {
-    return runTest(
-        argc,
-        (const char**) argv,
-        std::move(extraInit),
-        gtestRunFlags);
+    return runTest(argc, (const char**) argv, std::move(extraInit), gtestRunFlags);
 }
 
 } // namespace test

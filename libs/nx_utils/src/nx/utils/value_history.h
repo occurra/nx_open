@@ -29,7 +29,8 @@ public:
             keep, //< Keep closest excluded left value.
             drop, //< Drop excluded left values from results.
             move, //< Move closest excluded left value to the beginning of the interval.
-            hardcode, //< Put hardcoded value at the left border if there is(are) any left value(s).
+            hardcode, //< Put hardcoded value at the left border if there is(are) any left
+                      // value(s).
         };
 
         Type type = move;
@@ -45,10 +46,8 @@ public:
     void forEach(const Action& action, const Border& border = {}) const;
 
     template<typename Action> // void(const Value& value, std::chrono::milliseconds duration)
-    void forEach(
-        std::chrono::milliseconds maxAge,
-        const Action& action,
-        const Border& border = {}) const;
+    void forEach(std::chrono::milliseconds maxAge, const Action& action, const Border& border = {})
+        const;
 
 private:
     std::chrono::milliseconds fixAge(std::chrono::milliseconds age) const;
@@ -92,7 +91,6 @@ Value ValueHistory<Value>::current() const
     return m_values.empty() ? Value() : m_values.back().first;
 }
 
-
 template<typename Value>
 template<typename Action> // void(const Value& value, std::chrono::milliseconds duration)
 void ValueHistory<Value>::forEach(const Action& action, const Border& border) const
@@ -103,7 +101,9 @@ void ValueHistory<Value>::forEach(const Action& action, const Border& border) co
 template<typename Value>
 template<typename Action> // void(const Value& value, std::chrono::milliseconds duration)
 void ValueHistory<Value>::forEach(
-    std::chrono::milliseconds maxAge, const Action& action, const Border& border) const
+    std::chrono::milliseconds maxAge,
+    const Action& action,
+    const Border& border) const
 {
     NX_MUTEX_LOCKER locker(&m_mutex);
     if (m_values.empty())
@@ -126,23 +126,29 @@ void ValueHistory<Value>::forEach(
     }
 
     using namespace std::chrono;
-    const auto interval =
-        [this, &now](std::chrono::steady_clock::time_point begin, auto it)
-        {
-            const auto next = std::next(it);
-            const auto end = next != m_values.end() ? next->second : now;
-            NX_CRITICAL(begin <= end, "begin: %1, end: %2, now: %3", begin, end, now);
-            return round<milliseconds>(end - begin);
-        };
+    const auto interval = [this, &now](std::chrono::steady_clock::time_point begin, auto it)
+    {
+        const auto next = std::next(it);
+        const auto end = next != m_values.end() ? next->second : now;
+        NX_CRITICAL(begin <= end, "begin: %1, end: %2, now: %3", begin, end, now);
+        return round<milliseconds>(end - begin);
+    };
 
     if (bound != m_values.end() && bound->second < deadline)
     {
         switch (border.type)
         {
-            case Border::Type::keep: action(bound->first, interval(bound->second, bound)); break;
-            case Border::Type::move: action(bound->first, interval(deadline, bound)); break;
-            case Border::Type::drop: break;
-            case Border::Type::hardcode: action(border.value, interval(deadline, bound)); break;
+            case Border::Type::keep:
+                action(bound->first, interval(bound->second, bound));
+                break;
+            case Border::Type::move:
+                action(bound->first, interval(deadline, bound));
+                break;
+            case Border::Type::drop:
+                break;
+            case Border::Type::hardcode:
+                action(border.value, interval(deadline, bound));
+                break;
         }
         bound = std::next(bound);
     }
@@ -155,7 +161,8 @@ template<typename Value>
 std::chrono::milliseconds ValueHistory<Value>::fixAge(std::chrono::milliseconds age) const
 {
     const double delimiter = ini().valueHistoryAgeDelimiter;
-    const std::chrono::milliseconds reduced(std::chrono::milliseconds::rep(age.count() / delimiter));
+    const std::chrono::milliseconds reduced(
+        std::chrono::milliseconds::rep(age.count() / delimiter));
     return std::max(reduced, std::chrono::milliseconds(1));
 }
 

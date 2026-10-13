@@ -22,7 +22,7 @@ TEST(Time, timeSinceEpoch_equals_time_t)
 
     ASSERT_LE(
         std::abs(t2 - duration_cast<seconds>(t1).count()),
-        duration_cast<seconds>(testRunTime).count()+1);
+        duration_cast<seconds>(testRunTime).count() + 1);
 }
 
 TEST(Time, parseDurationCorrect)

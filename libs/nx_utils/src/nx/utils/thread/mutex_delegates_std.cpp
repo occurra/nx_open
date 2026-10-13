@@ -30,7 +30,6 @@ bool MutexStdDelegate::tryLock(const char* /*sourceFile*/, int /*sourceLine*/, i
         return m_recursiveMutex->try_lock();
 }
 
-
 void MutexStdDelegate::unlock()
 {
     if (m_mutex)
@@ -55,7 +54,9 @@ ReadWriteLockStdDelegate::ReadWriteLockStdDelegate(ReadWriteLock::RecursionMode 
 }
 
 void ReadWriteLockStdDelegate::lockForRead(
-    const char* /*sourceFile*/, int /*sourceLine*/, int /*lockId*/)
+    const char* /*sourceFile*/,
+    int /*sourceLine*/,
+    int /*lockId*/)
 {
     if (m_mutex)
         m_mutex->lock_shared();
@@ -64,7 +65,9 @@ void ReadWriteLockStdDelegate::lockForRead(
 }
 
 void ReadWriteLockStdDelegate::lockForWrite(
-    const char* /*sourceFile*/, int /*sourceLine*/, int /*lockId*/)
+    const char* /*sourceFile*/,
+    int /*sourceLine*/,
+    int /*lockId*/)
 {
     if (m_mutex)
         m_mutex->lock();
@@ -73,7 +76,9 @@ void ReadWriteLockStdDelegate::lockForWrite(
 }
 
 bool ReadWriteLockStdDelegate::tryLockForRead(
-    const char* /*sourceFile*/, int /*sourceLine*/, int /*lockId*/)
+    const char* /*sourceFile*/,
+    int /*sourceLine*/,
+    int /*lockId*/)
 {
     if (m_mutex)
         return m_mutex->try_lock_shared();
@@ -82,7 +87,9 @@ bool ReadWriteLockStdDelegate::tryLockForRead(
 }
 
 bool ReadWriteLockStdDelegate::tryLockForWrite(
-    const char* /*sourceFile*/, int /*sourceLine*/, int /*lockId*/)
+    const char* /*sourceFile*/,
+    int /*sourceLine*/,
+    int /*lockId*/)
 {
     if (m_mutex)
         return m_mutex->try_lock();
@@ -108,7 +115,11 @@ bool WaitConditionStdDelegate::wait(MutexDelegate* mutex, std::chrono::milliseco
 
     // std::condition_variable interface requires unique_lock<std::mutex> to be used.
     std::unique_lock<std::mutex> lock(*delegate->m_mutex, std::adopt_lock);
-    const auto unlockGuard = utils::makeScopeGuard([&] { lock.release(); });
+    const auto unlockGuard = utils::makeScopeGuard(
+        [&]
+        {
+            lock.release();
+        });
 
     if (timeout != std::chrono::milliseconds::max())
         return m_condition.wait_for(lock, timeout) == std::cv_status::no_timeout;

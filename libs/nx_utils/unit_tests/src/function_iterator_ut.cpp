@@ -12,7 +12,10 @@ namespace test {
 TEST(FunctionIterator, Simple)
 {
     std::vector<int> copyData;
-    const auto pushBack = [&](int i) { copyData.push_back(i); };
+    const auto pushBack = [&](int i)
+    {
+        copyData.push_back(i);
+    };
 
     const std::vector<int> kTestData = {1, 2, 3};
     std::copy(kTestData.begin(), kTestData.end(), functionIterator<int>(pushBack));

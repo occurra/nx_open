@@ -20,7 +20,6 @@ struct NX_VMS_COMMON_API QnTimePeriod
     Q_PROPERTY(qint64 durationMs MEMBER durationMs)
 
 public:
-
     /**
      * Infinite duration value.
      */
@@ -55,8 +54,7 @@ public:
 
     constexpr QnTimePeriod(
         const std::chrono::milliseconds& startTime,
-        const std::chrono::milliseconds& duration)
-        :
+        const std::chrono::milliseconds& duration):
         QnTimePeriod(startTime.count(), duration.count())
     {
     }
@@ -141,17 +139,20 @@ public:
     }
 
     /**
-     * \returns distance from the nearest period edge to the time in ms. Returns zero if timeMs inside period
+     * \returns distance from the nearest period edge to the time in ms. Returns zero if timeMs
+     * inside period
      */
     qint64 distanceToTime(qint64 timeMs) const;
 
     /**
-     * Truncate period duration to the specified timeMs. This functions does nothing if truncate point is outside period.
+     * Truncate period duration to the specified timeMs. This functions does nothing if truncate
+     * point is outside period.
      */
     void truncate(qint64 timeMs);
 
     /**
-     * Truncate period start time to the specified timeMs. This functions does nothing if truncate point is outside period.
+     * Truncate period start time to the specified timeMs. This functions does nothing if truncate
+     * point is outside period.
      */
     void truncateFront(qint64 timeMs);
 
@@ -207,8 +208,6 @@ NX_VMS_COMMON_API QDataStream& operator>>(QDataStream& in, QnTimePeriod& value);
 
 Q_DECLARE_TYPEINFO(QnTimePeriod, Q_MOVABLE_TYPE);
 
-QN_FUSION_DECLARE_FUNCTIONS(QnTimePeriod,
-    (json)(ubjson)(xml)(csv_record),
-    NX_VMS_COMMON_API)
+QN_FUSION_DECLARE_FUNCTIONS(QnTimePeriod, (json) (ubjson) (xml) (csv_record), NX_VMS_COMMON_API)
 
 NX_REFLECTION_INSTRUMENT(QnTimePeriod, (startTimeMs)(durationMs))

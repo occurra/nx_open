@@ -49,7 +49,7 @@ public:
     void setStorageArchiveMode(nx::vms::api::StorageArchiveMode mode);
     nx::vms::api::StorageArchiveMode storageArchiveMode() const;
 
-    static QString urlToPath(const QString &url);
+    static QString urlToPath(const QString& url);
     static QString urlWithoutCredentials(const QString& url);
     QString urlWithoutCredentials() const;
 
@@ -64,13 +64,14 @@ public:
     void releaseBitrate(QnAbstractMediaStreamDataProvider* provider);
 
     /*
-     * Short and unique storage ID. It is addition related ID field, and used for memory usage optimization
+     * Short and unique storage ID. It is addition related ID field, and used for memory usage
+     * optimization
      */
     virtual void setUrl(const QString& value) override;
 
     virtual void updateInternal(const QnResourcePtr& source, NotifierList& notifiers) override;
 
-    static QString toNativeDirPath(const QString &dirPath);
+    static QString toNativeDirPath(const QString& dirPath);
 
     void setBackup(bool value);
     bool isBackup() const;
@@ -80,9 +81,7 @@ public:
 
     virtual qint64 nxOccupiedSpace() const { return 0; }
 
-    virtual QIODevice* open(
-        const QString &fileName,
-        QIODevice::OpenMode openMode) override;
+    virtual QIODevice* open(const QString& fileName, QIODevice::OpenMode openMode) override;
 
 signals:
     void isUsedForWritingChanged(const QnResourcePtr& resource);
@@ -90,8 +89,10 @@ signals:
     void spaceLimitChanged(const QnResourcePtr& resource);
     void typeChanged(const QnResourcePtr& resource);
     void runtimeFlagsChanged(const QnStorageResourcePtr& storage);
+
 protected:
-    virtual QIODevice* openInternal(const QString &fileName, QIODevice::OpenMode openMode) = 0;
+    virtual QIODevice* openInternal(const QString& fileName, QIODevice::OpenMode openMode) = 0;
+
 private:
     qint64 m_spaceLimit = QnAbstractStorageResource::kUnknownSize;
     int m_maxStoreTime = 0; // in seconds

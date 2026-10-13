@@ -1,8 +1,8 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
-#include "../http_server_basic_message_dispatcher_ut.h"
-
 #include <nx/network/http/server/rest/http_server_rest_message_dispatcher.h>
+
+#include "../http_server_basic_message_dispatcher_ut.h"
 
 namespace nx::network::http::server::test {
 
@@ -15,18 +15,14 @@ class HttpServerRestMessageDispatcher:
     public HttpServerBasicMessageDispatcher<rest::MessageDispatcher>
 {
 protected:
-    void givenRegisteredHandler(const std::string& pathTemplate)
-    {
-        registerHandler(pathTemplate);
-    }
+    void givenRegisteredHandler(const std::string& pathTemplate) { registerHandler(pathTemplate); }
 
     void whenSentRequest(const std::string& requestPath)
     {
         assertRequestIsDispatched(requestPath, nx::network::http::Method::get);
     }
 
-    void thenParametersHaveBeenPassedToTheHandler(
-        const RequestPathParams& expectedParams)
+    void thenParametersHaveBeenPassedToTheHandler(const RequestPathParams& expectedParams)
     {
         ASSERT_EQ(expectedParams, issuedRequest().requestPathParams);
     }
@@ -53,8 +49,7 @@ TEST_F(HttpServerRestMessageDispatcher, find_handler_by_url_with_query)
 {
     givenRegisteredHandler("/account/{accountId}/systems");
     whenSentRequest("/account/akolesnikov/systems?status=online");
-    thenParametersHaveBeenPassedToTheHandler(
-        {{{"accountId", "akolesnikov"}}});
+    thenParametersHaveBeenPassedToTheHandler({{{"accountId", "akolesnikov"}}});
 }
 
 } // namespace nx::network::http::server::test

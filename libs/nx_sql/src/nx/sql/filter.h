@@ -25,8 +25,7 @@ public:
 
 //-------------------------------------------------------------------------------------------------
 
-class NX_SQL_API SqlFilterField:
-    public AbstractFilterCondition
+class NX_SQL_API SqlFilterField: public AbstractFilterCondition
 {
 public:
     SqlFilterField(
@@ -48,8 +47,7 @@ private:
     std::string m_comparisonOperator;
 };
 
-class NX_SQL_API SqlFilterFieldEqual:
-    public SqlFilterField
+class NX_SQL_API SqlFilterFieldEqual: public SqlFilterField
 {
 public:
     SqlFilterFieldEqual(
@@ -58,8 +56,7 @@ public:
         QVariant value);
 };
 
-class NX_SQL_API SqlFilterFieldNotEqual:
-    public SqlFilterField
+class NX_SQL_API SqlFilterFieldNotEqual: public SqlFilterField
 {
 public:
     SqlFilterFieldNotEqual(
@@ -68,8 +65,7 @@ public:
         QVariant value);
 };
 
-class NX_SQL_API SqlFilterFieldGreaterOrEqual:
-    public SqlFilterField
+class NX_SQL_API SqlFilterFieldGreaterOrEqual: public SqlFilterField
 {
 public:
     SqlFilterFieldGreaterOrEqual(
@@ -78,8 +74,7 @@ public:
         QVariant value);
 };
 
-class NX_SQL_API SqlFilterFieldLess:
-    public SqlFilterField
+class NX_SQL_API SqlFilterFieldLess: public SqlFilterField
 {
 public:
     SqlFilterFieldLess(
@@ -88,8 +83,7 @@ public:
         QVariant value);
 };
 
-class NX_SQL_API SqlFilterFieldLessOrEqual:
-    public SqlFilterField
+class NX_SQL_API SqlFilterFieldLessOrEqual: public SqlFilterField
 {
 public:
     SqlFilterFieldLessOrEqual(
@@ -114,20 +108,16 @@ public:
  * condition.bindFields(someQuery);
  * </code></pre>
  */
-class NX_SQL_API SqlFilterFieldAnyOf:
-    public AbstractFilterCondition
+class NX_SQL_API SqlFilterFieldAnyOf: public AbstractFilterCondition
 {
 public:
-    SqlFilterFieldAnyOf(
-        const std::string& name,
-        const std::string& placeHolderName);
+    SqlFilterFieldAnyOf(const std::string& name, const std::string& placeHolderName);
 
     template<typename... Values>
     SqlFilterFieldAnyOf(
         const std::string& name,
         const std::string& placeHolderName,
-        Values... values)
-        :
+        Values... values):
         SqlFilterFieldAnyOf(name, placeHolderName)
     {
         m_values = {toVariant(values)...};
@@ -137,8 +127,7 @@ public:
     SqlFilterFieldAnyOf(
         const std::string& name,
         const std::string& placeHolderName,
-        const std::vector<Value>& values)
-        :
+        const std::vector<Value>& values):
         SqlFilterFieldAnyOf(name, placeHolderName)
     {
         for (const auto& value: values)

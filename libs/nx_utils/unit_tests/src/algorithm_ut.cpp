@@ -12,8 +12,7 @@ namespace nx {
 namespace utils {
 namespace test {
 
-class AlgorithmMoveIf:
-    public ::testing::Test
+class AlgorithmMoveIf: public ::testing::Test
 {
 protected:
     void performFixedDataTest(
@@ -37,7 +36,9 @@ protected:
     void whenMoveValuesGreaterThan(int splitValue)
     {
         auto newEnd = nx::utils::move_if(
-            m_initialData.begin(), m_initialData.end(), std::back_inserter(m_resultingData),
+            m_initialData.begin(),
+            m_initialData.end(),
+            std::back_inserter(m_resultingData),
             [splitValue](const std::unique_ptr<int>& elem)
             {
                 return *elem > splitValue;
@@ -71,48 +72,56 @@ private:
 
 TEST_F(AlgorithmMoveIf, actually_splits_array)
 {
-    const std::vector<int> initialArray = { 1, 2, 8, 5, 3, 7, 4, 9 };
+    const std::vector<int> initialArray = {1, 2, 8, 5, 3, 7, 4, 9};
     const int splitValue = 5;
-    const std::vector<int> initialArrayAfterTest = { 1, 2, 5, 3, 4 };
-    const std::vector<int> resultingArrayAfterTest = { 8, 7, 9 };
+    const std::vector<int> initialArrayAfterTest = {1, 2, 5, 3, 4};
+    const std::vector<int> resultingArrayAfterTest = {8, 7, 9};
 
     performFixedDataTest(initialArray, splitValue, initialArrayAfterTest, resultingArrayAfterTest);
 }
 
 TEST_F(AlgorithmMoveIf, whole_initial_data_is_moved)
 {
-    const std::vector<int> initialArray = { 1, 2, 8, 5, 3, 7, 4, 9 };
+    const std::vector<int> initialArray = {1, 2, 8, 5, 3, 7, 4, 9};
     const int splitValue = 0;
     const std::vector<int> initialArrayAfterTest = {};
-    const std::vector<int> resultingArrayAfterTest = { 1, 2, 8, 5, 3, 7, 4, 9 };
+    const std::vector<int> resultingArrayAfterTest = {1, 2, 8, 5, 3, 7, 4, 9};
 
     performFixedDataTest(initialArray, splitValue, initialArrayAfterTest, resultingArrayAfterTest);
 }
 
 TEST_F(AlgorithmMoveIf, whole_initial_data_is_left_in_place)
 {
-    const std::vector<int> initialArray = { 1, 2, 8, 5, 3, 7, 4, 9 };
+    const std::vector<int> initialArray = {1, 2, 8, 5, 3, 7, 4, 9};
     const int splitValue = 10;
-    const std::vector<int> initialArrayAfterTest = { 1, 2, 8, 5, 3, 7, 4, 9 };
+    const std::vector<int> initialArrayAfterTest = {1, 2, 8, 5, 3, 7, 4, 9};
     const std::vector<int> resultingArrayAfterTest = {};
 
-    performFixedDataTest(
-        initialArray,
-        splitValue,
-        initialArrayAfterTest,
-        resultingArrayAfterTest);
+    performFixedDataTest(initialArray, splitValue, initialArrayAfterTest, resultingArrayAfterTest);
 }
 
 TEST(Algorithm_findLastIf, emptyRange)
 {
     std::ranges::iota_view range{0, 0};
-    ASSERT_EQ(nx::utils::find_last_if(range, [](int) { return true; }), range.end());
+    ASSERT_EQ(
+        nx::utils::find_last_if(
+            range,
+            [](int)
+            {
+                return true;
+            }),
+        range.end());
 }
 
 TEST(Algorithm_findLastIf, allSatisfy)
 {
     std::ranges::iota_view range{1, 6};
-    const auto it = nx::utils::find_last_if(range, [](int) { return true; });
+    const auto it = nx::utils::find_last_if(
+        range,
+        [](int)
+        {
+            return true;
+        });
     ASSERT_NE(it, range.end());
     ASSERT_EQ(*it, 5);
 }
@@ -120,7 +129,14 @@ TEST(Algorithm_findLastIf, allSatisfy)
 TEST(Algorithm_findLastIf, noneSatisfy)
 {
     std::ranges::iota_view range{1, 4};
-    ASSERT_EQ(nx::utils::find_last_if(range, [](int) { return false; }), range.end());
+    ASSERT_EQ(
+        nx::utils::find_last_if(
+            range,
+            [](int)
+            {
+                return false;
+            }),
+        range.end());
 }
 
 TEST(Algorithm_findLastIf, binarySearchBehavior)
@@ -129,8 +145,13 @@ TEST(Algorithm_findLastIf, binarySearchBehavior)
     constexpr int kExpected = kSize / 2;
     std::ranges::iota_view range{0, kSize};
     size_t callCount = 0;
-    const auto it = nx::utils::find_last_if(range,
-        [&](int x) { ++callCount; return x <= kExpected; });
+    const auto it = nx::utils::find_last_if(
+        range,
+        [&](int x)
+        {
+            ++callCount;
+            return x <= kExpected;
+        });
     ASSERT_NE(it, range.end());
     ASSERT_EQ(*it, kExpected);
     constexpr size_t kExpectedCallCount = 11; // log2(1024) + 1

@@ -28,9 +28,8 @@ QString chopWithTilda(const QString& source, int symbolsCount)
     if (symbolsCount == 0)
         return source;
 
-    return source.length() <= symbolsCount
-        ? QString()
-        : source.left(source.length() - symbolsCount - 1) + "~";
+    return source.length() <= symbolsCount ? QString()
+                                           : source.left(source.length() - symbolsCount - 1) + "~";
 }
 
 QString getFrameTimestampText(
@@ -38,9 +37,8 @@ QString getFrameTimestampText(
     const nx::core::transcoding::TimestampParams& params)
 {
     QString result;
-    const qint64 timestampMs = NX_ASSERT(params.timestamp.count() > 0)
-        ? params.timestamp.count()
-        : frame->pts / 1000;
+    const qint64 timestampMs =
+        NX_ASSERT(params.timestamp.count() > 0) ? params.timestamp.count() : frame->pts / 1000;
 
     QDateTime displayTime = QDateTime::fromMSecsSinceEpoch(timestampMs, params.timeZone);
 
@@ -72,21 +70,21 @@ FilterChainPtr createFilterChain(
         {
             // Both markers should be placed in the same corner, creating single filter.
             const auto textGetter =
-                [timestampParams = timestampParams, text = cameraName]
-                    (const CLVideoDecoderOutputPtr& frame, int cutSymbolsCount)
-                {
-                    const auto cameraName = chopWithTilda(text, cutSymbolsCount);
-                    if (cameraName.isEmpty())
-                        cutSymbolsCount -= cameraName.length();
+                [timestampParams = timestampParams,
+                 text = cameraName](const CLVideoDecoderOutputPtr& frame, int cutSymbolsCount)
+            {
+                const auto cameraName = chopWithTilda(text, cutSymbolsCount);
+                if (cameraName.isEmpty())
+                    cutSymbolsCount -= cameraName.length();
 
-                    const auto timestamp = getFrameTimestampText(frame, timestampParams);
-                    if (cameraName.isEmpty())
-                        return chopWithTilda(timestamp, cutSymbolsCount);
+                const auto timestamp = getFrameTimestampText(frame, timestampParams);
+                if (cameraName.isEmpty())
+                    return chopWithTilda(timestamp, cutSymbolsCount);
 
-                    return QString("%1\n%2").arg(
-                        chopWithTilda(cameraName, cutSymbolsCount),
-                        timestamp);
-                };
+                return QString("%1\n%2").arg(
+                    chopWithTilda(cameraName, cutSymbolsCount),
+                    timestamp);
+            };
 
             const auto filter = TextImageFilter::create(
                 settings.layout,
@@ -105,11 +103,11 @@ FilterChainPtr createFilterChain(
     if (timestampParams.filterParams.enabled)
     {
         const auto textGetter =
-            [timestampParams = timestampParams]
-                (const CLVideoDecoderOutputPtr& frame, int cutSymbolsCount)
-            {
-                return chopWithTilda(getFrameTimestampText(frame, timestampParams), cutSymbolsCount);
-            };
+            [timestampParams =
+                 timestampParams](const CLVideoDecoderOutputPtr& frame, int cutSymbolsCount)
+        {
+            return chopWithTilda(getFrameTimestampText(frame, timestampParams), cutSymbolsCount);
+        };
 
         const auto filter = TextImageFilter::create(
             settings.layout,
@@ -122,17 +120,14 @@ FilterChainPtr createFilterChain(
     if (cameraNameParams.enabled)
     {
         const auto textGetter =
-            [cameraName = cameraName]
-                (const CLVideoDecoderOutputPtr& /*frame*/, int cutSymbolsCount)
-            {
-                return chopWithTilda(cameraName, cutSymbolsCount);
-            };
+            [cameraName =
+                 cameraName](const CLVideoDecoderOutputPtr& /*frame*/, int cutSymbolsCount)
+        {
+            return chopWithTilda(cameraName, cutSymbolsCount);
+        };
 
-        const auto filter = TextImageFilter::create(
-            settings.layout,
-            cameraNameParams.corner,
-            textGetter,
-            factor);
+        const auto filter =
+            TextImageFilter::create(settings.layout, cameraNameParams.corner, textGetter, factor);
         result->addLegacyFilter(filter);
     }
 

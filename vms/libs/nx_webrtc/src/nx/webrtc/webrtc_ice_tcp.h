@@ -13,8 +13,7 @@ class SessionPool;
 
 namespace nx::webrtc {
 
-class NX_WEBRTC_API ListenerTcp:
-    public QnTCPConnectionProcessor
+class NX_WEBRTC_API ListenerTcp: public QnTCPConnectionProcessor
 {
 public:
     ListenerTcp(
@@ -41,8 +40,7 @@ public:
         std::unique_ptr<nx::network::AbstractStreamSocket>&& socket,
         SessionPool* sessionPool,
         const SessionConfig& config,
-        const QByteArray& readBuffer
-        );
+        const QByteArray& readBuffer);
     virtual ~IceTcp();
     void start();
     virtual IceCandidate::Filter type() const override;

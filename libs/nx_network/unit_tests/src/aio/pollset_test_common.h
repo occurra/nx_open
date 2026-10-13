@@ -17,8 +17,7 @@
 namespace nx::network::aio::test {
 
 template<typename PollsetHelperType>
-class PollSetAcceptance:
-    public ::testing::Test
+class PollSetAcceptance: public ::testing::Test
 {
 protected:
     void initializeSocketOfRandomType();
@@ -191,10 +190,10 @@ void PollSetAcceptance<PollsetHelperType>::runRemoveSocketWithMultipleEventsTest
             ++numberOfEventsReported;
 
             const int seed = nx::utils::random::number<int>(0, 2);
-            const auto eventsToRemove =
-                seed == 0 ? (aio::etRead | aio::etWrite) :
-                seed == 1 ? (aio::etRead) :
-                seed == 2 ? (aio::etWrite) : 0;
+            const auto eventsToRemove = seed == 0 ? (aio::etRead | aio::etWrite)
+                : seed == 1                       ? (aio::etRead)
+                : seed == 2                       ? (aio::etWrite)
+                                                  : 0;
 
             unsubscribeSocketFromEvents(socket, eventsToRemove);
             unsubscribeSocketFromEvents(
@@ -250,7 +249,7 @@ void PollSetAcceptance<PollsetHelperType>::thenReadWriteEventsShouldBeReportedEv
     for (;;)
     {
         whenReceivedSocketEvents();
-        if (isEveryExpectedEventHasBeenReported({ aio::etRead, aio::etWrite }))
+        if (isEveryExpectedEventHasBeenReported({aio::etRead, aio::etWrite}))
             break;
         m_eventsReported.clear();
     }
@@ -361,8 +360,7 @@ TYPED_TEST_P(PollSetAcceptance, removingSocketWithMultipleEvents)
 
 TYPED_TEST_P(PollSetAcceptance, multiplePollsetIterators)
 {
-    const auto additionalPollsetIteratorInstance =
-        this->m_pollset.getSocketEventsIterator();
+    const auto additionalPollsetIteratorInstance = this->m_pollset.getSocketEventsIterator();
 
     this->initializeRegularSocket();
     this->runRemoveSocketWithMultipleEventsTest();
@@ -385,7 +383,8 @@ TYPED_TEST_P(PollSetAcceptance, pollIsActuallyLevelTriggered)
 //-------------------------------------------------------------------------------------------------
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(PollSetAcceptance);
-REGISTER_TYPED_TEST_SUITE_P(PollSetAcceptance,
+REGISTER_TYPED_TEST_SUITE_P(
+    PollSetAcceptance,
     allEventsAreActuallyReported,
     removingSocketWithMultipleEvents,
     multiplePollsetIterators,

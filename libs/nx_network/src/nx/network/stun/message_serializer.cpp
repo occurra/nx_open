@@ -2,11 +2,11 @@
 
 #include "message_serializer.h"
 
-#include <QtCore/QtEndian>
-
 #include <bitset>
 
 #include <boost/crc.hpp>
+
+#include <QtCore/QtEndian>
 
 #include <nx/utils/string.h>
 
@@ -25,8 +25,7 @@ void MessageSerializer::setMessage(const Message* message)
 }
 
 // Serialization class implementation
-server::SerializerState MessageSerializer::serializeHeaderInitial(
-    MessageSerializerBuffer* buffer)
+server::SerializerState MessageSerializer::serializeHeaderInitial(MessageSerializerBuffer* buffer)
 {
     std::bitset<16> initial(0);
     // 1. Setting the method bits.
@@ -77,16 +76,17 @@ server::SerializerState MessageSerializer::serializeMagicCookieAndTransactionID(
 
     NX_ASSERT(m_message->header.transactionId.size() == Header::TRANSACTION_ID_SIZE);
     // Transaction ID
-    if (buffer->WriteBytes(m_message->header.transactionId.data(),
-        m_message->header.transactionId.size()) == NULL)
+    if (buffer->WriteBytes(
+            m_message->header.transactionId.data(),
+            m_message->header.transactionId.size())
+        == NULL)
     {
         return server::SerializerState::needMoreBufferSpace;
     }
     return server::SerializerState::done;
 }
 
-server::SerializerState MessageSerializer::serializeHeader(
-    MessageSerializerBuffer* buffer)
+server::SerializerState MessageSerializer::serializeHeader(MessageSerializerBuffer* buffer)
 {
     NX_ASSERT(m_message->header.messageClass != MessageClass::unknown);
     NX_ASSERT(m_message->header.method != MethodType::invalid);
@@ -95,7 +95,8 @@ server::SerializerState MessageSerializer::serializeHeader(
         return server::SerializerState::needMoreBufferSpace;
     if (serializeHeaderLengthStart(buffer) == server::SerializerState::needMoreBufferSpace)
         return server::SerializerState::needMoreBufferSpace;
-    if (serializeMagicCookieAndTransactionID(buffer) == server::SerializerState::needMoreBufferSpace)
+    if (serializeMagicCookieAndTransactionID(buffer)
+        == server::SerializerState::needMoreBufferSpace)
         return server::SerializerState::needMoreBufferSpace;
     return server::SerializerState::done;
 }
@@ -125,21 +126,36 @@ server::SerializerState MessageSerializer::serializeAttributeValue(
     switch (attribute->getType())
     {
         case attrs::errorCode:
-            return serializeAttributeValue_ErrorCode(buffer, *static_cast<const ErrorCode*>(attribute), bytesWritten);
+            return serializeAttributeValue_ErrorCode(
+                buffer,
+                *static_cast<const ErrorCode*>(attribute),
+                bytesWritten);
 
         case attrs::xorMappedAddress:
         case attrs::xorPeerAddress:
         case attrs::xorRelayedAddress:
-            return serializeAttributeValue_XORMappedAddress(buffer, *static_cast<const XorMappedAddress*>(attribute), bytesWritten);
+            return serializeAttributeValue_XORMappedAddress(
+                buffer,
+                *static_cast<const XorMappedAddress*>(attribute),
+                bytesWritten);
 
         case attrs::messageIntegrity:
-            return serializeAttributeValue_Buffer(buffer, *static_cast<const MessageIntegrity*>(attribute), bytesWritten);
+            return serializeAttributeValue_Buffer(
+                buffer,
+                *static_cast<const MessageIntegrity*>(attribute),
+                bytesWritten);
 
         case attrs::userName:
-            return serializeAttributeValue_Buffer(buffer, *static_cast<const UserName*>(attribute), bytesWritten);
+            return serializeAttributeValue_Buffer(
+                buffer,
+                *static_cast<const UserName*>(attribute),
+                bytesWritten);
 
         case attrs::nonce:
-            return serializeAttributeValue_Buffer(buffer, *static_cast<const Nonce*>(attribute), bytesWritten);
+            return serializeAttributeValue_Buffer(
+                buffer,
+                *static_cast<const Nonce*>(attribute),
+                bytesWritten);
 
         default:
         {
@@ -151,7 +167,9 @@ server::SerializerState MessageSerializer::serializeAttributeValue(
             if (attribute->getType() > attrs::unknown)
             {
                 return serializeAttributeValue_Buffer(
-                    buffer, *static_cast<const Unknown*>(attribute), bytesWritten);
+                    buffer,
+                    *static_cast<const Unknown*>(attribute),
+                    bytesWritten);
             }
 
             NX_ASSERT(false);
@@ -165,7 +183,8 @@ server::SerializerState MessageSerializer::serializeAttributeValue_XORMappedAddr
     const attrs::XorMappedAddress& attribute,
     std::size_t* bytesWritten)
 {
-    NX_ASSERT(attribute.family == XorMappedAddress::IPV4 || attribute.family == XorMappedAddress::IPV6);
+    NX_ASSERT(
+        attribute.family == XorMappedAddress::IPV4 || attribute.family == XorMappedAddress::IPV6);
     std::size_t cur_pos = buffer->position();
     if (buffer->WriteUint16(attribute.family) == NULL)
         return server::SerializerState::needMoreBufferSpace;
@@ -187,8 +206,8 @@ server::SerializerState MessageSerializer::serializeAttributeValue_XORMappedAddr
         for (std::size_t i = 2; i < 8; ++i)
         {
             const auto tid = m_message->header.transactionId.data() + (i - 2) * 2;
-            xor_addr[i] = *reinterpret_cast< const std::uint16_t* >(tid) ^
-                attribute.address.ipv6.words[i];
+            xor_addr[i] =
+                *reinterpret_cast<const std::uint16_t*>(tid) ^ attribute.address.ipv6.words[i];
         }
 
         if (buffer->WriteIPV6Address(xor_addr) == NULL)
@@ -220,7 +239,7 @@ server::SerializerState MessageSerializer::serializeAttributeValue_Buffer(
 
 server::SerializerState MessageSerializer::serializeAttributeValue_ErrorCode(
     MessageSerializerBuffer* buffer,
-    const attrs::ErrorCode&  attribute,
+    const attrs::ErrorCode& attribute,
     std::size_t* value)
 {
     std::size_t cur_pos = buffer->position();
@@ -291,8 +310,7 @@ bool MessageSerializer::travelAllAttributes(
     return true;
 }
 
-server::SerializerState MessageSerializer::serializeAttributes(
-    MessageSerializerBuffer* buffer)
+server::SerializerState MessageSerializer::serializeAttributes(MessageSerializerBuffer* buffer)
 {
     int length = 0;
     bool ret = travelAllAttributes(
@@ -303,17 +321,19 @@ server::SerializerState MessageSerializer::serializeAttributes(
 
             std::uint16_t* len = nullptr;
             std::size_t valueSize = 0;
-            if (serializeAttributeTypeAndLength(buffer, attribute->getType(), &len) ==
-                    server::SerializerState::needMoreBufferSpace ||
-                serializeAttributeValue(buffer, attribute, &valueSize) ==
-                    server::SerializerState::needMoreBufferSpace)
+            if (serializeAttributeTypeAndLength(buffer, attribute->getType(), &len)
+                    == server::SerializerState::needMoreBufferSpace
+                || serializeAttributeValue(buffer, attribute, &valueSize)
+                    == server::SerializerState::needMoreBufferSpace)
             {
                 return false;
             }
 
             // Checking for really large message may round our body size
             std::size_t padding_attribute_value_size = addPadding(valueSize);
-            NX_ASSERT(padding_attribute_value_size + 4 + length <= std::numeric_limits<std::uint16_t>::max());
+            NX_ASSERT(
+                padding_attribute_value_size + 4 + length
+                <= std::numeric_limits<std::uint16_t>::max());
             qToBigEndian(static_cast<std::uint16_t>(valueSize), reinterpret_cast<uchar*>(len));
             length += static_cast<std::uint16_t>(4 + padding_attribute_value_size);
 
@@ -329,18 +349,18 @@ bool MessageSerializer::checkMessageIntegrity()
     // testing is based on the RFC.
     // 1. Header
     // Checking the method and it only has 12 bits in the message
-    if (m_message->header.method <0 || m_message->header.method >= 1 << 12)
+    if (m_message->header.method < 0 || m_message->header.method >= 1 << 12)
     {
         return false;
     }
     // 2. Checking the attributes
     // NOTE: the position in the map is not valid for this king of verification
-    //auto ib = m_message->attributes.find(attrs::fingerPrint);
-    //if( ib != m_message->attributes.end() && ++ib != m_message->attributes.end() ) {
+    // auto ib = m_message->attributes.find(attrs::fingerPrint);
+    // if( ib != m_message->attributes.end() && ++ib != m_message->attributes.end() ) {
     //    return false;
     //}
-    //ib = m_message->attributes.find(attrs::messageIntegrity);
-    //if( ib != m_message->attributes.end() && ++ib != m_message->attributes.end() ) {
+    // ib = m_message->attributes.find(attrs::messageIntegrity);
+    // if( ib != m_message->attributes.end() && ++ib != m_message->attributes.end() ) {
     //    return false;
     //}
     // 3. Checking the validation for specific attributes
@@ -370,7 +390,7 @@ server::SerializerState MessageSerializer::serialize(
     if (user_buffer->capacity() == 0)
         user_buffer->reserve(kDefaultMessageBufferSize);
 
-    for (int i = 0; ; ++i) //TODO #akolesnikov ensure loop is not infinite
+    for (int i = 0;; ++i) // TODO #akolesnikov ensure loop is not infinite
     {
         if (i > 0)
         {
@@ -389,8 +409,8 @@ server::SerializerState MessageSerializer::serialize(
         if (serializeAttributes(&buffer) == server::SerializerState::needMoreBufferSpace)
             continue;
 
-        if (m_alwaysAddFingerprint ||
-            m_message->getAttribute<attrs::Attribute>(attrs::fingerPrint) != nullptr)
+        if (m_alwaysAddFingerprint
+            || m_message->getAttribute<attrs::Attribute>(attrs::fingerPrint) != nullptr)
         {
             if (!addFingerprint(&buffer))
                 continue;
@@ -451,8 +471,8 @@ std::uint32_t MessageSerializer::calcFingerprint(MessageSerializerBuffer* buffer
     // The length should cover the CRC32 attributes, the length is 4+4 = 8, and the
     // buffer currently only contains the header for Fingerprint but not the value,so
     // we need to fix the length in the buffer here.
-    buffer->WriteMessageLength(static_cast<std::uint16_t>(
-        buffer->size() + kFingerprintAttrSize - kHeaderSize));
+    buffer->WriteMessageLength(
+        static_cast<std::uint16_t>(buffer->size() + kFingerprintAttrSize - kHeaderSize));
 
     // Now we calculate the CRC32 value , since the buffer has 4 bytes which is not needed
     // so we must ignore those bytes in the buffer.

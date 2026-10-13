@@ -31,16 +31,18 @@ bool ShortTermReferencePictureSet::read(
 
         delta_rps_sign = reader.getBits(1);
         abs_delta_rps_minus1 = reader.getGolomb();
-        int32_t deltaRps = (1 - 2 * (signed)(delta_rps_sign)) * ((signed)(abs_delta_rps_minus1) + 1);
+        int32_t deltaRps =
+            (1 - 2 * (signed) (delta_rps_sign)) * ((signed) (abs_delta_rps_minus1) + 1);
 
         used_by_curr_pic_flags.resize(spsSets[refRpsIdx].NumDeltaPocs + 1);
-        use_delta_flags.assign(spsSets[refRpsIdx].NumDeltaPocs + 1, 1); // when absent, inferred to 1
+        use_delta_flags.assign(
+            spsSets[refRpsIdx].NumDeltaPocs + 1,
+            1); // when absent, inferred to 1
         for (uint32_t j = 0; j <= spsSets[refRpsIdx].NumDeltaPocs; ++j)
         {
             used_by_curr_pic_flags[j] = reader.getBits(1);
             if (!used_by_curr_pic_flags[j])
                 use_delta_flags[j] = reader.getBits(1);
-
         }
 
         // compute higher order variables
@@ -88,7 +90,8 @@ bool ShortTermReferencePictureSet::read(
             if (i == 0)
                 DeltaPocS0[i] = -((int32_t) delta_poc_s0_minus1_vector[i] + 1);
             else
-                DeltaPocS0[i] = delta_poc_s0_minus1_vector[i - 1] - (delta_poc_s0_minus1_vector[i] + 1);
+                DeltaPocS0[i] =
+                    delta_poc_s0_minus1_vector[i - 1] - (delta_poc_s0_minus1_vector[i] + 1);
         }
 
         DeltaPocS1.resize(num_positive_pics);
@@ -97,8 +100,8 @@ bool ShortTermReferencePictureSet::read(
             if (i == 0)
                 DeltaPocS1[i] = delta_poc_s1_minus1_vector[i] + 1;
             else
-                DeltaPocS1[i] = delta_poc_s1_minus1_vector[i - 1] + (delta_poc_s1_minus1_vector[i] + 1);
-
+                DeltaPocS1[i] =
+                    delta_poc_s1_minus1_vector[i - 1] + (delta_poc_s1_minus1_vector[i] + 1);
         }
     }
 
@@ -106,14 +109,15 @@ bool ShortTermReferencePictureSet::read(
 }
 
 void ShortTermReferencePictureSet::computeRefNegativeVariables(
-    const ShortTermReferencePictureSet& refSet, int32_t deltaRps)
+    const ShortTermReferencePictureSet& refSet,
+    int32_t deltaRps)
 {
     uint32_t i = 0;
     DeltaPocS0.clear();
     UsedByCurrPicS0.clear();
     for (int32_t j = refSet.NumPositivePics - 1; j >= 0; --j)
     {
-        int32_t dPoc = (signed)(refSet.DeltaPocS1[j]) + deltaRps;
+        int32_t dPoc = (signed) (refSet.DeltaPocS1[j]) + deltaRps;
         if (dPoc < 0 && use_delta_flags[refSet.NumNegativePics + j])
         {
             DeltaPocS0.push_back(dPoc);
@@ -126,12 +130,12 @@ void ShortTermReferencePictureSet::computeRefNegativeVariables(
     {
         DeltaPocS0.push_back(deltaRps);
         UsedByCurrPicS0.push_back(used_by_curr_pic_flags[refSet.NumDeltaPocs]);
-        ++ i;
+        ++i;
     }
 
-    for(uint32_t j = 0; j < refSet.NumNegativePics; ++j)
+    for (uint32_t j = 0; j < refSet.NumNegativePics; ++j)
     {
-        int32_t dPoc = (signed)(refSet.DeltaPocS0[j]) + deltaRps;
+        int32_t dPoc = (signed) (refSet.DeltaPocS0[j]) + deltaRps;
         if (dPoc < 0 && use_delta_flags[j])
         {
             DeltaPocS0.push_back(dPoc);
@@ -144,7 +148,8 @@ void ShortTermReferencePictureSet::computeRefNegativeVariables(
 }
 
 void ShortTermReferencePictureSet::computeRefPositiveVariables(
-    const ShortTermReferencePictureSet& refSet, int32_t deltaRps)\
+    const ShortTermReferencePictureSet& refSet,
+    int32_t deltaRps)
 {
     uint32_t i = 0;
 
@@ -152,7 +157,7 @@ void ShortTermReferencePictureSet::computeRefPositiveVariables(
     UsedByCurrPicS1.clear();
     for (int32_t j = refSet.NumNegativePics - 1; j >= 0; --j)
     {
-        int32_t dPoc = (signed)(refSet.DeltaPocS0[j]) + deltaRps;
+        int32_t dPoc = (signed) (refSet.DeltaPocS0[j]) + deltaRps;
         if (dPoc > 0 && use_delta_flags[j])
         {
             DeltaPocS1.push_back(dPoc);

@@ -16,22 +16,15 @@ namespace nx::network::http::server::test {
 
 namespace {
 
-static const Credentials kDefaultCredentials{
-    "user",
-    PasswordAuthToken{"PazzWerd"}
-};
+static const Credentials kDefaultCredentials{"user", PasswordAuthToken{"PazzWerd"}};
 
-static const Credentials kInvalidCredentials {
-    "user",
-    PasswordAuthToken{"pazzwerd"}
-};
+static const Credentials kInvalidCredentials{"user", PasswordAuthToken{"pazzwerd"}};
 
 static constexpr char kDefaultPath[]{"/test"};
 
 } // namespace
 
-class AuthenticationManager:
-    public ::testing::Test
+class AuthenticationManager: public ::testing::Test
 {
 public:
     AuthenticationManager():
@@ -41,24 +34,16 @@ public:
 
         m_credsProvider.addCredentials(kDefaultCredentials);
 
-        m_httpServer.authDispatcher().add(
-            std::regex(kDefaultPath),
-            &m_authManager);
+        m_httpServer.authDispatcher().add(std::regex(kDefaultPath), &m_authManager);
 
         NX_GTEST_ASSERT_TRUE(
-            m_httpServer.registerStaticProcessor(
-                kDefaultPath,
-                "hello",
-                "text/plain",
-                Method::get));
+            m_httpServer
+                .registerStaticProcessor(kDefaultPath, "hello", "text/plain", Method::get));
 
         NX_GTEST_ASSERT_TRUE(m_httpServer.bindAndListen());
     }
 
-    void addCredentials(const Credentials& creds)
-    {
-        m_credsProvider.addCredentials(creds);
-    }
+    void addCredentials(const Credentials& creds) { m_credsProvider.addCredentials(creds); }
 
     void addCredentials(std::string_view user, std::string password, AuthTokenType authTokenType)
     {
@@ -66,10 +51,7 @@ public:
             ? calcHa1(user, m_authManager.realm(), password, "MD5")
             : password;
 
-        addCredentials(
-            Credentials{
-                user,
-                AuthToken{std::move(actualPassword), authTokenType}});
+        addCredentials(Credentials{user, AuthToken{std::move(actualPassword), authTokenType}});
     }
 
     nx::Url httpsUrl(std::string_view path) const
@@ -96,7 +78,13 @@ public:
             client.setCredentials(*creds);
 
         std::promise<void> p;
-        client.doRequest(method, url, [&p](){ p.set_value(); });
+        client.doRequest(
+            method,
+            url,
+            [&p]()
+            {
+                p.set_value();
+            });
         p.get_future().get();
 
         std::optional<Response> response;
@@ -127,22 +115,16 @@ TEST_F(AuthenticationManager, https_no_authorization_rejected)
 
 TEST_F(AuthenticationManager, https_basic_authorization_accepted)
 {
-    const auto response = makeRequest(
-        Method::get,
-        httpsUrl(kDefaultPath),
-        AuthType::authBasic,
-        kDefaultCredentials);
+    const auto response =
+        makeRequest(Method::get, httpsUrl(kDefaultPath), AuthType::authBasic, kDefaultCredentials);
 
     ASSERT_EQ(StatusCode::ok, response->statusLine.statusCode);
 }
 
 TEST_F(AuthenticationManager, https_basic_authorization_invalid_credentials_rejected)
 {
-    const auto reponse = makeRequest(
-        Method::get,
-        httpsUrl(kDefaultPath),
-        AuthType::authBasic,
-        kInvalidCredentials);
+    const auto reponse =
+        makeRequest(Method::get, httpsUrl(kDefaultPath), AuthType::authBasic, kInvalidCredentials);
 
     ASSERT_EQ(StatusCode::unauthorized, reponse->statusLine.statusCode);
 }
@@ -156,16 +138,15 @@ TEST_F(AuthenticationManager, https_basic_authorization_accepted_against_ha1_cre
     // AuthenticationManager, so credentials must be encoded into ha1.
     addCredentials(creds.username, creds.authToken.value, AuthTokenType::ha1);
 
-    const auto response = makeRequest(
-        Method::get,
-        httpsUrl(kDefaultPath),
-        AuthType::authBasic,
-        creds);
+    const auto response =
+        makeRequest(Method::get, httpsUrl(kDefaultPath), AuthType::authBasic, creds);
 
     ASSERT_EQ(StatusCode::ok, response->statusLine.statusCode);
 }
 
-TEST_F(AuthenticationManager, https_basic_authorization_invalid_credentials_rejected_against_ha1_credentials)
+TEST_F(
+    AuthenticationManager,
+    https_basic_authorization_invalid_credentials_rejected_against_ha1_credentials)
 {
     addCredentials("httpsguy", "PazzWerd", AuthTokenType::ha1);
 

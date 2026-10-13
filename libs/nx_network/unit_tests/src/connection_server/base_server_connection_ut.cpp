@@ -17,8 +17,7 @@ namespace {
 /**
  * Socket non-blocking mode option is inconsistent.
  */
-class BrokenStreamSocket:
-    public nx::network::TCPSocket
+class BrokenStreamSocket: public nx::network::TCPSocket
 {
 public:
     virtual bool setNonBlockingMode(bool /*val*/) override
@@ -34,16 +33,14 @@ public:
     }
 };
 
-class TCPSocketWithInstanceCounter:
-    public nx::network::StreamSocketDelegate
+class TCPSocketWithInstanceCounter: public nx::network::StreamSocketDelegate
 {
     using base_type = nx::network::StreamSocketDelegate;
 
 public:
     TCPSocketWithInstanceCounter(
         std::unique_ptr<nx::network::AbstractStreamSocket> socket,
-        std::atomic<int>* counter)
-        :
+        std::atomic<int>* counter):
         base_type(socket.get()),
         m_socket(std::move(socket)),
         m_counter(counter)
@@ -51,26 +48,21 @@ public:
         ++(*m_counter);
     }
 
-    ~TCPSocketWithInstanceCounter()
-    {
-        --(*m_counter);
-    }
+    ~TCPSocketWithInstanceCounter() { --(*m_counter); }
 
 private:
     std::unique_ptr<nx::network::AbstractStreamSocket> m_socket;
     std::atomic<int>* m_counter = nullptr;
 };
 
-class TestConnection:
-    public nx::network::server::BaseServerConnection
+class TestConnection: public nx::network::server::BaseServerConnection
 {
     using base_type = nx::network::server::BaseServerConnection;
 
 public:
     TestConnection(
         std::unique_ptr<AbstractStreamSocket> streamSocket,
-        nx::utils::SyncQueue<nx::Buffer>* receivedDataQueue)
-        :
+        nx::utils::SyncQueue<nx::Buffer>* receivedDataQueue):
         base_type(std::move(streamSocket)),
         m_receivedDataQueue(receivedDataQueue)
     {
@@ -89,9 +81,7 @@ private:
             m_handler();
     }
 
-    virtual void readyToSendData() override
-    {
-    }
+    virtual void readyToSendData() override {}
 
 private:
     nx::utils::SyncQueue<nx::Buffer>* m_receivedDataQueue = nullptr;
@@ -102,8 +92,7 @@ private:
 
 //-------------------------------------------------------------------------------------------------
 
-class ConnectionServerBaseServerConnection:
-    public ::testing::Test
+class ConnectionServerBaseServerConnection: public ::testing::Test
 {
 public:
     ConnectionServerBaseServerConnection():
@@ -124,16 +113,13 @@ public:
     }
 
 protected:
-    void setInactivityTimeout(std::chrono::milliseconds timeout)
-    {
-        m_inactivityTimeout = timeout;
-    }
+    void setInactivityTimeout(std::chrono::milliseconds timeout) { m_inactivityTimeout = timeout; }
 
     void givenConnection()
     {
         auto clientConnection = std::make_unique<TCPSocket>(AF_INET);
-        ASSERT_TRUE(clientConnection->connect(
-            m_serverSocket.getLocalAddress(), nx::network::kNoTimeout));
+        ASSERT_TRUE(
+            clientConnection->connect(m_serverSocket.getLocalAddress(), nx::network::kNoTimeout));
         m_clientConnections.push_back(std::move(clientConnection));
 
         auto acceptedConnection = m_serverSocket.accept();
@@ -175,13 +161,13 @@ protected:
     void whenChangeConnectionInactivityTimeoutTo(std::chrono::milliseconds timeout)
     {
         m_connection->executeInAioThreadSync(
-            [this, timeout]() { m_connection->setInactivityTimeout(timeout); });
+            [this, timeout]()
+            {
+                m_connection->setInactivityTimeout(timeout);
+            });
     }
 
-    void whenCloseConnection()
-    {
-        m_connection->closeConnection(SystemError::connectionReset);
-    }
+    void whenCloseConnection() { m_connection->closeConnection(SystemError::connectionReset); }
 
     void whenSendRandomData()
     {
@@ -248,10 +234,7 @@ protected:
         m_closeSubscriptions.push_back(std::move(subscription));
     }
 
-    void resetConnection()
-    {
-        m_connection.reset();
-    }
+    void resetConnection() { m_connection.reset(); }
 
 private:
     std::unique_ptr<TestConnection> m_connection;
@@ -278,11 +261,12 @@ private:
 
     void initializeConnection(std::unique_ptr<AbstractStreamSocket> socket)
     {
-        m_connection = std::make_unique<TestConnection>(
-            std::move(socket),
-            &m_receivedDataQueue);
+        m_connection = std::make_unique<TestConnection>(std::move(socket), &m_receivedDataQueue);
         keepCloseHandler(m_connection->registerCloseHandler(
-            [this](auto... args) { saveConnectionClosedEvent(args...); }));
+            [this](auto... args)
+            {
+                saveConnectionClosedEvent(args...);
+            }));
     }
 
     void saveConnectionClosedEvent(SystemError::ErrorCode closeReason, bool connectionDestroyed)
@@ -300,7 +284,7 @@ private:
         for (const auto& t: aioThreads)
         {
             ticker.bindToAioThread(t);
-            ticker.executeInAioThreadSync([](){});
+            ticker.executeInAioThreadSync([]() {});
         }
     }
 };
@@ -357,25 +341,34 @@ TEST_F(ConnectionServerBaseServerConnection, connection_close_works_properly)
 TEST_F(ConnectionServerBaseServerConnection, connection_can_be_closed_in_message_handler)
 {
     givenStartedConnection();
-    setAuxiliaryMessageHandler([this]()
-    {
-        whenCloseConnection();
-    });
+    setAuxiliaryMessageHandler(
+        [this]()
+        {
+            whenCloseConnection();
+        });
 
     whenSendRandomData();
 
     thenConnectionReportedExpectedData();
 }
 
-TEST_F(ConnectionServerBaseServerConnection, close_handler_tells_if_connection_is_destroyed_by_previous_close_handler)
+TEST_F(
+    ConnectionServerBaseServerConnection,
+    close_handler_tells_if_connection_is_destroyed_by_previous_close_handler)
 {
     std::promise<bool> destroyed;
     givenStartedConnection();
 
-    keepCloseHandler(registerCloseHandler([this](auto... /*args*/) { resetConnection(); }));
-    keepCloseHandler(
-        registerCloseHandler([&destroyed](auto /*closeReason*/, bool connectionDestroyed)
-            { destroyed.set_value(connectionDestroyed); }));
+    keepCloseHandler(registerCloseHandler(
+        [this](auto... /*args*/)
+        {
+            resetConnection();
+        }));
+    keepCloseHandler(registerCloseHandler(
+        [&destroyed](auto /*closeReason*/, bool connectionDestroyed)
+        {
+            destroyed.set_value(connectionDestroyed);
+        }));
 
     whenCloseConnection();
 
@@ -392,11 +385,20 @@ TEST_F(ConnectionServerBaseServerConnection, close_handler_cancelled_by_another_
 
     // The handlers are invoked in the registration order.
     keepCloseHandler(registerCloseHandler(
-        [&subscriptionToCancel](auto... /*args*/) { subscriptionToCancel.reset(); }));
+        [&subscriptionToCancel](auto... /*args*/)
+        {
+            subscriptionToCancel.reset();
+        }));
     subscriptionToCancel = registerCloseHandler(
-        [&cancelledHandlerInvoked](auto... /*args*/) { cancelledHandlerInvoked = true; });
+        [&cancelledHandlerInvoked](auto... /*args*/)
+        {
+            cancelledHandlerInvoked = true;
+        });
     keepCloseHandler(registerCloseHandler(
-        [&lastHandlerInvoked](auto... /*args*/) { lastHandlerInvoked.set_value(); }));
+        [&lastHandlerInvoked](auto... /*args*/)
+        {
+            lastHandlerInvoked.set_value();
+        }));
 
     whenCloseConnection();
 
@@ -404,7 +406,8 @@ TEST_F(ConnectionServerBaseServerConnection, close_handler_cancelled_by_another_
     ASSERT_FALSE(cancelledHandlerInvoked);
 }
 
-TEST_F(ConnectionServerBaseServerConnection,
+TEST_F(
+    ConnectionServerBaseServerConnection,
     close_handler_is_not_invoked_after_its_subscription_is_gone)
 {
     std::atomic<bool> handlerInvoked = false;
@@ -412,8 +415,11 @@ TEST_F(ConnectionServerBaseServerConnection,
     givenStartedConnection();
 
     {
-        const auto subscription =
-            registerCloseHandler([&handlerInvoked](auto... /*args*/) { handlerInvoked = true; });
+        const auto subscription = registerCloseHandler(
+            [&handlerInvoked](auto... /*args*/)
+            {
+                handlerInvoked = true;
+            });
     }
 
     whenCloseConnection();

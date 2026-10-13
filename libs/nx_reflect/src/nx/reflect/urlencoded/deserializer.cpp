@@ -29,10 +29,11 @@ std::tuple<std::string, DeserializationResult> decode(std::string_view str)
                 }
                 else
                 {
-                    return {{},
+                    return {
+                        {},
                         {false,
-                            "Unexpected end of string with encoded symbol at the end",
-                            std::string{str}}};
+                         "Unexpected end of string with encoded symbol at the end",
+                         std::string{str}}};
                 }
                 break;
 
@@ -53,9 +54,7 @@ std::string toLower(std::string_view value)
 
 std::tuple<std::string_view, DeserializationResult> trimBrackets(std::string_view str)
 {
-    static constexpr std::pair<char, char> kBrackets[] = {
-        {'{', '}'}, {'(', ')'}, {'[', ']'}
-    };
+    static constexpr std::pair<char, char> kBrackets[] = {{'{', '}'}, {'(', ')'}, {'[', ']'}};
 
     if (str.length() < 2)
         return {str, true};
@@ -74,7 +73,8 @@ std::tuple<std::string_view, DeserializationResult> trimBrackets(std::string_vie
 }
 
 std::tuple<std::vector<std::string_view>, DeserializationResult> tokenizeRequest(
-    std::string_view request, char delimiter)
+    std::string_view request,
+    char delimiter)
 {
     std::vector<std::string_view> requestTokenized;
 
@@ -94,10 +94,11 @@ std::tuple<std::vector<std::string_view>, DeserializationResult> tokenizeRequest
         }
         if (bracesCounter < 0)
         {
-            return {std::move(requestTokenized),
+            return {
+                std::move(requestTokenized),
                 {false,
-                    "Unexpected bracket",
-                    std::string{request.substr(begPos, curPos - begPos)}}};
+                 "Unexpected bracket",
+                 std::string{request.substr(begPos, curPos - begPos)}}};
         }
         if (c == delimiter)
         {

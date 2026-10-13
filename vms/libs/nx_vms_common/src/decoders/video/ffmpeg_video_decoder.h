@@ -30,7 +30,8 @@ class NX_VMS_COMMON_API QnFfmpegVideoDecoder: public QnAbstractVideoDecoder
 {
 public:
     /*!
-        \param swDecoderCount Atomically incremented in constructor and atomically decremented in destructor
+        \param swDecoderCount Atomically incremented in constructor and atomically decremented in
+       destructor
     */
     QnFfmpegVideoDecoder(
         const DecoderConfig& config,
@@ -39,15 +40,14 @@ public:
     QnFfmpegVideoDecoder(const QnFfmpegVideoDecoder&) = delete;
     QnFfmpegVideoDecoder& operator=(const QnFfmpegVideoDecoder&) = delete;
     ~QnFfmpegVideoDecoder();
-    bool decode(
-        const QnConstCompressedVideoDataPtr& data,
-        CLVideoDecoderOutputPtr* const outFrame) override;
+    bool decode(const QnConstCompressedVideoDataPtr& data, CLVideoDecoderOutputPtr* const outFrame)
+        override;
 
     virtual void setLightCpuMode(DecodeMode val) override;
 
     AVCodecContext* getContext() const;
     bool hardwareDecoder() const override;
-    virtual int getWidth() const override { return m_context->width;  }
+    virtual int getWidth() const override { return m_context->width; }
     virtual int getHeight() const override { return m_context->height; }
     virtual AVCodecID codec() const override { return m_context->codec_id; }
     double getSampleAspectRatio() const override;
@@ -60,18 +60,23 @@ private:
     void determineOptimalThreadType(const QnConstCompressedVideoDataPtr& data);
     bool openDecoder(const QnConstCompressedVideoDataPtr& data);
     bool initFFmpegDecoder();
-    void processNewResolutionIfChanged(const QnConstCompressedVideoDataPtr& data, int width, int height);
+    void processNewResolutionIfChanged(
+        const QnConstCompressedVideoDataPtr& data,
+        int width,
+        int height);
     bool decodeVideo(const QnConstCompressedVideoDataPtr& data);
     void setMultiThreadDecoding(bool value);
 
     /** Applies pixel format / aspect ratio / flags / channel bookkeeping shared by every
      * decoded frame this class hands out.
      */
-    bool finalizeDecodedFrame(const QnConstCompressedVideoDataPtr& data, CLVideoDecoderOutput* outFrame);
+    bool finalizeDecodedFrame(
+        const QnConstCompressedVideoDataPtr& data,
+        CLVideoDecoderOutput* outFrame);
 
 private:
     std::unique_ptr<nx::media::ffmpeg::FfmpegSharedMemoryBufferContext> m_shmBufferContext;
-    AVCodecContext *m_context;
+    AVCodecContext* m_context;
 
     AVCodecID m_codecId = AV_CODEC_ID_NONE;
     QnAbstractVideoDecoder::DecodeMode m_decodeMode;
@@ -93,7 +98,7 @@ private:
     nx::metric::Storage* m_metrics = nullptr;
     int m_lastDecodeResult = 0;
 
-    QnAbstractMediaData::MediaFlags m_lastFlags {};
+    QnAbstractMediaData::MediaFlags m_lastFlags{};
     int m_lastChannelNumber = 0;
     const DecoderConfig m_config;
     bool m_opened = false;

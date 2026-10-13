@@ -27,24 +27,24 @@ namespace nx {
 namespace ranges {
 
 #if defined __cpp_lib_ranges_to_container
-    using std::ranges::to;
+using std::ranges::to;
 #else
-    using detail::to;
+using detail::to;
 #endif
 
 #if defined __cpp_lib_ranges_fold
-    using std::ranges::fold_left;
+using std::ranges::fold_left;
 #else
-    template<std::ranges::forward_range R, typename Accum, typename BinaryOp>
-    constexpr auto fold_left(R&& r, Accum&& init, BinaryOp f)
-    {
-        auto c = std::views::common(std::forward<R>(r));
-        return std::accumulate(
-            std::ranges::begin(c),
-            std::ranges::end(c),
-            std::forward<Accum>(init),
-            std::ref(f));
-    }
+template<std::ranges::forward_range R, typename Accum, typename BinaryOp>
+constexpr auto fold_left(R&& r, Accum&& init, BinaryOp f)
+{
+    auto c = std::views::common(std::forward<R>(r));
+    return std::accumulate(
+        std::ranges::begin(c),
+        std::ranges::end(c),
+        std::forward<Accum>(init),
+        std::ref(f));
+}
 #endif
 
 } // namespace ranges
@@ -52,18 +52,18 @@ namespace ranges {
 namespace views {
 
 #if defined __cpp_lib_ranges_cartesian_product
-    using std::views::cartesian_product;
+using std::views::cartesian_product;
 #else
-    constexpr auto cartesian_product()
-    {
-        return detail::cartesianProduct();
-    }
+constexpr auto cartesian_product()
+{
+    return detail::cartesianProduct();
+}
 
-    template<typename... Ranges>
-    constexpr auto cartesian_product(Ranges&&... ranges)
-    {
-        return detail::cartesianProduct(std::forward<Ranges>(ranges)...);
-    }
+template<typename... Ranges>
+constexpr auto cartesian_product(Ranges&&... ranges)
+{
+    return detail::cartesianProduct(std::forward<Ranges>(ranges)...);
+}
 #endif
 
 } // namespace views

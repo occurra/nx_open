@@ -16,17 +16,15 @@ static const size_t USEC_PER_MS = 1000;
  *   Zero - return immediately. Less than zero - wait indefinitely.
  * @return
  * - Zero - no sockets were in the queried state before the timer expired
- * - Greater than zero - the number of elements in fdarray for which an events member of the POLLFD structure is nonzero
- * - SOCKET_ERROR - an error occurred. Call the WSAGetLastError function to retrieve the extended error code
- * NOTE: Implementation is very inefficient! (same as select, actually)
+ * - Greater than zero - the number of elements in fdarray for which an events member of the POLLFD
+ * structure is nonzero
+ * - SOCKET_ERROR - an error occurred. Call the WSAGetLastError function to retrieve the extended
+ * error code NOTE: Implementation is very inefficient! (same as select, actually)
  */
-int WINAPI pollOverSelectWin32(
-    pollfd fdarray[],
-    ULONG nfds,
-    INT timeout)
+int WINAPI pollOverSelectWin32(pollfd fdarray[], ULONG nfds, INT timeout)
 {
-    //TODO #akolesnikov modify implementation taking into account undocumented win32 select features (its epoll-like resulting array)
-    //this will make implementation much more efficient
+    // TODO #akolesnikov modify implementation taking into account undocumented win32 select
+    // features (its epoll-like resulting array) this will make implementation much more efficient
 
     if (nfds > FD_SETSIZE)
     {
@@ -35,7 +33,7 @@ int WINAPI pollOverSelectWin32(
         return SOCKET_ERROR;
     }
 
-    //preparing fd sets
+    // preparing fd sets
     fd_set readfds;
     FD_ZERO(&readfds);
     fd_set writefds;
@@ -60,7 +58,8 @@ int WINAPI pollOverSelectWin32(
         timeoutVal.tv_usec = (timeout % MS_PER_SEC) * USEC_PER_MS;
     }
 
-    const int selectResult = select(nfds, &readfds, &writefds, &exceptfds, timeout < 0 ? NULL : &timeoutVal);
+    const int selectResult =
+        select(nfds, &readfds, &writefds, &exceptfds, timeout < 0 ? NULL : &timeoutVal);
     if (selectResult == SOCKET_ERROR || selectResult == 0)
         return selectResult;
 
@@ -77,9 +76,16 @@ int WINAPI pollOverSelectWin32(
 
             DWORD errorCode = 0;
             int optLen = sizeof(errorCode);
-            if (getsockopt(fdarray[i].fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&errorCode), &optLen) == 0)
+            if (getsockopt(
+                    fdarray[i].fd,
+                    SOL_SOCKET,
+                    SO_ERROR,
+                    reinterpret_cast<char*>(&errorCode),
+                    &optLen)
+                == 0)
             {
-                if (errorCode == WSAENOTCONN || errorCode == WSAECONNRESET || errorCode == WSAESHUTDOWN)
+                if (errorCode == WSAENOTCONN || errorCode == WSAECONNRESET
+                    || errorCode == WSAESHUTDOWN)
                     fdarray[i].revents |= POLLHUP;
             }
         }

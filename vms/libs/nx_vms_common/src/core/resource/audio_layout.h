@@ -23,7 +23,7 @@ public:
     explicit AudioLayout(const CodecParametersConstPtr& codecParams);
     explicit AudioLayout(const AVFormatContext* formatContext);
 
-    void addTrack(const CodecParametersConstPtr &codecParams, const QString& description = {});
+    void addTrack(const CodecParametersConstPtr& codecParams, const QString& description = {});
     const std::vector<AudioTrack>& tracks() const;
 
 private:

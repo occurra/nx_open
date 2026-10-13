@@ -6,11 +6,11 @@
 #include <QtCore/QDebug>
 
 #include <nx/codec/h265/extradata.h>
+#include <nx/codec/jpeg/jpeg_utils.h>
 #include <nx/codec/nal_units.h>
 #include <nx/media/audio/format.h>
 #include <nx/media/av_codec_helper.h>
 #include <nx/media/codec_parameters.h>
-#include <nx/codec/jpeg/jpeg_utils.h>
 #include <nx/media/h264_utils.h>
 #include <nx/media/utils.h>
 #include <nx/media/video_data_packet.h>
@@ -51,7 +51,7 @@ void logCallback(void* /*ptr*/, int level, const char* fmt, va_list vl)
     }
 }
 
-}
+} // namespace ffmpeg
 
 void QnFfmpegHelper::registerLogCallback()
 {
@@ -102,7 +102,9 @@ qint64 QnFfmpegHelper::getFileSizeByIOContext(AVIOContext* ioContext)
 }
 
 CodecParametersPtr QnFfmpegHelper::createVideoCodecParametersMp4(
-    const QnCompressedVideoData* video, int width, int height)
+    const QnCompressedVideoData* video,
+    int width,
+    int height)
 {
     auto codecParams = std::make_shared<CodecParameters>();
     auto avCodecParams = codecParams->getAvCodecParameters();
@@ -112,7 +114,8 @@ CodecParametersPtr QnFfmpegHelper::createVideoCodecParametersMp4(
     avCodecParams->height = height;
 
     // Fill ffmpeg extra data.
-    auto nalUnits = nx::media::nal::findNalUnitsMp4((const uint8_t*)video->data(), video->dataSize());
+    auto nalUnits =
+        nx::media::nal::findNalUnitsMp4((const uint8_t*) video->data(), video->dataSize());
     std::vector<uint8_t> extradata;
     if (video->compressionType == AV_CODEC_ID_H264)
         extradata = nx::media::h264::buildExtraDataMp4(nalUnits);
@@ -130,13 +133,17 @@ CodecParametersPtr QnFfmpegHelper::createVideoCodecParametersMp4(
 }
 
 CodecParametersPtr QnFfmpegHelper::createVideoCodecParametersAnnexB(
-    const QnCompressedVideoData* data, const std::vector<uint8_t>* externalExtradata)
+    const QnCompressedVideoData* data,
+    const std::vector<uint8_t>* externalExtradata)
 {
     auto codecParams = std::make_shared<CodecParameters>();
     auto avCodecParams = codecParams->getAvCodecParameters();
     avCodecParams->codec_type = AVMEDIA_TYPE_VIDEO;
     avCodecParams->codec_id = data->compressionType;
-    if (!nx::media::fillExtraDataAnnexB(data, &avCodecParams->extradata, &avCodecParams->extradata_size))
+    if (!nx::media::fillExtraDataAnnexB(
+            data,
+            &avCodecParams->extradata,
+            &avCodecParams->extradata_size))
     {
         if (!externalExtradata || externalExtradata->empty())
             return nullptr;
@@ -154,10 +161,11 @@ CodecParametersPtr QnFfmpegHelper::createVideoCodecParametersAnnexB(
         avCodecParams->height = streamResolution.height();
     }
 
-    if (data->compressionType == AV_CODEC_ID_MJPEG) // TODO rename function or move it to other place.
+    if (data->compressionType
+        == AV_CODEC_ID_MJPEG) // TODO rename function or move it to other place.
     {
         nx::media::jpeg::ImageInfo info;
-        nx::media::jpeg::readJpegImageInfo((const uint8_t*)data->data(), data->dataSize(), &info);
+        nx::media::jpeg::readJpegImageInfo((const uint8_t*) data->data(), data->dataSize(), &info);
         if (info.pixelFormat == AV_PIX_FMT_NONE)
         {
             NX_DEBUG(NX_SCOPE_TAG, "Failed to parse MJPEG header");
@@ -174,7 +182,8 @@ int QnFfmpegHelper::audioSampleSize(AVCodecContext* ctx)
     return ctx->ch_layout.nb_channels * av_get_bytes_per_sample(ctx->sample_fmt);
 }
 
-AVSampleFormat QnFfmpegHelper::fromAudioFormatToFfmpegSampleType(const nx::media::audio::Format& format)
+AVSampleFormat QnFfmpegHelper::fromAudioFormatToFfmpegSampleType(
+    const nx::media::audio::Format& format)
 {
     if (format.sampleType == nx::media::audio::Format::SampleType::signedInt)
     {
@@ -232,9 +241,12 @@ int QnFfmpegHelper::planeCount(const AVPixFmtDescriptor* avPixFmtDescriptor)
     for (int component = 0; component < avPixFmtDescriptor->nb_components; ++component)
     {
         const int componentPlane = avPixFmtDescriptor->comp[component].plane;
-        if (!NX_ASSERT(componentPlane >= 0 && componentPlane < AV_NUM_DATA_POINTERS,
-            NX_FMT("AVPixFmtDescriptor reports plane %1 for component %2 of pixel format %3"),
-                componentPlane, component, avPixFmtDescriptor->name))
+        if (!NX_ASSERT(
+                componentPlane >= 0 && componentPlane < AV_NUM_DATA_POINTERS,
+                NX_FMT("AVPixFmtDescriptor reports plane %1 for component %2 of pixel format %3"),
+                componentPlane,
+                component,
+                avPixFmtDescriptor->name))
         {
             return 0;
         }
@@ -267,10 +279,9 @@ QnFfmpegAudioHelper::QnFfmpegAudioHelper(AVCodecContext* decoderContext):
     m_sample_fmt = decoderContext->sample_fmt;
 }
 
-
 bool QnFfmpegAudioHelper::isCompatible(AVCodecContext* decoderContext) const
 {
-    return m_channel_layout == (int)decoderContext->ch_layout.u.mask
+    return m_channel_layout == (int) decoderContext->ch_layout.u.mask
         && m_channels == decoderContext->ch_layout.nb_channels
         && m_sample_rate == decoderContext->sample_rate
         && m_sample_fmt == decoderContext->sample_fmt;
@@ -284,7 +295,7 @@ QnFfmpegAudioHelper::~QnFfmpegAudioHelper()
 void QnFfmpegAudioHelper::copyAudioSamples(quint8* dst, const AVFrame* src) const
 {
     quint8* tmpData[4] = {dst};
-    swr_convert(m_swr,tmpData, src->nb_samples, (const quint8**) src->data, src->nb_samples);
+    swr_convert(m_swr, tmpData, src->nb_samples, (const quint8**) src->data, src->nb_samples);
 }
 
 QByteArray toString(AVPixelFormat pixelFormat)

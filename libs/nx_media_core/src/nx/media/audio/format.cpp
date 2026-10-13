@@ -5,11 +5,7 @@
 #include <nx/media/codec_parameters.h>
 #include <nx/utils/log/format.h>
 
-namespace {
-
-static constexpr auto kMicrosecondsInSecond = 1000000LL;
-
-} // namespace
+namespace { static constexpr auto kMicrosecondsInSecond = 1000000LL; } // namespace
 
 using namespace std::chrono;
 
@@ -17,11 +13,8 @@ namespace nx::media::audio {
 
 bool Format::isValid() const
 {
-    return sampleRate != -1
-        && channelCount != -1
-        && sampleSize != -1
-        && sampleType != SampleType::unknown
-        && !codec.isEmpty();
+    return sampleRate != -1 && channelCount != -1 && sampleSize != -1
+        && sampleType != SampleType::unknown && !codec.isEmpty();
 }
 
 microseconds Format::durationForBytes(int bytes) const
@@ -58,8 +51,7 @@ QString Format::toString() const
         channelCount,
         (int) sampleType,
         (int) byteOrder,
-        codec
-    );
+        codec);
 }
 
 Format formatFromMediaContext(const CodecParametersConstPtr& c)
@@ -77,7 +69,7 @@ Format formatFromMediaContext(const CodecParametersConstPtr& c)
 
     result.byteOrder = QSysInfo::LittleEndian;
 
-    switch(c->getSampleFmt())
+    switch (c->getSampleFmt())
     {
         case AV_SAMPLE_FMT_U8: ///< unsigned 8 bits
         case AV_SAMPLE_FMT_U8P:
@@ -91,7 +83,7 @@ Format formatFromMediaContext(const CodecParametersConstPtr& c)
             result.sampleType = Format::SampleType::signedInt;
             break;
 
-        case AV_SAMPLE_FMT_S32:///< signed 32 bits
+        case AV_SAMPLE_FMT_S32: ///< signed 32 bits
         case AV_SAMPLE_FMT_S32P:
             result.sampleSize = 32;
             result.sampleType = Format::SampleType::signedInt;

@@ -25,7 +25,7 @@ class QnTCPConnectionProcessorPrivate
     friend class QnTCPConnectionProcessor;
 
 public:
-    //enum State {State_Stopped, State_Paused, State_Playing, State_Rewind};
+    // enum State {State_Stopped, State_Paused, State_Playing, State_Rewind};
 
     QnTCPConnectionProcessorPrivate():
         tcpReadBuffer(new quint8[TCP_READ_BUFFER_SIZE]),
@@ -44,7 +44,7 @@ public:
     {
         if (socket)
             socket->pleaseStopSync();
-        delete [] tcpReadBuffer;
+        delete[] tcpReadBuffer;
     }
 
     struct SendDataResult
@@ -57,7 +57,9 @@ public:
     };
 
     SendDataResult sendData(
-        const char* data, int size, std::optional<int64_t> timestampForLogging = {})
+        const char* data,
+        int size,
+        std::optional<int64_t> timestampForLogging = {})
     {
         return sendData(data, size, socket.get(), std::move(timestampForLogging));
     }
@@ -81,30 +83,28 @@ public:
         const int64_t sendDurationUs =
             duration_cast<microseconds>(afterSendTime - beforeSendTime).count();
 
-        const auto logLevel =
-            (sendDurationUs >= nx::network::ini().minSocketSendDurationUs)
-                ? nx::log::Level::warning
-                : nx::log::Level::verbose;
+        const auto logLevel = (sendDurationUs >= nx::network::ini().minSocketSendDurationUs)
+            ? nx::log::Level::warning
+            : nx::log::Level::verbose;
 
-        NX_UTILS_LOG(logLevel, this,
+        NX_UTILS_LOG(
+            logLevel,
+            this,
             "Called send(@%1, %2 bytes) -> %3, timestamp %4, duration %5 us, since last send %6%7",
             nx::kit::utils::toString((const void*) data),
             size,
-            (
-                ((result.sendResult == size) ? "ok" : QString::number(result.sendResult))
-                +
-                ((result.sendResult >= 0) ? "" : nx::format(" (OS code %1)").args((int) result.errorCode))
-            ),
+            (((result.sendResult == size) ? "ok" : QString::number(result.sendResult))
+             + ((result.sendResult >= 0)
+                    ? ""
+                    : nx::format(" (OS code %1)").args((int) result.errorCode))),
             timestampForLogging ? nx::format("%1 us").args(*timestampForLogging) : "n/a",
             duration_cast<microseconds>(afterSendTime - beforeSendTime).count(),
-            lastSendTime
-                ? nx::format("%1 us").args(duration_cast<microseconds>(
-                    beforeSendTime - *lastSendTime).count())
-                : "n/a",
+            lastSendTime ? nx::format("%1 us").args(
+                               duration_cast<microseconds>(beforeSendTime - *lastSendTime).count())
+                         : "n/a",
             (result.sendResult < 0)
                 ? ("; OS error text: " + SystemError::toString(result.errorCode))
-                : ""
-        );
+                : "");
 
         lastSendTime = beforeSendTime;
         return result;
@@ -118,7 +118,7 @@ public:
 
     nx::String protocol;
     QByteArray requestBody;
-    //QByteArray responseBody;
+    // QByteArray responseBody;
     QByteArray clientRequest;
     QByteArray receiveBuffer;
     quint8* tcpReadBuffer;

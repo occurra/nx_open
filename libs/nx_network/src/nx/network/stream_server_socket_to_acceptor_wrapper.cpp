@@ -5,23 +5,20 @@
 namespace nx::network {
 
 StreamServerSocketToAcceptorWrapper::StreamServerSocketToAcceptorWrapper(
-    std::unique_ptr<AbstractStreamServerSocket> serverSocket)
-    :
+    std::unique_ptr<AbstractStreamServerSocket> serverSocket):
     m_serverSocket(std::move(serverSocket))
 {
     bindToAioThread(m_serverSocket->getAioThread());
 }
 
-void StreamServerSocketToAcceptorWrapper::bindToAioThread(
-    aio::AbstractAioThread* aioThread)
+void StreamServerSocketToAcceptorWrapper::bindToAioThread(aio::AbstractAioThread* aioThread)
 {
     base_type::bindToAioThread(aioThread);
 
     m_serverSocket->bindToAioThread(aioThread);
 }
 
-void StreamServerSocketToAcceptorWrapper::acceptAsync(
-    AcceptCompletionHandler handler)
+void StreamServerSocketToAcceptorWrapper::acceptAsync(AcceptCompletionHandler handler)
 {
     m_serverSocket->acceptAsync(std::move(handler));
 }

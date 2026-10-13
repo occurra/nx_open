@@ -4,8 +4,8 @@
 
 #ifdef _WIN32
 
-#include <list>
-#include <string>
+    #include <list>
+    #include <string>
 
 struct Win32FuncResolverImpl;
 
@@ -22,12 +22,12 @@ public:
      * NOTE: thread-safe.
      */
     template<class FuncPointerType>
-        FuncPointerType resolveFunction(
-            const std::wstring& libName,
-            const std::string& funcName,
-            FuncPointerType defaultValue = nullptr )
+    FuncPointerType resolveFunction(
+        const std::wstring& libName,
+        const std::string& funcName,
+        FuncPointerType defaultValue = nullptr)
     {
-        FuncPointerType func = (FuncPointerType)resolveFunction( libName, funcName );
+        FuncPointerType func = (FuncPointerType) resolveFunction(libName, funcName);
         return func ? func : defaultValue;
     }
 
@@ -36,7 +36,7 @@ public:
 private:
     Win32FuncResolverImpl* m_impl;
 
-    void* resolveFunction( const std::wstring& libName, const std::string& funcName );
+    void* resolveFunction(const std::wstring& libName, const std::string& funcName);
 };
 
 #endif

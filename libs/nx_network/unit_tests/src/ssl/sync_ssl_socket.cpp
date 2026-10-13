@@ -11,14 +11,14 @@ namespace nx::network::ssl::test {
 
 const unsigned char sid[] = "Test SSL socket";
 
-int sock_read(BIO *b, char *out, int outl)
+int sock_read(BIO* b, char* out, int outl)
 {
     SyncSslSocket* sslSock = (SyncSslSocket*) BIO_get_app_data(b);
-    int ret=0;
+    int ret = 0;
 
     if (out != NULL)
     {
-        //clear_socket_error();
+        // clear_socket_error();
         ret = sslSock->recvInternal(out, outl, 0);
         BIO_clear_retry_flags(b);
         if (ret <= 0)
@@ -30,10 +30,10 @@ int sock_read(BIO *b, char *out, int outl)
     return ret;
 }
 
-int sock_write(BIO *b, const char *in, int inl)
+int sock_write(BIO* b, const char* in, int inl)
 {
     SyncSslSocket* sslSock = (SyncSslSocket*) BIO_get_app_data(b);
-    //clear_socket_error();
+    // clear_socket_error();
     int ret = sslSock->sendInternal(in, inl);
     BIO_clear_retry_flags(b);
     if (ret <= 0)
@@ -46,7 +46,7 @@ int sock_write(BIO *b, const char *in, int inl)
 
 static int sock_puts(BIO* bp, const char* str)
 {
-    return sock_write(bp, str, (int)strlen(str));
+    return sock_write(bp, str, (int) strlen(str));
 }
 
 static long sock_ctrl(BIO* b, int cmd, long num, void* /*ptr*/)
@@ -55,30 +55,30 @@ static long sock_ctrl(BIO* b, int cmd, long num, void* /*ptr*/)
 
     switch (cmd)
     {
-    case BIO_C_SET_FD:
-        Q_ASSERT("Invalid proxy socket use!");
-        break;
-    case BIO_C_GET_FD:
-        Q_ASSERT("Invalid proxy socket use!");
-        break;
-    case BIO_CTRL_GET_CLOSE:
-        ret = BIO_get_shutdown(b);
-        break;
-    case BIO_CTRL_SET_CLOSE:
-        BIO_set_shutdown(b, (int) num);
-        break;
-    case BIO_CTRL_DUP:
-    case BIO_CTRL_FLUSH:
-        ret=1;
-        break;
-    default:
-        ret=0;
-        break;
+        case BIO_C_SET_FD:
+            Q_ASSERT("Invalid proxy socket use!");
+            break;
+        case BIO_C_GET_FD:
+            Q_ASSERT("Invalid proxy socket use!");
+            break;
+        case BIO_CTRL_GET_CLOSE:
+            ret = BIO_get_shutdown(b);
+            break;
+        case BIO_CTRL_SET_CLOSE:
+            BIO_set_shutdown(b, (int) num);
+            break;
+        case BIO_CTRL_DUP:
+        case BIO_CTRL_FLUSH:
+            ret = 1;
+            break;
+        default:
+            ret = 0;
+            break;
     }
-    return(ret);
+    return (ret);
 }
 
-static int sock_new(BIO *bio)
+static int sock_new(BIO* bio)
 {
     BIO_set_init(bio, 1);
     BIO_set_data(bio, nullptr);
@@ -86,7 +86,7 @@ static int sock_new(BIO *bio)
     return 1;
 }
 
-static int sock_free(BIO *bio)
+static int sock_free(BIO* bio)
 {
     if (!bio)
         return 0;
@@ -108,9 +108,8 @@ static int sock_free(BIO *bio)
 
 static std::unique_ptr<BIO_METHOD, decltype(&BIO_meth_free)> createBioMethod()
 {
-    auto bioMethod = nx::wrapUnique(
-        BIO_meth_new(BIO_TYPE_SOCKET, "SyncSslSocket"),
-        &BIO_meth_free);
+    auto bioMethod =
+        nx::wrapUnique(BIO_meth_new(BIO_TYPE_SOCKET, "SyncSslSocket"), &BIO_meth_free);
     BIO_meth_set_write(bioMethod.get(), &sock_write);
     BIO_meth_set_read(bioMethod.get(), &sock_read);
     BIO_meth_set_puts(bioMethod.get(), &sock_puts);
@@ -124,10 +123,7 @@ static std::unique_ptr<BIO_METHOD, decltype(&BIO_meth_free)> createBioMethod()
 //-------------------------------------------------------------------------------------------------
 // SyncSslSocket
 
-SyncSslSocket::SyncSslSocket(
-    std::unique_ptr<AbstractStreamSocket> delegate,
-    bool isServerSide)
-    :
+SyncSslSocket::SyncSslSocket(std::unique_ptr<AbstractStreamSocket> delegate, bool isServerSide):
     base_type(delegate.get()),
     m_extraBufferLen(0),
     m_delegate(std::move(delegate)),
@@ -146,9 +142,9 @@ SyncSslSocket::SyncSslSocket(
     BIO_set_nbio(writeBio, 1);
 
     m_ssl = nx::wrapUnique(
-        SSL_new(m_isServerSide
-            ? Context::instance()->defaultServerContext().get()
-            : Context::instance()->clientContext().get()),
+        SSL_new(
+            m_isServerSide ? Context::instance()->defaultServerContext().get()
+                           : Context::instance()->clientContext().get()),
         &SSL_free);
     SSL_set_verify(m_ssl.get(), SSL_VERIFY_NONE, nullptr);
     SSL_set_session_id_context(m_ssl.get(), sid, 4);
@@ -172,13 +168,13 @@ int SyncSslSocket::recv(void* buffer, std::size_t bytesToRead, int flags)
         int totalBytesRead = 0;
         for (;;)
         {
-            const int bytesRead = SSL_read(m_ssl.get(), (char*)buffer, (int) bytesToRead);
+            const int bytesRead = SSL_read(m_ssl.get(), (char*) buffer, (int) bytesToRead);
             if (bytesRead <= 0)
                 return totalBytesRead > 0 ? totalBytesRead : bytesRead;
 
             totalBytesRead += bytesRead;
             bytesToRead -= bytesRead;
-            buffer = (char*)buffer + bytesRead;
+            buffer = (char*) buffer + bytesRead;
 
             if (bytesToRead == 0)
                 return totalBytesRead;
@@ -203,16 +199,12 @@ int SyncSslSocket::send(const void* buffer, std::size_t bufferLen)
     return SSL_write(m_ssl.get(), buffer, (int) bufferLen);
 }
 
-void SyncSslSocket::readSomeAsync(
-    nx::Buffer* const /*buffer*/,
-    IoCompletionHandler /*handler*/)
+void SyncSslSocket::readSomeAsync(nx::Buffer* const /*buffer*/, IoCompletionHandler /*handler*/)
 {
     NX_CRITICAL(false, "Not implemented and will never be. Use ssl::StreamSocket");
 }
 
-void SyncSslSocket::sendAsync(
-    const nx::Buffer* /*buffer*/,
-    IoCompletionHandler /*handler*/)
+void SyncSslSocket::sendAsync(const nx::Buffer* /*buffer*/, IoCompletionHandler /*handler*/)
 {
     NX_CRITICAL(false, "Not implemented and will never be. Use ssl::StreamSocket");
 }
@@ -237,7 +229,7 @@ int SyncSslSocket::recvInternal(void* buffer, unsigned int bufferLen, int /*flag
 {
     if (m_extraBufferLen > 0)
     {
-        int toReadLen = qMin((int)bufferLen, m_extraBufferLen);
+        int toReadLen = qMin((int) bufferLen, m_extraBufferLen);
         memcpy(buffer, m_extraBuffer, toReadLen);
         memmove(m_extraBuffer, m_extraBuffer + toReadLen, m_extraBufferLen - toReadLen);
         m_extraBufferLen -= toReadLen;
@@ -275,16 +267,12 @@ bool SyncSslSocket::doClientHandshake()
     return ret == 1;
 }
 
-ClientSyncSslSocket::ClientSyncSslSocket(
-    std::unique_ptr<AbstractStreamSocket> wrappedSocket)
-    :
+ClientSyncSslSocket::ClientSyncSslSocket(std::unique_ptr<AbstractStreamSocket> wrappedSocket):
     SyncSslSocket(std::move(wrappedSocket), false)
 {
 }
 
-AcceptedSyncSslSocket::AcceptedSyncSslSocket(
-    std::unique_ptr<AbstractStreamSocket> wrappedSocket)
-    :
+AcceptedSyncSslSocket::AcceptedSyncSslSocket(std::unique_ptr<AbstractStreamSocket> wrappedSocket):
     SyncSslSocket(std::move(wrappedSocket), true)
 {
 }

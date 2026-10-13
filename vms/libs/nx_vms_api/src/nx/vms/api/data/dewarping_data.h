@@ -46,15 +46,15 @@ struct NX_VMS_API MediaData
     bool operator==(const MediaData& other) const;
 
     /**
-    * Compatibility-layer function to maintain the old way of (de)serializing. Used in the server
-    * sql database and in the pre-2.3 client exported layouts.
-    */
+     * Compatibility-layer function to maintain the old way of (de)serializing. Used in the server
+     * sql database and in the pre-2.3 client exported layouts.
+     */
     QByteArray toByteArray() const;
 
     /**
-    * Compatibility-layer function to maintain the old way of (de)serializing. Used in the server
-    * sql database and in the pre-2.3 client exported layouts.
-    */
+     * Compatibility-layer function to maintain the old way of (de)serializing. Used in the server
+     * sql database and in the pre-2.3 client exported layouts.
+     */
     static MediaData fromByteArray(const QByteArray& data);
 
     /** If current settings specify a 360-degree VR dewarping. */
@@ -76,10 +76,10 @@ struct NX_VMS_API MediaData
     static const QList<int>& allowedPanoFactorValues(FisheyeCameraMount mount);
 };
 #define MediaData_Fields \
-    (enabled)(viewMode)(fovRot)(xCenter)(yCenter)(radius)(hStretch)(cameraProjection) \
-    (sphereAlpha)(sphereBeta)
+    (enabled)(viewMode)( \
+        fovRot) (xCenter) (yCenter) (radius) (hStretch) (cameraProjection) (sphereAlpha) (sphereBeta)
 
-NX_VMS_API_DECLARE_STRUCT_EX(MediaData, (ubjson)(json))
+NX_VMS_API_DECLARE_STRUCT_EX(MediaData, (ubjson) (json))
 NX_REFLECTION_INSTRUMENT(MediaData, MediaData_Fields)
 
 struct NX_VMS_API ViewData
@@ -116,8 +116,8 @@ struct NX_VMS_API ViewData
     static ViewData fromByteArray(const QByteArray& data);
 };
 
-#define ViewData_Fields (enabled)(xAngle)(yAngle)(fov)(panoFactor)
-NX_VMS_API_DECLARE_STRUCT_EX(ViewData, (ubjson)(json)(xml)(csv_record))
+#define ViewData_Fields (enabled)(xAngle)(yAngle) (fov) (panoFactor)
+NX_VMS_API_DECLARE_STRUCT_EX(ViewData, (ubjson) (json) (xml) (csv_record))
 NX_REFLECTION_INSTRUMENT(ViewData, ViewData_Fields)
 
 } // namespace dewarping
@@ -125,6 +125,8 @@ NX_REFLECTION_INSTRUMENT(ViewData, ViewData_Fields)
 
 // Compatibility-layer functions to maintain old way of (de)serializing in the server sql database.
 void NX_VMS_API serialize_field(const nx::vms::api::dewarping::MediaData& data, QVariant* target);
-void NX_VMS_API deserialize_field(const QVariant& value, nx::vms::api::dewarping::MediaData* target);
+void NX_VMS_API
+    deserialize_field(const QVariant& value, nx::vms::api::dewarping::MediaData* target);
 void NX_VMS_API serialize_field(const nx::vms::api::dewarping::ViewData& data, QVariant* target);
-void NX_VMS_API deserialize_field(const QVariant& value, nx::vms::api::dewarping::ViewData* target);
+void NX_VMS_API
+    deserialize_field(const QVariant& value, nx::vms::api::dewarping::ViewData* target);

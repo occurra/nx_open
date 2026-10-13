@@ -19,8 +19,7 @@ namespace nx::network::http::test {
 
 namespace {
 
-class TestChunkedBodySource:
-    public ChunkedBodySource
+class TestChunkedBodySource: public ChunkedBodySource
 {
     using base_type = ChunkedBodySource;
 
@@ -31,13 +30,11 @@ public:
      * Asserts on reading beyond the chunked stream EOF marker.
      */
     virtual void readAsync(
-        nx::MoveOnlyFunc<
-            void(SystemError::ErrorCode, nx::Buffer)
-        > completionHandler) override
+        nx::MoveOnlyFunc<void(SystemError::ErrorCode, nx::Buffer)> completionHandler) override
     {
         base_type::readAsync(
-            [completionHandler = std::move(completionHandler)](
-                SystemError::ErrorCode errorCode, nx::Buffer buf)
+            [completionHandler =
+                 std::move(completionHandler)](SystemError::ErrorCode errorCode, nx::Buffer buf)
             {
                 NX_ASSERT(!buf.empty());
                 completionHandler(errorCode, std::move(buf));
@@ -60,8 +57,7 @@ static constexpr char kStreamingRequestBodyPath[] = "/HttpServerConnectionTest/s
 static constexpr char kSubscribeToServerConnectionClosedPath[] =
     "/HttpServerConnectionTest/addConnectionClosedListener";
 
-class HttpServerConnection:
-    public ::testing::Test
+class HttpServerConnection: public ::testing::Test
 {
 public:
     struct LocalRequestContext
@@ -83,25 +79,38 @@ protected:
 
         m_httpServer.registerRequestProcessorFunc(
             kResourceWithBodyPath,
-            [this](auto&&... args) { provideMessageBody(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                provideMessageBody(std::forward<decltype(args)>(args)...);
+            });
 
         m_httpServer.registerRequestProcessorFunc(
             kResourceWithChunkedBodyPath,
-            [this](auto&&... args) { provideChunkedMessageBody(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                provideChunkedMessageBody(std::forward<decltype(args)>(args)...);
+            });
 
         m_httpServer.registerRequestProcessorFunc(
             kValidConnectionTestPath,
-            [this](auto&&... args) { checkConnectionValidity(std::forward<decltype(args)>(args)...); });
+            [this](auto&&... args)
+            {
+                checkConnectionValidity(std::forward<decltype(args)>(args)...);
+            });
 
         m_httpServer.registerRequestProcessorFunc(
             kStreamingRequestBodyPath,
-            [this](auto&&... args) { saveStreamingBody(std::forward<decltype(args)>(args)...); },
+            [this](auto&&... args)
+            {
+                saveStreamingBody(std::forward<decltype(args)>(args)...);
+            },
             nx::network::http::kAnyMethod,
             MessageBodyDeliveryType::stream);
 
         m_httpServer.registerRequestProcessorFunc(
             kSubscribeToServerConnectionClosedPath,
-            [this](auto&&... args) {
+            [this](auto&&... args)
+            {
                 subscribeToServerConnectionClosed(std::forward<decltype(args)>(args)...);
             });
     }
@@ -122,15 +131,9 @@ protected:
         performRequest(prepareUrl(kUrlSchemeName, kTestPath));
     }
 
-    void whenIssuedRequestViaSsl()
-    {
-        performRequest(prepareUrl(kSecureUrlSchemeName, kTestPath));
-    }
+    void whenIssuedRequestViaSsl() { performRequest(prepareUrl(kSecureUrlSchemeName, kTestPath)); }
 
-    void whenIssuedRequestViaRawTcp()
-    {
-        performRequest(prepareUrl(kUrlSchemeName, kTestPath));
-    }
+    void whenIssuedRequestViaRawTcp() { performRequest(prepareUrl(kUrlSchemeName, kTestPath)); }
 
     void whenReceiveStrictTransportSecurityHeaderInResponse()
     {
@@ -143,10 +146,7 @@ protected:
         performRequest(prepareUrl(kUrlSchemeName, kResourceWithChunkedBodyPath));
     }
 
-    void whenIssueRequest()
-    {
-        performRequest(prepareUrl(kUrlSchemeName, kResourceWithBodyPath));
-    }
+    void whenIssueRequest() { performRequest(prepareUrl(kUrlSchemeName, kResourceWithBodyPath)); }
 
     void whenIssueRequestOverExistingConnection()
     {
@@ -163,9 +163,7 @@ protected:
 
     void whenSendRequestAndCloseConnectionJustAfterSending()
     {
-        sendRequestAndCloseConnectionJustAfterSending(
-            kValidConnectionTestPath,
-            256 * 1024);
+        sendRequestAndCloseConnectionJustAfterSending(kValidConnectionTestPath, 256 * 1024);
     }
 
     void whenSendRequestWithIncompleteMessageBody()
@@ -188,10 +186,7 @@ protected:
             m_lastSentRequestBody));
     }
 
-    void givenOpenRawConnection()
-    {
-        whenOpenRawConnection();
-    }
+    void givenOpenRawConnection() { whenOpenRawConnection(); }
 
     void whenTimePasses(std::chrono::milliseconds timeout)
     {
@@ -223,10 +218,7 @@ protected:
         sendDataThroughRawConnection(kSubscribeToServerConnectionClosedPath);
     }
 
-    void thenOnResponseSentHandlerIsCalled()
-    {
-        m_responseSentEvents.pop();
-    }
+    void thenOnResponseSentHandlerIsCalled() { m_responseSentEvents.pop(); }
 
     void thenResponseContainsHeader(const std::string& headerName)
     {
@@ -247,27 +239,19 @@ protected:
 
     void thenStrictTransportSecurityHeaderIsValid()
     {
-        const auto strictTransportSecurityStr = getHeaderValue(
-            m_prevResponse->headers,
-            header::StrictTransportSecurity::NAME);
+        const auto strictTransportSecurityStr =
+            getHeaderValue(m_prevResponse->headers, header::StrictTransportSecurity::NAME);
         ASSERT_TRUE(m_prevStrictTransportSecurity.parse(strictTransportSecurityStr));
     }
 
-    void andStrictTransportSecurityMaxAgeIsNotLessThan(
-        std::chrono::seconds desiredMinimalAge)
+    void andStrictTransportSecurityMaxAgeIsNotLessThan(std::chrono::seconds desiredMinimalAge)
     {
         ASSERT_GE(m_prevStrictTransportSecurity.maxAge, desiredMinimalAge);
     }
 
-    void thenRequestIsReceived()
-    {
-        m_lastRequestReceived = m_requestsReceived.pop();
-    }
+    void thenRequestIsReceived() { m_lastRequestReceived = m_requestsReceived.pop(); }
 
-    const LocalRequestContext& lastRequest() const
-    {
-        return *m_lastRequestReceived;
-    }
+    const LocalRequestContext& lastRequest() const { return *m_lastRequestReceived; }
 
     void andConnectionObjectIsValidInRequestHandler()
     {
@@ -307,15 +291,14 @@ protected:
         ASSERT_GT(m_client->totalRequestsSentViaCurrentConnection(), 1);
     }
 
-    TestHttpServer& httpServer()
-    {
-        return m_httpServer;
-    }
+    TestHttpServer& httpServer() { return m_httpServer; }
 
     nx::Url prepareUrl(const char* urlScheme, const char* path)
     {
         return nx::network::url::Builder()
-            .setScheme(urlScheme).setEndpoint(m_httpServer.serverAddress()).setPath(path);
+            .setScheme(urlScheme)
+            .setEndpoint(m_httpServer.serverAddress())
+            .setPath(path);
     }
 
     void setExtraSuccessResponseHeaders(HttpHeaders headers)
@@ -381,8 +364,10 @@ private:
         recordRequest(requestContext);
 
         RequestResult result(StatusCode::ok);
-        result.connectionEvents.onResponseHasBeenSent =
-            [this](auto&&... args) { onResponseSent(std::forward<decltype(args)>(args)...); };
+        result.connectionEvents.onResponseHasBeenSent = [this](auto&&... args)
+        {
+            onResponseSent(std::forward<decltype(args)>(args)...);
+        };
         result.body = std::make_unique<EmptyMessageBodySource>("text/plain", 0);
         completionHandler(std::move(result));
     }
@@ -393,9 +378,11 @@ private:
     {
         recordRequest(requestContext);
 
-        m_closeSubscriptions.push_back(
-            requestContext.conn.lock()->registerCloseHandler([this](auto&&... args)
-                { saveConnectionClosedEvent(std::forward<decltype(args)>(args)...); }));
+        m_closeSubscriptions.push_back(requestContext.conn.lock()->registerCloseHandler(
+            [this](auto&&... args)
+            {
+                saveConnectionClosedEvent(std::forward<decltype(args)>(args)...);
+            }));
 
         completionHandler(StatusCode::ok);
     }
@@ -453,8 +440,8 @@ private:
     {
         auto bodyPtr = body.get();
         bodyPtr->readAsync(
-            [this, body = std::move(body)](
-                SystemError::ErrorCode resultCode, nx::Buffer buffer) mutable
+            [this,
+             body = std::move(body)](SystemError::ErrorCode resultCode, nx::Buffer buffer) mutable
             {
                 const auto eof = resultCode != SystemError::noError || buffer.empty();
 
@@ -525,24 +512,22 @@ private:
         for (const auto& t: aioThreads)
         {
             ticker.bindToAioThread(t);
-            ticker.executeInAioThreadSync([](){});
+            ticker.executeInAioThreadSync([]() {});
         }
     }
 
     void recordRequest(const RequestContext& ctx)
     {
-        m_requestsReceived.push({
-            .request = ctx.request,
-            .clientEndpoint = ctx.clientEndpoint,
-            .traceContext = ctx.traceContext});
+        m_requestsReceived.push(
+            {.request = ctx.request,
+             .clientEndpoint = ctx.clientEndpoint,
+             .traceContext = ctx.traceContext});
     }
 };
 
 //-------------------------------------------------------------------------------------------------
 
-TEST_F(
-    HttpServerConnection,
-    on_response_sent_handler_is_called_after_response_with_empty_body)
+TEST_F(HttpServerConnection, on_response_sent_handler_is_called_after_response_with_empty_body)
 {
     whenRespondWithEmptyMessageBody();
     thenOnResponseSentHandlerIsCalled();
@@ -564,9 +549,7 @@ TEST_F(
     thenResponseDoesNotContainHeader(header::StrictTransportSecurity::NAME);
 }
 
-TEST_F(
-    HttpServerConnection,
-    http_strict_transport_security_header_is_valid)
+TEST_F(HttpServerConnection, http_strict_transport_security_header_is_valid)
 {
     whenReceiveStrictTransportSecurityHeaderInResponse();
 
@@ -630,7 +613,7 @@ TEST_F(HttpServerConnection, inactivity_timeout_is_prolonged)
 
 TEST_F(HttpServerConnection, custom_server_header)
 {
-    HttpHeaders responseHeaders {{"Server", compatibilityServerName()}};
+    HttpHeaders responseHeaders{{"Server", compatibilityServerName()}};
     setExtraSuccessResponseHeaders(responseHeaders);
 
     installRequestHandlerWithEmptyBody();
@@ -650,9 +633,7 @@ TEST_F(HttpServerConnection, default_server_header)
 
 TEST_F(HttpServerConnection, set_success_response_headers)
 {
-    HttpHeaders responseHeaders{
-        {"Hello", "World"},
-        {"Server", compatibilityServerName()}};
+    HttpHeaders responseHeaders{{"Hello", "World"}, {"Server", compatibilityServerName()}};
     setExtraSuccessResponseHeaders(responseHeaders);
 
     installRequestHandlerWithEmptyBody();
@@ -678,13 +659,21 @@ class HttpServerConnectionTraceContext:
     using base_type = HttpServerConnection;
 };
 
-INSTANTIATE_TEST_SUITE_P(HttpServerConnectionTraceContextInstance, HttpServerConnectionTraceContext,
+INSTANTIATE_TEST_SUITE_P(
+    HttpServerConnectionTraceContextInstance,
+    HttpServerConnectionTraceContext,
     ::testing::Values(
-        TraceContextTestParams{"4b8b1b1d1", "X-Amzn-Trace-Id", "Root=1-5e7b1b1d-4b8b1b1d1;Self=1-5e7b1b1d-4b8b3b1d9"}, // AWS X-Ray.
-        TraceContextTestParams{"TRACE_ID", "X-Cloud-Trace-Context", "TRACE_ID/SPAN_ID;o=OPTIONS"},   // GCP.
-        TraceContextTestParams{"TRACE_ID", "X-Cloud-Trace-Context", "TRACE_ID"},   // GCP.
-        TraceContextTestParams{"test12", "X-Request-Id", "test12"}           // custom.
-    ));
+        TraceContextTestParams{
+            "4b8b1b1d1",
+            "X-Amzn-Trace-Id",
+            "Root=1-5e7b1b1d-4b8b1b1d1;Self=1-5e7b1b1d-4b8b3b1d9"}, // AWS X-Ray.
+        TraceContextTestParams{
+            "TRACE_ID",
+            "X-Cloud-Trace-Context",
+            "TRACE_ID/SPAN_ID;o=OPTIONS"}, // GCP.
+        TraceContextTestParams{"TRACE_ID", "X-Cloud-Trace-Context", "TRACE_ID"}, // GCP.
+        TraceContextTestParams{"test12", "X-Request-Id", "test12"} // custom.
+        ));
 
 TEST_P(HttpServerConnectionTraceContext, request_trace_context_is_read)
 {
@@ -701,8 +690,7 @@ TEST_P(HttpServerConnectionTraceContext, request_trace_context_is_read)
 
 //-------------------------------------------------------------------------------------------------
 
-class HttpServerConnectionClientEndpoint:
-    public HttpServerConnection
+class HttpServerConnectionClientEndpoint: public HttpServerConnection
 {
     using base_type = HttpServerConnection;
 
@@ -715,8 +703,7 @@ protected:
 
         httpServer().registerRequestProcessorFunc(
             kTestPath,
-            std::bind(&HttpServerConnectionClientEndpoint::saveHttpClientEndpoint, this,
-                _1, _2));
+            std::bind(&HttpServerConnectionClientEndpoint::saveHttpClientEndpoint, this, _1, _2));
     }
 
     void whenIssueRequest()
@@ -728,17 +715,14 @@ protected:
 
     void whenIssueRequestWithXForwardedFor()
     {
-        issueRequest({{ "X-Forwarded-For", "1.2.3.4" }});
+        issueRequest({{"X-Forwarded-For", "1.2.3.4"}});
 
-        m_httpClientEndpoint =
-            SocketAddress("1.2.3.4", m_client.socket()->getLocalAddress().port);
+        m_httpClientEndpoint = SocketAddress("1.2.3.4", m_client.socket()->getLocalAddress().port);
     }
 
     void whenIssueRequestWithXForwardedPort()
     {
-        issueRequest({
-            {"X-Forwarded-For", "1.2.3.4"},
-            {"X-Forwarded-Port", "5831"}});
+        issueRequest({{"X-Forwarded-For", "1.2.3.4"}, {"X-Forwarded-Port", "5831"}});
 
         m_httpClientEndpoint = SocketAddress("1.2.3.4", 5831);
     }
@@ -747,8 +731,7 @@ protected:
     {
         issueRequest({{"Forwarded", "for=1.2.3.4"}});
 
-        m_httpClientEndpoint =
-            SocketAddress("1.2.3.4", m_client.socket()->getLocalAddress().port);
+        m_httpClientEndpoint = SocketAddress("1.2.3.4", m_client.socket()->getLocalAddress().port);
     }
 
     void whenIssueRequestWithForwardedHeaderWithPort()
@@ -821,10 +804,9 @@ TEST_F(HttpServerConnectionClientEndpoint, forwarded_header_with_port)
 
 static constexpr char kPipeliningTestPath[] = "/HttpServerConnectionRequestPipelining";
 
-class HttpServerConnectionRequestPipelining:
-    public HttpServerConnection
+class HttpServerConnectionRequestPipelining: public HttpServerConnection
 {
-     using base_type = HttpServerConnection;
+    using base_type = HttpServerConnection;
 
 public:
     ~HttpServerConnectionRequestPipelining()
@@ -840,7 +822,10 @@ protected:
     {
         httpServer().registerRequestProcessorFunc(
             kPipeliningTestPath,
-            [this](auto... args) { replyWhileReorderingResponses(std::move(args)...); });
+            [this](auto... args)
+            {
+                replyWhileReorderingResponses(std::move(args)...);
+            });
     }
 
     void whenSendMultipleRequests()
@@ -853,13 +838,15 @@ protected:
             ASSERT_TRUE(connection->connect(url::getEndpoint(requestUrl), kNoTimeout))
                 << SystemError::getLastOSErrorText();
 
-            ASSERT_TRUE(connection->setNonBlockingMode(true))
-                << SystemError::getLastOSErrorText();
+            ASSERT_TRUE(connection->setNonBlockingMode(true)) << SystemError::getLastOSErrorText();
 
-            m_clientConnection = std::make_unique<http::AsyncMessagePipeline>(
-                std::move(connection));
+            m_clientConnection =
+                std::make_unique<http::AsyncMessagePipeline>(std::move(connection));
             m_clientConnection->setMessageHandler(
-                [this](auto... args) { saveMessage(std::move(args)...); });
+                [this](auto... args)
+                {
+                    saveMessage(std::move(args)...);
+                });
             m_clientConnection->startReadingConnection();
         }
 
@@ -910,8 +897,8 @@ private:
         if (m_postponedRequestCompletionHandlers.empty())
         {
             m_postponedRequestCompletionHandlers.push_back(
-                [requestSequence, completionHandler = std::move(completionHandler)](
-                    RequestResult result) mutable
+                [requestSequence,
+                 completionHandler = std::move(completionHandler)](RequestResult result) mutable
                 {
                     result.headers.emplace("Sequence", requestSequence);
                     completionHandler(std::move(result));
@@ -925,7 +912,10 @@ private:
 
             m_timer.start(
                 std::chrono::milliseconds(10),
-                [this]() { sendPostponedResponse(); });
+                [this]()
+                {
+                    sendPostponedResponse();
+                });
         }
     }
 

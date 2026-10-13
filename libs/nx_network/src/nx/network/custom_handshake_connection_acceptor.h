@@ -30,10 +30,10 @@ namespace nx::network {
 template<typename AcceptorDelegate, typename CustomHandshakeConnection>
 // requires AsyncAcceptor<AcceptorDelegate> &&
 //   std::is_base_of<AbstractStreamSocket, CustomHandshakeConnection>::value
-class CustomHandshakeConnectionAcceptor:
-    public AbstractStreamSocketAcceptor
+class CustomHandshakeConnectionAcceptor: public AbstractStreamSocketAcceptor
 {
-    // TODO: #akolesnikov CustomHandshakeConnectionAcceptor should not be a template after inheriting
+    // TODO: #akolesnikov CustomHandshakeConnectionAcceptor should not be a template after
+    // inheriting
     //   AbstractStreamServerSocket from AbstractStreamSocketAcceptor.
 
     using base_type = AbstractStreamSocketAcceptor;
@@ -45,19 +45,16 @@ public:
 
     constexpr static std::size_t kDefaultMaxReadyConnectionCount = 32;
     // 24 seconds is a default TCP handshake timeout in Linux.
-    constexpr static std::chrono::seconds kDefaultHandshakeTimeout =
-        std::chrono::seconds(24);
+    constexpr static std::chrono::seconds kDefaultHandshakeTimeout = std::chrono::seconds(24);
     // Only there to keep a stalled AIO thread from exhausting the file descriptor limit, so well
     // above any plausible burst of concurrent handshakes.
     constexpr static std::size_t kDefaultMaxConnectionsBeingHandshakedCount = 1024;
 
     CustomHandshakeConnectionAcceptor(
         std::unique_ptr<AcceptorDelegate> delegate,
-        CustomHandshakeConnectionFactory customHandshakeConnectionFactory)
-        :
+        CustomHandshakeConnectionFactory customHandshakeConnectionFactory):
         m_delegate(std::move(delegate)),
-        m_customHandshakeConnectionFactory(
-            std::move(customHandshakeConnectionFactory))
+        m_customHandshakeConnectionFactory(std::move(customHandshakeConnectionFactory))
     {
         bindToAioThread(m_delegate->getAioThread());
     }
@@ -84,15 +81,9 @@ public:
      * When ready-to-use connection count is greater or equal to this value,
      * then creation of new connections is stopped until there is more room in the queue.
      */
-    void setReadyConnectionQueueSize(std::size_t count)
-    {
-        m_maxReadyConnectionCount = count;
-    }
+    void setReadyConnectionQueueSize(std::size_t count) { m_maxReadyConnectionCount = count; }
 
-    std::size_t readyConnectionQueueSize() const
-    {
-        return m_maxReadyConnectionCount;
-    }
+    std::size_t readyConnectionQueueSize() const { return m_maxReadyConnectionCount; }
 
     /**
      * When this many connections are in the handshake, accepting pauses until some of them
@@ -118,15 +109,9 @@ public:
         return m_connectionsBeingHandshaked.size();
     }
 
-    void setHandshakeTimeout(std::chrono::milliseconds timeout)
-    {
-        m_handshakeTimeout = timeout;
-    }
+    void setHandshakeTimeout(std::chrono::milliseconds timeout) { m_handshakeTimeout = timeout; }
 
-    std::chrono::milliseconds handshakeTimeout() const
-    {
-        return m_handshakeTimeout;
-    }
+    std::chrono::milliseconds handshakeTimeout() const { return m_handshakeTimeout; }
 
     void start()
     {
@@ -218,9 +203,7 @@ private:
         std::unique_ptr<CustomHandshakeConnection> connection;
         aio::Timer handshakeTimer;
 
-        ConnectionContext(
-            std::unique_ptr<CustomHandshakeConnection> connection)
-            :
+        ConnectionContext(std::unique_ptr<CustomHandshakeConnection> connection):
             connection(std::move(connection))
         {
         }
@@ -236,8 +219,7 @@ private:
 
         AcceptResult(
             SystemError::ErrorCode resultCode,
-            std::unique_ptr<CustomHandshakeConnection> connection)
-            :
+            std::unique_ptr<CustomHandshakeConnection> connection):
             resultCode(resultCode),
             connection(std::move(connection))
         {
@@ -276,7 +258,9 @@ private:
         {
             if (!m_isDelegateAccepting && !m_acceptSuspended)
             {
-                NX_VERBOSE(this, "Suspending accepting new connections since there are already %1",
+                NX_VERBOSE(
+                    this,
+                    "Suspending accepting new connections since there are already %1",
                     m_acceptedConnections.size());
                 m_acceptSuspended = true;
             }
@@ -294,7 +278,8 @@ private:
             // resumes accepting for exactly one connection, so the suspension itself repeats.
             if (!std::exchange(m_handshakeLimitReached, true))
             {
-                NX_WARNING(this,
+                NX_WARNING(
+                    this,
                     "Suspending accepting new connections since %1 connections are "
                     "still performing the handshake",
                     m_connectionsBeingHandshaked.size());
@@ -305,7 +290,8 @@ private:
         if (m_handshakeLimitReached
             && m_connectionsBeingHandshaked.size() < m_maxConnectionsBeingHandshakedCount / 2)
         {
-            NX_INFO(this,
+            NX_INFO(
+                this,
                 "Connections performing the handshake are down to %1, no longer at the limit",
                 m_connectionsBeingHandshaked.size());
             m_handshakeLimitReached = false;
@@ -316,11 +302,13 @@ private:
 
         if (!m_isDelegateAccepting)
         {
-            NX_VERBOSE(this, "Accepting new connection. There are already %1 accepted",
+            NX_VERBOSE(
+                this,
+                "Accepting new connection. There are already %1 accepted",
                 m_acceptedConnections.size());
 
-            m_delegate->acceptAsync(std::bind(
-                &CustomHandshakeConnectionAcceptor::onConnectionAccepted, this, _1, _2));
+            m_delegate->acceptAsync(
+                std::bind(&CustomHandshakeConnectionAcceptor::onConnectionAccepted, this, _1, _2));
             m_isDelegateAccepting = true;
         }
     }
@@ -340,8 +328,7 @@ private:
         // Not forwarding timedOut since user may not even called
         // CustomHandshakeConnectionAcceptor::acceptAsync.
         // So, he should not receive timedOut right after calling acceptAsync.
-        if (systemErrorCode != SystemError::noError &&
-            systemErrorCode != SystemError::timedOut)
+        if (systemErrorCode != SystemError::noError && systemErrorCode != SystemError::timedOut)
         {
             m_acceptedConnections.emplace_back(systemErrorCode, nullptr);
 
@@ -364,13 +351,16 @@ private:
             auto ctxPtr = ctx.get();
 
             m_connectionsBeingHandshaked.emplace(seq, std::move(ctx));
-            ctxPtr->connection->bindToAioThread(
-                SocketGlobals::aioService().getRandomAioThread());
+            ctxPtr->connection->bindToAioThread(SocketGlobals::aioService().getRandomAioThread());
             ctxPtr->handshakeTimer.bindToAioThread(ctxPtr->connection->getAioThread());
 
-            auto handshakeDone =
-                std::bind(&CustomHandshakeConnectionAcceptor::onHandshakeDone, this,
-                    m_guard.sharedGuard(), seq, ctxPtr, _1);
+            auto handshakeDone = std::bind(
+                &CustomHandshakeConnectionAcceptor::onHandshakeDone,
+                this,
+                m_guard.sharedGuard(),
+                seq,
+                ctxPtr,
+                _1);
 
             ctxPtr->handshakeTimer.start(
                 m_handshakeTimeout,
@@ -389,8 +379,8 @@ private:
         ConnectionContext* ctxPtr,
         SystemError::ErrorCode handshakeResult)
     {
-        // NOTE: We are in connection's AIO thread which may be different from this->getAioThread().
-        // That guarantees that the connection context object is alive.
+        // NOTE: We are in connection's AIO thread which may be different from
+        // this->getAioThread(). That guarantees that the connection context object is alive.
         ctxPtr->handshakeTimer.pleaseStopSync();
 
         ctxPtr->connection->cancelIOSync(aio::EventType::etAll);
@@ -419,8 +409,11 @@ private:
                         auto connection = std::move(connectionIter->second->connection);
                         m_connectionsBeingHandshaked.erase(connectionIter);
 
-                        NX_VERBOSE(this, "Handshake completed. Connection %1, result %2",
-                            connection.get(), SystemError::toString(handshakeResult));
+                        NX_VERBOSE(
+                            this,
+                            "Handshake completed. Connection %1, result %2",
+                            connection.get(),
+                            SystemError::toString(handshakeResult));
 
                         if (handshakeResult != SystemError::noError)
                         {
@@ -430,7 +423,11 @@ private:
                             // delete the socket while its callback is still running. To prevent
                             // this race, schedule the socket deletion via Post too.
                             const auto connectionPtr = connection.get();
-                            connectionPtr->post([c = std::move(connection)]() mutable { c.reset(); });
+                            connectionPtr->post(
+                                [c = std::move(connection)]() mutable
+                                {
+                                    c.reset();
+                                });
                             return;
                         }
 
@@ -443,8 +440,7 @@ private:
             });
     }
 
-    void provideConnectionToTheCallerIfAppropriate(
-        const nx::Locker<nx::Mutex>& lock)
+    void provideConnectionToTheCallerIfAppropriate(const nx::Locker<nx::Mutex>& lock)
     {
         NX_ASSERT(isInSelfAioThread());
 
@@ -467,8 +463,7 @@ private:
         }
     }
 
-    std::optional<AcceptResult> takeNextAcceptedConnection(
-        const nx::Locker<nx::Mutex>& /*lock*/)
+    std::optional<AcceptResult> takeNextAcceptedConnection(const nx::Locker<nx::Mutex>& /*lock*/)
     {
         std::optional<AcceptResult> acceptResult;
         if (!m_acceptedConnections.empty())
@@ -501,18 +496,17 @@ private:
             connectionContextsByAioThread;
         for (auto& [seq, ctx]: connectionsBeingHandshaked)
         {
-            connectionContextsByAioThread[ctx->connection->getAioThread()]
-                .push_back(std::move(ctx));
+            connectionContextsByAioThread[ctx->connection->getAioThread()].push_back(
+                std::move(ctx));
         }
 
         for (auto& [aioThread, connections]: connectionContextsByAioThread)
         {
             aioThread->post(
                 nullptr,
-                [
-                    connections = std::move(connections),
-                    guard =
-                        m_startedAsyncHandshakeCancellationsCounter.getScopedIncrement()]() mutable
+                [connections = std::move(connections),
+                 guard =
+                     m_startedAsyncHandshakeCancellationsCounter.getScopedIncrement()]() mutable
                 {
                     connections.clear();
                 });

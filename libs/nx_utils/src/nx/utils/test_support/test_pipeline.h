@@ -12,8 +12,7 @@ namespace utils {
 namespace bstream {
 namespace test {
 
-class NX_UTILS_API NotifyingOutput:
-    public nx::utils::bstream::AbstractOutput
+class NX_UTILS_API NotifyingOutput: public nx::utils::bstream::AbstractOutput
 {
 public:
     virtual int write(const void* data, size_t count) override;
@@ -32,6 +31,6 @@ private:
 };
 
 } // namespace test
-} // namespace pipeline
+} // namespace bstream
 } // namespace utils
 } // namespace nx

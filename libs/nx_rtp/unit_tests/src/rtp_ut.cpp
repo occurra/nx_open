@@ -28,8 +28,22 @@ TEST(RtpHeader, Read)
 
     // Padding bigger than overall size.
     {
-        uint8_t data[] = {0xa0, 0x60, 0x00, 0x00, 0x00, 0x00, 0x03, 0x84, 0x00, 0x00, 0x02, 0x2b,
-            0x00, 0x00, 0x00, //< Payload.
+        uint8_t data[] = {
+            0xa0,
+            0x60,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x03,
+            0x84,
+            0x00,
+            0x00,
+            0x02,
+            0x2b,
+            0x00,
+            0x00,
+            0x00, //< Payload.
             0x10 //< Padding size.
         };
         nx::rtp::RtpHeaderData header;
@@ -38,8 +52,22 @@ TEST(RtpHeader, Read)
 
     // Padding bigger than payload size.
     {
-        uint8_t data[] = {0xa0, 0x60, 0x00, 0x00, 0x00, 0x00, 0x03, 0x84, 0x00, 0x00, 0x02, 0x2b,
-            0x00, 0x00, 0x00, //< Payload.
+        uint8_t data[] = {
+            0xa0,
+            0x60,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x03,
+            0x84,
+            0x00,
+            0x00,
+            0x02,
+            0x2b,
+            0x00,
+            0x00,
+            0x00, //< Payload.
             0x05 //< Padding size.
         };
         nx::rtp::RtpHeaderData header;
@@ -48,8 +76,22 @@ TEST(RtpHeader, Read)
 
     // Normal padding
     {
-        uint8_t data[] = {0xa0, 0x60, 0x00, 0x00, 0x00, 0x00, 0x03, 0x84, 0x00, 0x00, 0x02, 0x2b,
-            0x00, 0x00, 0x00, //< Payload.
+        uint8_t data[] = {
+            0xa0,
+            0x60,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x03,
+            0x84,
+            0x00,
+            0x00,
+            0x02,
+            0x2b,
+            0x00,
+            0x00,
+            0x00, //< Payload.
             0x02 //< Padding size.
         };
         nx::rtp::RtpHeaderData header;

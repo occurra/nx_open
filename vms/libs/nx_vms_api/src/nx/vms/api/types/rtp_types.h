@@ -37,8 +37,7 @@ constexpr auto nxReflectVisitAllEnumItems(RtpTransportType*, Visitor&& visitor)
         Item{RtpTransportType::automatic, "Auto"},
         Item{RtpTransportType::tcp, "TCP"},
         Item{RtpTransportType::udp, "UDP"},
-        Item{RtpTransportType::multicast, "Multicast"}
-    );
+        Item{RtpTransportType::multicast, "Multicast"});
 }
 
 } // namespace nx::vms::api

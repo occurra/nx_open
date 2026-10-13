@@ -14,8 +14,7 @@ namespace nx::network::aio::test {
 
 constexpr auto kWaitTimeout = std::chrono::seconds(30); //< Below the CI per-test time limit.
 
-class TestPollable:
-    public aio::BasicPollable
+class TestPollable: public aio::BasicPollable
 {
     using base_type = aio::BasicPollable;
 
@@ -31,10 +30,7 @@ public:
             stopWhileInAioThread();
     }
 
-    bool isCleanupDone() const
-    {
-        return m_cleanupDone;
-    }
+    bool isCleanupDone() const { return m_cleanupDone; }
 
 protected:
     virtual void stopWhileInAioThread() override
@@ -47,24 +43,15 @@ private:
     bool m_cleanupDone;
 };
 
-class BasicPollable:
-    public ::testing::Test
+class BasicPollable: public ::testing::Test
 {
 public:
-    BasicPollable()
-    {
-    }
+    BasicPollable() {}
 
-    ~BasicPollable()
-    {
-        m_pollable.pleaseStopSync();
-    }
+    ~BasicPollable() { m_pollable.pleaseStopSync(); }
 
 protected:
-    TestPollable& pollable()
-    {
-        return m_pollable;
-    }
+    TestPollable& pollable() { return m_pollable; }
 
     void recordAsyncCall()
     {
@@ -78,7 +65,11 @@ protected:
 
     void whenPostedAsyncCall()
     {
-        pollable().post([this]() { recordAsyncCall(); });
+        pollable().post(
+            [this]()
+            {
+                recordAsyncCall();
+            });
     }
 
     void assertIfAsyncCallHasNotBeenMade()
@@ -91,8 +82,7 @@ protected:
 
     void assertThatAsyncCallHasBeenMadeWithinCurrentThread()
     {
-        thenAsyncCallShouldBeMadeWithinThread(
-            SocketGlobals::aioService().getCurrentAioThread());
+        thenAsyncCallShouldBeMadeWithinThread(SocketGlobals::aioService().getCurrentAioThread());
     }
 
     void thenAsyncCallShouldBeMadeWithinThread(AbstractAioThread* aioThread)
@@ -103,15 +93,9 @@ protected:
         ASSERT_EQ(aioThread, *m_callResult);
     }
 
-    void whenRequestedStop()
-    {
-        pollable().pleaseStopSync();
-    }
+    void whenRequestedStop() { pollable().pleaseStopSync(); }
 
-    void thenCleanupShouldOccur()
-    {
-        ASSERT_TRUE(pollable().isCleanupDone());
-    }
+    void thenCleanupShouldOccur() { ASSERT_TRUE(pollable().isCleanupDone()); }
 
 private:
     TestPollable m_pollable;
@@ -128,7 +112,11 @@ TEST_F(BasicPollable, post)
 
 TEST_F(BasicPollable, dispatch_within_non_aio_thread)
 {
-    pollable().dispatch([this]() { recordAsyncCall(); });
+    pollable().dispatch(
+        [this]()
+        {
+            recordAsyncCall();
+        });
 
     assertIfAsyncCallHasNotBeenMade();
 }
@@ -138,7 +126,11 @@ TEST_F(BasicPollable, dispatch_within_aio_thread)
     pollable().post(
         [this]()
         {
-            pollable().dispatch([this]() { recordAsyncCall(); });
+            pollable().dispatch(
+                [this]()
+                {
+                    recordAsyncCall();
+                });
 
             assertIfAsyncCallHasNotBeenMade();
             assertThatAsyncCallHasBeenMadeWithinCurrentThread();
@@ -181,7 +173,7 @@ TEST_F(BasicPollable, stopWhileInAioThread)
     thenCleanupShouldOccur();
 }
 
-//TEST_F(BasicPollable, pleaseStop)
+// TEST_F(BasicPollable, pleaseStop)
 
 TEST_F(BasicPollable, post_cancelled_by_pleaseStopSync_called_within_aio_thread)
 {
@@ -199,7 +191,11 @@ TEST_F(BasicPollable, post_cancelled_by_pleaseStopSync_called_within_aio_thread)
             stopCompleted.set_value();
         });
 
-    pollable().post([&asyncCallsDone]() { ++asyncCallsDone; });
+    pollable().post(
+        [&asyncCallsDone]()
+        {
+            ++asyncCallsDone;
+        });
     secondCallPosted.set_value();
 
     // A fixed delay can observe the counter before a busy AIO thread completes the stop request.
@@ -211,8 +207,7 @@ TEST_F(BasicPollable, post_cancelled_by_pleaseStopSync_called_within_aio_thread)
 // PerformanceBasicPollable
 
 template<typename Func>
-class PerformanceBasicPollable:
-    public BasicPollable
+class PerformanceBasicPollable: public BasicPollable
 {
 public:
     PerformanceBasicPollable(Func func):
@@ -247,7 +242,7 @@ protected:
         else
             aioObject = std::make_unique<aio::BasicPollable>();
 
-        std::size_t prevCallCounter = (std::size_t)-1;
+        std::size_t prevCallCounter = (std::size_t) -1;
         const auto endTime = std::chrono::steady_clock::now() + testDuration;
         while (std::chrono::steady_clock::now() < endTime)
         {
@@ -275,9 +270,9 @@ protected:
         using namespace std::chrono;
 
         std::cout << "post performance. Total " << m_result.asyncCallsMade << " calls made in "
-            << m_result.testDuration.count() << " ms. That gives "
-            << (m_result.asyncCallsMade * 1000 / m_result.testDuration.count()) << " calls per second"
-            << std::endl;
+                  << m_result.testDuration.count() << " ms. That gives "
+                  << (m_result.asyncCallsMade * 1000 / m_result.testDuration.count())
+                  << " calls per second" << std::endl;
     }
 
 private:
@@ -320,7 +315,8 @@ class PerformanceBasicPollableDispatch:
 {
 public:
     PerformanceBasicPollableDispatch():
-        PerformanceBasicPollable<decltype(&aio::BasicPollable::dispatch)>(&aio::BasicPollable::dispatch)
+        PerformanceBasicPollable<decltype(&aio::BasicPollable::dispatch)>(
+            &aio::BasicPollable::dispatch)
     {
     }
 };

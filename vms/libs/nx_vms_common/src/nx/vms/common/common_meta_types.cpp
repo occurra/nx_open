@@ -93,7 +93,7 @@ void initializeMetatypesInternal()
     qRegisterMetaType<nx::network::HostAddress>();
     qRegisterMetaType<nx::network::SocketAddress>();
 
-    //qRegisterMetaType<QnParam>();
+    // qRegisterMetaType<QnParam>();
 
     qRegisterMetaType<QnResourceTypeList>();
     qRegisterMetaType<QnResourcePtr>();

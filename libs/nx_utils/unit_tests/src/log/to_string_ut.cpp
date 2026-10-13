@@ -82,11 +82,17 @@ TEST(ToString, Qt)
     assertToString(QLatin1String("hello world today"), "hello world today");
 
     assertToString(QUrl(QLatin1String("http://abc.xyz:8080/path")), "http://abc.xyz:8080/path");
-    assertToString(QUrl(QLatin1String("http://xxx-yyy.w/path?param=3")), "http://xxx-yyy.w/path?param=3");
+    assertToString(
+        QUrl(QLatin1String("http://xxx-yyy.w/path?param=3")),
+        "http://xxx-yyy.w/path?param=3");
     if (nx::log::showPasswords())
-        assertToString(QUrl(QLatin1String("http://login:password@abx-xyz.x")), "http://login:password@abx-xyz.x");
+        assertToString(
+            QUrl(QLatin1String("http://login:password@abx-xyz.x")),
+            "http://login:password@abx-xyz.x");
     else
-        assertToString(QUrl(QLatin1String("http://login:password@abx-xyz.x")), "http://login@abx-xyz.x");
+        assertToString(
+            QUrl(QLatin1String("http://login:password@abx-xyz.x")),
+            "http://login@abx-xyz.x");
 
     assertToString(QPoint(123, 456), "QPoint(123,456)");
     assertToString(QPointF(2.5, 3.6), "QPointF(2.5,3.6)");
@@ -128,14 +134,20 @@ TEST(ToString, Qt)
 struct CustomStringableType
 {
     int i = 0;
-    CustomStringableType(int i = 0): i(i) {}
+    CustomStringableType(int i = 0):
+        i(i)
+    {
+    }
     QString toString() const { return QLatin1String("CustomStringableType") + QString::number(i); }
 };
 
 struct CustomDebuggableType
 {
     int i = 0;
-    CustomDebuggableType(int i = 0): i(i) {}
+    CustomDebuggableType(int i = 0):
+        i(i)
+    {
+    }
 };
 static QDebug operator<<(QDebug debug, const CustomDebuggableType& d)
 {
@@ -163,7 +175,8 @@ template<typename T>
 void assertToStringPattern(const T& value, const char* pattern)
 {
     const auto valueString = nx::toString(value);
-    const auto wildcard = QRegularExpression::wildcardToRegularExpression(QString::fromUtf8(pattern));
+    const auto wildcard =
+        QRegularExpression::wildcardToRegularExpression(QString::fromUtf8(pattern));
     const QRegularExpression regExp(wildcard);
 
     EXPECT_TRUE(regExp.match(valueString).hasMatch())
@@ -183,13 +196,21 @@ void assertPtrToString(const char* pattern)
     assertToStringPattern(shared, pattern);
 }
 
-struct CustomBase { virtual ~CustomBase() = default; };
-struct CustomInheritor: CustomBase {};
+struct CustomBase
+{
+    virtual ~CustomBase() = default;
+};
+struct CustomInheritor: CustomBase
+{
+};
 
 struct CustomInt
 {
     int i = 0;
-    CustomInt(int i = 0): i(i) {}
+    CustomInt(int i = 0):
+        i(i)
+    {
+    }
     QString idForToStringFromPtr() const { return nx::toString(i); }
 };
 

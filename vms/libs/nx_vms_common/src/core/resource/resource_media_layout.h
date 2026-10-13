@@ -4,16 +4,17 @@
 
 #include <optional>
 
+#include <QtCore/QList>
 #include <QtCore/QPoint>
 #include <QtCore/QSize>
 #include <QtCore/QStringList>
-#include <QtCore/QList>
 
 #include <core/resource/audio_layout.h>
 
 #include "resource_media_layout_fwd.h"
 
-class QnResourceLayout {
+class QnResourceLayout
+{
 public:
     QnResourceLayout() {}
     virtual ~QnResourceLayout() {}
@@ -27,7 +28,8 @@ private:
     Q_DISABLE_COPY(QnResourceLayout);
 };
 
-class QnResourceVideoLayout: public QnResourceLayout {
+class QnResourceVideoLayout: public QnResourceLayout
+{
 public:
     QnResourceVideoLayout() {}
 
@@ -52,38 +54,30 @@ public:
 /**
  * Default video layout for any camera with only one sensor.
  */
-class QnDefaultResourceVideoLayout : public QnResourceVideoLayout {
+class QnDefaultResourceVideoLayout: public QnResourceVideoLayout
+{
 public:
     QnDefaultResourceVideoLayout() {}
 
-    virtual int channelCount() const override {
-        return 1;
-    }
+    virtual int channelCount() const override { return 1; }
 
-    virtual QSize size() const override {
-        return QSize(1, 1);
-    }
+    virtual QSize size() const override { return QSize(1, 1); }
 
-    virtual QPoint position(int) const override {
-        return QPoint(0, 0);
-    }
+    virtual QPoint position(int) const override { return QPoint(0, 0); }
 
-    virtual QList<int> getChannels() const override
-    {
-        return QList<int>() << 0;
-    }
+    virtual QList<int> getChannels() const override { return QList<int>() << 0; }
 };
 
-class NX_VMS_COMMON_API QnCustomResourceVideoLayout : public QnResourceVideoLayout {
+class NX_VMS_COMMON_API QnCustomResourceVideoLayout: public QnResourceVideoLayout
+{
 public:
-
-    QnCustomResourceVideoLayout(const QSize &size);
+    QnCustomResourceVideoLayout(const QSize& size);
 
     /**
      * Converts from a string representation produced by toString(). Ignores all errors, setting
      * to 0 all values that are omitted or cannot be parsed.
      */
-    static QnCustomResourceVideoLayoutPtr fromString(const QString &value);
+    static QnCustomResourceVideoLayoutPtr fromString(const QString& value);
 
     /**
      * Converts to a string representation which is considered to be an implementation detail, and
@@ -95,7 +89,7 @@ public:
 
     virtual QSize size() const override;
 
-    void setSize(const QSize &size);
+    void setSize(const QSize& size);
 
     void setChannel(int x, int y, int channel);
 

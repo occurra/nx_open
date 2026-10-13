@@ -9,8 +9,7 @@ void AbstractMsgBodySourceWithCache::readSomeAsync(
     IoCompletionHandler handler)
 {
     readAsync(
-        [userBuffer = buffer, handler = std::move(handler)](
-            auto resultCode, auto buffer)
+        [userBuffer = buffer, handler = std::move(handler)](auto resultCode, auto buffer)
         {
             *userBuffer = std::move(buffer);
             handler(resultCode, userBuffer->size());

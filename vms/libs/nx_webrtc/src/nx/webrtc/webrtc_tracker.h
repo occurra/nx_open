@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include <rapidjson/document.h>
-
 #include <nx/network/websocket/websocket.h>
+#include <rapidjson/document.h>
 
 #include "webrtc_session.h"
 

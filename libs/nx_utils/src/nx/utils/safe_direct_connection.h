@@ -12,7 +12,8 @@ class SafeDirectConnectionGlobalHelper;
 
 /**
  * Class that want to receive signals directly, MUST inherit this type.
- * WARNING: Implementation MUST call EnableSafeDirectConnection::directDisconnectAll before object destruction.
+ * WARNING: Implementation MUST call EnableSafeDirectConnection::directDisconnectAll before object
+ * destruction.
  */
 class NX_UTILS_API EnableSafeDirectConnection
 {

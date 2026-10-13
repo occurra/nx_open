@@ -29,13 +29,13 @@ namespace nx::utils {
  * }
  * </code></pre>
  */
-template <typename... Functors>
+template<typename... Functors>
 struct CompoundVisitor: Functors...
 {
     using Functors::operator()...;
 };
 
-template <typename... Functors>
+template<typename... Functors>
 CompoundVisitor(Functors...) -> CompoundVisitor<Functors...>;
 
 } // namespace nx::utils

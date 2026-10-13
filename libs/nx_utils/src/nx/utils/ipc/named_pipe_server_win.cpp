@@ -6,8 +6,8 @@
 
 #include <QtCore/QString>
 
-#include "named_pipe_socket_win.h"
 #include "../string.h"
+#include "named_pipe_socket_win.h"
 
 #pragma comment(lib, "advapi32.lib")
 
@@ -23,10 +23,7 @@ public:
     HANDLE overlappedIOEvent = NULL;
     struct _OVERLAPPED overlappedInfo;
 
-    NamedPipeServerImpl()
-    {
-        memset(&overlappedInfo, 0, sizeof(overlappedInfo));
-    }
+    NamedPipeServerImpl() { memset(&overlappedInfo, 0, sizeof(overlappedInfo)); }
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -58,14 +55,21 @@ SystemError::ErrorCode NamedPipeServer::listen(const std::string& pipeName)
     SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
 
     PSECURITY_DESCRIPTOR pSD = NULL;
-    for (;; )   //for break
+    for (;;) // for break
     {
         // Make a well-known SID for the group "Everybody".
         if (!AllocateAndInitializeSid(
-            &SIDAuthWorld, 1,
-            SECURITY_WORLD_RID,
-            0, 0, 0, 0, 0, 0, 0,
-            &pEveryoneSID))
+                &SIDAuthWorld,
+                1,
+                SECURITY_WORLD_RID,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                &pEveryoneSID))
         {
             break;
         }
@@ -78,14 +82,14 @@ SystemError::ErrorCode NamedPipeServer::listen(const std::string& pipeName)
         ea[0].grfInheritance = NO_INHERITANCE;
         ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
         ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-        ea[0].Trustee.ptstrName = (LPTSTR)pEveryoneSID;
+        ea[0].Trustee.ptstrName = (LPTSTR) pEveryoneSID;
 
         // Make a new ACL containing the ACE defined by the above EXPLICIT_ACCESS instance.
         dwRes = SetEntriesInAcl(1, ea, NULL, &pACL);
         if (dwRes != ERROR_SUCCESS)
             break;
 
-        pSD = (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
+        pSD = (PSECURITY_DESCRIPTOR) LocalAlloc(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
         if (!pSD)
             break;
         if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION)
@@ -108,15 +112,16 @@ SystemError::ErrorCode NamedPipeServer::listen(const std::string& pipeName)
     // TODO: #akolesnikov remove QString
     const QString win32PipeName = QString("\\\\.\\pipe\\%1").arg(pipeName.c_str());
     m_impl->hPipe = CreateNamedPipe(
-        reinterpret_cast<const wchar_t*>(win32PipeName.utf16()),              // pipe name
-        FILE_FLAG_FIRST_PIPE_INSTANCE | PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,       // read/write access, overlapped I/O
-        PIPE_TYPE_MESSAGE |                 // message type pipe
-        PIPE_READMODE_MESSAGE |         // message-read mode
-        PIPE_WAIT,                      // blocking mode
-        PIPE_UNLIMITED_INSTANCES,           // max. instances
-        NamedPipeSocketImpl::BUFSIZE,       // output buffer size
-        NamedPipeSocketImpl::BUFSIZE,       // input buffer size
-        0,                                  // client time-out
+        reinterpret_cast<const wchar_t*>(win32PipeName.utf16()), // pipe name
+        FILE_FLAG_FIRST_PIPE_INSTANCE | PIPE_ACCESS_DUPLEX
+            | FILE_FLAG_OVERLAPPED, // read/write access, overlapped I/O
+        PIPE_TYPE_MESSAGE | // message type pipe
+            PIPE_READMODE_MESSAGE | // message-read mode
+            PIPE_WAIT, // blocking mode
+        PIPE_UNLIMITED_INSTANCES, // max. instances
+        NamedPipeSocketImpl::BUFSIZE, // output buffer size
+        NamedPipeSocketImpl::BUFSIZE, // input buffer size
+        0, // client time-out
         pSD ? &secAttrs : NULL);
 
     if (pEveryoneSID)
@@ -129,12 +134,8 @@ SystemError::ErrorCode NamedPipeServer::listen(const std::string& pipeName)
     if (m_impl->hPipe == INVALID_HANDLE_VALUE)
         return SystemError::getLastOSErrorCode();
 
-    //creating event for overlapped I/O
-    m_impl->overlappedIOEvent = CreateEvent(
-        NULL,
-        TRUE,
-        FALSE,
-        NULL);
+    // creating event for overlapped I/O
+    m_impl->overlappedIOEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     if (m_impl->overlappedIOEvent == NULL)
     {
         const SystemError::ErrorCode osErrorCode = SystemError::getLastOSErrorCode();
@@ -157,12 +158,12 @@ SystemError::ErrorCode NamedPipeServer::accept(NamedPipeSocket** sock, int timeo
         switch (GetLastError())
         {
             case ERROR_PIPE_CONNECTED:
-                //connection has already been established
+                // connection has already been established
                 break;
 
             case ERROR_IO_PENDING:
             {
-                //waiting for new connection
+                // waiting for new connection
                 switch (WaitForSingleObject(
                     m_impl->overlappedInfo.hEvent,
                     timeoutMillis == -1 ? INFINITE : timeoutMillis))
@@ -170,7 +171,11 @@ SystemError::ErrorCode NamedPipeServer::accept(NamedPipeSocket** sock, int timeo
                     case WAIT_OBJECT_0:
                     {
                         DWORD numberOfBytesTransferred = 0;
-                        if (!GetOverlappedResult(m_impl->hPipe, &m_impl->overlappedInfo, &numberOfBytesTransferred, FALSE))
+                        if (!GetOverlappedResult(
+                                m_impl->hPipe,
+                                &m_impl->overlappedInfo,
+                                &numberOfBytesTransferred,
+                                FALSE))
                             return SystemError::getLastOSErrorCode();
                         break;
                     }

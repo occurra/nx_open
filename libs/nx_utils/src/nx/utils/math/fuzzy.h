@@ -14,21 +14,21 @@
 // -------------------------------------------------------------------------- //
 // qFuzzyIsNull
 // -------------------------------------------------------------------------- //
-inline bool qFuzzyIsNull(const QVector2D &vector) noexcept
+inline bool qFuzzyIsNull(const QVector2D& vector) noexcept
 {
     return qFuzzyIsNull(vector.x()) && qFuzzyIsNull(vector.y());
 }
 
-inline bool qFuzzyIsNull(const QVector3D &vector) noexcept
+inline bool qFuzzyIsNull(const QVector3D& vector) noexcept
 {
     return qFuzzyIsNull(vector.x()) && qFuzzyIsNull(vector.y()) && qFuzzyIsNull(vector.z());
 }
 
-inline bool qFuzzyIsNull(const QVector4D &vector) noexcept
+inline bool qFuzzyIsNull(const QVector4D& vector) noexcept
 {
-    return qFuzzyIsNull(vector.x()) && qFuzzyIsNull(vector.y()) && qFuzzyIsNull(vector.z()) && qFuzzyIsNull(vector.w());
+    return qFuzzyIsNull(vector.x()) && qFuzzyIsNull(vector.y()) && qFuzzyIsNull(vector.z())
+        && qFuzzyIsNull(vector.w());
 }
-
 
 // -------------------------------------------------------------------------- //
 // qFuzzyEquals
@@ -47,41 +47,38 @@ inline bool qFuzzyEquals(double l, double r) noexcept
     return qFuzzyCompare(l, r) || (qFuzzyIsNull(l) && qFuzzyIsNull(r));
 }
 
-inline bool qFuzzyEquals(const QPointF &l, const QPointF &r) noexcept
+inline bool qFuzzyEquals(const QPointF& l, const QPointF& r) noexcept
 {
     return qFuzzyEquals(l.x(), r.x()) && qFuzzyEquals(l.y(), r.y());
 }
 
-inline bool qFuzzyEquals(const QSizeF &l, const QSizeF &r) noexcept
+inline bool qFuzzyEquals(const QSizeF& l, const QSizeF& r) noexcept
 {
     return qFuzzyEquals(l.width(), r.width()) && qFuzzyEquals(l.height(), r.height());
 }
 
-inline bool qFuzzyEquals(const QRectF &l, const QRectF &r) noexcept
+inline bool qFuzzyEquals(const QRectF& l, const QRectF& r) noexcept
 {
-    return
-        qFuzzyEquals(l.x(), r.x()) &&
-        qFuzzyEquals(l.y(), r.y()) &&
-        qFuzzyEquals(l.width(), r.width()) &&
-        qFuzzyEquals(l.height(), r.height());
+    return qFuzzyEquals(l.x(), r.x()) && qFuzzyEquals(l.y(), r.y())
+        && qFuzzyEquals(l.width(), r.width()) && qFuzzyEquals(l.height(), r.height());
 }
 
-inline bool qFuzzyEquals(const QVector2D &l, const QVector2D &r) noexcept
+inline bool qFuzzyEquals(const QVector2D& l, const QVector2D& r) noexcept
 {
     return qFuzzyEquals(l.x(), r.x()) && qFuzzyEquals(l.y(), r.y());
 }
 
-inline bool qFuzzyEquals(const QVector3D &l, const QVector3D &r) noexcept
+inline bool qFuzzyEquals(const QVector3D& l, const QVector3D& r) noexcept
 {
     return qFuzzyEquals(l.x(), r.x()) && qFuzzyEquals(l.y(), r.y()) && qFuzzyEquals(l.z(), r.z());
 }
 
-inline bool qFuzzyEquals(const QVector4D &l, const QVector4D &r) noexcept
+inline bool qFuzzyEquals(const QVector4D& l, const QVector4D& r) noexcept
 {
     return qFuzzyEquals(l.x(), r.x()) && qFuzzyEquals(l.y(), r.y()) && qFuzzyEquals(l.w(), r.w());
 }
 
-inline bool qFuzzyEquals(const QMatrix4x4 &l, const QMatrix4x4 &r) noexcept
+inline bool qFuzzyEquals(const QMatrix4x4& l, const QMatrix4x4& r) noexcept
 {
     auto lm = l.constData();
     auto rm = r.constData();
@@ -96,14 +93,14 @@ inline bool qFuzzyEquals(const QMatrix4x4 &l, const QMatrix4x4 &r) noexcept
 // Fuzzy border functions
 // -------------------------------------------------------------------------- //
 namespace QnFuzzyDetail {
+
 template<class T>
-inline bool qFuzzyBetween(const T &min, const T &value, const T &max) noexcept
+inline bool qFuzzyBetween(const T& min, const T& value, const T& max) noexcept
 {
     return (min <= value && value <= max) || qFuzzyEquals(value, min) || qFuzzyEquals(value, max);
 }
 
 } // namespace QnFuzzyDetail
-
 
 /**
  * \param value                         Value to check.
@@ -129,4 +126,4 @@ float NX_UTILS_API qFuzzyCeil(float value);
 
 double NX_UTILS_API qFuzzyCeil(double value);
 
-bool NX_UTILS_API qFuzzyContains(const QRectF &rect, const QPointF &point);
+bool NX_UTILS_API qFuzzyContains(const QRectF& rect, const QPointF& point);

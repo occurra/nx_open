@@ -59,7 +59,8 @@ TEST(HevcRtpParser, RejectsFragmentationPacketWithBothStartAndEndFlags)
     bool gotData = false;
 
     uint8_t payload[] = {
-        0x62, 0x01, // NAL unit type 49 (fragmentation packet).
+        0x62,
+        0x01, // NAL unit type 49 (fragmentation packet).
         0xD3, // Start and end flags are both set for unit type 19.
         0x80,
     };

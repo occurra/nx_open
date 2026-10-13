@@ -19,11 +19,11 @@ public:
     using Type = typename detail::Accessor<Accessor>::Type;
     using ValueType = typename detail::Accessor<Accessor>::ValueType;
 
-    Comparator(bool ascending, const Accessor& accessor, Accessors ...accessors):
+    Comparator(bool ascending, const Accessor& accessor, Accessors... accessors):
         m_accessor(accessor),
-        m_pred(ascending
-            ? BinaryPred(std::less<ValueType>())
-            : BinaryPred(std::greater<ValueType>())),
+        m_pred(
+            ascending ? BinaryPred(std::less<ValueType>())
+                      : BinaryPred(std::greater<ValueType>())),
         m_nested(ascending, std::forward<Accessors>(accessors)...)
     {
     }
@@ -34,13 +34,13 @@ public:
         const ValueType& rightValue = m_accessor(right);
 
         const bool predResult = m_pred(leftValue, rightValue);
-        return !predResult && ! m_pred(rightValue, leftValue) //< Means equal values.
+        return !predResult && !m_pred(rightValue, leftValue) //< Means equal values.
             ? static_cast<bool>(m_nested(left, right))
             : predResult;
     }
 
 private:
-    using BinaryPred = std::function<bool (const ValueType& left, const ValueType& right)>;
+    using BinaryPred = std::function<bool(const ValueType& left, const ValueType& right)>;
     const detail::Accessor<Accessor> m_accessor;
     const BinaryPred m_pred;
     const Comparator<Accessors...> m_nested;
@@ -55,9 +55,8 @@ public:
 
     Comparator(bool ascending, const Accessor& accessor):
         m_accessor(accessor),
-        m_pred(ascending
-            ? BinaryPred(std::less<ValueType>{})
-            : BinaryPred(std::greater<ValueType>{}))
+        m_pred(
+            ascending ? BinaryPred(std::less<ValueType>{}) : BinaryPred(std::greater<ValueType>{}))
     {
     }
 
@@ -69,7 +68,7 @@ public:
     }
 
 private:
-    using BinaryPred = std::function<bool (const ValueType& left, const ValueType& right)>;
+    using BinaryPred = std::function<bool(const ValueType& left, const ValueType& right)>;
     const detail::Accessor<Accessor> m_accessor;
     const BinaryPred m_pred;
 };

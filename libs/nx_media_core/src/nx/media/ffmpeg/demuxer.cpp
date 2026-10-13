@@ -34,7 +34,9 @@ bool Demuxer::open(IoContextPtr ioContext)
 
     if (status < 0)
     {
-        NX_ERROR(this, "Failed to open audio stream, error: %1",
+        NX_ERROR(
+            this,
+            "Failed to open audio stream, error: %1",
             nx::media::ffmpeg::avErrorToString(status));
         return false;
     }
@@ -42,7 +44,9 @@ bool Demuxer::open(IoContextPtr ioContext)
     status = avformat_find_stream_info(m_formatContext, nullptr);
     if (status < 0)
     {
-        NX_ERROR(this, "Failed to find stream info, error: %1",
+        NX_ERROR(
+            this,
+            "Failed to find stream info, error: %1",
             nx::media::ffmpeg::avErrorToString(status));
         return false;
     }
@@ -64,7 +68,9 @@ QnAbstractMediaDataPtr Demuxer::getNextData()
     {
         if (status != AVERROR_EOF)
         {
-            NX_ERROR(this, "Failed to read frame, error: %1",
+            NX_ERROR(
+                this,
+                "Failed to read frame, error: %1",
                 nx::media::ffmpeg::avErrorToString(status));
         }
         return nullptr;
