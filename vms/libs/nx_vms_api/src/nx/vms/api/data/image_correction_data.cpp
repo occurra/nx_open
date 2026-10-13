@@ -2,15 +2,11 @@
 
 #include "image_correction_data.h"
 
-#include <nx/fusion/model_functions.h>
+#include <QtCore/QList>
+
 #include <nx/reflect/compare.h>
 
 namespace nx::vms::api {
-
-QN_FUSION_ADAPT_STRUCT_FUNCTIONS(
-    ImageCorrectionData,
-    (ubjson) (json) (xml) (csv_record),
-    ImageCorrectionData_Fields)
 
 QByteArray ImageCorrectionData::toByteArray() const
 {
@@ -44,15 +40,3 @@ bool ImageCorrectionData::operator==(const ImageCorrectionData& other) const
 }
 
 } // namespace nx::vms::api
-
-void serialize_field(const nx::vms::api::ImageCorrectionData& data, QVariant* target)
-{
-    serialize_field(data.toByteArray(), target);
-}
-
-void deserialize_field(const QVariant& value, nx::vms::api::ImageCorrectionData* target)
-{
-    QByteArray tmp;
-    deserialize_field(value, &tmp);
-    *target = nx::vms::api::ImageCorrectionData::fromByteArray(tmp);
-}

@@ -2,7 +2,9 @@
 
 #include "resolution_data.h"
 
-#include <nx/fusion/model_functions.h>
+#include <regex>
+
+#include <nx/utils/log/log.h>
 
 namespace nx::vms::api {
 
@@ -13,21 +15,6 @@ const std::string kResolutionStringSuffix("p");
 const std::regex kResolutionRegexp("^([+-]?\\d+)([px])([+-]?\\d+)?$");
 
 } // anonymous namespace
-
-bool deserialize(QnJsonContext* /*ctx*/, const QJsonValue& value, ResolutionData* target)
-{
-    if (value.isString())
-    {
-        const auto str = value.toString().toStdString();
-        return fromString(str, target);
-    }
-    return false;
-}
-
-void serialize(QnJsonContext* /*ctx*/, const ResolutionData& value, QJsonValue* target)
-{
-    *target = value.toString();
-}
 
 int ResolutionData::megaPixels() const
 {
