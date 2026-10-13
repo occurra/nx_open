@@ -1,29 +1,12 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
 #include <nx/build_info.h>
-#include <nx/build_info/ini.h>
-#include <nx/reflect/string_conversion.h>
 
 namespace nx::build_info {
 
-QString publicationTypeSuffix()
+QString developerBuildSuffix()
 {
-    return "${publication_type_suffix}";
-}
-
-PublicationType publicationType()
-{
-    static const PublicationType publicationType =
-        []()
-        {
-            return nx::reflect::fromString(R"(${publicationType})", PublicationType::local);
-        }();
-
-    std::string overridenValue = ini().publicationType;
-    if (!overridenValue.empty())
-        return nx::reflect::fromString(overridenValue, publicationType);
-
-    return publicationType;
+    return "${developer_build_suffix}";
 }
 
 QString revision()
@@ -36,47 +19,14 @@ QString vmsVersion()
     return "${releaseVersion.full}";
 }
 
-QString mobileClientVersion()
-{
-    return "${mobileClientVersion.full}";
-}
-
 int buildNumber()
 {
     return ${buildNumber};
 }
 
-QString applicationCompiler()
-{
-    #if defined(__clang__)
-        return "clang";
-    #elif defined(__GNUC__)
-        return "gcc";
-    #elif defined(_MSC_VER)
-        return "msvc";
-    #else
-        return QString();
-    #endif
-}
-
-QString applicationArch()
-{
-    return "${arch}";
-}
-
 QString applicationPlatform()
 {
     return "${platform}";
-}
-
-QString applicationPlatformNew()
-{
-    return "${platform_new}";
-}
-
-QString applicationPlatformModification()
- {
-    return "${modification}";
 }
 
 bool isArm()
@@ -88,34 +38,14 @@ bool isArm()
     #endif
 }
 
-bool isAndroid()
-{
-    return applicationPlatform() == "android";
-}
-
-bool isIos()
-{
-    return applicationPlatform() == "ios";
-}
-
-bool isMobilePlatform()
-{
-    return isAndroid() || isIos();
-}
-
-bool isLinux()
-{
-    return applicationPlatform() == "linux";
-}
-
 bool isWindows()
 {
-    return applicationPlatform() == "windows";
+    return applicationPlatform().startsWith("win");
 }
 
 bool isMacOsX()
 {
-    return applicationPlatform() == "macosx";
+    return applicationPlatform().startsWith("mac");
 }
 
 } // namespace nx::build_info
