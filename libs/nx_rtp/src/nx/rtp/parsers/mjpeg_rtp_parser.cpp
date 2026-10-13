@@ -588,10 +588,7 @@ Result MjpegParser::processData(
                 if (!mjpeg16BitWarningLogged)
                 {
                     mjpeg16BitWarningLogged = true;
-                    NX_DEBUG(
-                        this,
-                        lit("%1: 16-bit MJPEG is not supported")
-                            .arg(QString::fromStdString(logId())));
+                    NX_DEBUG(this, "%1: 16-bit MJPEG is not supported", logId());
                 }
                 return {false, "Only 8-bit MJPEG is supported"};
             }
