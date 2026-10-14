@@ -217,7 +217,7 @@ struct NX_UTILS_API ValueHelper
         else
         {
             const std::string strVal = nx::reflect::json::serialize(val);
-            ::rapidjson::Document doc(&allocator);
+            ::rapidjson::Document doc(/*depthLimit*/ 1024, &allocator);
             doc.Parse(strVal);
             if (doc.IsObject())
                 value = doc.GetObject();
@@ -228,7 +228,7 @@ struct NX_UTILS_API ValueHelper
 
     ValueHelper(ValueHelper&&) = default;
     ValueHelper(const ValueHelper&) = delete;
-    ValueHelper& operator=(ValueHelper&& valueHelper) noexcept;
+    ValueHelper& operator=(ValueHelper&& valueHelper) = delete;
     ValueHelper& operator=(const ValueHelper&) = delete;
 
     bool isNull() const;
@@ -1022,6 +1022,7 @@ public:
     std::string toStdString() const;
     bool isValid() const;
     ::rapidjson::ParseErrorCode getParseError() const;
+    QString getPrettyParseErrorString() const;
 
 private:
     Processor(const Processor& processor, ::rapidjson::Value* newCurr):

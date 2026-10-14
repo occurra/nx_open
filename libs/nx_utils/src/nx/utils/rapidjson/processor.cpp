@@ -2,6 +2,7 @@
 
 #include "processor.h"
 
+#include <rapidjson/error/en.h>
 #include <rapidjson/writer.h>
 
 namespace nx::utils::rapidjson {
@@ -12,13 +13,6 @@ ValueHelper::ValueHelper(const QString& val, ::rapidjson::Document::AllocatorTyp
     allocator(alloc),
     value(val.toStdString(), allocator)
 {
-}
-
-ValueHelper& ValueHelper::operator=(ValueHelper&& valueHelper) noexcept
-{
-    value = std::move(valueHelper.value);
-    allocator = std::move(valueHelper.allocator);
-    return *this;
 }
 
 bool ValueHelper::isNull() const
@@ -118,6 +112,15 @@ bool Processor::isValid() const
 ::rapidjson::ParseErrorCode Processor::getParseError() const
 {
     return m_data->GetParseError();
+}
+
+QString Processor::getPrettyParseErrorString() const
+{
+    return NX_FMT(
+        "Error %1 at offset %2: `%3`",
+        m_data->GetParseError(),
+        m_data->GetErrorOffset(),
+        ::rapidjson::GetParseError_En(m_data->GetParseError()));
 }
 
 void Processor::getWithRecursiveSearch(
