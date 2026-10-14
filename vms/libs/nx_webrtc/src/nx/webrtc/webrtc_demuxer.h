@@ -25,6 +25,8 @@ public:
         uint32_t videoSsrc); //< Back to sender. RTCP for emitting keyframe.
     QnAbstractMediaDataPtr getNextFrame(); //< From sender.
     void setSrtpEncryptionData(const rtsp::EncryptionData& data);
+    bool hasVideo() const { return m_hasVideo; }
+    bool hasAudio() const { return m_hasAudio; }
     CodecParametersConstPtr audioCodecParameters() const { return m_audioCodecParameters; }
 
 private:

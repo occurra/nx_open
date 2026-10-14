@@ -46,6 +46,8 @@ public:
     /// change.
     void renegotiateCodec(nx::Uuid deviceId);
 
+    std::string idForToStringFromPtr() const;
+
 private:
     void readMessage();
     bool processMessages();
@@ -67,6 +69,7 @@ private:
     IceCandidate::Filter m_candidateFilter = IceCandidate::Filter::All;
     std::atomic<bool> m_started{};
     bool m_iceSent = false;
+    std::string m_sessionId;
 };
 
 } // namespace nx::webrtc

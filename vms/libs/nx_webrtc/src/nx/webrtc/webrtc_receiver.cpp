@@ -28,21 +28,17 @@ bool Receiver::start(Ice* ice, Dtls* dtls)
     m_ice = ice;
 
     m_session->demuxer()->setSrtpEncryptionData(dtls->encryptionData());
-
-    // TODO: I suppose FIR packets are not needed. Lets check in browser and remove it.
-#if 0
     m_session->reader()->onKeyframeNeeded(
         [this]()
         {
             NX_DEBUG(this, "Send RTCP FIR into source");
             auto output = m_session->demuxer()->getRtcpFirPacket(
-                m_session->tracks()->videoTrack().ssrc);
+                m_session->tracks()->videoTrack(nx::Uuid())->ssrc);
             if (output.size() != 0)
                 m_ice->writePacket(output.data(), output.size(), /*foreground*/ false);
         });
-#endif
-    m_session->reader()->start();
 
+    m_session->reader()->start();
     return true;
 }
 
@@ -73,6 +69,7 @@ bool Receiver::onSrtp(std::vector<uint8_t> buffer)
         QnAbstractMediaDataPtr media = m_session->demuxer()->getNextFrame();
         if (!media)
             break;
+        NX_VERBOSE(this, "New data from demuxer: %1", media);
         m_session->reader()->pushFrame(std::move(media));
     }
     return true;

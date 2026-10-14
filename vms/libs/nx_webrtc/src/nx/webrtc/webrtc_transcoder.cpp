@@ -105,7 +105,7 @@ bool Transcoder::createRtpEncoders(
     bool success = false;
     if (videoParameters)
     {
-        if (const auto track = m_session->tracks()->videoTrack(deviceId))
+        if (auto track = m_session->tracks()->videoTrack(deviceId))
         {
             if (auto encoder =
                     createRtpEncoder(videoParameters, track->ssrc, track->cname, track->mid))
@@ -115,8 +115,9 @@ bool Transcoder::createRtpEncoders(
                     encoder->setSrtpEncryptionData(*m_encryptionData);
                 seedSequenceForward(m_videoEncoders, deviceId, *encoder);
                 seedTimestampForward(m_videoEncoders, deviceId, *encoder, /*rtpClockHz*/ 90000);
-                m_videoEncoders[deviceId] = std::move(encoder);
                 track->offerState = TrackState::active;
+                track->payloadType = encoder->payloadType();
+                m_videoEncoders[deviceId] = std::move(encoder);
             }
             else
             {
@@ -132,7 +133,7 @@ bool Transcoder::createRtpEncoders(
 
     if (audioParameters)
     {
-        if (const auto track = m_session->tracks()->audioTrack(deviceId))
+        if (auto track = m_session->tracks()->audioTrack(deviceId))
         {
             if (auto encoder =
                     createRtpEncoder(audioParameters, track->ssrc, track->cname, track->mid))
@@ -146,8 +147,9 @@ bool Transcoder::createRtpEncoders(
                     deviceId,
                     *encoder,
                     /*rtpClockHz*/ audioParameters->sample_rate);
-                m_audioEncoders[deviceId] = std::move(encoder);
                 track->offerState = TrackState::active;
+                track->payloadType = encoder->payloadType();
+                m_audioEncoders[deviceId] = std::move(encoder);
             }
             else
             {
@@ -209,11 +211,6 @@ QnUniversalRtpEncoderPtr Transcoder::createRtpEncoder(
             codecParameters->codec_id);
         return nullptr;
     }
-
-    if (Track* track = m_session->tracks()->track(ssrc))
-        track->payloadType = universalEncoder->payloadType();
-    else
-        NX_WARNING(this, "Track %1 not found", ssrc);
 
     return universalEncoder;
 }
@@ -291,9 +288,12 @@ QnUniversalRtpEncoder* Transcoder::getRtpEncoder(
     nx::Uuid deviceId,
     QnAbstractMediaData::DataType type) const
 {
-    auto& encoders = type == QnAbstractMediaData::VIDEO ? m_videoEncoders : m_audioEncoders;
-    auto it = encoders.find(deviceId);
-    return it != encoders.end() ? it->second.get() : nullptr;
+    if (type == QnAbstractMediaData::VIDEO)
+        return videoEncoder(deviceId);
+    if (type == QnAbstractMediaData::AUDIO)
+        return audioEncoder(deviceId);
+
+    return nullptr;
 }
 
 QnUniversalRtpEncoder* Transcoder::setDataPacket(

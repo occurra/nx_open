@@ -58,7 +58,9 @@ public:
      */
     void handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus result, int seq = 0);
 
-protected:
+    std::string idForToStringFromPtr() const;
+
+private:
     void updateMetrics(int value);
 
 private:

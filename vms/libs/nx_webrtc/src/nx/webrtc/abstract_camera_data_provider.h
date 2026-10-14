@@ -31,7 +31,7 @@ public:
     void setInitialized(bool value) { m_initialized = value; }
     virtual bool isStarted() const = 0;
 
-    void setDataConsumer(Consumer* consumer);
+    void setDataConsumer(std::weak_ptr<Consumer> consumer);
 
 public: // Initialize.
     virtual bool addVideoTranscoder(
@@ -101,7 +101,7 @@ protected:
     nx::Uuid m_deviceId;
     int64_t m_positionUs = DATETIME_NOW;
     bool m_initialized = false;
-    Consumer* m_consumer;
+    std::weak_ptr<Consumer> m_consumer;
 };
 
 using AbstractCameraDataProviderPtr = std::shared_ptr<AbstractCameraDataProvider>;
@@ -109,6 +109,7 @@ using createDataProviderFactory = nx::MoveOnlyFunc<AbstractCameraDataProviderPtr
     nx::Uuid /*deviceId*/,
     std::optional<std::chrono::milliseconds> /*positionMs*/,
     nx::vms::api::StreamIndex /*stream*/,
-    std::optional<float> /*speedOpt*/)>;
+    std::optional<float> /*speedOpt*/,
+    std::string_view /*sessionId*/)>;
 
 } // namespace nx::webrtc

@@ -238,7 +238,12 @@ std::string TracksForSend::getSdpForTrack(const Track* track, uint16_t port) con
         isVideo ? muxer->videoEncoder(track->deviceId) : muxer->audioEncoder(track->deviceId);
     if (!encoder)
     {
-        NX_DEBUG(this, "Encoder is not initialized for track %1:%2", track->deviceId, track->ssrc);
+        NX_DEBUG(
+            this,
+            "Encoder is not initialized for track %1:%2, type: %3",
+            track->deviceId,
+            track->ssrc,
+            (int) track->trackType);
         return {};
     }
     return encoder->getSdpMedia(isVideo, track->mid, port, /*ssl*/ true).toStdString()

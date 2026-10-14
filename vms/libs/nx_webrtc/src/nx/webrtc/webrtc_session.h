@@ -318,6 +318,8 @@ public:
      */
     bool adaptToAudioCodecChange(nx::Uuid deviceId, const QnConstAbstractMediaDataPtr& media);
 
+    std::string idForToStringFromPtr() const;
+
 private:
     std::string dataChannelSdp(
         uint16_t port,
@@ -418,10 +420,10 @@ private:
      *  Written on the signaling thread, read on the muxing thread - guarded by m_mutex. */
     std::set<nx::Uuid> m_devicesAwaitingAnswer;
     std::unique_ptr<Transcoder> m_muxer; //< Streaming side. Can be null.
-    std::unique_ptr<Consumer> m_consumer; //< Streaming side. Can be null.
+    std::shared_ptr<Consumer> m_consumer; //< Streaming side. Can be null.
     std::unique_ptr<Demuxer> m_demuxer; //< Receiving side. Can be null.
     std::shared_ptr<Reader> m_reader; //< Receiving side. Can be null.
-    std::string m_localUfrag;
+    const std::string m_localUfrag;
     std::string m_localPwd;
     std::uint64_t m_tieBreaker = 0; ///< Stable per-session ICE tie-breaker.
     SdpParseResult m_sdpParseResult;

@@ -78,6 +78,7 @@ Session::Session(
     nx::network::aio::AbstractAioThread* aioThread):
     SystemContextAware(context),
     m_purpose(purpose),
+    m_localUfrag(localUfrag),
     m_localAddress(address),
     m_pem(ssl::Context::instance()->getDefaultCertificate()),
     m_tracker(std::make_shared<Tracker>(this, aioThread)),
@@ -85,7 +86,6 @@ Session::Session(
     m_sessionPool(sessionPool),
     m_config(config)
 {
-    m_localUfrag = localUfrag;
     m_localPwd = generatePwd(24);
     m_tieBreaker = nx::utils::random::number<std::uint64_t>();
     m_dtls = std::make_shared<Dtls>(m_localUfrag, m_pem);
@@ -112,7 +112,7 @@ Session::Session(
 
     if (m_purpose == Purpose::send)
     {
-        m_consumer = std::make_unique<Consumer>(this);
+        m_consumer = std::make_shared<Consumer>(this);
         m_providerFactory = std::move(providerFactory);
     }
     else if (m_purpose == Purpose::recv)
@@ -132,6 +132,7 @@ Session::Session(
         });
         m_tracks->addTrack(std::move(audio));
 
+        m_transceiver = std::make_unique<Receiver>(this);
         m_demuxer = std::make_unique<Demuxer>(m_tracks.get());
     }
 }
@@ -224,8 +225,7 @@ void Session::start(const QList<nx::network::SocketAddress>& addresses)
             {
                 NX_DEBUG(
                     this,
-                    "%1: Got Srflx remote addres: %2, local address: %3",
-                    id(),
+                    "Got Srflx remote addres: %1, local address: %2",
                     mappedAddress.toString(),
                     socket ? socket->getLocalAddress().toString() : "null");
                 // 1. Create IceUdp with given socket.
@@ -554,7 +554,7 @@ AbstractCameraDataProviderPtr Session::createProviderNow(
     nx::vms::api::StreamIndex stream,
     std::optional<float> speedOpt)
 {
-    auto provider = m_providerFactory(deviceId, positionMs, stream, speedOpt);
+    auto provider = m_providerFactory(deviceId, positionMs, stream, speedOpt, m_localUfrag);
     // The consumer owns the session's metadata subscription state (seeded from
     // the signaling URL, toggled by the {"metadata": bool} data-channel
     // command). Apply it to every new provider so streams added mid-session
@@ -860,7 +860,7 @@ AbstractCameraDataProviderPtr Session::retargetProviderNow(
     // construction, and without one it paces nothing - the new camera's archive
     // would stream as fast as it can be read. Hardcoded because no command
     // carries a speed today; when one does, take it from there.
-    auto provider = m_providerFactory(toDeviceId, positionMs, stream, /*speed*/ 1.0);
+    auto provider = m_providerFactory(toDeviceId, positionMs, stream, /*speed*/ 1.0, m_localUfrag);
     if (!provider)
     {
         NX_WARNING(this, "Can't create data provider for device %1", toDeviceId);
@@ -1070,7 +1070,7 @@ void Session::addProvider(std::shared_ptr<AbstractCameraDataProvider> provider)
     }
 
     m_providers.emplace(deviceId, provider);
-    provider->setDataConsumer(m_consumer.get());
+    provider->setDataConsumer(m_consumer);
 }
 
 void Session::setTranscodingParams(
@@ -1148,11 +1148,10 @@ bool Session::initializeProviderMuxer(const AbstractCameraDataProviderPtr& provi
         {
             NX_DEBUG(
                 this,
-                "%1: Video transcoding is disabled(source codec: %2) in the server settings. "
-                "Feature unavailable. RTP",
-                id(),
-                videoCodecParamaters->codec_id);
-            noteUnsupportedVideoCodec(provider->deviceId(), videoCodecParamaters->codec_id);
+                "Video transcoding is disabled(source codec: %1) in the server settings. "
+                "Feature unavailable",
+                videoCodecParamaters->getCodecId());
+            noteUnsupportedVideoCodec(provider->deviceId(), videoCodecParamaters->getCodecId());
             return false;
         }
 
@@ -1178,17 +1177,15 @@ bool Session::initializeProviderMuxer(const AbstractCameraDataProviderPtr& provi
                     this,
                     "%1: Video codec %2 of device %3 needs a transcoder and none is available",
                     id(),
-                    videoCodecParamaters->codec_id,
+                    videoCodecParamaters->getCodecId(),
                     provider->deviceId());
-                noteUnsupportedVideoCodec(provider->deviceId(), videoCodecParamaters->codec_id);
+                noteUnsupportedVideoCodec(
+                    provider->deviceId(),
+                    videoCodecParamaters->getCodecId());
                 return false;
             }
 
-            NX_DEBUG(
-                this,
-                "%1: Video transcoding started, target codec: %2",
-                id(),
-                config.targetCodecId);
+            NX_DEBUG(this, "Video transcoding started, target codec: %1", config.targetCodecId);
         }
     }
 
@@ -1203,8 +1200,7 @@ bool Session::initializeProviderMuxer(const AbstractCameraDataProviderPtr& provi
             {
                 NX_DEBUG(
                     this,
-                    "%1: Audio transcoding started, target codec: %2",
-                    id(),
+                    "Audio transcoding started, target codec: %1",
                     kFallbackSrtpAudioCodec);
             }
             else
@@ -1448,14 +1444,13 @@ AnswerResult Session::processSdpAnswer(const std::string& sdp)
     m_sdpParseResult = SdpParseResult::parse(sdp);
     NX_DEBUG(
         this,
-        "%1: Sdp parsed, got remote: %2/%3",
-        id(),
+        "Sdp parsed, got remote: %1/%2",
         m_sdpParseResult.iceUfrag,
         m_sdpParseResult.icePwd);
 
     if (m_sdpParseResult.fingerprint.type == Fingerprint::Type::none)
     {
-        NX_DEBUG(this, "%1: No DTLS fingerprint in answer", id());
+        NX_DEBUG(this, "No DTLS fingerprint in answer");
         return AnswerResult::failed;
     }
     m_dtls->setFingerprint(m_sdpParseResult.fingerprint);
@@ -1464,8 +1459,13 @@ AnswerResult Session::processSdpAnswer(const std::string& sdp)
     {
         NX_DEBUG(
             this,
-            "%1: Tracks in offer and answer does not match (application track doesn't exists)",
-            id());
+            "Tracks in offer and answer does not match (application track doesn't exists)");
+        return AnswerResult::failed;
+    }
+
+    if (!m_tracks->examineSdp(sdp))
+    {
+        NX_DEBUG(this, "SDP examination failed");
         return AnswerResult::failed;
     }
 
@@ -1540,7 +1540,7 @@ bool Session::lock()
     if (isLocked())
         return false;
 
-    NX_DEBUG(this, "Locked session %1", id());
+    NX_DEBUG(this, "Locked session");
     m_locked = true;
     // Repurpose the reap clock as the streaming liveness clock: a locked session
     // is now reaped on inbound silence, not idleness. Start fresh so a peer that
@@ -1595,7 +1595,7 @@ void Session::stop(std::shared_ptr<Session> session)
 void Session::unlock()
 {
     NX_MUTEX_LOCKER lk(&m_mutex);
-    NX_DEBUG(this, "Unlocked session %1", id());
+    NX_DEBUG(this, "Unlocked session");
     m_locked = false;
     m_timer.restart();
 }
@@ -1686,6 +1686,11 @@ void Session::stopAllProviders()
     }
     for (const auto& [_, provider]: providers)
         provider->stop();
+}
+
+std::string Session::idForToStringFromPtr() const
+{
+    return m_localUfrag;
 }
 
 } // namespace nx::webrtc

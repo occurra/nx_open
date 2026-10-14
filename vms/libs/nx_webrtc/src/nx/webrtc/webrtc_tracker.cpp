@@ -24,7 +24,8 @@ using namespace nx;
 
 Tracker::Tracker(Session* session, nx::network::aio::AbstractAioThread* aioThread):
     m_session(session),
-    m_pollable(aioThread)
+    m_pollable(aioThread),
+    m_sessionId(session->id())
 {
     const std::string iceCandidatesIni = ::ini().webrtcIceCandidates;
     if (!iceCandidatesIni.empty())
@@ -252,6 +253,7 @@ bool Tracker::processMessages()
      */
 
     AnswerResult result = examineAnswer();
+    NX_VERBOSE(this, "Answer examination result: %1", (int) result);
     if (result == AnswerResult::failed)
         return false;
     // A camera the peer cannot decode is that camera's problem alone: name it, and leave the
@@ -263,8 +265,6 @@ bool Tracker::processMessages()
         sendOffer();
         return true;
     }
-
-    NX_VERBOSE(this, "Answer examination result: %1 in stage: %2", (int) result);
 
     //< A Purpose::data session has no consumer and nothing to start.
     if (auto* consumer = m_session->consumer())
@@ -313,6 +313,11 @@ void Tracker::onBytesRead(SystemError::ErrorCode errorCode, std::size_t /*bytesT
         m_buffer.clear();
         readMessage();
     }
+}
+
+std::string Tracker::idForToStringFromPtr() const
+{
+    return m_sessionId;
 }
 
 } // namespace nx::webrtc

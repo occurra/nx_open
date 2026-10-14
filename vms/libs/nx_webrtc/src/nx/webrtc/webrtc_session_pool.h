@@ -66,6 +66,7 @@ public:
         const SessionConfig& config,
         const QList<nx::network::SocketAddress>& hostAddresses,
         nx::network::aio::AbstractAioThread* aioThread = nullptr);
+
     /**
      * @param session id
      * @return Nullptr, if session not found.

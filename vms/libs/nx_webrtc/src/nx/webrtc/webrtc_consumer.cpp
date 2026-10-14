@@ -20,7 +20,8 @@ static constexpr auto kRenegotiationTimeout = std::chrono::seconds(5);
 Consumer::Consumer(Session* session):
     m_mediaQueue(kMediaQueueSize),
     m_session(session),
-    m_renegotiationTimer(session->aioThread())
+    m_renegotiationTimer(session->aioThread()),
+    m_sessionId(session->id())
 {
     //< The one and only binding. It happens here, while the consumer is still
     //< unreachable, because a pollable may not be moved once anything can post
@@ -727,6 +728,11 @@ bool Consumer::isMetadataEnabledFor(nx::Uuid deviceId) const
 {
     const auto it = m_metadataOverrides.find(deviceId);
     return it != m_metadataOverrides.end() ? it->second : m_enableMetadata.load();
+}
+
+std::string Consumer::idForToStringFromPtr() const
+{
+    return m_sessionId;
 }
 
 } // namespace nx::webrtc

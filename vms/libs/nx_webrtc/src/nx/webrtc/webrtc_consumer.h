@@ -141,6 +141,7 @@ public:
     bool isMetadataEnabledFor(nx::Uuid deviceId) const;
 
     bool canAcceptData() const;
+    std::string idForToStringFromPtr() const;
 
 private:
     friend class Ice;
@@ -190,6 +191,7 @@ private:
     nx::network::aio::Timer m_renegotiationTimer; ///< Safety net: falls back to
                                                   ///< a full reconnect if the peer never answers
                                                   ///< the renegotiation offer.
+    const std::string m_sessionId;
 };
 
 } // namespace nx::webrtc

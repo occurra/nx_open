@@ -29,6 +29,11 @@ Streamer::~Streamer()
 {
 }
 
+std::string Streamer::idForToStringFromPtr() const
+{
+    return m_session->id();
+}
+
 bool Streamer::start(Ice* ice, Dtls* dtls)
 {
     NX_ASSERT(ice);
@@ -98,8 +103,18 @@ static std::optional<int64_t> parseTimeUs(const rapidjson::Value& obj, const cha
         ms = v.GetInt64();
     else if (v.IsInt())
         ms = v.GetInt();
-    else if (v.IsString() && v.GetString()[0] != 0)
-        ms = std::atoll(v.GetString());
+    else if (v.IsString())
+    {
+        const char* str = v.GetString();
+        if (!str || !*str)
+            return std::nullopt;
+
+        char* end = nullptr;
+        errno = 0;
+        ms = std::strtoll(str, &end, 10);
+        if (end == str || errno == ERANGE)
+            return std::nullopt;
+    }
     if (ms < 0)
         return std::nullopt;
     return ms * 1000;
@@ -378,7 +393,15 @@ void Streamer::onDataChannelString(const std::string& data, int /*streamId*/)
     else if (d.HasMember("pause"))
     {
         if (deviceId.isNull())
-            deviceId = nx::Uuid::fromStringSafe(d["pause"].GetString());
+        {
+            const auto& pauseValue = d["pause"];
+            if (!pauseValue.IsString())
+            {
+                NX_DEBUG(this, "Invalid pause method: %1", data);
+                return;
+            }
+            deviceId = nx::Uuid::fromStringSafe(pauseValue.GetString());
+        }
         m_session->consumer()->pause(
             deviceId,
             [this, seq = parseSeq(d)](nx::Uuid deviceId, Consumer::StreamStatus result)
