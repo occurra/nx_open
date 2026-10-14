@@ -55,6 +55,16 @@ std::string generatePwd(int size)
 static const AVCodecID kFallbackSrtpVideoCodec = AV_CODEC_ID_VP8;
 static const AVCodecID kFallbackSrtpAudioCodec = AV_CODEC_ID_PCM_MULAW;
 
+// Neither H.264 nor Opus has a statically assigned RTP payload type, so both take one from the
+// dynamic range (96-127). These are the values browsers use, which keeps the offer familiar.
+constexpr int kH264PayloadType = 96;
+constexpr int kOpusPayloadType = 111;
+
+AVCodecParameters* avCodecParameters(const CodecParametersConstPtr& parameters)
+{
+    return parameters ? parameters->getAvCodecParameters() : nullptr;
+}
+
 } // namespace
 
 namespace nx::webrtc {
@@ -119,14 +129,14 @@ Session::Session(
     {
         auto video = std::make_unique<Track>(Track{
             .mid = 0,
-            .payloadType = 96,
+            .payloadType = kH264PayloadType,
             .trackType = TrackType::video,
             .offerState = TrackState::active,
         });
         m_tracks->addTrack(std::move(video));
         auto audio = std::make_unique<Track>(Track{
             .mid = 1,
-            .payloadType = 0,
+            .payloadType = kOpusPayloadType,
             .trackType = TrackType::audio,
             .offerState = TrackState::active,
         });

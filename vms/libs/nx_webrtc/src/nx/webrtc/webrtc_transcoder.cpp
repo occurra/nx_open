@@ -14,12 +14,10 @@
 namespace {
 
 static const std::set<AVCodecID> kSrtpVideoCodecs =
-    {AV_CODEC_ID_VP8, AV_CODEC_ID_VP9, AV_CODEC_ID_H264, AV_CODEC_ID_H265};
+    {AV_CODEC_ID_VP8, AV_CODEC_ID_VP9, AV_CODEC_ID_AV1, AV_CODEC_ID_H264, AV_CODEC_ID_H265};
 
-static const std::set<AVCodecID> kSrtpAudioCodecs = {
-    AV_CODEC_ID_PCM_MULAW,
-    AV_CODEC_ID_PCM_ALAW,
-    AV_CODEC_ID_ADPCM_G722};
+static const std::set<AVCodecID> kSrtpAudioCodecs =
+    {AV_CODEC_ID_PCM_MULAW, AV_CODEC_ID_PCM_ALAW, AV_CODEC_ID_ADPCM_G722, AV_CODEC_ID_OPUS};
 
 /* For some NATs, there can be another network layer, such as VPN,
  * which fragments original UDP packets with RTP.
