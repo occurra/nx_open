@@ -5,9 +5,7 @@
 #include <nx/network/async_stoppable.h>
 #include <nx/utils/move_only_func.h>
 
-namespace nx {
-namespace network {
-namespace aio {
+namespace nx::network::aio {
 
 class AbstractAioThread;
 
@@ -33,6 +31,4 @@ public:
     virtual void dispatch(nx::MoveOnlyFunc<void()> func) = 0;
 };
 
-} // namespace aio
-} // namespace network
-} // namespace nx
+} // namespace nx::network::aio

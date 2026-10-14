@@ -9,11 +9,7 @@
 #include <nx/network/stun/message_parser.h>
 #include <nx/network/stun/stun_attributes.h>
 
-namespace nx {
-namespace network {
-namespace stun {
-namespace attrs {
-namespace test {
+namespace nx::network::stun::attrs::test {
 
 //-------------------------------------------------------------------------------------------------
 // StunAttributeCommonTest
@@ -149,8 +145,4 @@ TEST_F(StunAttributeMappedAddress, composite_test)
     runTests();
 }
 
-} // namespace test
-} // namespace attrs
-} // namespace stun
-} // namespace network
-} // namespace nx
+} // namespace nx::network::stun::attrs::test

@@ -6,8 +6,7 @@
 
 #include "text_ip_address_resolver.h"
 
-namespace nx {
-namespace network {
+namespace nx::network {
 
 SystemError::ErrorCode TextIpAddressResolver::resolve(
     std::string_view hostName,
@@ -31,5 +30,4 @@ SystemError::ErrorCode TextIpAddressResolver::resolve(
     return SystemError::noError;
 }
 
-} // namespace network
-} // namespace nx
+} // namespace nx::network

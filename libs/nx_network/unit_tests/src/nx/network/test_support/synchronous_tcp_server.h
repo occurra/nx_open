@@ -10,9 +10,7 @@
 #include <nx/utils/atomic_unique_ptr.h>
 #include <nx/utils/byte_stream/pipeline.h>
 
-namespace nx {
-namespace network {
-namespace test {
+namespace nx::network::test {
 
 class SynchronousStreamSocketServer
 {
@@ -133,6 +131,4 @@ protected:
         int dataSize) override;
 };
 
-} // namespace test
-} // namespace network
-} // namespace nx
+} // namespace nx::network::test

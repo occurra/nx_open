@@ -12,8 +12,7 @@
 #include "buffered_stream_socket.h"
 #include "socket_delegate.h"
 
-namespace nx {
-namespace network {
+namespace nx::network {
 
 /**
  * Can be used as a server-side connection only.
@@ -98,5 +97,4 @@ protected:
     }
 };
 
-} // namespace network
-} // namespace nx
+} // namespace nx::network

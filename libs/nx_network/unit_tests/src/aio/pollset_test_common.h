@@ -13,10 +13,7 @@
 #include <nx/utils/random.h>
 #include <nx/utils/test_support/utils.h>
 
-namespace nx {
-namespace network {
-namespace aio {
-namespace test {
+namespace nx::network::aio::test {
 
 template<typename PollsetHelperType>
 class PollSetAcceptance: public ::testing::Test
@@ -386,7 +383,4 @@ REGISTER_TYPED_TEST_SUITE_P(
     removeSocketThatHasUnprocessedEvents,
     pollIsActuallyLevelTriggered);
 
-} // namespace test
-} // namespace aio
-} // namespace network
-} // namespace nx
+} // namespace nx::network::aio::test

@@ -6,8 +6,7 @@
 
 #include "event_type.h"
 
-namespace nx {
-namespace network {
+namespace nx::network {
 
 class Pollable;
 
@@ -133,5 +132,4 @@ private:
 };
 
 } // namespace aio
-} // namespace network
-} // namespace nx
+} // namespace nx::network

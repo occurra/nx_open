@@ -4,8 +4,7 @@
 
 #include <nx/utils/move_only_func.h>
 
-namespace nx {
-namespace network {
+namespace nx::network {
 
 namespace aio { class AIOService; }
 
@@ -44,5 +43,4 @@ protected:
     void pleaseStopSync(const nx::network::aio::AIOService* aioService);
 };
 
-} // namespace network
-} // namespace nx
+} // namespace nx::network

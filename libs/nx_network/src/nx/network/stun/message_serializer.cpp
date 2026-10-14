@@ -12,9 +12,7 @@
 
 #include "parse_utils.h"
 
-namespace nx {
-namespace network {
-namespace stun {
+namespace nx::network::stun {
 
 static constexpr int kHeaderSize = 20;
 
@@ -492,6 +490,4 @@ std::uint32_t MessageSerializer::calcFingerprint(MessageSerializerBuffer* buffer
     return xor_result;
 }
 
-} // namespace stun
-} // namespace network
-} // namespace nx
+} // namespace nx::network::stun

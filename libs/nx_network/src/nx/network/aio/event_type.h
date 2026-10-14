@@ -2,9 +2,7 @@
 
 #pragma once
 
-namespace nx {
-namespace network {
-namespace aio {
+namespace nx::network::aio {
 
 enum EventType
 {
@@ -25,6 +23,4 @@ enum EventType
 
 const char* toString(EventType eventType);
 
-} // namespace aio
-} // namespace network
-} // namespace nx
+} // namespace nx::network::aio

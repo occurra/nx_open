@@ -9,8 +9,7 @@
 
 #include "socket_global.h"
 
-namespace nx {
-namespace network {
+namespace nx::network {
 
 void QnStoppableAsync::pleaseStopSync()
 {
@@ -37,5 +36,4 @@ void QnStoppableAsync::pleaseStopSync(const nx::network::aio::AIOService* aioSer
     fut.wait();
 }
 
-} // namespace network
-} // namespace nx
+} // namespace nx::network

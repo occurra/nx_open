@@ -22,8 +22,7 @@
 #include "resolve/abstract_resolver.h"
 #include "socket_common.h"
 
-namespace nx {
-namespace network {
+namespace nx::network {
 
 class PredefinedHostResolver;
 
@@ -131,5 +130,4 @@ private:
     bool isExpired(const ResolveTask& task) const;
 };
 
-} // namespace network
-} // namespace nx
+} // namespace nx::network

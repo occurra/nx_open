@@ -9,10 +9,7 @@
 #include <nx/network/aio/basic_pollable.h>
 #include <nx/network/socket_global.h>
 
-namespace nx {
-namespace network {
-namespace aio {
-namespace test {
+namespace nx::network::aio::test {
 
 class TestPollable: public aio::BasicPollable
 {
@@ -199,7 +196,4 @@ TEST_F(BasicPollable, post_cancelled_by_pleaseStopSync_called_within_aio_thread)
     ASSERT_EQ(1, asyncCallsDone.load());
 }
 
-} // namespace test
-} // namespace aio
-} // namespace network
-} // namespace nx
+} // namespace nx::network::aio::test

@@ -10,8 +10,7 @@
 
 #include "abstract_resolver.h"
 
-namespace nx {
-namespace network {
+namespace nx::network {
 
 /**
  * Resolves name to a manually-added address entry(-ies).
@@ -57,5 +56,4 @@ private:
     std::map<std::string, std::deque<AddressEntry>> m_etcHosts;
 };
 
-} // namespace network
-} // namespace nx
+} // namespace nx::network

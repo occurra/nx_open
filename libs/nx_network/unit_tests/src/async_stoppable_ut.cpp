@@ -9,9 +9,7 @@
 #include <nx/utils/thread/mutex.h>
 #include <nx/utils/thread/wait_condition.h>
 
-namespace nx {
-namespace network {
-namespace test {
+namespace nx::network::test {
 
 struct StoppableTestClass: public QnStoppableAsync
 {
@@ -96,6 +94,4 @@ TEST(QnStoppableAsync, MultiManual)
     EXPECT_EQ(runningCount(), 0);
 }
 
-} // namespace test
-} // namespace network
-} // namespace nx
+} // namespace nx::network::test

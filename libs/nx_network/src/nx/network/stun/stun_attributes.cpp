@@ -8,10 +8,7 @@
 
 #include "stun_attributes.h"
 
-namespace nx {
-namespace network {
-namespace stun {
-namespace attrs {
+namespace nx::network::stun::attrs {
 
 //-------------------------------------------------------------------------------------------------
 // class AttributeFactory
@@ -375,7 +372,4 @@ RequestedTransport::RequestedTransport(Transport transport):
     setBuffer({value, kRequestedTransportValueSize});
 }
 
-} // namespace attrs
-} // namespace stun
-} // namespace network
-} // namespace nx
+} // namespace nx::network::stun::attrs

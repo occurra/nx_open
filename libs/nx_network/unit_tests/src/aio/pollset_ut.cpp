@@ -9,10 +9,7 @@
 #include "pollset_performance_tests.h"
 #include "pollset_test_common.h"
 
-namespace nx {
-namespace network {
-namespace aio {
-namespace test {
+namespace nx::network::aio::test {
 
 class PollSetHelper
 {
@@ -52,7 +49,4 @@ INSTANTIATE_TYPED_TEST_SUITE_P(PollSet, PollSetAcceptance, PollSetHelper);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(PollSet, PollSetPerformance, aio::PollSet);
 
-} // namespace test
-} // namespace aio
-} // namespace network
-} // namespace nx
+} // namespace nx::network::aio::test

@@ -8,9 +8,7 @@
 
 #include <nx/network/async_stoppable.h>
 
-namespace nx {
-namespace network {
-namespace server {
+namespace nx::network::server {
 
 /**
  * Dispatches STUN protocol messages to corresponding processor.
@@ -87,6 +85,4 @@ private:
     ProcessorDictionaryType m_processors;
 };
 
-} // namespace server
-} // namespace network
-} // namespace nx
+} // namespace nx::network::server

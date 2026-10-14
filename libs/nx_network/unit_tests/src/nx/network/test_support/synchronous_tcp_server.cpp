@@ -5,9 +5,7 @@
 #include <nx/network/system_socket.h>
 #include <nx/utils/random.h>
 
-namespace nx {
-namespace network {
-namespace test {
+namespace nx::network::test {
 
 SynchronousStreamSocketServer::SynchronousStreamSocketServer():
     SynchronousStreamSocketServer(std::make_unique<nx::network::TCPServerSocket>(AF_INET))
@@ -175,6 +173,4 @@ void SynchronousSpamServer::processDataReceived(
     }
 }
 
-} // namespace test
-} // namespace network
-} // namespace nx
+} // namespace nx::network::test
