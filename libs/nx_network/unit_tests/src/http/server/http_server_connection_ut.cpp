@@ -317,6 +317,7 @@ protected:
 
 private:
     nx::utils::SyncQueue<SystemError::ErrorCode> m_connectionClosedEvents;
+    std::vector<nx::network::server::CloseHandlerSubscription> m_closeSubscriptions;
     TestHttpServer m_httpServer;
     SocketAddress m_lastRequestOriginEndpoint;
     nx::utils::SyncQueue<LocalRequestContext> m_requestsReceived;
@@ -377,11 +378,11 @@ private:
     {
         recordRequest(requestContext);
 
-        requestContext.conn.lock()->registerCloseHandler(
+        m_closeSubscriptions.push_back(requestContext.conn.lock()->registerCloseHandler(
             [this](auto&&... args)
             {
                 saveConnectionClosedEvent(std::forward<decltype(args)>(args)...);
-            });
+            }));
 
         completionHandler(StatusCode::ok);
     }

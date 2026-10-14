@@ -212,7 +212,7 @@ private:
         m_requestsBeingProcessed;
     OnResponseSentHandler m_responseSentHandler;
     std::shared_ptr<MessageBodyWriter> m_currentRequestBodyWriter;
-    int m_closeHandlerSubscriptionId = -1;
+    nx::network::server::CloseHandlerSubscription m_closeHandlerSubscription;
     std::optional<SystemError::ErrorCode> m_markedForClosure;
     std::unique_ptr<aio::AsyncChannelBridge> m_bridge;
     nx::utils::InterruptionFlag m_destructionFlag;

@@ -268,6 +268,58 @@ protected:
 
     void enableDelayingHandshakes() { m_needToDelayHandshake = true; }
 
+    void givenLimitOnConnectionsBeingHandshaked(std::size_t limit)
+    {
+        m_acceptor->setMaxConnectionsBeingHandshakedCount(limit);
+    }
+
+    void givenShortHandshakeTimeout() { m_acceptor->setHandshakeTimeout(kShortHandshakeTimeout); }
+
+    void givenNoAcceptCallPending() { m_acceptor->cancelIOSync(); }
+
+    void whenEstablishSilentConnections(std::size_t count) { openSilentConnections(count); }
+
+    void whenSilentConnectionsAreClosed() { m_silentConnections.clear(); }
+
+    void thenConnectionsBeingHandshakedCountReaches(std::size_t expected)
+    {
+        const auto stopWaitingTime = std::chrono::steady_clock::now() + std::chrono::seconds(15);
+        while (acceptor().connectionsBeingHandshakedCount() != expected)
+        {
+            ASSERT_LT(std::chrono::steady_clock::now(), stopWaitingTime)
+                << acceptor().connectionsBeingHandshakedCount()
+                << " connections are performing the handshake, expected " << expected;
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }
+
+    void thenConnectionsBeingHandshakedCountStaysAt(std::size_t expected)
+    {
+        // The acceptor accepts up to the limit, then stops asking the delegate for more.
+        ASSERT_NO_FATAL_FAILURE(thenConnectionsBeingHandshakedCountReaches(expected));
+
+        // The rest stay in the listen queue. The handshake timeout is an hour here, so nothing is
+        // reaped meanwhile.
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        ASSERT_EQ(expected, acceptor().connectionsBeingHandshakedCount());
+    }
+
+    // The TCP connect succeeds whatever the acceptor does, so it is the handshake that waits.
+    void thenNewConnectionIsAccepted()
+    {
+        auto connection = std::make_unique<ssl::ClientStreamSocket>(
+            ssl::Context::instance(),
+            std::make_unique<TCPSocket>(AF_INET),
+            ssl::kAcceptAnyCertificateCallback);
+
+        ASSERT_TRUE(connection->connect(m_tcpServer->getLocalAddress(), kHandshakeWaitTimeout))
+            << SystemError::getLastOSErrorText();
+    }
+
+    static constexpr std::size_t kHandshakeLimit = 2;
+    static constexpr std::chrono::seconds kShortHandshakeTimeout{1};
+    static constexpr std::chrono::seconds kHandshakeWaitTimeout{15};
+
 private:
     struct AcceptResult
     {
@@ -380,6 +432,57 @@ TEST_F(CustomHandshakeConnectionAcceptor, silent_connections_do_not_block_active
     givenManySilentConnectionCountGreaterThanListenQueue();
     whenEstablishValidConnection();
     thenConnectionIsAccepted();
+}
+
+// Without the bound, connections whose handshake never progresses (e.g. a stuck AIO thread)
+// accumulate until the process runs out of file descriptors. See VMS-62752.
+TEST_F(CustomHandshakeConnectionAcceptor, connections_being_handshaked_are_bounded)
+{
+    givenLimitOnConnectionsBeingHandshaked(kHandshakeLimit);
+    whenEstablishSilentConnections(kHandshakeLimit * 5);
+    thenConnectionsBeingHandshakedCountStaysAt(kHandshakeLimit);
+}
+
+// The bound degrades the listener only while the slots are held. If accepting did not come back
+// the first burst of stuck handshakes would take the listener down for good.
+TEST_F(CustomHandshakeConnectionAcceptor, accepting_resumes_once_stuck_handshakes_time_out)
+{
+    givenShortHandshakeTimeout();
+    givenLimitOnConnectionsBeingHandshaked(kHandshakeLimit);
+
+    whenEstablishSilentConnections(kHandshakeLimit);
+    ASSERT_NO_FATAL_FAILURE(thenConnectionsBeingHandshakedCountReaches(kHandshakeLimit));
+
+    thenNewConnectionIsAccepted();
+}
+
+// A peer that closes mid-handshake frees its slot at once, not after the handshake timeout.
+TEST_F(CustomHandshakeConnectionAcceptor, closing_a_connection_ends_its_handshake)
+{
+    givenLimitOnConnectionsBeingHandshaked(kHandshakeLimit);
+
+    // Exactly the limit, so closing them leaves nothing in the listen queue to take their place.
+    whenEstablishSilentConnections(kHandshakeLimit);
+    ASSERT_NO_FATAL_FAILURE(thenConnectionsBeingHandshakedCountStaysAt(kHandshakeLimit));
+
+    whenSilentConnectionsAreClosed();
+    thenConnectionsBeingHandshakedCountReaches(0);
+}
+
+// A freed slot has to re-arm accepting even with no accept call to hand the connection to,
+// otherwise the acceptor stays suspended until the next one.
+TEST_F(CustomHandshakeConnectionAcceptor, accepting_resumes_with_no_accept_call_pending)
+{
+    givenNoAcceptCallPending();
+    givenLimitOnConnectionsBeingHandshaked(kHandshakeLimit);
+
+    whenEstablishSilentConnections(kHandshakeLimit - 1);
+    ASSERT_NO_FATAL_FAILURE(thenConnectionsBeingHandshakedCountReaches(kHandshakeLimit - 1));
+
+    // Takes the last slot and frees it again.
+    whenEstablishValidConnection();
+
+    thenNewConnectionIsAccepted();
 }
 
 TEST_F(

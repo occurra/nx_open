@@ -25,7 +25,7 @@ HttpClientMessageBodySource::HttpClientMessageBodySource(
         {
             onMessageEnd(std::forward<decltype(args)>(args)...);
         });
-    m_messagePipeline->registerCloseHandler(
+    m_closeSubscription = m_messagePipeline->registerCloseHandler(
         [this](auto reason, auto /*connectionDestroyed*/)
         {
             onConnectionClosed(reason);
@@ -75,6 +75,7 @@ void HttpClientMessageBodySource::stopWhileInAioThread()
 {
     base_type::stopWhileInAioThread();
 
+    m_closeSubscription.reset();
     m_messagePipeline.reset();
 }
 

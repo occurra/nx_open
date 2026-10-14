@@ -126,24 +126,12 @@ void BaseServerConnection::closeConnection(SystemError::ErrorCode closeReason)
         [this, closeReason]()
         {
             nx::utils::InterruptionFlag::Watcher watcher(&m_connectionFreedFlag);
-            triggerConnectionClosedEvent(closeReason);
+            m_closeHandlers.invokeAll(closeReason, &m_connectionFreedFlag);
             if (watcher.interrupted())
                 return;
 
             m_streamSocket.reset();
         });
-}
-
-int BaseServerConnection::registerCloseHandler(OnConnectionClosedHandler handler)
-{
-    auto id = ++m_lastConnectionClosedHandlerId;
-    m_connectionClosedHandlers.emplace(id, std::move(handler));
-    return id;
-}
-
-void BaseServerConnection::removeCloseHandler(int id)
-{
-    m_connectionClosedHandlers.erase(id);
 }
 
 bool BaseServerConnection::isSsl() const
@@ -196,7 +184,7 @@ std::size_t BaseServerConnection::totalBytesReceived() const
 void BaseServerConnection::stopWhileInAioThread()
 {
     nx::utils::InterruptionFlag::Watcher watcher(&m_connectionFreedFlag);
-    triggerConnectionClosedEvent(SystemError::noError);
+    m_closeHandlers.invokeAll(SystemError::noError, &m_connectionFreedFlag);
     if (watcher.interrupted())
         return;
     m_streamSocket.reset();
@@ -271,14 +259,6 @@ void BaseServerConnection::handleSocketError(SystemError::ErrorCode errorCode)
 {
     NX_ASSERT(errorCode != SystemError::noError);
     closeConnection(errorCode);
-}
-
-void BaseServerConnection::triggerConnectionClosedEvent(SystemError::ErrorCode closeReason)
-{
-    auto connectionClosedHandlers = std::exchange(m_connectionClosedHandlers, {});
-    nx::utils::InterruptionFlag::Watcher watcher(&m_connectionFreedFlag);
-    for (auto& [id, connectionCloseHandler]: connectionClosedHandlers)
-        connectionCloseHandler(closeReason, watcher.interrupted());
 }
 
 void BaseServerConnection::resetInactivityTimer()

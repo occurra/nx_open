@@ -736,7 +736,7 @@ std::unique_ptr<AbstractMsgBodySource> AsyncClient::takeResponseBodySource()
     }
 
     // Removing this from "connection closed" event receivers.
-    m_messagePipeline->removeCloseHandler(m_closeHandlerId);
+    m_closeSubscription.reset();
 
     return std::make_unique<HttpClientMessageBodySource>(
         *m_response.response,
@@ -761,9 +761,7 @@ quint64 AsyncClient::bytesRead() const
 void AsyncClient::stopWhileInAioThread()
 {
     m_socket.reset();
-    // Remove close handler before destroying pipeline to prevent callback on destroyed object.
-    if (m_messagePipeline)
-        m_messagePipeline->removeCloseHandler(m_closeHandlerId);
+    m_closeSubscription.reset();
     m_messagePipeline.reset();
     m_requestBody.reset();
 
@@ -851,9 +849,7 @@ void AsyncClient::reportConnectionFailure(SystemError::ErrorCode err)
         return;
 
     m_socket.reset();
-    // Remove close handler before destroying pipeline to prevent callback on destroyed object.
-    if (m_messagePipeline)
-        m_messagePipeline->removeCloseHandler(m_closeHandlerId);
+    m_closeSubscription.reset();
     m_messagePipeline.reset(); //< Closing failed connection so that it is not reused.
 }
 
@@ -880,10 +876,7 @@ void AsyncClient::onRequestSent(SystemError::ErrorCode errorCode)
             m_state = State::sFailed;
             if (emitDone() != Result::proceed)
                 return;
-            // Remove close handler before destroying pipeline to prevent callback on destroyed
-            // object.
-            if (m_messagePipeline)
-                m_messagePipeline->removeCloseHandler(m_closeHandlerId);
+            m_closeSubscription.reset();
             m_messagePipeline.reset();
         }
         return;
@@ -928,7 +921,7 @@ void AsyncClient::initializeMessagePipeline()
 {
     m_messagePipeline = std::make_unique<AsyncMessagePipeline>(std::exchange(m_socket, nullptr));
 
-    m_closeHandlerId = m_messagePipeline->registerCloseHandler(
+    m_closeSubscription = m_messagePipeline->registerCloseHandler(
         [this](auto reason, auto /*connectionDestroyed*/)
         {
             onConnectionClosed(reason);
@@ -1203,8 +1196,7 @@ void AsyncClient::initiateHttpMessageDelivery()
                     break;
 
                 case ConnectionReusePolicy::noReuse:
-                    if (m_messagePipeline)
-                        m_messagePipeline->removeCloseHandler(m_closeHandlerId);
+                    m_closeSubscription.reset();
                     m_messagePipeline.reset();
                     initiateTcpConnection();
                     break;
@@ -1677,8 +1669,7 @@ bool AsyncClient::reconnectIfAppropriate()
     if ((m_state == State::sSendingRequest || m_state == State::sReceivingResponse)
         && m_messageReceivedThroughTheCurrentConnectionCount > 0)
     {
-        if (m_messagePipeline)
-            m_messagePipeline->removeCloseHandler(m_closeHandlerId);
+        m_closeSubscription.reset();
         m_messagePipeline.reset();
         initiateHttpMessageDelivery();
         return true;

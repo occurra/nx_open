@@ -1,5 +1,6 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
+#include <atomic>
 #include <future>
 #include <optional>
 
@@ -9,10 +10,7 @@
 #include <nx/network/system_socket.h>
 #include <nx/utils/thread/sync_queue.h>
 
-namespace nx {
-namespace network {
-namespace server {
-namespace test {
+namespace nx::network::server::test {
 
 namespace {
 
@@ -225,15 +223,22 @@ protected:
         m_connection->setAuxiliaryMessageHandler(std::move(handler));
     }
 
-    void registerCloseHandler(BaseServerConnection::OnConnectionClosedHandler handler)
+    [[nodiscard]] CloseHandlerSubscription registerCloseHandler(
+        BaseServerConnection::OnConnectionClosedHandler handler)
     {
-        m_connection->registerCloseHandler(std::move(handler));
+        return m_connection->registerCloseHandler(std::move(handler));
+    }
+
+    void keepCloseHandler(CloseHandlerSubscription subscription)
+    {
+        m_closeSubscriptions.push_back(std::move(subscription));
     }
 
     void resetConnection() { m_connection.reset(); }
 
 private:
     std::unique_ptr<TestConnection> m_connection;
+    std::vector<CloseHandlerSubscription> m_closeSubscriptions;
     bool m_invokingConnectionMethod = false;
     std::optional<bool> m_connectionClosedReportedDirectly;
     nx::utils::SyncMultiQueue<SystemError::ErrorCode, bool> m_connectionCloseEvents;
@@ -257,11 +262,11 @@ private:
     void initializeConnection(std::unique_ptr<AbstractStreamSocket> socket)
     {
         m_connection = std::make_unique<TestConnection>(std::move(socket), &m_receivedDataQueue);
-        m_connection->registerCloseHandler(
+        keepCloseHandler(m_connection->registerCloseHandler(
             [this](auto... args)
             {
                 saveConnectionClosedEvent(args...);
-            });
+            }));
     }
 
     void saveConnectionClosedEvent(SystemError::ErrorCode closeReason, bool connectionDestroyed)
@@ -354,23 +359,73 @@ TEST_F(
     std::promise<bool> destroyed;
     givenStartedConnection();
 
-    registerCloseHandler(
+    keepCloseHandler(registerCloseHandler(
         [this](auto... /*args*/)
         {
             resetConnection();
-        });
-    registerCloseHandler(
+        }));
+    keepCloseHandler(registerCloseHandler(
         [&destroyed](auto /*closeReason*/, bool connectionDestroyed)
         {
             destroyed.set_value(connectionDestroyed);
-        });
+        }));
 
     whenCloseConnection();
 
     ASSERT_TRUE(destroyed.get_future().get());
 }
 
-} // namespace test
-} // namespace server
-} // namespace network
-} // namespace nx
+TEST_F(ConnectionServerBaseServerConnection, close_handler_cancelled_by_another_one_is_not_invoked)
+{
+    std::promise<void> lastHandlerInvoked;
+    std::atomic<bool> cancelledHandlerInvoked = false;
+    CloseHandlerSubscription subscriptionToCancel;
+
+    givenStartedConnection();
+
+    // The handlers are invoked in the registration order.
+    keepCloseHandler(registerCloseHandler(
+        [&subscriptionToCancel](auto... /*args*/)
+        {
+            subscriptionToCancel.reset();
+        }));
+    subscriptionToCancel = registerCloseHandler(
+        [&cancelledHandlerInvoked](auto... /*args*/)
+        {
+            cancelledHandlerInvoked = true;
+        });
+    keepCloseHandler(registerCloseHandler(
+        [&lastHandlerInvoked](auto... /*args*/)
+        {
+            lastHandlerInvoked.set_value();
+        }));
+
+    whenCloseConnection();
+
+    lastHandlerInvoked.get_future().wait();
+    ASSERT_FALSE(cancelledHandlerInvoked);
+}
+
+TEST_F(
+    ConnectionServerBaseServerConnection,
+    close_handler_is_not_invoked_after_its_subscription_is_gone)
+{
+    std::atomic<bool> handlerInvoked = false;
+
+    givenStartedConnection();
+
+    {
+        const auto subscription = registerCloseHandler(
+            [&handlerInvoked](auto... /*args*/)
+            {
+                handlerInvoked = true;
+            });
+    }
+
+    whenCloseConnection();
+    andConnectionCloseEventIsReported();
+
+    ASSERT_FALSE(handlerInvoked);
+}
+
+} // namespace nx::network::server::test

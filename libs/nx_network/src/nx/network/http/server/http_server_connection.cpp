@@ -31,7 +31,7 @@ HttpServerConnection::HttpServerConnection(
     SocketGlobals::instance().allocationAnalyzer().recordObjectCreation(this);
     ++SocketGlobals::instance().debugCounters().httpServerConnectionCount;
 
-    m_closeHandlerSubscriptionId = registerCloseHandler(
+    m_closeHandlerSubscription = registerCloseHandler(
         [this](SystemError::ErrorCode reason, auto /*connectionDestroyed*/)
         {
             cleanUpOnConnectionClosure(reason);
@@ -40,8 +40,6 @@ HttpServerConnection::HttpServerConnection(
 
 HttpServerConnection::~HttpServerConnection()
 {
-    removeCloseHandler(m_closeHandlerSubscriptionId);
-
     --SocketGlobals::instance().debugCounters().httpServerConnectionCount;
     SocketGlobals::instance().allocationAnalyzer().recordObjectDestruction(this);
 

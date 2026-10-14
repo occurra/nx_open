@@ -52,7 +52,7 @@ public:
 
         m_parser.setMessage(&m_message);
 
-        base_type::registerCloseHandler(
+        m_closeSubscription = base_type::registerCloseHandler(
             [this](auto errorCode, auto /*connectionDestroyed*/)
             {
                 onConnectionClosed(errorCode);
@@ -247,6 +247,7 @@ private:
     nx::Buffer m_writeBuffer;
     std::deque<SendTask> m_sendQueue;
     nx::utils::InterruptionFlag m_connectionFreedFlag;
+    CloseHandlerSubscription m_closeSubscription;
     bool m_messageReported = false;
     nx::ConstBufferRefType m_dataToParse;
     std::chrono::steady_clock::time_point m_creationTimestamp;

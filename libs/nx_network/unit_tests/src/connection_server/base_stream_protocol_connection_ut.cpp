@@ -160,7 +160,7 @@ public:
             {
                 saveSomeBody(std::move(args)...);
             });
-        m_connection->registerCloseHandler(
+        m_closeSubscription = m_connection->registerCloseHandler(
             [this](auto&&... args)
             {
                 saveConnectionClosedEvent(std::move(args)...);
@@ -328,6 +328,7 @@ private:
     nx::utils::bstream::Pipe m_input;
     aio::test::AsyncChannel m_asyncChannel;
     std::unique_ptr<TestHttpConnection> m_connection;
+    nx::network::server::CloseHandlerSubscription m_closeSubscription;
     nx::utils::SyncQueue<std::unique_ptr<nx::network::http::Message>> m_receivedMessageQueue;
     nx::utils::bstream::test::NotifyingOutput m_receivedMsgBody;
     nx::Buffer m_expectedBody;
