@@ -12,8 +12,6 @@
 #include <QtCore/QString>
 
 #include <cpptrace/cpptrace.hpp>
-#include <nx/branding.h>
-#include <nx/build_info.h>
 #include <nx/kit/ini_config.h>
 #include <nx/utils/log/log.h>
 #include <nx/utils/thread/mutex.h>

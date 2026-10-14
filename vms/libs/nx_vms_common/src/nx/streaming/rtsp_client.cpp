@@ -846,10 +846,10 @@ void QnRtspClient::addCommonHeaders(nx::network::http::HttpHeaders& headers)
 }
 
 void QnRtspClient::addAdditionalHeaders(
-    const QString& requestName,
+    std::string_view requestName,
     nx::network::http::HttpHeaders* outHeaders)
 {
-    for (const auto& header: m_additionalHeaders[requestName])
+    for (const auto& header: m_additionalHeaders[std::string(requestName)])
         nx::network::http::insertOrReplaceHeader(outHeaders, header);
 }
 
@@ -2086,10 +2086,12 @@ void QnRtspClient::setDateTimeFormat(const DateTimeFormat& format)
 }
 
 void QnRtspClient::addRequestHeader(
-    const QString& requestName,
+    std::string_view requestName,
     const nx::network::http::HttpHeader& header)
 {
-    nx::network::http::insertOrReplaceHeader(&m_additionalHeaders[requestName], header);
+    nx::network::http::insertOrReplaceHeader(
+        &m_additionalHeaders[std::string(requestName)],
+        header);
 }
 
 QElapsedTimer QnRtspClient::lastReceivedDataTimer() const

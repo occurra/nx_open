@@ -331,7 +331,9 @@ public:
 
     void setDateTimeFormat(const DateTimeFormat& format);
     void setScaleHeaderEnabled(bool value);
-    void addRequestHeader(const QString& requestName, const nx::network::http::HttpHeader& header);
+    void addRequestHeader(
+        std::string_view requestName,
+        const nx::network::http::HttpHeader& header);
 
     bool processTcpRtcpData(const quint8* data, int size);
 
@@ -384,7 +386,7 @@ private:
     bool sendRequestInternal(nx::network::http::Request&& request);
     void addCommonHeaders(nx::network::http::HttpHeaders& headers);
     void addAdditionalHeaders(
-        const QString& requestName,
+        std::string_view requestName,
         nx::network::http::HttpHeaders* outHeaders);
     QString parseContentBase(const QString& buffer);
     CameraDiagnostics::Result parseErrorResponse(const nx::network::rtsp::RtspResponse& response);
@@ -452,7 +454,7 @@ private:
     nx::String m_serverInfo;
     DateTimeFormat m_dateTimeFormat = DateTimeFormat::Numeric;
     bool m_scaleHeaderEnabled = true;
-    using RequestName = QString;
+    using RequestName = std::string;
     QMap<RequestName, nx::network::http::HttpHeaders> m_additionalHeaders;
     QElapsedTimer m_lastReceivedDataTimer;
     std::set<QString> m_additionalSupportedCodecs;
