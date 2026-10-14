@@ -14,6 +14,13 @@ namespace nx::vms::api { struct ServerTimePeriod; }
 
 struct NX_VMS_COMMON_API QnTimePeriod
 {
+    Q_GADGET
+
+    Q_PROPERTY(qint64 startTimeMs MEMBER startTimeMs)
+    Q_PROPERTY(qint64 endTimeMs READ endTimeMs WRITE setEndTimeMs)
+    Q_PROPERTY(qint64 durationMs MEMBER durationMs)
+
+public:
     /**
      * Infinite duration value.
      */
@@ -83,9 +90,9 @@ struct NX_VMS_COMMON_API QnTimePeriod
 
     bool isContainedIn(const QnTimePeriod& other) const;
 
-    bool contains(qint64 timeMs) const;
+    Q_INVOKABLE bool contains(qint64 timeMs) const;
     bool contains(std::chrono::milliseconds time) const { return contains(time.count()); }
-    bool contains(const QnTimePeriod& timePeriod) const;
+    Q_INVOKABLE bool contains(const QnTimePeriod& timePeriod) const;
 
     /**
      * Expand period so it will contain target period.
@@ -94,7 +101,7 @@ struct NX_VMS_COMMON_API QnTimePeriod
     void addPeriod(const QnTimePeriod& timePeriod);
 
     QnTimePeriod intersected(const QnTimePeriod& other) const;
-    bool intersects(const QnTimePeriod& other) const;
+    Q_INVOKABLE bool intersects(const QnTimePeriod& other) const;
     void clear();
 
     /** Time value bound by this period. */
