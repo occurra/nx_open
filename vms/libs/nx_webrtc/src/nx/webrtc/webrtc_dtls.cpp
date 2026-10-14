@@ -3,6 +3,7 @@
 #include "webrtc_dtls.h"
 
 #include <algorithm>
+#include <cstdint>
 
 #include <openssl/err.h>
 
@@ -322,17 +323,17 @@ Dtls::Status Dtls::handlePacket(const uint8_t* data, int size, AbstractDtlsDeleg
         return Status::error;
     }
     // Order is client key, server key, client salt, and server salt
-    memcpy(m_encryptionData.clientKeyAndSalt, material, rtsp::kSrtpAes128KeyLen);
+    memcpy(m_encryptionData.client.keyAndSalt.data(), material, rtsp::kSrtpAes128KeyLen);
     memcpy(
-        m_encryptionData.serverKeyAndSalt,
+        m_encryptionData.server.keyAndSalt.data(),
         material + rtsp::kSrtpAes128KeyLen,
         rtsp::kSrtpAes128KeyLen);
     memcpy(
-        m_encryptionData.clientKeyAndSalt + rtsp::kSrtpAes128KeyLen,
+        m_encryptionData.client.keyAndSalt.data() + rtsp::kSrtpAes128KeyLen,
         material + rtsp::kSrtpAes128KeyLen * 2,
         rtsp::kSrtpSaltLen);
     memcpy(
-        m_encryptionData.serverKeyAndSalt + rtsp::kSrtpAes128KeyLen,
+        m_encryptionData.server.keyAndSalt.data() + rtsp::kSrtpAes128KeyLen,
         material + rtsp::kSrtpAes128KeyLen * 2 + rtsp::kSrtpSaltLen,
         rtsp::kSrtpSaltLen);
 

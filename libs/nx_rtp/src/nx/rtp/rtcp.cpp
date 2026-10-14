@@ -118,12 +118,35 @@ int buildClientRtcpReport(
     return size + size2;
 }
 
+int buildClientRtcpReport(
+    uint8_t* dstBuffer,
+    int bufferLen,
+    uint32_t ssrc,
+    const std::optional<std::string>& cname)
+{
+    const std::string esDescr = cname.value_or("nx");
+
+    NX_ASSERT((size_t) bufferLen >= 20 + esDescr.size());
+
+    const int size = buildReceiverReport(dstBuffer, bufferLen, ssrc);
+    const int size2 =
+        buildSourceDescriptionReport(dstBuffer + size, bufferLen - size, ssrc, cname);
+    return size + size2;
+}
+
+uint64_t unixTimestampToNtpTimestamp(std::chrono::microseconds timestamp)
+{
+    const auto fraction =
+        makeFraction(timestamp.count() + kNtpEpochTimeDiff.count() * 1'000'000, 1'000'000);
+    return (uint64_t(fraction.first) << 32) | fraction.second;
+}
+
 int RtcpSenderReport::write(uint8_t* data, int size) const
 {
     try
     {
-        auto fraction =
-            makeFraction(ntpTimestamp + kNtpEpochTimeDiff.count() * 1'000'000, 1'000'000);
+        const uint64_t timestamp =
+            unixTimestampToNtpTimestamp(std::chrono::microseconds(ntpTimestamp));
 
         nx::utils::BitStreamWriter bitstream(data, data + size);
         bitstream.putBits(2, kRtpVersion);
@@ -131,8 +154,8 @@ int RtcpSenderReport::write(uint8_t* data, int size) const
         bitstream.putBits(8, kRtcpSenderReport);
         bitstream.putBits(16, 6); //< length in words - 1
         bitstream.putBits(32, ssrc);
-        bitstream.putBits(32, fraction.first);
-        bitstream.putBits(32, fraction.second);
+        bitstream.putBits(32, uint32_t(timestamp >> 32));
+        bitstream.putBits(32, uint32_t(timestamp));
         bitstream.putBits(32, rtpTimestamp);
         bitstream.putBits(32, packetCount);
         bitstream.putBits(32, octetCount);

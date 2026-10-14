@@ -120,6 +120,10 @@ Sdp::Media parseMedia(QStringList& lines, const Sdp::RtpMap& preferredMap)
     QStringList trackParams = line.mid(2).split(' ');
     media.mediaType = mediaTypeFromString(trackParams[0]);
 
+    // SDP media description format: m=<media> <port> <proto> <fmt> ...
+    if (trackParams.size() >= 3)
+        media.protocol = trackParams[2].toStdString();
+
     if (trackParams.size() >= 4)
         media.rtpmap.codecName = findCodecById(trackParams[3].toInt());
 
@@ -130,14 +134,13 @@ Sdp::Media parseMedia(QStringList& lines, const Sdp::RtpMap& preferredMap)
         media.payloadType = trackParams[3].toInt();
 
     lines.pop_front();
-    for (; !lines.empty() && !lines.front().startsWith("m=", Qt::CaseInsensitive);
-         lines.pop_front())
+    for (; !lines.empty() && !lines.front().startsWith("m="); lines.pop_front())
     {
         line = lines.front().trimmed();
-        if (line.startsWith("a=", Qt::CaseInsensitive))
+        if (line.startsWith("a="))
             media.sdpAttributes << line; // save sdp for codec parser
 
-        if (line.startsWith("a=rtpmap", Qt::CaseInsensitive))
+        if (line.startsWith("a=rtpmap"))
         {
             int payloadType = 0;
             Sdp::RtpMap rtpmap;
@@ -152,26 +155,26 @@ Sdp::Media parseMedia(QStringList& lines, const Sdp::RtpMap& preferredMap)
                     rtpmap.codecName = findCodecById(payloadType);
             }
         }
-        else if (line.startsWith("a=fmtp", Qt::CaseInsensitive))
+        else if (line.startsWith("a=fmtp"))
         {
             int payloadType = 0;
             Sdp::Fmtp fmtp;
             if (parseFmtp(line, &fmtp, &payloadType) && payloadType == media.payloadType)
                 media.fmtp = fmtp;
         }
-        else if (line.startsWith("a=control:", Qt::CaseInsensitive))
+        else if (line.startsWith("a=control:"))
         {
             media.control = line.mid(QString("a=control:").length());
         }
-        else if (line.startsWith("a=sendonly", Qt::CaseInsensitive))
+        else if (line.startsWith("a=sendonly"))
         {
             media.sendOnly = true;
         }
-        else if (line.startsWith("c=", Qt::CaseInsensitive))
+        else if (line.startsWith("c="))
         {
             media.connectionAddress = parseConnectionAddress(line);
         }
-        else if (line.startsWith("a=ssrc:", Qt::CaseInsensitive))
+        else if (line.startsWith("a=ssrc:"))
         {
             media.ssrc = parseSsrc(line);
         }
@@ -182,23 +185,30 @@ Sdp::Media parseMedia(QStringList& lines, const Sdp::RtpMap& preferredMap)
 void Sdp::parse(const QString& sdpData)
 {
     controlUrl.clear();
+    range.clear();
+    sdpAttributes.clear();
     media.clear();
     QHostAddress sessionConnectionAddress;
     QStringList lines = sdpData.split('\n');
     while (!lines.isEmpty())
     {
         QString line = lines.front().trimmed();
-        if (line.startsWith("m=", Qt::CaseInsensitive))
+        if (line.startsWith("m="))
         {
             media.push_back(parseMedia(lines, preferredMap));
         }
         else
         {
             const static QString kControlUrlPrefix = "a=control:";
-            if (line.startsWith("c=", Qt::CaseInsensitive))
+            const static QString kRangePrefix = "a=range:";
+            if (line.startsWith("c="))
                 sessionConnectionAddress = parseConnectionAddress(line);
-            else if (line.startsWith(kControlUrlPrefix, Qt::CaseInsensitive))
+            else if (line.startsWith(kControlUrlPrefix))
                 controlUrl = line.mid(kControlUrlPrefix.length());
+            else if (line.startsWith(kRangePrefix))
+                range = line.mid(kRangePrefix.length()).toStdString();
+            if (line.startsWith("a="))
+                sdpAttributes.push_back(line.toStdString());
             lines.pop_front();
         }
     }
@@ -227,15 +237,17 @@ QString Sdp::Media::toString() const
 {
     return "{serverPort: " + QString::number(serverPort) + "; payloadType: "
         + QString::number(payloadType) + "; mediaType: " + nx::rtp::toString(mediaType)
-        + "; control: " + control + "; sendOnly: " + QString::number(sendOnly)
-        + "; ssrc: " + QString::number(ssrc) + "; rtpmap: " + rtpmap.toString()
-        + "; fmtp: " + fmtp.toString() + "; sdpAttributes: [" + sdpAttributes.join(", ") + "]"
-        + "; connectionAddress: " + connectionAddress.toString() + "}";
+        + "; protocol: " + QString::fromStdString(protocol) + "; control: " + control
+        + "; sendOnly: " + QString::number(sendOnly) + "; ssrc: " + QString::number(ssrc)
+        + "; rtpmap: " + rtpmap.toString() + "; fmtp: " + fmtp.toString() + "; sdpAttributes: ["
+        + sdpAttributes.join(", ") + "]" + "; connectionAddress: " + connectionAddress.toString()
+        + "}";
 }
 
 QString Sdp::toString() const
 {
-    return nx::format("{controlUrl: %1; media: [%2]").args(controlUrl, containerString(media));
+    return nx::format("{controlUrl: %1; range: %2; media: [%3]")
+        .args(controlUrl, QString::fromStdString(range), containerString(media));
 }
 
 } // namespace nx::rtp
