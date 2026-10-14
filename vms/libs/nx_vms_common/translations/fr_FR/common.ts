@@ -934,6 +934,13 @@
     </message>
   </context>
   <context>
+    <name>QnOnlineServerPolicy</name>
+    <message>
+      <source>Online servers</source>
+      <translation>Serveurs en ligne</translation>
+    </message>
+  </context>
+  <context>
     <name>QnPoeOverBudgetPolicy</name>
     <message>
       <source>Servers that support PoE monitoring</source>
@@ -1421,6 +1428,10 @@
     <message>
       <source>Live view</source>
       <translation>Vue en direct</translation>
+    </message>
+    <message>
+      <source>Generic</source>
+      <translation>Générique</translation>
     </message>
   </context>
   <context>
@@ -1956,10 +1967,6 @@
       <translation>En-tête HTTP : Serveur, variables supportées : $vmsName, $vmsVersion, $company, $compatibility.</translation>
     </message>
     <message>
-      <source>HTTP header: Origin.</source>
-      <translation>En-tête HTTP: Origine.</translation>
-    </message>
-    <message>
       <source>HTTP header: X-Frame-Options.</source>
       <translation>En-tête HTTP : X-Frame-Options.</translation>
     </message>
@@ -2009,11 +2016,23 @@
     </message>
     <message>
       <source>Socket sending timeout when Server streams media data (Seconds).</source>
-      <translation type="unfinished">Socket sending timeout when Server streams media data (Seconds).</translation>
+      <translation>Délai d'expiration de l'envoi du socket lors de la diffusion de données multimédias par le serveur (secondes).</translation>
     </message>
     <message>
       <source>Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</source>
       <translation type="unfinished">Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Origin.</source>
+      <translation>En-tête HTTP: Access-Control-Allow-Origin.</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Credentials.</source>
+      <translation>En-tête HTTP: Access-Control-Allow-Credentials.</translation>
+    </message>
+    <message>
+      <source>JSON RPC subscription update interval (milliseconds, 0 = disabled).</source>
+      <translation type="unfinished">JSON RPC subscription update interval (milliseconds, 0 = disabled).</translation>
     </message>
   </context>
 </TS>

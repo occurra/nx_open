@@ -893,6 +893,13 @@
     </message>
   </context>
   <context>
+    <name>QnOnlineServerPolicy</name>
+    <message>
+      <source>Online servers</source>
+      <translation type="unfinished">Online servers</translation>
+    </message>
+  </context>
+  <context>
     <name>QnPoeOverBudgetPolicy</name>
     <message>
       <source>Servers that support PoE monitoring</source>
@@ -1354,6 +1361,10 @@
     <message>
       <source>Live view</source>
       <translation>실시간 보기</translation>
+    </message>
+    <message>
+      <source>Generic</source>
+      <translation>일반</translation>
     </message>
   </context>
   <context>
@@ -1886,10 +1897,6 @@
       <translation>HTTP 헤더: 서버, 지원 변수: $vmsName, $vmsVersion, $company, $compatibility.</translation>
     </message>
     <message>
-      <source>HTTP header: Origin.</source>
-      <translation>HTTP 헤더: 출처.</translation>
-    </message>
-    <message>
       <source>HTTP header: X-Frame-Options.</source>
       <translation>HTTP 헤더: X-Frame-Options.</translation>
     </message>
@@ -1944,6 +1951,18 @@
     <message>
       <source>Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</source>
       <translation type="unfinished">Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Origin.</source>
+      <translation type="unfinished">HTTP header: Access-Control-Allow-Origin.</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Credentials.</source>
+      <translation type="unfinished">HTTP header: Access-Control-Allow-Credentials.</translation>
+    </message>
+    <message>
+      <source>JSON RPC subscription update interval (milliseconds, 0 = disabled).</source>
+      <translation type="unfinished">JSON RPC subscription update interval (milliseconds, 0 = disabled).</translation>
     </message>
   </context>
 </TS>

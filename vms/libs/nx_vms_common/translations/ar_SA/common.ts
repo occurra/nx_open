@@ -5,23 +5,23 @@
     <name>AccessRightHelper</name>
     <message>
       <source>View Live</source>
-      <translation type="unfinished">View Live</translation>
+      <translation>عرض مباشر</translation>
     </message>
     <message>
       <source>Play Audio</source>
-      <translation type="unfinished">Play Audio</translation>
+      <translation>تشغيل الصوت</translation>
     </message>
     <message>
       <source>View Archive</source>
-      <translation type="unfinished">View Archive</translation>
+      <translation>عرض الأرشيف</translation>
     </message>
     <message>
       <source>Export Archive</source>
-      <translation type="unfinished">Export Archive</translation>
+      <translation>تصدير الأرشيف</translation>
     </message>
     <message>
       <source>View Bookmarks</source>
-      <translation type="unfinished">View Bookmarks</translation>
+      <translation>عرض الإشارات المرجعية</translation>
     </message>
     <message>
       <source>Manage Bookmarks</source>
@@ -33,7 +33,7 @@
     </message>
     <message>
       <source>Edit Settings</source>
-      <translation type="unfinished">Edit Settings</translation>
+      <translation>تعديل الإعدادات</translation>
     </message>
   </context>
   <context>
@@ -55,19 +55,19 @@
     <name>BookmarkFacadeStrings</name>
     <message>
       <source>Removed camera</source>
-      <translation type="unfinished">Removed camera</translation>
+      <translation>تمت إزالة الكاميرا</translation>
     </message>
     <message>
       <source>Site Event</source>
       <comment>Shows that the bookmark was created by a site event</comment>
-      <translation type="unfinished">Site Event</translation>
+      <translation>حدث الموقع</translation>
     </message>
   </context>
   <context>
     <name>CustomerSupport</name>
     <message>
       <source>your Regional / License support</source>
-      <translation type="unfinished">your Regional / License support</translation>
+      <translation>الدعم الإقليمي / دعم الترخيص</translation>
     </message>
   </context>
   <context>
@@ -179,52 +179,52 @@
     <name>PredefinedUserGroups</name>
     <message>
       <source>Administrators</source>
-      <translation type="unfinished">Administrators</translation>
+      <translation>المسؤولون</translation>
     </message>
     <message>
       <source>Power Users</source>
-      <translation type="unfinished">Power Users</translation>
+      <translation>المستخدمون المتقدمون</translation>
     </message>
     <message>
       <source>Advanced Viewers</source>
-      <translation type="unfinished">Advanced Viewers</translation>
+      <translation>المشاهدون المتقدمون</translation>
     </message>
     <message>
       <source>Viewers</source>
-      <translation type="unfinished">Viewers</translation>
+      <translation>المشاهدون</translation>
     </message>
     <message>
       <source>Live Viewers</source>
-      <translation type="unfinished">Live Viewers</translation>
+      <translation>مشاهدون البث المباشر</translation>
     </message>
     <message>
       <source>Members of this group can view live videos, I/O modules and web pages.</source>
-      <translation type="unfinished">Members of this group can view live videos, I/O modules and web pages.</translation>
+      <translation>يمكن لأعضاء هذه المجموعة مشاهدة مقاطع الفيديو المباشرة ووحدات الإدخال/الإخراج وصفحات الويب.</translation>
     </message>
     <message>
       <source>Members of this group can, in addition to the permissions granted by the Viewers group, see and activate PTZ positions and PTZ tours, use 2-way audio, operate I/O module buttons, create and edit bookmarks, and view the Event Log.</source>
-      <translation type="unfinished">Members of this group can, in addition to the permissions granted by the Viewers group, see and activate PTZ positions and PTZ tours, use 2-way audio, operate I/O module buttons, create and edit bookmarks, and view the Event Log.</translation>
+      <translation>بالإضافة إلى الأذونات الممنوحة من قبل مجموعة المشاهدين، يمكن لأعضاء هذه المجموعة رؤية وتفعيل مواقع الكاميرات المتحركة وجولاتها، واستخدام الصوت ثنائي الاتجاه 2، وتشغيل أزرار وحدة الإدخال/الإخراج، وإنشاء وتحرير الإشارات المرجعية، وعرض سجل الأحداث.</translation>
     </message>
     <message>
       <source>Members of this group can, in addition to the permissions granted by the Live Viewers group, view and export archive and Bookmarks.</source>
-      <translation type="unfinished">Members of this group can, in addition to the permissions granted by the Live Viewers group, view and export archive and Bookmarks.</translation>
+      <translation>يمكن لأعضاء هذه المجموعة، بالإضافة إلى الأذونات الممنوحة من قبل مجموعة مشاهدين البث المباشر، عرض وتصدير الأرشيف والإشارات المرجعية.</translation>
     </message>
     <message>
       <source>Site Health Viewers</source>
-      <translation type="unfinished">Site Health Viewers</translation>
+      <translation>مشاهدي سلامة الموقع</translation>
     </message>
     <message>
       <source>Members of this group have unlimited Site privileges. Administrators can create and modify Power Users, merge Sites and connect or disconnect Site to %1.</source>
       <comment>%1 is the cloud name (like Nx Cloud)</comment>
-      <translation type="unfinished">Members of this group have unlimited Site privileges. Administrators can create and modify Power Users, merge Sites and connect or disconnect Site to %1.</translation>
+      <translation>يتمتع أعضاء هذه المجموعة بصلاحيات غير محدودة على الموقع. يمكن للمسؤولين إنشاء وتعديل المستخدمين المتقدمون، ودمج المواقع، وربط أو فصل الموقع عن .</translation>
     </message>
     <message>
       <source>Members of this group can, in addition to the permissions granted by the Advanced Viewers group, control most of the Site configuration, but are not allowed to change any Administrator related settings, like delete or change their own groups and permissions, and cannot create or edit other Power Users.</source>
-      <translation type="unfinished">Members of this group can, in addition to the permissions granted by the Advanced Viewers group, control most of the Site configuration, but are not allowed to change any Administrator related settings, like delete or change their own groups and permissions, and cannot create or edit other Power Users.</translation>
+      <translation>يمكن لأعضاء هذه المجموعة، بالإضافة إلى الأذونات الممنوحة من قبل مجموعة المشاهدين المتقدمين، التحكم في معظم إعدادت الموقع، ولكن لا يُسمح لهم بتغيير أي إعدادات متعلقة بالمسؤول، مثل حذف أو تغيير مجموعاتهم وأذوناتهم الخاصة، ولا يمكنهم إنشاء أو تعديل مستخدمين متقدمون آخرين.</translation>
     </message>
     <message>
       <source>Members of this group can view Site Health Monitoring information and server processor load in real-time (Server Monitoring).</source>
-      <translation type="unfinished">Members of this group can view Site Health Monitoring information and server processor load in real-time (Server Monitoring).</translation>
+      <translation>يمكن لأعضاء هذه المجموعة عرض معلومات مراقبة سلامة الموقع وحمل معالج الخادم في الوقت الفعلي (مراقبة الخادم).</translation>
     </message>
   </context>
   <context>
@@ -290,14 +290,14 @@
     <name>QnCameraAnalyticsEventsPolicy</name>
     <message>
       <source>Analytics events are not available for %1</source>
-      <translation type="unfinished">Analytics events are not available for %1</translation>
+      <translation>أحداث التحليلات غير متاحة لـ %1</translation>
     </message>
   </context>
   <context>
     <name>QnCameraAnalyticsObjectsPolicy</name>
     <message>
       <source>Analytics objects are not available for %1</source>
-      <translation type="unfinished">Analytics objects are not available for %1</translation>
+      <translation>كائنات التحليلات غير متاحة لـ %1</translation>
     </message>
   </context>
   <context>
@@ -335,11 +335,11 @@
     </message>
     <message>
       <source>Media stream is opened but no media data was received.</source>
-      <translation type="unfinished">Media stream is opened but no media data was received.</translation>
+      <translation>تم فتح بث الوسائط ولكن لم يتم استلام أي بيانات وسائط.</translation>
     </message>
     <message>
       <source>Unknown error. Please contact support.</source>
-      <translation type="unfinished">Unknown error. Please contact support.</translation>
+      <translation>خطأ غير معروف. يرجى التواصل مع الدعم</translation>
     </message>
     <message>
       <source>(unknown)</source>
@@ -347,75 +347,75 @@
     </message>
     <message>
       <source>Server %1 is not available.</source>
-      <translation type="unfinished">Server %1 is not available.</translation>
+      <translation>الخادم %1 غير متاح.</translation>
     </message>
     <message>
       <source>Check that Server is up and running.</source>
-      <translation type="unfinished">Check that Server is up and running.</translation>
+      <translation>تأكد من أن الخادم يعمل بشكل صحيح.</translation>
     </message>
     <message>
       <source>Received bad response from Server %1: &quot;%2&quot;.</source>
-      <translation type="unfinished">Received bad response from Server %1: &quot;%2&quot;.</translation>
+      <translation>تلقيت استجابة خاطئة من الخادم %1: &quot;%2&quot;.</translation>
     </message>
     <message>
       <source>Check if Server is up and has the proper version.</source>
-      <translation type="unfinished">Check if Server is up and has the proper version.</translation>
+      <translation>تحقق مما إذا كان الخادم يعمل ويحتوي على الإصدار المناسب.</translation>
     </message>
     <message>
       <source>Cannot connect to http port %1.</source>
-      <translation type="unfinished">Cannot connect to http port %1.</translation>
+      <translation>لا يمكن الاتصال بمنفذ HTTP %1.</translation>
     </message>
     <message>
       <source>Finally, try to update firmware. If the problem persists, please contact support.</source>
-      <translation type="unfinished">Finally, try to update firmware. If the problem persists, please contact support.</translation>
+      <translation>أخيرًا، حاول تحديث البرنامج الثابت. إذا استمرت المشكلة، يُرجى الاتصال بالدعم الفني.</translation>
     </message>
     <message>
       <source>Failed to configure parameter %1.</source>
-      <translation type="unfinished">Failed to configure parameter %1.</translation>
+      <translation>فشل في إعداد المتغير %1.</translation>
     </message>
     <message>
       <source>Please contact support.</source>
-      <translation type="unfinished">Please contact support.</translation>
+      <translation>يرجى الاتصال بالدعم الفني.</translation>
     </message>
     <message>
       <source>An input/output error has occurred. OS message: &quot;%1&quot;.</source>
-      <translation type="unfinished">An input/output error has occurred. OS message: &quot;%1&quot;.</translation>
+      <translation>حدث خطأ في الإدخال/الإخراج. رسالة نظام التشغيل: &quot;%1&quot;.</translation>
     </message>
     <message>
       <source>Parameters:</source>
-      <translation type="unfinished">Parameters:</translation>
+      <translation>المُتغيرات</translation>
     </message>
     <message>
       <source>Please try to reboot the device, then restore factory defaults on the web-page.</source>
-      <translation type="unfinished">Please try to reboot the device, then restore factory defaults on the web-page.</translation>
+      <translation>يرجى محاولة إعادة تشغيل الجهاز، ثم استعادة إعدادات المصنع الافتراضية من خلال صفحة الويب.</translation>
     </message>
     <message>
       <source>Please try to reboot the camera, then restore factory defaults on the web-page.</source>
-      <translation type="unfinished">Please try to reboot the camera, then restore factory defaults on the web-page.</translation>
+      <translation>يرجى محاولة إعادة تشغيل الكاميرا، ثم استعادة إعدادات المصنع الافتراضية من خلال صفحة الويب.</translation>
     </message>
     <message>
       <source>Make sure the device is plugged into the network. Try to reboot the device.</source>
-      <translation type="unfinished">Make sure the device is plugged into the network. Try to reboot the device.</translation>
+      <translation>تأكد من توصيل الجهاز بالشبكة. حاول إعادة تشغيل الجهاز.</translation>
     </message>
     <message>
       <source>Make sure the camera is plugged into the network. Try to reboot the camera.</source>
-      <translation type="unfinished">Make sure the camera is plugged into the network. Try to reboot the camera.</translation>
+      <translation>تأكد من توصيل الكاميرا بالشبكة. حاول إعادة تشغيل الكاميرا.</translation>
     </message>
     <message>
       <source>Device request &quot;%1&quot; failed with error &quot;%2&quot;.</source>
-      <translation type="unfinished">Device request &quot;%1&quot; failed with error &quot;%2&quot;.</translation>
+      <translation>طلب الجهاز &quot;%1&quot; فشل مع الخطأ &quot;%2&quot;.</translation>
     </message>
     <message>
       <source>Camera request &quot;%1&quot; failed with error &quot;%2&quot;.</source>
-      <translation type="unfinished">Camera request &quot;%1&quot; failed with error &quot;%2&quot;.</translation>
+      <translation>طلب الكاميرا &quot;%1&quot; فشل مع الخطأ &quot;%2&quot;.</translation>
     </message>
     <message>
       <source>Unknown device issue.</source>
-      <translation type="unfinished">Unknown device issue.</translation>
+      <translation>مشكلة غير معروفة في الجهاز.</translation>
     </message>
     <message>
       <source>Unknown camera issue.</source>
-      <translation type="unfinished">Unknown camera issue.</translation>
+      <translation>مشكلة غير معروفة في الكاميرا.</translation>
     </message>
     <message>
       <source>Too many media errors. Please open device issues dialog for more details.</source>
@@ -435,7 +435,7 @@
     </message>
     <message>
       <source>I/O Module request &quot;%1&quot; failed with error &quot;%2&quot;.</source>
-      <translation type="unfinished">I/O Module request &quot;%1&quot; failed with error &quot;%2&quot;.</translation>
+      <translation>فشل طلب وحدة الإدخال/الإخراج &quot;%1&quot; مع الخطأ &quot;%2&quot;.</translation>
     </message>
     <message>
       <source>Unknown I/O module issue.</source>
@@ -471,83 +471,83 @@
     </message>
     <message>
       <source>If it does not help, restore factory defaults on the I/O module web-page.</source>
-      <translation type="unfinished">If it does not help, restore factory defaults on the I/O module web-page.</translation>
+      <translation>إذا لم ينجح ذلك، فقم باستعادة إعدادات المصنع الافتراضية على صفحة الويب الخاصة بوحدة الإدخال/الإخراج.</translation>
     </message>
     <message>
       <source>Cannot open media URL %1. Failed to connect to media port %2.</source>
-      <translation type="unfinished">Cannot open media URL %1. Failed to connect to media port %2.</translation>
+      <translation>تعذر فتح عنوان الوسائط %1. فشل الاتصال بمنفذ الوسائط %2.</translation>
     </message>
     <message>
       <source>Cannot open media URL %1. Connection to port %2 was closed unexpectedly.</source>
-      <translation type="unfinished">Cannot open media URL %1. Connection to port %2 was closed unexpectedly.</translation>
+      <translation>تعذر فتح عنوان URL %1 للوسائط. الاتصال بالمنفذ %2 تم إغلاقه بشكل غير متوقع.</translation>
     </message>
     <message>
       <source>Could not parse device response. URL %1, request name %2.</source>
-      <translation type="unfinished">Could not parse device response. URL %1, request name %2.</translation>
+      <translation>تعذر تحليل استجابة الجهاز. عنوان %1، اسم الطلب %2.</translation>
     </message>
     <message>
       <source>Could not parse camera response. URL %1, request name %2.</source>
-      <translation type="unfinished">Could not parse camera response. URL %1, request name %2.</translation>
+      <translation>تعذر تحليل استجابة الكاميرا. عنوان  %1، اسم الطلب %2.</translation>
     </message>
     <message>
       <source>Could not parse I/O module response. URL %1, request name %2.</source>
-      <translation type="unfinished">Could not parse I/O module response. URL %1, request name %2.</translation>
+      <translation>تعذر تحليل استجابة وحدة الإدخال/الإخراج. عنوان  %1، اسم الطلب %2.</translation>
     </message>
     <message>
       <source>No supported media tracks at URL %1.</source>
-      <translation type="unfinished">No supported media tracks at URL %1.</translation>
+      <translation>لا توجد مسارات وسائط مدعومة على عنوان %1.</translation>
     </message>
     <message>
       <source>Not authorized. URL %1.</source>
-      <translation type="unfinished">Not authorized. URL %1.</translation>
+      <translation>غير مصرح به. عنوان  %1.</translation>
     </message>
     <message>
       <source>Cannot open media URL %1. Unsupported media protocol %2.</source>
-      <translation type="unfinished">Cannot open media URL %1. Unsupported media protocol %2.</translation>
+      <translation>لا يمكن فتح رابط الوسائط %1. بروتوكول الوسائط %2 غير معتمد.</translation>
     </message>
     <message>
       <source>Camera was restored from archive. Delete the camera and add it again to view Live video.</source>
-      <translation type="unfinished">Camera was restored from archive. Delete the camera and add it again to view Live video.</translation>
+      <translation>تمت استعادة الكاميرا من الأرشيف. احذف الكاميرا ثم أضفها مرة أخرى لمشاهدة البث المباشر.</translation>
     </message>
     <message>
       <source>Please update firmware. Minimal supported version is %1. Current version is %2</source>
-      <translation type="unfinished">Please update firmware. Minimal supported version is %1. Current version is %2</translation>
+      <translation>يرجى تحديث البرنامج الثابت. الحد الأدنى للإصدار المدعوم هو %1. الإصدار الحالي هو %2</translation>
     </message>
     <message>
       <source>Plugin error. %1</source>
-      <translation type="unfinished">Plugin error. %1</translation>
+      <translation>خطأ في البرنامج الإضافي. %1</translation>
     </message>
     <message>
       <source>Plugin is unavailable</source>
-      <translation type="unfinished">Plugin is unavailable</translation>
+      <translation>البرنامج الإضافي غير متوفر</translation>
     </message>
     <message>
       <source>Internal server error. %1</source>
-      <translation type="unfinished">Internal server error. %1</translation>
+      <translation>خطأ داخلي في الخادم. %1</translation>
     </message>
     <message>
       <source>If disabled, try to enable Recording and decrease FPS in Device Settings (error &quot;%1&quot;).</source>
-      <translation type="unfinished">If disabled, try to enable Recording and decrease FPS in Device Settings (error &quot;%1&quot;).</translation>
+      <translation>في حالة تعطيلها، حاول تفعيل التسجيل وتقليل معدل الإطارات في إعدادات الجهاز (خطأ &quot;%1&quot;).</translation>
     </message>
     <message>
       <source>If disabled, try to enable Recording and decrease FPS in Camera Settings (error &quot;%1&quot;).</source>
-      <translation type="unfinished">If disabled, try to enable Recording and decrease FPS in Camera Settings (error &quot;%1&quot;).</translation>
+      <translation>في حالة تعطيلها، حاول تفعيل التسجيل وتقليل معدل الإطارات في إعدادات الكاميرا (خطأ &quot;%1&quot;).</translation>
     </message>
     <message>
       <source>If disabled, try to enable Recording in I/O Module Settings (error &quot;%1&quot;).</source>
-      <translation type="unfinished">If disabled, try to enable Recording in I/O Module Settings (error &quot;%1&quot;).</translation>
+      <translation>في حالة تعطيلها، حاول تفعيل التسجيل في إعدادات وحدة الإدخال/الإخراج (خطأ &quot;%1&quot;).</translation>
     </message>
     <message>
       <source>Invalid data was received from the device. Details: &quot;%1&quot;.</source>
-      <translation type="unfinished">Invalid data was received from the device. Details: &quot;%1&quot;.</translation>
+      <translation>تم تلقي بيانات غير صالحة من الجهاز. التفاصيل: &quot;%1&quot;.</translation>
     </message>
     <message>
       <source>Invalid data was received from the camera. Details: &quot;%1&quot;.</source>
-      <translation type="unfinished">Invalid data was received from the camera. Details: &quot;%1&quot;.</translation>
+      <translation>تم تلقي بيانات غير صالحة من الكاميرا. التفاصيل: &quot;%1&quot;.</translation>
     </message>
     <message>
       <source>Invalid data was received from the I/O module. Details: &quot;%1&quot;.</source>
-      <translation type="unfinished">Invalid data was received from the I/O module. Details: &quot;%1&quot;.</translation>
+      <translation>تم تلقي بيانات غير صالحة من وحدة I/O. التفاصيل: &quot;%1&quot;.</translation>
     </message>
   </context>
   <context>
@@ -576,7 +576,7 @@
     <name>QnCameraNamesWatcher</name>
     <message>
       <source>Removed camera</source>
-      <translation type="unfinished">Removed camera</translation>
+      <translation>تمت إزالة الكاميرا</translation>
     </message>
   </context>
   <context>
@@ -606,13 +606,13 @@
     <message numerus="yes">
       <source>%n of %1 selected users are not %2 users and will not get mobile notifications.</source>
       <comment>%2 here will be substituted with short cloud name e.g. &apos;Cloud&apos;.</comment>
-      <translation type="unfinished">
-        <numerusform>%n of %1 selected users are not %2 users and will not get mobile notifications.</numerusform>
-        <numerusform>%n of %1 selected users are not %2 users and will not get mobile notifications.</numerusform>
-        <numerusform>%n of %1 selected users are not %2 users and will not get mobile notifications.</numerusform>
-        <numerusform>%n of %1 selected users are not %2 users and will not get mobile notifications.</numerusform>
-        <numerusform>%n of %1 selected users are not %2 users and will not get mobile notifications.</numerusform>
-        <numerusform>%n of %1 selected users are not %2 users and will not get mobile notifications.</numerusform>
+      <translation>
+        <numerusform>%n من %1 المستخدمين المحددين ليسوا %2 مستخدمين ولن يتلقوا إشعارات على الهاتف المحمول.</numerusform>
+        <numerusform>%n من %1 المستخدمين المحددين ليسوا %2 مستخدمين ولن يتلقوا إشعارات على الهاتف المحمول.</numerusform>
+        <numerusform>%n من %1 المستخدمين المحددين ليسوا %2 مستخدمين ولن يتلقوا إشعارات على الهاتف المحمول.</numerusform>
+        <numerusform>%n من %1 المستخدمين المحددين ليسوا %2 مستخدمين ولن يتلقوا إشعارات على الهاتف المحمول.</numerusform>
+        <numerusform>%n من %1 المستخدمين المحددين ليسوا %2 مستخدمين ولن يتلقوا إشعارات على الهاتف المحمول.</numerusform>
+        <numerusform>%n من %1 المستخدمين المحددين ليسوا %2 مستخدمين ولن يتلقوا إشعارات على الهاتف المحمول.</numerusform>
       </translation>
     </message>
   </context>
@@ -642,41 +642,41 @@
     </message>
     <message>
       <source>This camera is not currently on the selected layout</source>
-      <translation type="unfinished">This camera is not currently on the selected layout</translation>
+      <translation>هذه الكاميرا غير موجودة حاليا في التخطيط المحدد</translation>
     </message>
     <message>
       <source>This camera is not currently on some of the selected layouts</source>
-      <translation type="unfinished">This camera is not currently on some of the selected layouts</translation>
+      <translation>هذه الكاميرا غير متوفرة حاليا في بعض التخطيطات المختارة</translation>
     </message>
   </context>
   <context>
     <name>QnLayoutAccessValidationPolicy</name>
     <message>
       <source>Users do not have access to the selected layout</source>
-      <translation type="unfinished">Users do not have access to the selected layout</translation>
+      <translation>المستخدمين ليس لديهم حق الوصول إلى التخطيط المحدد</translation>
     </message>
     <message>
       <source>Some users do not have access to the selected layout</source>
-      <translation type="unfinished">Some users do not have access to the selected layout</translation>
+      <translation>بعض المستخدمين لا يستطيعون الوصول إلى التخطيط المحدد</translation>
     </message>
   </context>
   <context>
     <name>QnLicense</name>
     <message>
       <source>Analog</source>
-      <translation type="unfinished">Analog</translation>
+      <translation>تناظري</translation>
     </message>
     <message>
       <source>Professional</source>
-      <translation type="unfinished">Professional</translation>
+      <translation>احترافي</translation>
     </message>
     <message>
       <source>Edge</source>
-      <translation type="unfinished">Edge</translation>
+      <translation>حافّة</translation>
     </message>
     <message>
       <source>Vmax</source>
-      <translation type="unfinished">Vmax</translation>
+      <translation>Vmax</translation>
     </message>
     <message>
       <source>Video Wall</source>
@@ -692,39 +692,39 @@
     </message>
     <message>
       <source>Analog Encoder</source>
-      <translation type="unfinished">Analog Encoder</translation>
+      <translation>مشفر تناظري</translation>
     </message>
     <message>
       <source>Analog Licenses</source>
-      <translation type="unfinished">Analog Licenses</translation>
+      <translation>التراخيص التناظرية</translation>
     </message>
     <message>
       <source>Professional Licenses</source>
-      <translation type="unfinished">Professional Licenses</translation>
+      <translation>ترخيص احترافي</translation>
     </message>
     <message>
       <source>Edge Licenses</source>
-      <translation type="unfinished">Edge Licenses</translation>
+      <translation>رخص طرفيه</translation>
     </message>
     <message>
       <source>Vmax Licenses</source>
-      <translation type="unfinished">Vmax Licenses</translation>
+      <translation>تراخيص Vmax</translation>
     </message>
     <message>
       <source>Analog Encoder Licenses</source>
-      <translation type="unfinished">Analog Encoder Licenses</translation>
+      <translation>تراخيص أجهزة التشفير التناظرية</translation>
     </message>
     <message>
       <source>Video Wall Licenses</source>
-      <translation type="unfinished">Video Wall Licenses</translation>
+      <translation>تراخيص حائط الفيديو</translation>
     </message>
     <message>
       <source>I/O Module Licenses</source>
-      <translation type="unfinished">I/O Module Licenses</translation>
+      <translation>تراخيص وحدات الإدخال/الإخراج</translation>
     </message>
     <message>
       <source>Start Licenses</source>
-      <translation type="unfinished">Start Licenses</translation>
+      <translation>تراخيص البدء</translation>
     </message>
     <message>
       <source>Invalid</source>
@@ -732,11 +732,11 @@
     </message>
     <message>
       <source>Invalid Licenses</source>
-      <translation type="unfinished">Invalid Licenses</translation>
+      <translation>ترخيص غير صالح</translation>
     </message>
     <message>
       <source>Free</source>
-      <translation type="unfinished">Free</translation>
+      <translation>مجاني</translation>
     </message>
     <message>
       <source>Time</source>
@@ -744,357 +744,364 @@
     </message>
     <message>
       <source>Time Licenses</source>
-      <translation type="unfinished">Time Licenses</translation>
+      <translation>تراخيص زمنية</translation>
     </message>
     <message>
       <source>Bridge</source>
-      <translation type="unfinished">Bridge</translation>
+      <translation>جسر</translation>
     </message>
     <message>
       <source>Bridge Licenses</source>
-      <translation type="unfinished">Bridge Licenses</translation>
+      <translation>تراخيص الجسر</translation>
     </message>
     <message numerus="yes">
       <source>%n Time Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Time Licenses</numerusform>
-        <numerusform>%n Time Licenses</numerusform>
-        <numerusform>%n Time Licenses</numerusform>
-        <numerusform>%n Time Licenses</numerusform>
-        <numerusform>%n Time Licenses</numerusform>
-        <numerusform>%n Time Licenses</numerusform>
+      <translation>
+        <numerusform>%n تراخيص زمنية</numerusform>
+        <numerusform>%n تراخيص زمنية</numerusform>
+        <numerusform>%n تراخيص زمنية</numerusform>
+        <numerusform>%n تراخيص زمنية</numerusform>
+        <numerusform>%n تراخيص زمنية</numerusform>
+        <numerusform>%n تراخيص زمنية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n Analog Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Analog Licenses</numerusform>
-        <numerusform>%n Analog Licenses</numerusform>
-        <numerusform>%n Analog Licenses</numerusform>
-        <numerusform>%n Analog Licenses</numerusform>
-        <numerusform>%n Analog Licenses</numerusform>
-        <numerusform>%n Analog Licenses</numerusform>
+      <translation>
+        <numerusform>%n تراخيص تناظرية</numerusform>
+        <numerusform>%n تراخيص تناظرية</numerusform>
+        <numerusform>%n تراخيص تناظرية</numerusform>
+        <numerusform>%n تراخيص تناظرية</numerusform>
+        <numerusform>%n تراخيص تناظرية</numerusform>
+        <numerusform>%n تراخيص تناظرية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n Professional Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Professional Licenses</numerusform>
-        <numerusform>%n Professional Licenses</numerusform>
-        <numerusform>%n Professional Licenses</numerusform>
-        <numerusform>%n Professional Licenses</numerusform>
-        <numerusform>%n Professional Licenses</numerusform>
-        <numerusform>%n Professional Licenses</numerusform>
+      <translation>
+        <numerusform>%n تراخيص احترافية</numerusform>
+        <numerusform>%n تراخيص احترافية</numerusform>
+        <numerusform>%n تراخيص احترافية</numerusform>
+        <numerusform>%n تراخيص احترافية</numerusform>
+        <numerusform>%n تراخيص احترافية</numerusform>
+        <numerusform>%n تراخيص احترافية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n Edge Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Edge Licenses</numerusform>
-        <numerusform>%n Edge Licenses</numerusform>
-        <numerusform>%n Edge Licenses</numerusform>
-        <numerusform>%n Edge Licenses</numerusform>
-        <numerusform>%n Edge Licenses</numerusform>
-        <numerusform>%n Edge Licenses</numerusform>
+      <translation>
+        <numerusform> %n تراخيص طرفية</numerusform>
+        <numerusform> %n تراخيص طرفية</numerusform>
+        <numerusform> %n تراخيص طرفية</numerusform>
+        <numerusform> %n تراخيص طرفية</numerusform>
+        <numerusform> %n تراخيص طرفية</numerusform>
+        <numerusform> %n تراخيص طرفية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n Vmax Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Vmax Licenses</numerusform>
-        <numerusform>%n Vmax Licenses</numerusform>
-        <numerusform>%n Vmax Licenses</numerusform>
-        <numerusform>%n Vmax Licenses</numerusform>
-        <numerusform>%n Vmax Licenses</numerusform>
-        <numerusform>%n Vmax Licenses</numerusform>
+      <translation>
+        <numerusform>%n تراخيص Vmax </numerusform>
+        <numerusform>%n تراخيص Vmax </numerusform>
+        <numerusform>%n تراخيص Vmax </numerusform>
+        <numerusform>%n تراخيص Vmax </numerusform>
+        <numerusform>%n تراخيص Vmax </numerusform>
+        <numerusform>%n تراخيص Vmax </numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n Analog Encoder Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Analog Encoder Licenses</numerusform>
-        <numerusform>%n Analog Encoder Licenses</numerusform>
-        <numerusform>%n Analog Encoder Licenses</numerusform>
-        <numerusform>%n Analog Encoder Licenses</numerusform>
-        <numerusform>%n Analog Encoder Licenses</numerusform>
-        <numerusform>%n Analog Encoder Licenses</numerusform>
+      <translation>
+        <numerusform>%n تراخيص أجهزة التشفير التناظرية </numerusform>
+        <numerusform>%n تراخيص أجهزة التشفير التناظرية </numerusform>
+        <numerusform>%n تراخيص أجهزة التشفير التناظرية </numerusform>
+        <numerusform>%n تراخيص أجهزة التشفير التناظرية </numerusform>
+        <numerusform>%n تراخيص أجهزة التشفير التناظرية </numerusform>
+        <numerusform>%n تراخيص أجهزة التشفير التناظرية </numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n Video Wall Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Video Wall Licenses</numerusform>
-        <numerusform>%n Video Wall Licenses</numerusform>
-        <numerusform>%n Video Wall Licenses</numerusform>
-        <numerusform>%n Video Wall Licenses</numerusform>
-        <numerusform>%n Video Wall Licenses</numerusform>
-        <numerusform>%n Video Wall Licenses</numerusform>
+      <translation>
+        <numerusform>%n رخص جدار الفيديو</numerusform>
+        <numerusform>%n رخص جدار الفيديو</numerusform>
+        <numerusform>%n رخص جدار الفيديو</numerusform>
+        <numerusform>%n رخص جدار الفيديو</numerusform>
+        <numerusform>%n رخص جدار الفيديو</numerusform>
+        <numerusform>%n رخص جدار الفيديو</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n I/O Module Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n I/O Module Licenses</numerusform>
-        <numerusform>%n I/O Module Licenses</numerusform>
-        <numerusform>%n I/O Module Licenses</numerusform>
-        <numerusform>%n I/O Module Licenses</numerusform>
-        <numerusform>%n I/O Module Licenses</numerusform>
-        <numerusform>%n I/O Module Licenses</numerusform>
+      <translation>
+        <numerusform>%n تراخيص وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n تراخيص وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n تراخيص وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n تراخيص وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n تراخيص وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n تراخيص وحدات الإدخال/الإخراج</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n Start Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Start Licenses</numerusform>
-        <numerusform>%n Start Licenses</numerusform>
-        <numerusform>%n Start Licenses</numerusform>
-        <numerusform>%n Start Licenses</numerusform>
-        <numerusform>%n Start Licenses</numerusform>
-        <numerusform>%n Start Licenses</numerusform>
+      <translation>
+        <numerusform>%n تراخيص البدء</numerusform>
+        <numerusform>%n تراخيص البدء</numerusform>
+        <numerusform>%n تراخيص البدء</numerusform>
+        <numerusform>%n تراخيص البدء</numerusform>
+        <numerusform>%n تراخيص البدء</numerusform>
+        <numerusform>%n تراخيص البدء</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n Bridge Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Bridge Licenses</numerusform>
-        <numerusform>%n Bridge Licenses</numerusform>
-        <numerusform>%n Bridge Licenses</numerusform>
-        <numerusform>%n Bridge Licenses</numerusform>
-        <numerusform>%n Bridge Licenses</numerusform>
-        <numerusform>%n Bridge Licenses</numerusform>
+      <translation>
+        <numerusform>%n تراخيص الجسر</numerusform>
+        <numerusform>%n تراخيص الجسر</numerusform>
+        <numerusform>%n تراخيص الجسر</numerusform>
+        <numerusform>%n تراخيص الجسر</numerusform>
+        <numerusform>%n تراخيص الجسر</numerusform>
+        <numerusform>%n تراخيص الجسر</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n Invalid Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Invalid Licenses</numerusform>
-        <numerusform>%n Invalid Licenses</numerusform>
-        <numerusform>%n Invalid Licenses</numerusform>
-        <numerusform>%n Invalid Licenses</numerusform>
-        <numerusform>%n Invalid Licenses</numerusform>
-        <numerusform>%n Invalid Licenses</numerusform>
+      <translation>
+        <numerusform>%n تراخيص غير صالحة</numerusform>
+        <numerusform>%n تراخيص غير صالحة</numerusform>
+        <numerusform>%n تراخيص غير صالحة</numerusform>
+        <numerusform>%n تراخيص غير صالحة</numerusform>
+        <numerusform>%n تراخيص غير صالحة</numerusform>
+        <numerusform>%n تراخيص غير صالحة</numerusform>
       </translation>
     </message>
     <message>
       <source>Free Licenses</source>
-      <translation type="unfinished">Free Licenses</translation>
+      <translation>تراخيص مجانية</translation>
     </message>
     <message numerus="yes">
       <source>%n Free Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n Free Licenses</numerusform>
-        <numerusform>%n Free Licenses</numerusform>
-        <numerusform>%n Free Licenses</numerusform>
-        <numerusform>%n Free Licenses</numerusform>
-        <numerusform>%n Free Licenses</numerusform>
-        <numerusform>%n Free Licenses</numerusform>
+      <translation>
+        <numerusform>%n تراخيص مجانية</numerusform>
+        <numerusform>%n تراخيص مجانية</numerusform>
+        <numerusform>%n تراخيص مجانية</numerusform>
+        <numerusform>%n تراخيص مجانية</numerusform>
+        <numerusform>%n تراخيص مجانية</numerusform>
+        <numerusform>%n تراخيص مجانية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Time Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Time Licenses</numerusform>
-        <numerusform>%n/%1 Time Licenses</numerusform>
-        <numerusform>%n/%1 Time Licenses</numerusform>
-        <numerusform>%n/%1 Time Licenses</numerusform>
-        <numerusform>%n/%1 Time Licenses</numerusform>
-        <numerusform>%n/%1 Time Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1 تراخيص زمنية</numerusform>
+        <numerusform>%n/%1 تراخيص زمنية</numerusform>
+        <numerusform>%n/%1 تراخيص زمنية</numerusform>
+        <numerusform>%n/%1 تراخيص زمنية</numerusform>
+        <numerusform>%n/%1 تراخيص زمنية</numerusform>
+        <numerusform>%n/%1 تراخيص زمنية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Analog Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Analog Licenses</numerusform>
-        <numerusform>%n/%1 Analog Licenses</numerusform>
-        <numerusform>%n/%1 Analog Licenses</numerusform>
-        <numerusform>%n/%1 Analog Licenses</numerusform>
-        <numerusform>%n/%1 Analog Licenses</numerusform>
-        <numerusform>%n/%1 Analog Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1 تراخيص تناظرية</numerusform>
+        <numerusform>%n/%1 تراخيص تناظرية</numerusform>
+        <numerusform>%n/%1 تراخيص تناظرية</numerusform>
+        <numerusform>%n/%1 تراخيص تناظرية</numerusform>
+        <numerusform>%n/%1 تراخيص تناظرية</numerusform>
+        <numerusform>%n/%1 تراخيص تناظرية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Professional Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Professional Licenses</numerusform>
-        <numerusform>%n/%1 Professional Licenses</numerusform>
-        <numerusform>%n/%1 Professional Licenses</numerusform>
-        <numerusform>%n/%1 Professional Licenses</numerusform>
-        <numerusform>%n/%1 Professional Licenses</numerusform>
-        <numerusform>%n/%1 Professional Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1 التراخيص الاحترافية</numerusform>
+        <numerusform>%n/%1 التراخيص الاحترافية</numerusform>
+        <numerusform>%n/%1 التراخيص الاحترافية</numerusform>
+        <numerusform>%n/%1 التراخيص الاحترافية</numerusform>
+        <numerusform>%n/%1 التراخيص الاحترافية</numerusform>
+        <numerusform>%n/%1 التراخيص الاحترافية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Edge Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Edge Licenses</numerusform>
-        <numerusform>%n/%1 Edge Licenses</numerusform>
-        <numerusform>%n/%1 Edge Licenses</numerusform>
-        <numerusform>%n/%1 Edge Licenses</numerusform>
-        <numerusform>%n/%1 Edge Licenses</numerusform>
-        <numerusform>%n/%1 Edge Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1 تراخيص الحافة</numerusform>
+        <numerusform>%n/%1 تراخيص الحافَة</numerusform>
+        <numerusform>%n/%1 تراخيص الحافَة</numerusform>
+        <numerusform>%n/%1 تراخيص الحافَة</numerusform>
+        <numerusform>%n/%1 تراخيص الحافَة</numerusform>
+        <numerusform>%n/%1 تراخيص الحافَة</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Vmax Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Vmax Licenses</numerusform>
-        <numerusform>%n/%1 Vmax Licenses</numerusform>
-        <numerusform>%n/%1 Vmax Licenses</numerusform>
-        <numerusform>%n/%1 Vmax Licenses</numerusform>
-        <numerusform>%n/%1 Vmax Licenses</numerusform>
-        <numerusform>%n/%1 Vmax Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1  تراخيص Vmax </numerusform>
+        <numerusform>%n/%1  تراخيص Vmax </numerusform>
+        <numerusform>%n/%1  تراخيص Vmax </numerusform>
+        <numerusform>%n/%1  تراخيص Vmax </numerusform>
+        <numerusform>%n/%1  تراخيص Vmax </numerusform>
+        <numerusform>%n/%1  تراخيص Vmax </numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Analog Encoder Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Analog Encoder Licenses</numerusform>
-        <numerusform>%n/%1 Analog Encoder Licenses</numerusform>
-        <numerusform>%n/%1 Analog Encoder Licenses</numerusform>
-        <numerusform>%n/%1 Analog Encoder Licenses</numerusform>
-        <numerusform>%n/%1 Analog Encoder Licenses</numerusform>
-        <numerusform>%n/%1 Analog Encoder Licenses</numerusform>
+      <translation>
+        <numerusform> %n/%1 تراخيص أجهزة التشفير التناظرية</numerusform>
+        <numerusform> %n/%1 تراخيص أجهزة التشفير التناظرية</numerusform>
+        <numerusform> %n/%1 تراخيص أجهزة التشفير التناظرية</numerusform>
+        <numerusform> %n/%1 تراخيص أجهزة التشفير التناظرية</numerusform>
+        <numerusform> %n/%1 تراخيص أجهزة التشفير التناظرية</numerusform>
+        <numerusform> %n/%1 تراخيص أجهزة التشفير التناظرية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Video Wall Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Video Wall Licenses</numerusform>
-        <numerusform>%n/%1 Video Wall Licenses</numerusform>
-        <numerusform>%n/%1 Video Wall Licenses</numerusform>
-        <numerusform>%n/%1 Video Wall Licenses</numerusform>
-        <numerusform>%n/%1 Video Wall Licenses</numerusform>
-        <numerusform>%n/%1 Video Wall Licenses</numerusform>
+      <translation>
+        <numerusform>%n \ %1 تراخيص حائط الفيديو</numerusform>
+        <numerusform>%n/1 تراخيص حائط الفيديو</numerusform>
+        <numerusform>%n/1 تراخيص حائط الفيديو</numerusform>
+        <numerusform>%n/1 تراخيص حائط الفيديو</numerusform>
+        <numerusform>%n/1 تراخيص حائط الفيديو</numerusform>
+        <numerusform>%n/1 تراخيص حائط الفيديو</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 I/O Module Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 I/O Module Licenses</numerusform>
-        <numerusform>%n/%1 I/O Module Licenses</numerusform>
-        <numerusform>%n/%1 I/O Module Licenses</numerusform>
-        <numerusform>%n/%1 I/O Module Licenses</numerusform>
-        <numerusform>%n/%1 I/O Module Licenses</numerusform>
-        <numerusform>%n/%1 I/O Module Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1 تراخيص وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n/%1 تراخيص وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n/%1 تراخيص وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n/%1 تراخيص وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n/%1 تراخيص وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n/%1 تراخيص وحدات الإدخال/الإخراج</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Start Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Start Licenses</numerusform>
-        <numerusform>%n/%1 Start Licenses</numerusform>
-        <numerusform>%n/%1 Start Licenses</numerusform>
-        <numerusform>%n/%1 Start Licenses</numerusform>
-        <numerusform>%n/%1 Start Licenses</numerusform>
-        <numerusform>%n/%1 Start Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1 تراخيص البَدْء</numerusform>
+        <numerusform>%n/%1 تراخيص البَدْء</numerusform>
+        <numerusform>%n/%1 تراخيص البَدْء</numerusform>
+        <numerusform>%n/%1 تراخيص البَدْء</numerusform>
+        <numerusform>%n/%1 تراخيص البَدْء</numerusform>
+        <numerusform>%n/%1 تراخيص البَدْء</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Free Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Free Licenses</numerusform>
-        <numerusform>%n/%1 Free Licenses</numerusform>
-        <numerusform>%n/%1 Free Licenses</numerusform>
-        <numerusform>%n/%1 Free Licenses</numerusform>
-        <numerusform>%n/%1 Free Licenses</numerusform>
-        <numerusform>%n/%1 Free Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1 تراخيص مجانية</numerusform>
+        <numerusform>%n/%1 تراخيص مجانية</numerusform>
+        <numerusform>%n/%1 تراخيص مجانية</numerusform>
+        <numerusform>%n/%1 تراخيص مجانية</numerusform>
+        <numerusform>%n/%1 تراخيص مجانية</numerusform>
+        <numerusform>%n/%1 تراخيص مجانية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Bridge Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Bridge Licenses</numerusform>
-        <numerusform>%n/%1 Bridge Licenses</numerusform>
-        <numerusform>%n/%1 Bridge Licenses</numerusform>
-        <numerusform>%n/%1 Bridge Licenses</numerusform>
-        <numerusform>%n/%1 Bridge Licenses</numerusform>
-        <numerusform>%n/%1 Bridge Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Invalid Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Invalid Licenses</numerusform>
-        <numerusform>%n/%1 Invalid Licenses</numerusform>
-        <numerusform>%n/%1 Invalid Licenses</numerusform>
-        <numerusform>%n/%1 Invalid Licenses</numerusform>
-        <numerusform>%n/%1 Invalid Licenses</numerusform>
-        <numerusform>%n/%1 Invalid Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1 تراخيص غير صالحة</numerusform>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
+        <numerusform>%n/%1 تراخيص جسر</numerusform>
       </translation>
     </message>
     <message>
       <source>NVR</source>
-      <translation type="unfinished">NVR</translation>
+      <translation>مسجل فيديو شبكي</translation>
     </message>
     <message>
       <source>NVR Licenses</source>
-      <translation type="unfinished">NVR Licenses</translation>
+      <translation>تراخيص NVR</translation>
     </message>
     <message numerus="yes">
       <source>%n NVR Licenses</source>
-      <translation type="unfinished">
-        <numerusform>%n NVR Licenses</numerusform>
-        <numerusform>%n NVR Licenses</numerusform>
-        <numerusform>%n NVR Licenses</numerusform>
-        <numerusform>%n NVR Licenses</numerusform>
-        <numerusform>%n NVR Licenses</numerusform>
-        <numerusform>%n NVR Licenses</numerusform>
+      <translation>
+        <numerusform> %n تراخيص مسجلات الفيديو الشبكية (NVR)</numerusform>
+        <numerusform> %n تراخيص مسجلات الفيديو الشبكية (NVR)</numerusform>
+        <numerusform> %n تراخيص مسجلات الفيديو الشبكية (NVR)</numerusform>
+        <numerusform> %n تراخيص مسجلات الفيديو الشبكية (NVR)</numerusform>
+        <numerusform> %n تراخيص مسجلات الفيديو الشبكية (NVR)</numerusform>
+        <numerusform> %n تراخيص مسجلات الفيديو الشبكية (NVR)</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 NVR Licenses</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 NVR Licenses</numerusform>
-        <numerusform>%n/%1 NVR Licenses</numerusform>
-        <numerusform>%n/%1 NVR Licenses</numerusform>
-        <numerusform>%n/%1 NVR Licenses</numerusform>
-        <numerusform>%n/%1 NVR Licenses</numerusform>
-        <numerusform>%n/%1 NVR Licenses</numerusform>
+      <translation>
+        <numerusform>%n/%1 تراخيص مسجلات الفيديو الشبكية (NVR) </numerusform>
+        <numerusform>%n/%1 تراخيص مسجلات الفيديو الشبكية (NVR) </numerusform>
+        <numerusform>%n/%1 تراخيص مسجلات الفيديو الشبكية (NVR) </numerusform>
+        <numerusform>%n/%1 تراخيص مسجلات الفيديو الشبكية (NVR) </numerusform>
+        <numerusform>%n/%1 تراخيص مسجلات الفيديو الشبكية (NVR) </numerusform>
+        <numerusform>%n/%1 تراخيص مسجلات الفيديو الشبكية (NVR) </numerusform>
       </translation>
     </message>
     <message>
       <source>Local recording</source>
-      <translation type="unfinished">Local recording</translation>
+      <translation>تسجيل محلي</translation>
     </message>
     <message numerus="yes">
       <source>%n Local recording services</source>
-      <translation type="unfinished">
-        <numerusform>%n Local recording services</numerusform>
-        <numerusform>%n Local recording services</numerusform>
-        <numerusform>%n Local recording services</numerusform>
-        <numerusform>%n Local recording services</numerusform>
-        <numerusform>%n Local recording services</numerusform>
-        <numerusform>%n Local recording services</numerusform>
+      <translation>
+        <numerusform> %n خدمات التسجيل المحلية</numerusform>
+        <numerusform> %n خِدْمَات التسجيل المحلية</numerusform>
+        <numerusform> %n خِدْمَات التسجيل المحلية</numerusform>
+        <numerusform> %n خِدْمَات التسجيل المحلية</numerusform>
+        <numerusform> %n خِدْمَات التسجيل المحلية</numerusform>
+        <numerusform> %n خِدْمَات التسجيل المحلية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n/%1 Local recording services</source>
       <comment>%n will be replaced by the total count</comment>
-      <translation type="unfinished">
-        <numerusform>%n/%1 Local recording services</numerusform>
-        <numerusform>%n/%1 Local recording services</numerusform>
-        <numerusform>%n/%1 Local recording services</numerusform>
-        <numerusform>%n/%1 Local recording services</numerusform>
-        <numerusform>%n/%1 Local recording services</numerusform>
-        <numerusform>%n/%1 Local recording services</numerusform>
+      <translation>
+        <numerusform>%n/%1 خدمات التسجيل المحلية</numerusform>
+        <numerusform>%n/%1 خِدْمَات التسجيل المحلية</numerusform>
+        <numerusform>%n/%1 خِدْمَات التسجيل المحلية</numerusform>
+        <numerusform>%n/%1 خِدْمَات التسجيل المحلية</numerusform>
+        <numerusform>%n/%1 خِدْمَات التسجيل المحلية</numerusform>
+        <numerusform>%n/%1 خِدْمَات التسجيل المحلية</numerusform>
       </translation>
     </message>
     <message>
       <source>Local recording services</source>
-      <translation type="unfinished">Local recording services</translation>
+      <translation>خدمات التسجيل المحلية</translation>
+    </message>
+  </context>
+  <context>
+    <name>QnOnlineServerPolicy</name>
+    <message>
+      <source>Online servers</source>
+      <translation>الخوادم المتصلة</translation>
     </message>
   </context>
   <context>
@@ -1108,13 +1115,13 @@
     <name>QnRequiredAccessRightPolicy</name>
     <message numerus="yes">
       <source>%n groups</source>
-      <translation type="unfinished">
-        <numerusform>%n groups</numerusform>
-        <numerusform>%n groups</numerusform>
-        <numerusform>%n groups</numerusform>
-        <numerusform>%n groups</numerusform>
-        <numerusform>%n groups</numerusform>
-        <numerusform>%n groups</numerusform>
+      <translation>
+        <numerusform>%n مجموعات</numerusform>
+        <numerusform>%n مجموعات</numerusform>
+        <numerusform>%n مجموعات</numerusform>
+        <numerusform>%n مجموعات</numerusform>
+        <numerusform>%n مجموعات</numerusform>
+        <numerusform>%n مجموعات</numerusform>
       </translation>
     </message>
     <message numerus="yes">
@@ -1131,109 +1138,109 @@
     <message>
       <source>%1 and %2 do not have %3 permission for some of selected cameras</source>
       <comment>%1 and %2 are the numbers of user groups and users in a correct numeric form (e.g. &apos;2 groups and 1 user&apos;), %3 is the permission name</comment>
-      <translation type="unfinished">%1 and %2 do not have %3 permission for some of selected cameras</translation>
+      <translation>%1 و %2 ليس لديهم إذن %3 لبعض الكاميرات المحددة</translation>
     </message>
     <message numerus="yes">
       <source>%n groups do not have %1 permission for some of selected cameras</source>
       <comment>%1 is the permission name</comment>
-      <translation type="unfinished">
-        <numerusform>%n groups do not have %1 permission for some of selected cameras</numerusform>
-        <numerusform>%n groups do not have %1 permission for some of selected cameras</numerusform>
-        <numerusform>%n groups do not have %1 permission for some of selected cameras</numerusform>
-        <numerusform>%n groups do not have %1 permission for some of selected cameras</numerusform>
-        <numerusform>%n groups do not have %1 permission for some of selected cameras</numerusform>
-        <numerusform>%n groups do not have %1 permission for some of selected cameras</numerusform>
+      <translation>
+        <numerusform>%n مجموعات ليس لديها إذن %1 لبعض الكاميرات المحددة</numerusform>
+        <numerusform>%n مجموعات ليس لديها إذن %1 لبعض الكاميرات المحددة</numerusform>
+        <numerusform>%n مجموعات ليس لديها إذن %1 لبعض الكاميرات المحددة</numerusform>
+        <numerusform>%n مجموعات ليس لديها إذن %1 لبعض الكاميرات المحددة</numerusform>
+        <numerusform>%n مجموعات ليس لديها إذن %1 لبعض الكاميرات المحددة</numerusform>
+        <numerusform>%n مجموعات ليس لديها إذن %1 لبعض الكاميرات المحددة</numerusform>
       </translation>
     </message>
     <message>
       <source>%1 group does not have %2 permission for some of selected cameras</source>
       <comment>%1 is the name of selected user group, %2 is the permission name</comment>
-      <translation type="unfinished">%1 group does not have %2 permission for some of selected cameras</translation>
+      <translation>مجموعة %1 ليس لديها إذن %2 لبعض الكاميرات المحددة</translation>
     </message>
     <message numerus="yes">
       <source>%n users do not have %1 permission for some of selected cameras</source>
       <comment>%1 is the permission name</comment>
-      <translation type="unfinished">
-        <numerusform>%n users do not have %1 permission for some of selected cameras</numerusform>
-        <numerusform>%n users do not have %1 permission for some of selected cameras</numerusform>
-        <numerusform>%n users do not have %1 permission for some of selected cameras</numerusform>
-        <numerusform>%n users do not have %1 permission for some of selected cameras</numerusform>
-        <numerusform>%n users do not have %1 permission for some of selected cameras</numerusform>
-        <numerusform>%n users do not have %1 permission for some of selected cameras</numerusform>
+      <translation>
+        <numerusform>%n المستخدمين ليس لديهم إذن %1 لبعض الكاميرات المحددة</numerusform>
+        <numerusform>%n المستخدمين ليس لديهم إذن %1 لبعض الكاميرات المحددة</numerusform>
+        <numerusform>%n المستخدمين ليس لديهم إذن %1 لبعض الكاميرات المحددة</numerusform>
+        <numerusform>%n المستخدمين ليس لديهم إذن %1 لبعض الكاميرات المحددة</numerusform>
+        <numerusform>%n المستخدمين ليس لديهم إذن %1 لبعض الكاميرات المحددة</numerusform>
+        <numerusform>%n المستخدمين ليس لديهم إذن %1 لبعض الكاميرات المحددة</numerusform>
       </translation>
     </message>
     <message>
       <source>%1 user does not have %2 permission for some of selected cameras</source>
       <comment>%1 is the name of the selected user, %2 is the permission name</comment>
-      <translation type="unfinished">%1 user does not have %2 permission for some of selected cameras</translation>
+      <translation>المستخدم %1 ليس لديه إذن %2 لبعض الكاميرات المحددة</translation>
     </message>
   </context>
   <context>
     <name>QnResourceNameStrings</name>
     <message numerus="yes">
       <source>%n Cameras</source>
-      <translation type="unfinished">
-        <numerusform>%n Cameras</numerusform>
-        <numerusform>%n Cameras</numerusform>
-        <numerusform>%n Cameras</numerusform>
-        <numerusform>%n Cameras</numerusform>
-        <numerusform>%n Cameras</numerusform>
-        <numerusform>%n Cameras</numerusform>
+      <translation>
+        <numerusform>%n كاميرات</numerusform>
+        <numerusform>%n كاميرات</numerusform>
+        <numerusform>%n كاميرات</numerusform>
+        <numerusform>%n كاميرات</numerusform>
+        <numerusform>%n كاميرات</numerusform>
+        <numerusform>%n كاميرات</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n cameras</source>
-      <translation type="unfinished">
-        <numerusform>%n cameras</numerusform>
-        <numerusform>%n cameras</numerusform>
-        <numerusform>%n cameras</numerusform>
-        <numerusform>%n cameras</numerusform>
-        <numerusform>%n cameras</numerusform>
-        <numerusform>%n cameras</numerusform>
+      <translation>
+        <numerusform>%n كاميرات</numerusform>
+        <numerusform>%n كاميرات</numerusform>
+        <numerusform>%n كاميرات</numerusform>
+        <numerusform>%n كاميرات</numerusform>
+        <numerusform>%n كاميرات</numerusform>
+        <numerusform>%n كاميرات</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n I/O Modules</source>
-      <translation type="unfinished">
-        <numerusform>%n I/O Modules</numerusform>
-        <numerusform>%n I/O Modules</numerusform>
-        <numerusform>%n I/O Modules</numerusform>
-        <numerusform>%n I/O Modules</numerusform>
-        <numerusform>%n I/O Modules</numerusform>
-        <numerusform>%n I/O Modules</numerusform>
+      <translation>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n I/O modules</source>
-      <translation type="unfinished">
-        <numerusform>%n I/O modules</numerusform>
-        <numerusform>%n I/O modules</numerusform>
-        <numerusform>%n I/O modules</numerusform>
-        <numerusform>%n I/O modules</numerusform>
-        <numerusform>%n I/O modules</numerusform>
-        <numerusform>%n I/O modules</numerusform>
+      <translation>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
+        <numerusform>%n وحدات الإدخال/الإخراج</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n Devices</source>
-      <translation type="unfinished">
-        <numerusform>%n Devices</numerusform>
-        <numerusform>%n Devices</numerusform>
-        <numerusform>%n Devices</numerusform>
-        <numerusform>%n Devices</numerusform>
-        <numerusform>%n Devices</numerusform>
-        <numerusform>%n Devices</numerusform>
+      <translation>
+        <numerusform>الأجهزة %n</numerusform>
+        <numerusform>الأجهزة %n</numerusform>
+        <numerusform>الأجهزة %n</numerusform>
+        <numerusform>الأجهزة %n</numerusform>
+        <numerusform>الأجهزة %n</numerusform>
+        <numerusform>الأجهزة %n</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n devices</source>
-      <translation type="unfinished">
-        <numerusform>%n devices</numerusform>
-        <numerusform>%n devices</numerusform>
-        <numerusform>%n devices</numerusform>
-        <numerusform>%n devices</numerusform>
-        <numerusform>%n devices</numerusform>
-        <numerusform>%n devices</numerusform>
+      <translation>
+        <numerusform>%n الأجهزة</numerusform>
+        <numerusform>%n الأجهزة</numerusform>
+        <numerusform>%n الأجهزة</numerusform>
+        <numerusform> %n الأجهزة</numerusform>
+        <numerusform>%n الأجهزة</numerusform>
+        <numerusform>%n الأجهزة</numerusform>
       </translation>
     </message>
   </context>
@@ -1245,30 +1252,30 @@
     </message>
     <message>
       <source>FREE License</source>
-      <translation type="unfinished">FREE License</translation>
+      <translation>رخصة مجانية</translation>
     </message>
     <message>
       <source>Licensed To: %1</source>
-      <translation type="unfinished">Licensed To: %1</translation>
+      <translation>مرخص لـ: %1</translation>
     </message>
     <message>
       <source>Watermark: %1</source>
-      <translation type="unfinished">Watermark: %1</translation>
+      <translation>العلامة المائية: %1</translation>
     </message>
     <message>
       <source>Hardware ID: %1</source>
-      <translation type="unfinished">Hardware ID: %1</translation>
+      <translation>معرّف الجهاز: %1</translation>
     </message>
   </context>
   <context>
     <name>QnSubjectValidationPolicy</name>
     <message>
       <source>None of selected user roles contain users</source>
-      <translation type="unfinished">None of selected user roles contain users</translation>
+      <translation>لا يحتوي أي من أدوار المستخدم المحددة على مستخدمين</translation>
     </message>
     <message>
       <source>Select at least one user</source>
-      <translation type="unfinished">Select at least one user</translation>
+      <translation>حدد مستخدم واحد على الأقل</translation>
     </message>
   </context>
   <context>
@@ -1452,65 +1459,65 @@
     <message>
       <source>Msec</source>
       <comment>Numerus: Capitalized long suffix for displaying milliseconds</comment>
-      <translation type="unfinished">Msec</translation>
+      <translation>مللي ثانية</translation>
     </message>
     <message>
       <source>Sec</source>
       <comment>Numerus: Capitalized long suffix for displaying seconds</comment>
-      <translation type="unfinished">Sec</translation>
+      <translation>ثانية</translation>
     </message>
     <message>
       <source>Min</source>
       <comment>Numerus: Capitalized long suffix for displaying minutes</comment>
-      <translation type="unfinished">Min</translation>
+      <translation>دقيقة</translation>
     </message>
     <message>
       <source>Hrs</source>
       <comment>Numerus: Capitalized long suffix for displaying hours</comment>
-      <translation type="unfinished">Hrs</translation>
+      <translation>ساعات</translation>
     </message>
     <message>
       <source>Days</source>
       <comment>Numerus: Capitalized long suffix for displaying days</comment>
-      <translation type="unfinished">Days</translation>
+      <translation>أيام</translation>
     </message>
     <message>
       <source>Wks</source>
       <comment>Numerus: Capitalized long suffix for displaying weeks</comment>
-      <translation type="unfinished">Wks</translation>
+      <translation>أسابيع</translation>
     </message>
     <message>
       <source>Mos</source>
       <comment>Numerus: Capitalized long suffix for displaying months</comment>
-      <translation type="unfinished">Mos</translation>
+      <translation>شهور</translation>
     </message>
     <message>
       <source>Yrs</source>
       <comment>Numerus: Capitalized long suffix for displaying years</comment>
-      <translation type="unfinished">Yrs</translation>
+      <translation>سنوات</translation>
     </message>
     <message numerus="yes">
       <source>Milliseconds</source>
       <comment>Numerus: Capitalized full suffix for displaying milliseconds</comment>
-      <translation type="unfinished">
-        <numerusform>Milliseconds</numerusform>
-        <numerusform>Milliseconds</numerusform>
-        <numerusform>Milliseconds</numerusform>
-        <numerusform>Milliseconds</numerusform>
-        <numerusform>Milliseconds</numerusform>
-        <numerusform>Milliseconds</numerusform>
+      <translation>
+        <numerusform>مللي ثانية</numerusform>
+        <numerusform>مللي ثانية</numerusform>
+        <numerusform>مللي ثانية</numerusform>
+        <numerusform>مللي ثانية</numerusform>
+        <numerusform>مللي ثانية</numerusform>
+        <numerusform>مللي ثانية</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>Seconds</source>
       <comment>Numerus: Capitalized full suffix for displaying seconds</comment>
-      <translation type="unfinished">
-        <numerusform>Seconds</numerusform>
-        <numerusform>Seconds</numerusform>
-        <numerusform>Seconds</numerusform>
-        <numerusform>Seconds</numerusform>
-        <numerusform>Seconds</numerusform>
-        <numerusform>Seconds</numerusform>
+      <translation>
+        <numerusform>ثواني</numerusform>
+        <numerusform>ثواني</numerusform>
+        <numerusform>ثواني</numerusform>
+        <numerusform>ثواني</numerusform>
+        <numerusform>ثواني</numerusform>
+        <numerusform>ثواني</numerusform>
       </translation>
     </message>
     <message numerus="yes">
@@ -1528,61 +1535,61 @@
     <message numerus="yes">
       <source>Hours</source>
       <comment>Numerus: Capitalized full suffix for displaying hours</comment>
-      <translation type="unfinished">
-        <numerusform>Hours</numerusform>
-        <numerusform>Hours</numerusform>
-        <numerusform>Hours</numerusform>
-        <numerusform>Hours</numerusform>
-        <numerusform>Hours</numerusform>
-        <numerusform>Hours</numerusform>
+      <translation>
+        <numerusform>الساعات </numerusform>
+        <numerusform>الساعات </numerusform>
+        <numerusform>الساعات </numerusform>
+        <numerusform>الساعات </numerusform>
+        <numerusform>الساعات </numerusform>
+        <numerusform>الساعات </numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>Days</source>
       <comment>Numerus: Capitalized full suffix for displaying days</comment>
-      <translation type="unfinished">
-        <numerusform>Days</numerusform>
-        <numerusform>Days</numerusform>
-        <numerusform>Days</numerusform>
-        <numerusform>Days</numerusform>
-        <numerusform>Days</numerusform>
-        <numerusform>Days</numerusform>
+      <translation>
+        <numerusform>أيام</numerusform>
+        <numerusform>أيام</numerusform>
+        <numerusform>أيام</numerusform>
+        <numerusform>أيام</numerusform>
+        <numerusform>أيام</numerusform>
+        <numerusform>أيام</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>Weeks</source>
       <comment>Numerus: Capitalized full suffix for displaying weeks</comment>
-      <translation type="unfinished">
-        <numerusform>Weeks</numerusform>
-        <numerusform>Weeks</numerusform>
-        <numerusform>Weeks</numerusform>
-        <numerusform>Weeks</numerusform>
-        <numerusform>Weeks</numerusform>
-        <numerusform>Weeks</numerusform>
+      <translation>
+        <numerusform>أسابيع</numerusform>
+        <numerusform>أسابيع</numerusform>
+        <numerusform>أسابيع</numerusform>
+        <numerusform>أسابيع</numerusform>
+        <numerusform>أسابيع</numerusform>
+        <numerusform>أسابيع</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>Months</source>
       <comment>Numerus: Capitalized full suffix for displaying months</comment>
-      <translation type="unfinished">
-        <numerusform>Months</numerusform>
-        <numerusform>Months</numerusform>
-        <numerusform>Months</numerusform>
-        <numerusform>Months</numerusform>
-        <numerusform>Months</numerusform>
-        <numerusform>Months</numerusform>
+      <translation>
+        <numerusform>أشهر</numerusform>
+        <numerusform>أشهر</numerusform>
+        <numerusform>أشهر</numerusform>
+        <numerusform>أشهر</numerusform>
+        <numerusform>أشهر</numerusform>
+        <numerusform>أشهر</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>Years</source>
       <comment>Numerus: Capitalized full suffix for displaying years</comment>
-      <translation type="unfinished">
-        <numerusform>Years</numerusform>
-        <numerusform>Years</numerusform>
-        <numerusform>Years</numerusform>
-        <numerusform>Years</numerusform>
-        <numerusform>Years</numerusform>
-        <numerusform>Years</numerusform>
+      <translation>
+        <numerusform>سنوات</numerusform>
+        <numerusform>سنوات</numerusform>
+        <numerusform>سنوات</numerusform>
+        <numerusform>سنوات</numerusform>
+        <numerusform>سنوات</numerusform>
+        <numerusform>سنوات</numerusform>
       </translation>
     </message>
     <message>
@@ -1619,11 +1626,11 @@
     </message>
     <message>
       <source>Milliseconds</source>
-      <translation type="unfinished">Milliseconds</translation>
+      <translation>مللي ثانية</translation>
     </message>
     <message>
       <source>Seconds</source>
-      <translation type="unfinished">Seconds</translation>
+      <translation>ثواني</translation>
     </message>
     <message>
       <source>Minutes</source>
@@ -1631,129 +1638,133 @@
     </message>
     <message>
       <source>Hours</source>
-      <translation type="unfinished">Hours</translation>
+      <translation>الساعات </translation>
     </message>
     <message>
       <source>Days</source>
-      <translation type="unfinished">Days</translation>
+      <translation>أيام</translation>
     </message>
     <message>
       <source>Weeks</source>
-      <translation type="unfinished">Weeks</translation>
+      <translation>أسابيع</translation>
     </message>
     <message>
       <source>Months</source>
-      <translation type="unfinished">Months</translation>
+      <translation>أشهر</translation>
     </message>
     <message>
       <source>Years</source>
-      <translation type="unfinished">Years</translation>
+      <translation>سنوات</translation>
     </message>
   </context>
   <context>
     <name>QnUserResource</name>
     <message>
       <source>Custom</source>
-      <translation type="unfinished">Custom</translation>
+      <translation>تخصيص</translation>
     </message>
     <message>
       <source>Multiple groups</source>
-      <translation type="unfinished">Multiple groups</translation>
+      <translation>مجموعات متعددة</translation>
     </message>
   </context>
   <context>
     <name>QnUsersWithEmailValidationPolicy</name>
     <message>
       <source>Email address is not set for all the selected users.</source>
-      <translation type="unfinished">Email address is not set for all the selected users.</translation>
+      <translation>لم يتم تعيين عنوان البريد الإلكتروني لجميع المستخدمين المحددين.</translation>
     </message>
     <message>
       <source>Email address is not set for some selected users.</source>
-      <translation type="unfinished">Email address is not set for some selected users.</translation>
+      <translation>لم يتم تعيين عنوان البريد الإلكتروني لبعض المستخدمين المختارين.</translation>
     </message>
   </context>
   <context>
     <name>ServiceTypeDisplayStringHelper</name>
     <message>
       <source>Local recording</source>
-      <translation type="unfinished">Local recording</translation>
+      <translation>تسجيل محلي</translation>
     </message>
     <message>
       <source>Integration</source>
-      <translation type="unfinished">Integration</translation>
+      <translation>التكامل</translation>
     </message>
     <message>
       <source>Cloud storage</source>
-      <translation type="unfinished">Cloud storage</translation>
+      <translation>تخزين سحابي</translation>
     </message>
     <message>
       <source>Live view</source>
-      <translation type="unfinished">Live view</translation>
+      <translation>عرض مباشر</translation>
+    </message>
+    <message>
+      <source>Generic</source>
+      <translation>Generic</translation>
     </message>
   </context>
   <context>
     <name>StringsHelper</name>
     <message>
       <source>Check internet connection between VMS and license server.</source>
-      <translation type="unfinished">Check internet connection between VMS and license server.</translation>
+      <translation>تحقق من اتصال الإنترنت بين VMS وخادم الترخيص.</translation>
     </message>
     <message>
       <source>Contact your channel partner for assistance.</source>
-      <translation type="unfinished">Contact your channel partner for assistance.</translation>
+      <translation>اتصل بشريك القناة للحصول على المساعدة.</translation>
     </message>
   </context>
   <context>
     <name>SystemHelpers</name>
     <message>
       <source>New Site</source>
-      <translation type="unfinished">New Site</translation>
+      <translation>موقع جديد</translation>
     </message>
   </context>
   <context>
     <name>TimeFormat</name>
     <message>
       <source>just now</source>
-      <translation type="unfinished">just now</translation>
+      <translation>الآن فقط</translation>
     </message>
     <message>
       <source>yesterday</source>
-      <translation type="unfinished">yesterday</translation>
+      <translation>أمس</translation>
     </message>
     <message>
       <source>a week ago</source>
-      <translation type="unfinished">a week ago</translation>
+      <translation>منذ أسبوع</translation>
     </message>
     <message numerus="yes">
       <source>%n minutes ago</source>
-      <translation type="unfinished">
-        <numerusform>%n minutes ago</numerusform>
-        <numerusform>%n minutes ago</numerusform>
-        <numerusform>%n minutes ago</numerusform>
-        <numerusform>%n minutes ago</numerusform>
-        <numerusform>%n minutes ago</numerusform>
-        <numerusform>%n minutes ago</numerusform>
+      <translation>
+        <numerusform>منذ %n دقائق</numerusform>
+        <numerusform>منذ %n دقائق</numerusform>
+        <numerusform>منذ %n دقائق</numerusform>
+        <numerusform>منذ %n دقائق</numerusform>
+        <numerusform>منذ %n دقائق</numerusform>
+        <numerusform>منذ %n دقائق</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n hours ago</source>
-      <translation type="unfinished">
-        <numerusform>%n hours ago</numerusform>
-        <numerusform>%n hours ago</numerusform>
-        <numerusform>%n hours ago</numerusform>
-        <numerusform>%n hours ago</numerusform>
-        <numerusform>%n hours ago</numerusform>
-        <numerusform>%n hours ago</numerusform>
+      <translation>
+        <numerusform>منذ %n  ساعات</numerusform>
+        <numerusform>منذ %n  ساعات</numerusform>
+        <numerusform>منذ %n  ساعات</numerusform>
+        <numerusform>منذ %n  ساعات</numerusform>
+        <numerusform>منذ %n  ساعات</numerusform>
+        <numerusform>منذ %n  ساعات</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n days ago</source>
-      <translation type="unfinished">
-        <numerusform>%n days ago</numerusform>
-        <numerusform>%n days ago</numerusform>
-        <numerusform>%n days ago</numerusform>
-        <numerusform>%n days ago</numerusform>
-        <numerusform>%n days ago</numerusform>
-        <numerusform>%n days ago</numerusform>
+      <translation>
+        <numerusform>منذ %n  أيام</numerusform>
+        <numerusform>منذ %n  أيام</numerusform>
+        <numerusform>منذ %n  أيام</numerusform>
+        <numerusform>منذ %n  أيام</numerusform>
+        <numerusform>منذ %n  أيام</numerusform>
+        <numerusform>منذ %n  أيام</numerusform>
       </translation>
     </message>
   </context>
@@ -1761,171 +1772,171 @@
     <name>nx::recording::Error</name>
     <message>
       <source>Internal error</source>
-      <translation type="unfinished">Internal error</translation>
+      <translation>خطأ داخلي</translation>
     </message>
     <message>
       <source>Corresponding container in FFMPEG library was not found.</source>
-      <translation type="unfinished">Corresponding container in FFMPEG library was not found.</translation>
+      <translation>لم يتم العثور على حاوية مناظرة في مكتبة FFMPEG.</translation>
     </message>
     <message>
       <source>Could not create output file for video recording.</source>
-      <translation type="unfinished">Could not create output file for video recording.</translation>
+      <translation>تعذر إنشاء ملف الإخراج لتسجيل الفيديو.</translation>
     </message>
     <message>
       <source>Could not allocate output stream for recording.</source>
-      <translation type="unfinished">Could not allocate output stream for recording.</translation>
+      <translation>تعذر تخصيص تيار الإخراج للتسجيل.</translation>
     </message>
     <message>
       <source>Could not allocate output audio stream.</source>
-      <translation type="unfinished">Could not allocate output audio stream.</translation>
+      <translation>تعذر تخصيص إخراج البث الصوتي.</translation>
     </message>
     <message>
       <source>Could not allocate output metadata stream.</source>
-      <translation type="unfinished">Could not allocate output metadata stream.</translation>
+      <translation>تعذر تخصيص دفق بيانات الإخراج الوصفية.</translation>
     </message>
     <message>
       <source>Invalid audio codec information.</source>
-      <translation type="unfinished">Invalid audio codec information.</translation>
+      <translation>معلومات ترميز الصوت غير صالحة.</translation>
     </message>
     <message>
       <source>Video or audio codec is incompatible with the selected format.</source>
-      <translation type="unfinished">Video or audio codec is incompatible with the selected format.</translation>
+      <translation>برنامج ترميز الفيديو أو الصوت غير متوافق مع التنسيق المحدد.</translation>
     </message>
     <message>
       <source>Video transcoding required.</source>
-      <translation type="unfinished">Video transcoding required.</translation>
+      <translation>يلزم تحويل ترميز الفيديو.</translation>
     </message>
     <message>
       <source>Invalid resource type for data export.</source>
-      <translation type="unfinished">Invalid resource type for data export.</translation>
+      <translation>نوع مصدر غير صالح لتصدير البيانات.</translation>
     </message>
     <message>
       <source>No data exported.</source>
-      <translation type="unfinished">No data exported.</translation>
+      <translation>لم يتم تصدير أي بيانات.</translation>
     </message>
     <message>
       <source>Unlock this portion of the archive to export its contents.</source>
-      <translation type="unfinished">Unlock this portion of the archive to export its contents.</translation>
+      <translation>فتح هذا الجزء من الأرشيف لتصدير محتوياته.</translation>
     </message>
     <message>
       <source>Archive is unavailable now. Please try again later.</source>
-      <translation type="unfinished">Archive is unavailable now. Please try again later.</translation>
+      <translation>الأرشيف غير متوفر الآن. الرجاء المحاولة مرة أخرى لاحقاً.</translation>
     </message>
     <message>
       <source>File write error.</source>
-      <translation type="unfinished">File write error.</translation>
+      <translation>خطأ في كتابة الملف.</translation>
     </message>
     <message>
       <source>Audio transcoding required.</source>
-      <translation type="unfinished">Audio transcoding required.</translation>
+      <translation>يلزم تحويل ترميز الصوت.</translation>
     </message>
   </context>
   <context>
     <name>nx::vms::common::SystemSettings</name>
     <message>
       <source>Maximum event log records to keep in the database. Real amount of undeleted records may be up to 20% higher than the specified value.</source>
-      <translation type="unfinished">Maximum event log records to keep in the database. Real amount of undeleted records may be up to 20% higher than the specified value.</translation>
+      <translation>الحد الأقصى لسجلات سجل الأحداث للاحتفاظ في قاعدة البيانات. قد يصل العدد الحقيقي للسجلات غير المحذوفة إلى 20% أعلى من القيمة المحددة.</translation>
     </message>
     <message>
       <source>Whether or not to cache some frames for the primary stream. Values: &apos;yes&apos; - always enabled (may use a lot of RAM), &apos;no&apos; - always disabled except when required by the playback (e.g. HLS), &apos;auto&apos; - similar to &apos;no&apos;, but turned on when improving the user experience (e.g. when some Analytics plugin is working on the Camera).</source>
-      <translation type="unfinished">Whether or not to cache some frames for the primary stream. Values: &apos;yes&apos; - always enabled (may use a lot of RAM), &apos;no&apos; - always disabled except when required by the playback (e.g. HLS), &apos;auto&apos; - similar to &apos;no&apos;, but turned on when improving the user experience (e.g. when some Analytics plugin is working on the Camera).</translation>
+      <translation>إما أن تخزن بعض أطر البث الأولي أو لا. القيم: &apos;نعم&apos; - مفعل دائمًا (قد تستخدم الكثير من ذاكرة الوصول العشوائي RAM)، &apos;لا&apos; - معطل دائمًا إلا إذا كان مطلوباً من قبل اعادة التشغيل (مثل. HLS)، &apos;تلقائيًا&apos; - مماثل ل &apos;no&apos;، ولكن تم تشغيله عند تحسين تجربة المستخدم (مثل. عندما تعمل بعض الملحقات التحليلية على الكاميرا).</translation>
     </message>
     <message>
       <source>Max amount of HTTP connections using transcoding for the Server. Chrome opens 2 connections at once, then closes the first one. We recommend setting this parameter&apos;s value to 2 or more.</source>
-      <translation type="unfinished">Max amount of HTTP connections using transcoding for the Server. Chrome opens 2 connections at once, then closes the first one. We recommend setting this parameter&apos;s value to 2 or more.</translation>
+      <translation>الحد الأقصى لعدد اتصالات HTTP التي تستخدم إعادة الترميز للخادم. يفتح متصفح Chrome اتصالين في وقت واحد، ثم يغلق الأول. نوصي بتعيين قيمة هذا المعامل&apos;إلى 2 أو أكثر.</translation>
     </message>
     <message>
       <source>Semicolon-separated list of Servers designated to connect to the Cloud. Servers at the top of the list have higher priority. If the list is empty a Server for the Cloud connection is selected automatically.</source>
-      <translation type="unfinished">Semicolon-separated list of Servers designated to connect to the Cloud. Servers at the top of the list have higher priority. If the list is empty a Server for the Cloud connection is selected automatically.</translation>
+      <translation>قائمة بالخوادم المخصصة للاتصال بالسحابة، مفصولة بفواصل منقوطة. الخوادم الموجودة في أعلى القائمة لها أولوية أعلى. في حال كانت القائمة فارغة، يتم اختيار خادم للاتصال بالسحابة تلقائيًا.</translation>
     </message>
     <message>
       <source>Maximum number of consecutive RTP errors before the server reconnects the RTSP session.</source>
-      <translation type="unfinished">Maximum number of consecutive RTP errors before the server reconnects the RTSP session.</translation>
+      <translation>الحد الأقصى لعدد أخطاء RTP المتتالية قبل أن يعيد الخادم الاتصال بجلسة RTSP.</translation>
     </message>
     <message>
       <source>Enable deprecated API functions currently used by %1 software (insecure)</source>
       <comment>%1 is a company name</comment>
-      <translation type="unfinished">Enable deprecated API functions currently used by %1 software (insecure)</translation>
+      <translation>تمكين وظائف API المهجورة المستخدمة حاليا من قبل برنامج %1 (غير آمن)</translation>
     </message>
     <message>
       <source>Interval between the Cloud polling HTTP requests to synchronize the data.</source>
-      <translation type="unfinished">Interval between the Cloud polling HTTP requests to synchronize the data.</translation>
+      <translation>الفاصل الزمني بين طلبات HTTP التي يقوم بها السحابة لمزامنة البيانات.</translation>
     </message>
     <message>
       <source>Local Site ID, null means the Site is not set up yet.</source>
-      <translation type="unfinished">Local Site ID, null means the Site is not set up yet.</translation>
+      <translation>معرف الموقع المحلي، فارغ يعني أن الموقع لم يتم إعداده بعد.</translation>
     </message>
     <message>
       <source>Enable or disable the creation of new Integration registration requests</source>
-      <translation type="unfinished">Enable or disable the creation of new Integration registration requests</translation>
+      <translation>تفعيل أو تعطيل إنشاء طلبات تسجيل التكامل الجديدة</translation>
     </message>
     <message>
       <source>Anonymous statistics report allowed.</source>
-      <translation type="unfinished">Anonymous statistics report allowed.</translation>
+      <translation>يُسمح بنشر التقارير الإحصائية بشكل مجهول.</translation>
     </message>
     <message>
       <source>Anonymous statistics report last time.</source>
-      <translation type="unfinished">Anonymous statistics report last time.</translation>
+      <translation>تقرير إحصائي مجهول المصدر في المرة الأخيرة.</translation>
     </message>
     <message>
       <source>Anonymous statistics report last version.</source>
-      <translation type="unfinished">Anonymous statistics report last version.</translation>
+      <translation>تقرير إحصائي مجهول المصدر، الإصدار الأخير.</translation>
     </message>
     <message>
       <source>Anonymous statistics report last number.</source>
-      <translation type="unfinished">Anonymous statistics report last number.</translation>
+      <translation>تقرير إحصائي مجهول المصدر، العدد الأخير.</translation>
     </message>
     <message>
       <source>Anonymous statistics time cycle.</source>
-      <translation type="unfinished">Anonymous statistics time cycle.</translation>
+      <translation>الدورة الزمنية للإحصاءات المجهولة.</translation>
     </message>
     <message>
       <source>Anonymous statistics report delay after update.</source>
-      <translation type="unfinished">Anonymous statistics report delay after update.</translation>
+      <translation>تأخر تقرير الإحصائيات المجهولة المصدر بعد التحديث.</translation>
     </message>
     <message>
       <source>Anonymous Statistics Report Server URL.</source>
-      <translation type="unfinished">Anonymous Statistics Report Server URL.</translation>
+      <translation>عنوان URL لخادم تقارير الإحصائيات المجهولة.</translation>
     </message>
     <message>
       <source>Anonymous Crash Report Server API URL.</source>
-      <translation type="unfinished">Anonymous Crash Report Server API URL.</translation>
+      <translation>رابط API الخاص بخادم تقرير الأعطال المجهول.</translation>
     </message>
     <message>
       <source>Anonymous statistics report Client settings.</source>
-      <translation type="unfinished">Anonymous statistics report Client settings.</translation>
+      <translation>تقرير الإحصائيات المجهولة عن إعدادات العميل.</translation>
     </message>
     <message>
       <source>Device storage information update interval.</source>
-      <translation type="unfinished">Device storage information update interval.</translation>
+      <translation>فترة تحديث معلومات تخزين الجهاز.</translation>
     </message>
     <message>
       <source>Site alive update interval (seconds, 1s-1h).</source>
-      <translation type="unfinished">Site alive update interval (seconds, 1s-1h).</translation>
+      <translation>الفاصل الزمني للتحديث المباشر للموقع (ثواني، 1s-1ساعة).</translation>
     </message>
     <message>
       <source>Proxy connection timeout (seconds, 1s-1h).</source>
-      <translation type="unfinished">Proxy connection timeout (seconds, 1s-1h).</translation>
+      <translation>مهلة اتصال الوكيل (ثواني، 1s-1ساعة).</translation>
     </message>
     <message>
       <source>Proxy connection access policy.</source>
-      <translation type="unfinished">Proxy connection access policy.</translation>
+      <translation>سياسة الوصول إلى اتصال الوكيل.</translation>
     </message>
     <message>
       <source>Time synchronization enabled.</source>
-      <translation type="unfinished">Time synchronization enabled.</translation>
+      <translation>تم تفعيل مزامنة الوقت.</translation>
     </message>
     <message>
       <source>Primary time synchronization Server ID.</source>
-      <translation type="unfinished">Primary time synchronization Server ID.</translation>
+      <translation>معرف خادم مزامنة الوقت الأساسي.</translation>
     </message>
     <message>
       <source>Max difference between local and source time (milliseconds).</source>
-      <translation type="unfinished">Max difference between local and source time (milliseconds).</translation>
+      <translation>أقصى فرق بين التوقيت المحلي وتوقيت المصدر (بالمللي ثانية).</translation>
     </message>
     <message>
       <source>OS time change check period.</source>
-      <translation type="unfinished">OS time change check period.</translation>
+      <translation>فترة التحقق من التغيير الزمني لنظام التشغيل.</translation>
     </message>
     <message>
       <source>Sync time synchronization interval for network requests.</source>
@@ -1933,59 +1944,59 @@
     </message>
     <message>
       <source>Sync time epsilon. New value is not applied if time delta less than epsilon.</source>
-      <translation type="unfinished">Sync time epsilon. New value is not applied if time delta less than epsilon.</translation>
+      <translation>مزامنة الوقت (إبسيلون). لا يتم تطبيق القيمة الجديدة إذا كان فرق الوقت أقل من إبسيلون.</translation>
     </message>
     <message>
       <source>Cloud owner account.</source>
-      <translation type="unfinished">Cloud owner account.</translation>
+      <translation>حساب مالك السحابة.</translation>
     </message>
     <message>
       <source>Organization Id.</source>
-      <translation type="unfinished">Organization Id.</translation>
+      <translation>رمز المؤسسة.</translation>
     </message>
     <message>
       <source>Cloud Site ID.</source>
-      <translation type="unfinished">Cloud Site ID.</translation>
+      <translation>معرف موقع السحابة.</translation>
     </message>
     <message>
       <source>Cloud authorization key.</source>
-      <translation type="unfinished">Cloud authorization key.</translation>
+      <translation>مفتاح تفويض السحابة.</translation>
     </message>
     <message>
       <source>Enable 2FA for the Site.</source>
-      <translation type="unfinished">Enable 2FA for the Site.</translation>
+      <translation>قم بتفعيل المصادقة الثنائية للموقع.</translation>
     </message>
     <message>
       <source>Site name.</source>
-      <translation type="unfinished">Site name.</translation>
+      <translation>اسم الموقع.</translation>
     </message>
     <message>
       <source>Last master Site merge ID.</source>
-      <translation type="unfinished">Last master Site merge ID.</translation>
+      <translation>معرّف دمج الموقع الرئيسي الأخير.</translation>
     </message>
     <message>
       <source>Last slave Site merge ID.</source>
-      <translation type="unfinished">Last slave Site merge ID.</translation>
+      <translation>معرف دمج الموقع الفرعي الأخير.</translation>
     </message>
     <message>
       <source>Disable Device vendors.</source>
-      <translation type="unfinished">Disable Device vendors.</translation>
+      <translation>إلغاء تفعيل الشركة المصنعة</translation>
     </message>
     <message>
       <source>Optimize Camera settings.</source>
-      <translation type="unfinished">Optimize Camera settings.</translation>
+      <translation>تحسين إعدادات الكاميرا.</translation>
     </message>
     <message>
       <source>Thumbnails auto-update.</source>
-      <translation type="unfinished">Thumbnails auto-update.</translation>
+      <translation>تحديث الصور المصغرة تلقائياً.</translation>
     </message>
     <message>
       <source>Send plain-text emails.</source>
-      <translation type="unfinished">Send plain-text emails.</translation>
+      <translation>أرسل رسائل بريد إلكتروني بنص عادي.</translation>
     </message>
     <message>
       <source>Use Windows line feed in emails.</source>
-      <translation type="unfinished">Use Windows line feed in emails.</translation>
+      <translation>استخدم خاصية تغذية السطر في نظام ويندوز في رسائل البريد الإلكتروني.</translation>
     </message>
     <message>
       <source>Enable audit trail.</source>
@@ -1993,163 +2004,163 @@
     </message>
     <message>
       <source>Audit trail period (days, 14-730).</source>
-      <translation type="unfinished">Audit trail period (days, 14-730).</translation>
+      <translation>فترة سجل التدقيق (أيام، 14-730).</translation>
     </message>
     <message>
       <source>Event log period (days).</source>
-      <translation type="unfinished">Event log period (days).</translation>
+      <translation>فترة سجل الأحداث (بالأيام).</translation>
     </message>
     <message>
       <source>Maximum number of bookmarks. Value less than or equal to 0 is infinite.</source>
-      <translation type="unfinished">Maximum number of bookmarks. Value less than or equal to 0 is infinite.</translation>
+      <translation>الحد الأقصى لعدد الإشارات المرجعية. قيمة أقل من أو تساوي 0 غير محدودة.</translation>
     </message>
     <message>
       <source>Enforce HTTPS (data traffic encryption).</source>
-      <translation type="unfinished">Enforce HTTPS (data traffic encryption).</translation>
+      <translation>فرض استخدام بروتوكول HTTPS (تشفير حركة البيانات).</translation>
     </message>
     <message>
       <source>Enforce RTSPS (video traffic encryption).</source>
-      <translation type="unfinished">Enforce RTSPS (video traffic encryption).</translation>
+      <translation>فرض  استخدام بروتوكول RTSPS (تشفير حركة مرور الفيديو).</translation>
     </message>
     <message>
       <source>Expose device passwords stored in VMS for administrators (for web pages).</source>
-      <translation type="unfinished">Expose device passwords stored in VMS for administrators (for web pages).</translation>
+      <translation>عرض كلمات مرور الجهاز المخزنة في نظام إدارة الفيديو للمسؤولين (لصفحات الويب).</translation>
     </message>
     <message>
       <source>Enable auto-discovery.</source>
-      <translation type="unfinished">Enable auto-discovery.</translation>
+      <translation>تفعيل خاصية الاكتشاف التلقائي للأجهزة.</translation>
     </message>
     <message>
       <source>Enable auto-update notifications.</source>
-      <translation type="unfinished">Enable auto-update notifications.</translation>
+      <translation>قم بتفعيل إشعارات التحديث التلقائي.</translation>
     </message>
     <message>
       <source>Enable update notifications.</source>
-      <translation type="unfinished">Enable update notifications.</translation>
+      <translation>تمكين إشعارات التحديث</translation>
     </message>
     <message>
       <source>Enable UPNP port-mapping.</source>
-      <translation type="unfinished">Enable UPNP port-mapping.</translation>
+      <translation>تمكين تعيين منفذ UPNP.</translation>
     </message>
     <message>
       <source>Backup settings.</source>
-      <translation type="unfinished">Backup settings.</translation>
+      <translation>إعدادات النسخ الاحتياطي</translation>
     </message>
     <message>
       <source>Cloud host override.</source>
-      <translation type="unfinished">Cloud host override.</translation>
+      <translation>تجاوز مضيف السحابة.</translation>
     </message>
     <message>
       <source>Enable cross-domain policy.</source>
-      <translation type="unfinished">Enable cross-domain policy.</translation>
+      <translation>تفعيل سياسة النطاقات المتعددة.</translation>
     </message>
     <message>
       <source>Enable RTSP for Arecont.</source>
-      <translation type="unfinished">Enable RTSP for Arecont.</translation>
+      <translation>قم بتفعيل بروتوكول RTSP لـ Arecont.</translation>
     </message>
     <message>
       <source>Enable sequential Flir ONVIF searcher.</source>
-      <translation type="unfinished">Enable sequential Flir ONVIF searcher.</translation>
+      <translation>استخدم أداة البحث التسلسلي لبروتوكول Onvif من Flir.</translation>
     </message>
     <message>
       <source>Max P2P queue size (bytes, 32-512MB).</source>
-      <translation type="unfinished">Max P2P queue size (bytes, 32-512MB).</translation>
+      <translation>الحد الأقصى لحجم قائمة انتظار P2P (بايت، 32-512 ميجابايت).</translation>
     </message>
     <message>
       <source>Max P2P all clients size (bytes, 32-512MB).</source>
-      <translation type="unfinished">Max P2P all clients size (bytes, 32-512MB).</translation>
+      <translation>الحد الأقصى لحجم جميع عملاء P2P (بايت، 32-512 ميجابايت).</translation>
     </message>
     <message>
       <source>Max record queue size (bytes, 6-96MB).</source>
-      <translation type="unfinished">Max record queue size (bytes, 6-96MB).</translation>
+      <translation>الحد الأقصى لحجم قائمة انتظار السجلات (بايت، 6-96 ميجابايت).</translation>
     </message>
     <message>
       <source>Max record queue size (elements, 250-4000).</source>
-      <translation type="unfinished">Max record queue size (elements, 250-4000).</translation>
+      <translation>الحد الأقصى لحجم قائمة انتظار السجلات (العناصر، 250-4000).</translation>
     </message>
     <message>
       <source>RTP timeout (milliseconds).</source>
-      <translation type="unfinished">RTP timeout (milliseconds).</translation>
+      <translation>مهلة بروتوكول النقل في الوقت الحقيقيٌ RTP (بالمللي ثانية).</translation>
     </message>
     <message>
       <source>Max RTSP connection duration (seconds).</source>
-      <translation type="unfinished">Max RTSP connection duration (seconds).</translation>
+      <translation>الحد الأقصى لمدة اتصال RTSP (ثواني).</translation>
     </message>
     <message>
       <source>Enable cloud-connect UDP hole-punching.</source>
-      <translation type="unfinished">Enable cloud-connect UDP hole-punching.</translation>
+      <translation>تفعيل خاصية اختراق ثقوب UDP في الاتصال السحابي.</translation>
     </message>
     <message>
       <source>Enable cloud-connect relays usage.</source>
-      <translation type="unfinished">Enable cloud-connect relays usage.</translation>
+      <translation>تفعيل استخدام خوادم الترحيل المتصلة بالسحابة.</translation>
     </message>
     <message>
       <source>Enforce SSL for cloud-connect relays.</source>
-      <translation type="unfinished">Enforce SSL for cloud-connect relays.</translation>
+      <translation>فرض استخدام بروتوكول SSL لخوادم الترحيل السحابية.</translation>
     </message>
     <message>
       <source>Enable recording on EDGE.</source>
-      <translation type="unfinished">Enable recording on EDGE.</translation>
+      <translation>تمكين التسجيل على EDGE.</translation>
     </message>
     <message>
       <source>Enable WebSocket for P2P.</source>
-      <translation type="unfinished">Enable WebSocket for P2P.</translation>
+      <translation>تمكين WebSocket لـ P2P.</translation>
     </message>
     <message>
       <source>Max thread count for remote archive synchronization (&lt;=0 - auto, max 32).</source>
-      <translation type="unfinished">Max thread count for remote archive synchronization (&lt;=0 - auto, max 32).</translation>
+      <translation>الحد الأقصى لعدد المواضيع لمزامنة الأرشيف عن بعد (&lt;=0 - تلقائي، الحد الأقصى 32).</translation>
     </message>
     <message>
       <source>Update releases.json file URL.</source>
-      <translation type="unfinished">Update releases.json file URL.</translation>
+      <translation>تحديث الإصدارات .json رابط الملف.</translation>
     </message>
     <message>
       <source>Target update information.</source>
-      <translation type="unfinished">Target update information.</translation>
+      <translation>معلومات تحديث الهدف.</translation>
     </message>
     <message>
       <source>Installed update information.</source>
-      <translation type="unfinished">Installed update information.</translation>
+      <translation>معلومات التحديث المثبت.</translation>
     </message>
     <message>
       <source>Downloader peers for files.</source>
-      <translation type="unfinished">Downloader peers for files.</translation>
+      <translation>أقران التنزيل للملفات.</translation>
     </message>
     <message>
       <source>Client update settings.</source>
-      <translation type="unfinished">Client update settings.</translation>
+      <translation>إعدادات تحديث العميل.</translation>
     </message>
     <message>
       <source>Thread count limit for camera archive synchronization.</source>
-      <translation type="unfinished">Thread count limit for camera archive synchronization.</translation>
+      <translation>الحد الأقصى لعدد المواضيع لمزامنة أرشيف الكاميرا.</translation>
     </message>
     <message>
       <source>Watermark settings.</source>
-      <translation type="unfinished">Watermark settings.</translation>
+      <translation>إعدادات العلامة المائية.</translation>
     </message>
     <message>
       <source>Pixelation settings.</source>
-      <translation type="unfinished">Pixelation settings.</translation>
+      <translation>إعدادات البكسلة.</translation>
     </message>
     <message>
       <source>Authorization Session token lifetime (seconds).</source>
-      <translation type="unfinished">Authorization Session token lifetime (seconds).</translation>
+      <translation>مدة صلاحية رمز جلسة التفويض (بالثواني).</translation>
     </message>
     <message>
       <source>Apply session limit for Cloud tokens.</source>
-      <translation type="unfinished">Apply session limit for Cloud tokens.</translation>
+      <translation>قم بتطبيق حد الجلسة لرموز السحابة.</translation>
     </message>
     <message>
       <source>Session token count limit on a single Server.</source>
-      <translation type="unfinished">Session token count limit on a single Server.</translation>
+      <translation>حد عدد رموز الجلسة على خادم واحد.</translation>
     </message>
     <message>
       <source>Max session token count per user on single Server.</source>
-      <translation type="unfinished">Max session token count per user on single Server.</translation>
+      <translation>الحد الأقصى لعدد رمز الجلسة لكل مستخدم على الخادم الواحد.</translation>
     </message>
     <message>
       <source>Update interval for remote session token cache (other Servers and Cloud).</source>
-      <translation type="unfinished">Update interval for remote session token cache (other Servers and Cloud).</translation>
+      <translation>فترة تحديث ذاكرة التخزين المؤقت لرمز الجلسة البعيدة (الخوادم الأخرى والسحابة).</translation>
     </message>
     <message>
       <source>Timeout for remote session token cache (other Servers and Cloud).</source>
@@ -2157,7 +2168,7 @@
     </message>
     <message>
       <source>Default video codec.</source>
-      <translation type="unfinished">Default video codec.</translation>
+      <translation>برنامج ترميز الفيديو الافتراضي.</translation>
     </message>
     <message>
       <source>Default codec for export video.</source>
@@ -2165,11 +2176,11 @@
     </message>
     <message>
       <source>Low quality screen video codec.</source>
-      <translation type="unfinished">Low quality screen video codec.</translation>
+      <translation>ترميز فيديو شاشة منخفضة الجودة.</translation>
     </message>
     <message>
       <source>License server.</source>
-      <translation type="unfinished">License server.</translation>
+      <translation>خادم الترخيص.</translation>
     </message>
     <message>
       <source>URI for resource_data.json automatic update.</source>
@@ -2177,7 +2188,7 @@
     </message>
     <message>
       <source>Meta data storage change policy.</source>
-      <translation type="unfinished">Meta data storage change policy.</translation>
+      <translation>سياسة تغيير تخزين البيانات الوصفية.</translation>
     </message>
     <message>
       <source>Persistent Servers for update storage.</source>
@@ -2236,10 +2247,6 @@
       <translation type="unfinished">HTTP header: Server, supported variables: $vmsName, $vmsVersion, $company, $compatibility.</translation>
     </message>
     <message>
-      <source>HTTP header: Origin.</source>
-      <translation type="unfinished">HTTP header: Origin.</translation>
-    </message>
-    <message>
       <source>HTTP header: X-Frame-Options.</source>
       <translation type="unfinished">HTTP header: X-Frame-Options.</translation>
     </message>
@@ -2277,7 +2284,7 @@
     </message>
     <message>
       <source>Max scene items (0 means default)</source>
-      <translation type="unfinished">Max scene items (0 means default)</translation>
+      <translation>الحد الأقصى لعناصر المشهد (0 يعني الوضع الافتراضي)</translation>
     </message>
     <message>
       <source>Encryption key used to encode secure cookie values.</source>
@@ -2294,6 +2301,18 @@
     <message>
       <source>Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</source>
       <translation type="unfinished">Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Origin.</source>
+      <translation>"التحكم في الوصول - السماح للمصدر."</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Credentials.</source>
+      <translation>التحكم في الوصول-السماح بالبيانات المعتمدة.</translation>
+    </message>
+    <message>
+      <source>JSON RPC subscription update interval (milliseconds, 0 = disabled).</source>
+      <translation type="unfinished">JSON RPC subscription update interval (milliseconds, 0 = disabled).</translation>
     </message>
   </context>
 </TS>

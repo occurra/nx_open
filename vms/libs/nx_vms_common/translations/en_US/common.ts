@@ -934,6 +934,13 @@
     </message>
 </context>
 <context>
+    <name>QnOnlineServerPolicy</name>
+    <message>
+        <source>Online servers</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>QnPoeOverBudgetPolicy</name>
     <message>
         <source>Servers that support PoE monitoring</source>
@@ -1421,6 +1428,10 @@
     <message>
         <source>Live view</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>Generic</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1956,10 +1967,6 @@
         <translation></translation>
     </message>
     <message>
-        <source>HTTP header: Origin.</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>HTTP header: X-Frame-Options.</source>
         <translation></translation>
     </message>
@@ -2013,6 +2020,18 @@
     </message>
     <message>
         <source>Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HTTP header: Access-Control-Allow-Origin.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HTTP header: Access-Control-Allow-Credentials.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>JSON RPC subscription update interval (milliseconds, 0 = disabled).</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -893,6 +893,13 @@
     </message>
   </context>
   <context>
+    <name>QnOnlineServerPolicy</name>
+    <message>
+      <source>Online servers</source>
+      <translation>Máy chủ trực tuyến</translation>
+    </message>
+  </context>
+  <context>
     <name>QnPoeOverBudgetPolicy</name>
     <message>
       <source>Servers that support PoE monitoring</source>
@@ -1354,6 +1361,10 @@
     <message>
       <source>Live view</source>
       <translation>Xem trực tiếp</translation>
+    </message>
+    <message>
+      <source>Generic</source>
+      <translation>Tổng quan</translation>
     </message>
   </context>
   <context>
@@ -1886,10 +1897,6 @@
       <translation>Tiêu đề HTTP: Máy chủ, các biến được hỗ trợ: $vmsName, $vmsVersion, $company, $compatibility.</translation>
     </message>
     <message>
-      <source>HTTP header: Origin.</source>
-      <translation>Tiêu đề HTTP: Nguồn gốc.</translation>
-    </message>
-    <message>
       <source>HTTP header: X-Frame-Options.</source>
       <translation>Tiêu đề HTTP: X-Frame-Options.</translation>
     </message>
@@ -1939,11 +1946,23 @@
     </message>
     <message>
       <source>Socket sending timeout when Server streams media data (Seconds).</source>
-      <translation type="unfinished">Socket sending timeout when Server streams media data (Seconds).</translation>
+      <translation>Lỗi hết thời gian chờ gửi dữ liệu khi máy chủ truyền phát dữ liệu đa phương tiện (giây).</translation>
     </message>
     <message>
       <source>Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</source>
-      <translation type="unfinished">Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</translation>
+      <translation>Kiểm soát cách thức tải các tích hợp. Các giá trị có thể là: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Origin.</source>
+      <translation type="unfinished">HTTP header: Access-Control-Allow-Origin.</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Credentials.</source>
+      <translation type="unfinished">HTTP header: Access-Control-Allow-Credentials.</translation>
+    </message>
+    <message>
+      <source>JSON RPC subscription update interval (milliseconds, 0 = disabled).</source>
+      <translation>Khoảng thời gian cập nhật đăng ký JSON RPC (mili giây, 0 = bị vô hiệu hóa).</translation>
     </message>
   </context>
 </TS>

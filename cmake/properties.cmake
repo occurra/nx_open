@@ -13,6 +13,7 @@ set(translations
     cs_CZ
     da_DK
     de_DE
+    el_GR
     fi_FI
     ru_RU
     es_ES
@@ -22,6 +23,7 @@ set(translations
     it_IT
     ja_JP
     ko_KR
+    lt_LT
     tr_TR
     zh_CN
     zh_TW

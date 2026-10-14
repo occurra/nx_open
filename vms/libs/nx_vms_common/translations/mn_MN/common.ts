@@ -5,35 +5,35 @@
     <name>AccessRightHelper</name>
     <message>
       <source>View Live</source>
-      <translation type="unfinished">View Live</translation>
+      <translation>Шууд үзэх</translation>
     </message>
     <message>
       <source>Play Audio</source>
-      <translation type="unfinished">Play Audio</translation>
+      <translation>Аудио тоглуулах</translation>
     </message>
     <message>
       <source>View Archive</source>
-      <translation type="unfinished">View Archive</translation>
+      <translation>Архивыг харах</translation>
     </message>
     <message>
       <source>Export Archive</source>
-      <translation type="unfinished">Export Archive</translation>
+      <translation>Архив экспортлох</translation>
     </message>
     <message>
       <source>View Bookmarks</source>
-      <translation type="unfinished">View Bookmarks</translation>
+      <translation>Хавчуургыг харах</translation>
     </message>
     <message>
       <source>Manage Bookmarks</source>
-      <translation type="unfinished">Manage Bookmarks</translation>
+      <translation>Хавчуургыг удирдах</translation>
     </message>
     <message>
       <source>User Input</source>
-      <translation type="unfinished">User Input</translation>
+      <translation>Хэрэглэгчийн оролт</translation>
     </message>
     <message>
       <source>Edit Settings</source>
-      <translation type="unfinished">Edit Settings</translation>
+      <translation>Тохиргоог засах</translation>
     </message>
   </context>
   <context>
@@ -60,14 +60,14 @@
     <message>
       <source>Site Event</source>
       <comment>Shows that the bookmark was created by a site event</comment>
-      <translation type="unfinished">Site Event</translation>
+      <translation>Сайтын арга хэмжээ</translation>
     </message>
   </context>
   <context>
     <name>CustomerSupport</name>
     <message>
       <source>your Regional / License support</source>
-      <translation type="unfinished">your Regional / License support</translation>
+      <translation>таны бүс нутгийн / лицензийн дэмжлэг</translation>
     </message>
   </context>
   <context>
@@ -192,53 +192,53 @@
     <message>
       <source>Members of this group have unlimited Site privileges. Administrators can create and modify Power Users, merge Sites and connect or disconnect Site to %1.</source>
       <comment>%1 is the cloud name (like Nx Cloud)</comment>
-      <translation type="unfinished">Members of this group have unlimited Site privileges. Administrators can create and modify Power Users, merge Sites and connect or disconnect Site to %1.</translation>
+      <translation>Энэ бүлгийн гишүүд хязгааргүй Сайтын эрхтэй. Админууд Туршлагатай Хэрэглэгчдийг үүсгэж, өөрчлөх, Сайтуудыг нэгтгэх, Сайтыг %1 руу холбох эсвэл салгах боломжтой.</translation>
     </message>
     <message>
       <source>Members of this group can, in addition to the permissions granted by the Advanced Viewers group, control most of the Site configuration, but are not allowed to change any Administrator related settings, like delete or change their own groups and permissions, and cannot create or edit other Power Users.</source>
-      <translation type="unfinished">Members of this group can, in addition to the permissions granted by the Advanced Viewers group, control most of the Site configuration, but are not allowed to change any Administrator related settings, like delete or change their own groups and permissions, and cannot create or edit other Power Users.</translation>
+      <translation>Энэ бүлгийн гишүүд Дэвшилтэт Үзэгчдийн бүлгээс олгосон зөвшөөрлөөс гадна Сайтын тохиргооны ихэнх хэсгийг хянах боломжтой боловч өөрсдийн бүлгүүд болон зөвшөөрлийг устгах эсвэл өөрчлөх гэх мэт Администратортой холбоотой тохиргоог өөрчлөхийг зөвшөөрдөггүй бөгөөд бусад Туршлагатай Хэрэглэгчдийг үүсгэх эсвэл засах боломжгүй.</translation>
     </message>
     <message>
       <source>Members of this group can view Site Health Monitoring information and server processor load in real-time (Server Monitoring).</source>
-      <translation type="unfinished">Members of this group can view Site Health Monitoring information and server processor load in real-time (Server Monitoring).</translation>
+      <translation>Энэ бүлгийн гишүүд Сайтын эрүүл мэндийн хяналтын мэдээлэл болон серверийн процессорын ачааллыг бодит цаг хугацаанд (Серверийн хяналт) харах боломжтой.</translation>
     </message>
   </context>
   <context>
     <name>QnBusinessResourceValidationStrings</name>
     <message>
       <source>Any Device</source>
-      <translation type="unfinished">Any Device</translation>
+      <translation>Ямар ч төхөөрөмж</translation>
     </message>
     <message>
       <source>Any Camera</source>
-      <translation type="unfinished">Any Camera</translation>
+      <translation>Дурын камер</translation>
     </message>
     <message>
       <source>Select at least one device</source>
-      <translation type="unfinished">Select at least one device</translation>
+      <translation>Дор хаяж нэг төхөөрөмж сонгоно уу</translation>
     </message>
     <message>
       <source>Select at least one camera</source>
-      <translation type="unfinished">Select at least one camera</translation>
+      <translation>Дор хаяж нэг камер сонгоно уу</translation>
     </message>
     <message numerus="yes">
       <source>%n of %1 devices</source>
       <translation type="unfinished">
-        <numerusform>%n of %1 devices</numerusform>
+        <numerusform>%1 төхөөрөмжөөс %n</numerusform>
         <numerusform>%n of %1 devices</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n of %1 cameras</source>
       <translation type="unfinished">
-        <numerusform>%n of %1 cameras</numerusform>
+        <numerusform>%1 камерын %n</numerusform>
         <numerusform>%n of %1 cameras</numerusform>
       </translation>
     </message>
     <message numerus="yes">
       <source>%n of %1 I/O modules</source>
       <translation type="unfinished">
-        <numerusform>%n of %1 I/O modules</numerusform>
+        <numerusform>%1 Оролт/Гаралтын модулиудын %n</numerusform>
         <numerusform>%n of %1 I/O modules</numerusform>
       </translation>
     </message>
@@ -247,7 +247,7 @@
     <name>QnBuzzerPolicy</name>
     <message>
       <source>Servers that support buzzer</source>
-      <translation type="unfinished">Servers that support buzzer</translation>
+      <translation>Дуу чимээг дэмждэг серверүүд</translation>
     </message>
   </context>
   <context>
@@ -272,7 +272,7 @@
     </message>
     <message>
       <source>Select camera</source>
-      <translation type="unfinished">Select camera</translation>
+      <translation>Камер сонгох</translation>
     </message>
     <message numerus="yes">
       <source>%1 does not support two-way audio</source>
@@ -935,6 +935,13 @@
     </message>
   </context>
   <context>
+    <name>QnOnlineServerPolicy</name>
+    <message>
+      <source>Online servers</source>
+      <translation type="unfinished">Online servers</translation>
+    </message>
+  </context>
+  <context>
     <name>QnPoeOverBudgetPolicy</name>
     <message>
       <source>Servers that support PoE monitoring</source>
@@ -1423,6 +1430,10 @@
       <source>Live view</source>
       <translation type="unfinished">Live view</translation>
     </message>
+    <message>
+      <source>Generic</source>
+      <translation type="unfinished">Generic</translation>
+    </message>
   </context>
   <context>
     <name>StringsHelper</name>
@@ -1439,7 +1450,7 @@
     <name>SystemHelpers</name>
     <message>
       <source>New Site</source>
-      <translation type="unfinished">New Site</translation>
+      <translation>Шинэ сайт</translation>
     </message>
   </context>
   <context>
@@ -1678,7 +1689,7 @@
     </message>
     <message>
       <source>Site name.</source>
-      <translation type="unfinished">Site name.</translation>
+      <translation>Сайтын нэр.</translation>
     </message>
     <message>
       <source>Last master Site merge ID.</source>
@@ -1790,7 +1801,7 @@
     </message>
     <message>
       <source>RTP timeout (milliseconds).</source>
-      <translation type="unfinished">RTP timeout (milliseconds).</translation>
+      <translation>RTP хугацаа (миллисекунд).</translation>
     </message>
     <message>
       <source>Max RTSP connection duration (seconds).</source>
@@ -1846,7 +1857,7 @@
     </message>
     <message>
       <source>Watermark settings.</source>
-      <translation type="unfinished">Watermark settings.</translation>
+      <translation>Усны тэмдгийн тохиргоо.</translation>
     </message>
     <message>
       <source>Pixelation settings.</source>
@@ -1886,11 +1897,11 @@
     </message>
     <message>
       <source>Low quality screen video codec.</source>
-      <translation type="unfinished">Low quality screen video codec.</translation>
+      <translation>Чанар муутай дэлгэцийн видео кодек.</translation>
     </message>
     <message>
       <source>License server.</source>
-      <translation type="unfinished">License server.</translation>
+      <translation>Лицензийн сервер.</translation>
     </message>
     <message>
       <source>URI for resource_data.json automatic update.</source>
@@ -1898,7 +1909,7 @@
     </message>
     <message>
       <source>Meta data storage change policy.</source>
-      <translation type="unfinished">Meta data storage change policy.</translation>
+      <translation>Мета өгөгдлийн сангийн өөрчлөлтийн бодлого.</translation>
     </message>
     <message>
       <source>Persistent Servers for update storage.</source>
@@ -1957,10 +1968,6 @@
       <translation type="unfinished">HTTP header: Server, supported variables: $vmsName, $vmsVersion, $company, $compatibility.</translation>
     </message>
     <message>
-      <source>HTTP header: Origin.</source>
-      <translation type="unfinished">HTTP header: Origin.</translation>
-    </message>
-    <message>
       <source>HTTP header: X-Frame-Options.</source>
       <translation type="unfinished">HTTP header: X-Frame-Options.</translation>
     </message>
@@ -2015,6 +2022,18 @@
     <message>
       <source>Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</source>
       <translation type="unfinished">Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Origin.</source>
+      <translation type="unfinished">HTTP header: Access-Control-Allow-Origin.</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Credentials.</source>
+      <translation type="unfinished">HTTP header: Access-Control-Allow-Credentials.</translation>
+    </message>
+    <message>
+      <source>JSON RPC subscription update interval (milliseconds, 0 = disabled).</source>
+      <translation type="unfinished">JSON RPC subscription update interval (milliseconds, 0 = disabled).</translation>
     </message>
   </context>
 </TS>

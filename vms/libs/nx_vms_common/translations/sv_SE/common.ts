@@ -934,6 +934,13 @@
     </message>
   </context>
   <context>
+    <name>QnOnlineServerPolicy</name>
+    <message>
+      <source>Online servers</source>
+      <translation>Online Server</translation>
+    </message>
+  </context>
+  <context>
     <name>QnPoeOverBudgetPolicy</name>
     <message>
       <source>Servers that support PoE monitoring</source>
@@ -1421,6 +1428,10 @@
     <message>
       <source>Live view</source>
       <translation>Livevisning</translation>
+    </message>
+    <message>
+      <source>Generic</source>
+      <translation>Allmänt</translation>
     </message>
   </context>
   <context>
@@ -1956,10 +1967,6 @@
       <translation>HTTP-huvud: Server, variabler som stöds: $vmsName, $vmsVersion, $company, $compatibility.</translation>
     </message>
     <message>
-      <source>HTTP header: Origin.</source>
-      <translation>HTTP-huvud: Ursprung.</translation>
-    </message>
-    <message>
       <source>HTTP header: X-Frame-Options.</source>
       <translation>HTTP-huvud: X-Frame-Options.</translation>
     </message>
@@ -2014,6 +2021,18 @@
     <message>
       <source>Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</source>
       <translation>Styr hur integrationer laddas. Möjliga värden är: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Origin.</source>
+      <translation>HTTP-header: Access-Control-Allow-Origin.</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Credentials.</source>
+      <translation>HTTP-header: Access-Control-Allow-Credentials.</translation>
+    </message>
+    <message>
+      <source>JSON RPC subscription update interval (milliseconds, 0 = disabled).</source>
+      <translation>JSON RPC-prenumerationsintervall (millisekunder, 0 = inaktiverat).</translation>
     </message>
   </context>
 </TS>

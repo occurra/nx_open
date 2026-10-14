@@ -201,11 +201,11 @@
     <name>QnBusinessResourceValidationStrings</name>
     <message>
       <source>Any Device</source>
-      <translation>全デバイス</translation>
+      <translation>すべてのデバイス</translation>
     </message>
     <message>
       <source>Any Camera</source>
-      <translation>全カメラ</translation>
+      <translation>すべてのカメラ</translation>
     </message>
     <message>
       <source>Select at least one device</source>
@@ -317,7 +317,7 @@
     </message>
     <message>
       <source>Finally, try to update firmware. If the problem persists, please contact support.</source>
-      <translation>ファームウェアの更新を行ってください。問題が継続する場合はサポートにお問合せください。</translation>
+      <translation>最後に、ファームウェアの更新をお試しください。問題が解決しない場合は、 サポートにお問い合わせください。</translation>
     </message>
     <message>
       <source>Failed to configure parameter %1.</source>
@@ -325,7 +325,7 @@
     </message>
     <message>
       <source>Please contact support.</source>
-      <translation>サポートにお問合せください。</translation>
+      <translation>サポートにお問い合わせください。</translation>
     </message>
     <message>
       <source>An input/output error has occurred. OS message: &quot;%1&quot;.</source>
@@ -893,6 +893,13 @@
     </message>
   </context>
   <context>
+    <name>QnOnlineServerPolicy</name>
+    <message>
+      <source>Online servers</source>
+      <translation>オンラインサーバー</translation>
+    </message>
+  </context>
+  <context>
     <name>QnPoeOverBudgetPolicy</name>
     <message>
       <source>Servers that support PoE monitoring</source>
@@ -1354,6 +1361,10 @@
     <message>
       <source>Live view</source>
       <translation>ライブ映像</translation>
+    </message>
+    <message>
+      <source>Generic</source>
+      <translation>汎用</translation>
     </message>
   </context>
   <context>
@@ -1886,10 +1897,6 @@
       <translation>HTTPヘッダー: サーバー、サポートされている変数: $vmsName, $vmsVersion, $company, $compatibility。</translation>
     </message>
     <message>
-      <source>HTTP header: Origin.</source>
-      <translation>HTTP ヘッダー: Origin。</translation>
-    </message>
-    <message>
       <source>HTTP header: X-Frame-Options.</source>
       <translation>HTTP ヘッダー: X-Frame-Options。</translation>
     </message>
@@ -1944,6 +1951,18 @@
     <message>
       <source>Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</source>
       <translation>インテグレーションの読み込み方法を制御します。以下より選択してください: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;, &quot;forceLoadingInCurrentProcess&quot;</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Origin.</source>
+      <translation>HTTP ヘッダー: Access-Control-Allow-Origin</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Credentials.</source>
+      <translation>HTTP ヘッダー: Access-Control-Allow-Credentials</translation>
+    </message>
+    <message>
+      <source>JSON RPC subscription update interval (milliseconds, 0 = disabled).</source>
+      <translation>JSON RPC サブスクリプション更新間隔 (ミリ秒、 0 = 無効)。</translation>
     </message>
   </context>
 </TS>

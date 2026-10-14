@@ -934,6 +934,13 @@
     </message>
   </context>
   <context>
+    <name>QnOnlineServerPolicy</name>
+    <message>
+      <source>Online servers</source>
+      <translation>Online servere</translation>
+    </message>
+  </context>
+  <context>
     <name>QnPoeOverBudgetPolicy</name>
     <message>
       <source>Servers that support PoE monitoring</source>
@@ -1421,6 +1428,10 @@
     <message>
       <source>Live view</source>
       <translation>Live visning</translation>
+    </message>
+    <message>
+      <source>Generic</source>
+      <translation>Generisk</translation>
     </message>
   </context>
   <context>
@@ -1956,10 +1967,6 @@
       <translation>HTTP header: Server, understøttede variabler: $vmsName, $vmsVersion, $company, $compatibility.</translation>
     </message>
     <message>
-      <source>HTTP header: Origin.</source>
-      <translation>HTTP header: Oprindelse.</translation>
-    </message>
-    <message>
       <source>HTTP header: X-Frame-Options.</source>
       <translation>HTTP header: X-Frame indstillinger.</translation>
     </message>
@@ -2014,6 +2021,18 @@
     <message>
       <source>Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</source>
       <translation>Styrer, hvordan integrationer indlæses. Mulige værdier er: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Origin.</source>
+      <translation>HTTP-header: Adgangskontrol-Tillad-Oprindelse.</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Credentials.</source>
+      <translation>HTTP-header: Adgangskontrol-Tillad-Legitimationsoplysninger.</translation>
+    </message>
+    <message>
+      <source>JSON RPC subscription update interval (milliseconds, 0 = disabled).</source>
+      <translation>JSON RPC abonnement opdateringsinterval (millisekunder, 0 = deaktiveret).</translation>
     </message>
   </context>
 </TS>

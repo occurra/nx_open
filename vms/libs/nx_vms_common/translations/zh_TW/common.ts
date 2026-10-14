@@ -201,7 +201,7 @@
     <name>QnBusinessResourceValidationStrings</name>
     <message>
       <source>Any Device</source>
-      <translation>任何設備</translation>
+      <translation>任何裝置</translation>
     </message>
     <message>
       <source>Any Camera</source>
@@ -489,7 +489,7 @@
     </message>
     <message>
       <source>Invalid data was received from the device. Details: &quot;%1&quot;.</source>
-      <translation>從設備收到無效的資料。詳細內容：&quot;%1&quot;</translation>
+      <translation>從裝置收到無效的資料。詳細內容：&quot;%1&quot;。</translation>
     </message>
     <message>
       <source>Invalid data was received from the camera. Details: &quot;%1&quot;.</source>
@@ -890,6 +890,13 @@
     <message>
       <source>Local recording services</source>
       <translation>個本地錄影服務</translation>
+    </message>
+  </context>
+  <context>
+    <name>QnOnlineServerPolicy</name>
+    <message>
+      <source>Online servers</source>
+      <translation>在線伺服器</translation>
     </message>
   </context>
   <context>
@@ -1355,6 +1362,10 @@
       <source>Live view</source>
       <translation>即時影像</translation>
     </message>
+    <message>
+      <source>Generic</source>
+      <translation>通用</translation>
+    </message>
   </context>
   <context>
     <name>StringsHelper</name>
@@ -1547,7 +1558,7 @@
     </message>
     <message>
       <source>Device storage information update interval.</source>
-      <translation>裝置儲存資訊更新間隔.</translation>
+      <translation>裝置儲存資訊更新間隔。</translation>
     </message>
     <message>
       <source>Site alive update interval (seconds, 1s-1h).</source>
@@ -1619,7 +1630,7 @@
     </message>
     <message>
       <source>Disable Device vendors.</source>
-      <translation>停用設備供應商.</translation>
+      <translation>停用裝置供應商。</translation>
     </message>
     <message>
       <source>Optimize Camera settings.</source>
@@ -1851,7 +1862,7 @@
     </message>
     <message>
       <source>Keep IO port state on when Server connects to the device.</source>
-      <translation>伺服器連接設備時保持IO接口狀態開啟.</translation>
+      <translation>伺服器連接裝置時保持IO接口狀態開啟。</translation>
     </message>
     <message>
       <source>Media buffer size (KB, 10KB-4MB).</source>
@@ -1884,10 +1895,6 @@
     <message>
       <source>HTTP header: Server, supported variables: $vmsName, $vmsVersion, $company, $compatibility.</source>
       <translation>HTTP header：伺服器，支援的變數： $vmsName、 $vmsVersion、 $company、 $compatibility.</translation>
-    </message>
-    <message>
-      <source>HTTP header: Origin.</source>
-      <translation>HTTP header: Origin.</translation>
     </message>
     <message>
       <source>HTTP header: X-Frame-Options.</source>
@@ -1944,6 +1951,18 @@
     <message>
       <source>Controls how integrations are loaded. Possible values are: &quot;manifestControlled&quot;, &quot;forceLoadingInSeparateProcess&quot;,&quot;forceLoadingInCurrentProcess&quot;</source>
       <translation>控制整合載入的方式，可選值如下：&quot;manifestControlled&quot;、&quot;forceLoadingInSeparateProcess&quot;、&quot;forceLoadingInCurrentProcess&quot;</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Origin.</source>
+      <translation>HTTP header: Access-Control-Allow-Origin</translation>
+    </message>
+    <message>
+      <source>HTTP header: Access-Control-Allow-Credentials.</source>
+      <translation>HTTP header: Access-Control-Allow-Credentials</translation>
+    </message>
+    <message>
+      <source>JSON RPC subscription update interval (milliseconds, 0 = disabled).</source>
+      <translation>JSON RPC 訂閱更新間隔（毫秒，0 = 停用）。</translation>
     </message>
   </context>
 </TS>
