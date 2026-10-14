@@ -18,9 +18,9 @@ NX_NETWORK_API std::string joinPath(std::string_view left, std::string_view righ
 
 /**
  * @param scheme Comparison is done in low-case.
- * @return 0 for unknown scheme
+ * @return nullopt for unknown scheme.
  */
-NX_NETWORK_API std::uint16_t getDefaultPortForScheme(std::string_view scheme);
+NX_NETWORK_API std::optional<std::uint16_t> getDefaultPortForScheme(std::string_view scheme);
 NX_NETWORK_API SocketAddress getEndpoint(const nx::Url& url, int defaultPort);
 NX_NETWORK_API SocketAddress getEndpoint(const nx::Url& url);
 
