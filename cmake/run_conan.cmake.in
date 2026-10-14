@@ -37,6 +37,7 @@ function(run_conan)
             ${CONAN_EXECUTABLE} install ${CMAKE_SOURCE_DIR}
             ${conanFlags}
             --output-folder ${CMAKE_BINARY_DIR}
+            -vv
             ${ARGV}
         COMMAND_ECHO STDERR
         RESULT_VARIABLE result

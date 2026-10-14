@@ -11,7 +11,11 @@ function(verify_python_version_is_compatible)
         ERROR_STRIP_TRAILING_WHITESPACE
     )
 
-    if (NOT "${PYTHON_VERSION}" MATCHES "Python 3\.(12|13|14)(\..*)?")
+    if ("${PYTHON_VERSION}" MATCHES "Python 3\.([0-9]+)")
+        if (CMAKE_MATCH_1 LESS 12 OR CMAKE_MATCH_1 GREATER 14)
+            set(PYTHON_EXECUTABLE PYTHON_EXECUTABLE-NOTFOUND PARENT_SCOPE)
+        endif()
+    else()
         set(PYTHON_EXECUTABLE PYTHON_EXECUTABLE-NOTFOUND PARENT_SCOPE)
     endif()
 endfunction()
