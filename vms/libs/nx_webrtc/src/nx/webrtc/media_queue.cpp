@@ -16,9 +16,11 @@ MediaQueue::MediaQueue(int maxSize):
 void MediaQueue::setKeyDataFound(bool value)
 {
     NX_MUTEX_LOCKER lock(&m_mutex);
-    //< Every channel, not just the ones seen so far: this is normally called
-    //< before any data arrives, when the vector is still empty.
-    m_keyDataFound.assign(CL_MAX_CHANNEL_NUMBER, value);
+    //< Every device and channel, not just the ones seen so far: this is normally
+    //< called before any data arrives, when the map is still empty.
+    m_keyDataFoundForNewDevices = value;
+    for (auto& [_, keyDataFound]: m_keyDataFound)
+        keyDataFound.assign(CL_MAX_CHANNEL_NUMBER, value);
 }
 
 // Normally should drop only first gop for the first appeared channel in media queue, and all audio
@@ -78,6 +80,7 @@ void MediaQueue::clearTillLastGopUnsafe()
     // Fallback.
     m_mediaQueue.clear();
     m_keyDataFound.clear();
+    m_keyDataFoundForNewDevices = false;
 }
 
 void MediaQueue::setMaxSize(int maxSize)
@@ -99,14 +102,18 @@ void MediaQueue::putData(const QnConstAbstractMediaDataPtr& media)
 
     if (const auto& video = std::dynamic_pointer_cast<const QnCompressedVideoData>(media))
     {
-        const bool isKeyFrame = video->flags.testFlag(QnAbstractMediaData::MediaFlags_AVKey);
-        if (m_keyDataFound.size() <= video->channelNumber)
-            m_keyDataFound.resize(video->channelNumber + 1);
+        const bool isKeyFrame = video->isKeyFrame();
+        const auto [it, isNewDevice] = m_keyDataFound.try_emplace(video->deviceId);
+        auto& keyDataFound = it->second;
+        if (isNewDevice && m_keyDataFoundForNewDevices)
+            keyDataFound.assign(CL_MAX_CHANNEL_NUMBER, true);
+        if (keyDataFound.size() <= video->channelNumber)
+            keyDataFound.resize(video->channelNumber + 1);
         if (isKeyFrame)
-            m_keyDataFound[video->channelNumber] = true;
-        if (!m_keyDataFound[video->channelNumber] && !isKeyFrame)
+            keyDataFound[video->channelNumber] = true;
+        if (!keyDataFound[video->channelNumber] && !isKeyFrame)
         {
-            NX_VERBOSE(this, "Skip data, waiting for keyframe: %1", media->timestamp);
+            NX_VERBOSE(this, "Skip data, waiting for keyframe: %1", media);
             return;
         }
     }
@@ -154,6 +161,7 @@ void MediaQueue::clearUnprocessedData(std::optional<nx::Uuid> deviceId)
     {
         m_mediaQueue.clear();
         m_keyDataFound.clear();
+        m_keyDataFoundForNewDevices = false;
         return;
     }
     std::erase_if(

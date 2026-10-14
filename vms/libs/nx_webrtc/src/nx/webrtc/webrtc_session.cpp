@@ -1151,7 +1151,7 @@ bool Session::initializeProviderMuxer(const AbstractCameraDataProviderPtr& provi
     {
         bool videoTranscodingRequired = m_transcodingSettings.isTranscodingRequired()
             || m_resolution || useFallbackVideo
-            || !m_muxer->isVideoCodecSupported(videoCodecParamaters->codec_id);
+            || !m_muxer->isVideoCodecSupported(videoCodecParamaters->getCodecId());
 
         const auto transcodePolicy = m_sessionPool->transcodePolicy();
         if (transcodePolicy.disableTranscoding && videoTranscodingRequired)
@@ -1202,8 +1202,8 @@ bool Session::initializeProviderMuxer(const AbstractCameraDataProviderPtr& provi
     bool hasAudio = audioCodecParamaters != nullptr;
     if (hasAudio)
     {
-        bool audioTranscodingRequired =
-            useFallbackAudio || !m_muxer->isAudioCodecSupported(audioCodecParamaters->codec_id);
+        bool audioTranscodingRequired = useFallbackAudio
+            || !m_muxer->isAudioCodecSupported(audioCodecParamaters->getCodecId());
         if (audioTranscodingRequired)
         {
             if (provider->addAudioTranscoder(kFallbackSrtpAudioCodec))
@@ -1222,7 +1222,7 @@ bool Session::initializeProviderMuxer(const AbstractCameraDataProviderPtr& provi
                     this,
                     "%1: Cannot open audio transcoder for codec %2, serving video-only",
                     id(),
-                    audioCodecParamaters->codec_id);
+                    audioCodecParamaters->getCodecId());
                 hasAudio = false;
             }
         }
@@ -1232,12 +1232,12 @@ bool Session::initializeProviderMuxer(const AbstractCameraDataProviderPtr& provi
     // must be re-read rather than reusing the source ones read above.
     if (!m_muxer->createEncoders(
             provider->deviceId(),
-            provider->getVideoCodecParameters(),
-            hasAudio ? provider->getAudioCodecParameters() : nullptr))
+            avCodecParameters(provider->getVideoCodecParameters()),
+            hasAudio ? avCodecParameters(provider->getAudioCodecParameters()) : nullptr))
     {
         NX_DEBUG(this, "%1: Cannot create encoders for device %2", id(), provider->deviceId());
         if (videoCodecParamaters)
-            noteUnsupportedVideoCodec(provider->deviceId(), videoCodecParamaters->codec_id);
+            noteUnsupportedVideoCodec(provider->deviceId(), videoCodecParamaters->getCodecId());
         return false;
     }
     provider->setInitialized(true);

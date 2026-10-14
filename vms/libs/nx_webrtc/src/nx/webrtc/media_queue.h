@@ -3,6 +3,7 @@
 #pragma once
 
 #include <deque>
+#include <map>
 #include <optional>
 #include <vector>
 
@@ -17,7 +18,7 @@ public:
     MediaQueue(int maxSize);
     void putData(const QnConstAbstractMediaDataPtr& data);
     /**
-     * Marks video as already having a key frame - on every channel present and
+     * Marks video as already having a key frame - on every device and channel present and
      * on any that appears later. For a queue fed from the middle of a stream,
      * where the key frame has already passed and holding video back until the
      * next one would discard the rest of the GOP.
@@ -35,8 +36,8 @@ public:
      * Drops the queued packets: every device's, or one device's when deviceId is given. A
      * seek flushes only the seeking device's backlog this way: the queue is shared by every
      * camera of a session, and their post-seek key frames arrive within a millisecond of each
-     * other, so a session-wide flush on one camera's BOF discarded the others'. The key-frame
-     * gate is per channel and shared the same way, so a per-device flush leaves it alone.
+     * other, so a session-wide flush on one camera's BOF discarded the others'. A per-device
+     * flush leaves the device's key-frame gate alone.
      */
     void clearUnprocessedData(std::optional<nx::Uuid> deviceId = std::nullopt);
 
@@ -49,7 +50,10 @@ private:
 private:
     int m_maxSize;
     std::deque<QnConstAbstractMediaDataPtr> m_mediaQueue;
-    std::vector<bool> m_keyDataFound;
+    // Per device, per channel: the queue skips video until the first keyframe of that channel.
+    std::map<nx::Uuid, std::vector<bool>> m_keyDataFound;
+    // Set by setKeyDataFound(): a device first seen afterwards starts with every channel open.
+    bool m_keyDataFoundForNewDevices = false;
 
     nx::WaitCondition m_waitForFrame;
     mutable nx::Mutex m_mutex;

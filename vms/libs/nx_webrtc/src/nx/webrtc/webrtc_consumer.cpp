@@ -502,7 +502,7 @@ void Consumer::processNextData()
                 return;
             }
             NX_VERBOSE(this, "Skip data: %1", media);
-            return;
+            continue;
         }
 
         nx::utils::ByteArray buffer;

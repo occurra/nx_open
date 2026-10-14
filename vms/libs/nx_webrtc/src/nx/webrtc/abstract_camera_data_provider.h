@@ -40,8 +40,8 @@ public: // Initialize.
     virtual bool addAudioTranscoder(AVCodecID codec) = 0;
     virtual bool isTranscodingEnabled(QnAbstractMediaData::DataType dataType) const = 0;
 
-    virtual AVCodecParameters* getVideoCodecParameters() const = 0;
-    virtual AVCodecParameters* getAudioCodecParameters() const = 0;
+    virtual CodecParametersConstPtr getVideoCodecParameters() const = 0;
+    virtual CodecParametersConstPtr getAudioCodecParameters() const = 0;
 
     /// Seed the cached video/audio codec parameters so the next encoder rebuild
     /// uses them instead of re-probing the source. Used on a mid-stream codec

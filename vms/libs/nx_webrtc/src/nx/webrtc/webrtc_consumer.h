@@ -32,8 +32,7 @@ public:
     {
         wait = http::StatusCode::_continue, //< Don't know result at this moment.
         success = http::StatusCode::ok, //< Success.
-        reconnect =
-            http::StatusCode::movedPermanently, //< Stream is possible only after reconnect.
+        reconnect = http::StatusCode::movedPermanently, //< Only a reconnect can resume the stream.
         nodata = http::StatusCode::notFound, //< No provider for this timestamp, can't seek.
         endOfArchive = http::StatusCode::gone, //< The device's archive ended mid-session.
     };
