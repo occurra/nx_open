@@ -99,6 +99,24 @@ public:
      */
     void setPersistentConnectionEnabled(bool value);
 
+    /** Default cap on the size of an inbound request body (ANAS-323). */
+    static constexpr std::uint64_t kDefaultMaxMessageBodySize = 16 * 1024 * 1024;
+
+    /** Default cap on the total bytes of the request line plus headers (ANAS-323). */
+    static constexpr std::uint64_t kDefaultMaxHeadersSize = 96 * 1024;
+
+    /**
+     * Caps the size of an inbound request body this connection will buffer. 0 means no limit.
+     * See kDefaultMaxMessageBodySize (ANAS-323).
+     */
+    void setMaxMessageBodySize(std::uint64_t value);
+
+    /**
+     * Caps the total bytes of the request line plus headers this connection will buffer.
+     * 0 means no limit. See kDefaultMaxHeadersSize (ANAS-323).
+     */
+    void setMaxHeadersSize(std::uint64_t value);
+
     /**
      * Set some HTTP headers to be sent in every response.
      */

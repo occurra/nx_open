@@ -11,6 +11,10 @@
 
 namespace nx::network::http {
 
+// Cap on bytes produced by a gzip/deflate content decoder. Mitigates decompression-bomb DoS on
+// Content-Encoding: gzip (ANAS-191).
+static constexpr std::uint64_t kMaxDecompressedMessageBodySize = 32 * 1024 * 1024;
+
 bool HttpStreamReader::parseBytes(const ConstBufferRefType& data, size_t* bytesProcessed)
 {
     if (bytesProcessed)
@@ -92,6 +96,21 @@ bool HttpStreamReader::parseBytes(const ConstBufferRefType& data, size_t* bytesP
                 currentDataPos += msgBodyBytesRead;
                 if (bytesProcessed)
                     *bytesProcessed = currentDataPos;
+
+                // Enforced regardless of what Content-Length declared or chunked framing
+                // implies (ANAS-323).
+                if (m_maxMessageBodySize && m_messageBodyBytesRead > *m_maxMessageBodySize)
+                {
+                    NX_DEBUG(
+                        this,
+                        "Failed to parse HTTP stream: message body exceeds the %1 "
+                        "byte limit (%2 bytes read)",
+                        *m_maxMessageBodySize,
+                        m_messageBodyBytesRead);
+                    m_state = ReadState::parseError;
+                    return false;
+                }
+
                 if ((m_contentLength && //< Content-Length known.
                      m_messageBodyBytesRead >= *m_contentLength)
                     || //< Read whole message body.
@@ -125,6 +144,32 @@ bool HttpStreamReader::parseBytes(const ConstBufferRefType& data, size_t* bytesP
                 currentDataPos += bytesRead;
                 if (bytesProcessed)
                     *bytesProcessed = currentDataPos;
+                if (m_lineSplitter.lineLengthExceeded())
+                {
+                    NX_DEBUG(
+                        this,
+                        "Failed to parse HTTP stream: a request/status or header line "
+                        "exceeds the %1 byte limit",
+                        m_lineSplitter.maxLineLength());
+                    m_state = ReadState::parseError;
+                    return false;
+                }
+
+                // Counts the header phase including a line still being accumulated, so neither an
+                // endless line nor endless short headers can grow memory unbounded (ANAS-323).
+                m_headerBytesRead += bytesRead;
+                if (m_maxHeadersSize && m_headerBytesRead > *m_maxHeadersSize)
+                {
+                    NX_DEBUG(
+                        this,
+                        "Failed to parse HTTP stream: headers exceed the %1 byte "
+                        "limit (%2 bytes read)",
+                        *m_maxHeadersSize,
+                        m_headerBytesRead);
+                    m_state = ReadState::parseError;
+                    return false;
+                }
+
                 if (!lineFound)
                     break;
                 if (!parseLine(lineBuffer))
@@ -229,6 +274,16 @@ void HttpStreamReader::setBreakAfterReadingHeaders(bool val)
 void HttpStreamReader::setParseHeadersStrict(bool enabled)
 {
     m_parseHeadersStrict = enabled;
+}
+
+void HttpStreamReader::setMaxMessageBodySize(std::optional<std::uint64_t> maxSize)
+{
+    m_maxMessageBodySize = maxSize;
+}
+
+void HttpStreamReader::setMaxHeadersSize(std::optional<std::uint64_t> maxSize)
+{
+    m_maxHeadersSize = maxSize;
 }
 
 bool HttpStreamReader::isEncodingSupported(std::string_view encoding)
@@ -448,7 +503,11 @@ std::unique_ptr<nx::utils::bstream::AbstractByteStreamFilter> HttpStreamReader::
     createContentDecoder(const std::string& encodingName)
 {
     if (encodingName == "gzip" || encodingName == "deflate")
-        return std::make_unique<nx::utils::bstream::gzip::Uncompressor>();
+    {
+        auto uncompressor = std::make_unique<nx::utils::bstream::gzip::Uncompressor>();
+        uncompressor->setMaxOutputSize(kMaxDecompressedMessageBodySize);
+        return uncompressor;
+    }
     return nullptr;
 }
 
@@ -460,6 +519,7 @@ void HttpStreamReader::resetStateInternal()
     m_contentLength.reset();
     m_isChunkedTransfer = false;
     m_messageBodyBytesRead = 0;
+    m_headerBytesRead = 0;
     {
         NX_MUTEX_LOCKER lk(&m_mutex);
         m_msgBodyBuffer.clear();

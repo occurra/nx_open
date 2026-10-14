@@ -50,6 +50,12 @@ public:
      */
     void setExtraSuccessResponseHeaders(HttpHeaders responseHeaders);
 
+    /** See HttpServerConnection::setMaxMessageBodySize. */
+    void setMaxMessageBodySize(std::uint64_t value);
+
+    /** See HttpServerConnection::setMaxHeadersSize. */
+    void setMaxHeadersSize(std::uint64_t value);
+
     void redirectAllRequestsTo(SocketAddress addressToRedirect);
 
     virtual server::HttpStatistics httpStatistics() const override;
@@ -62,6 +68,10 @@ private:
     nx::network::http::AbstractRequestHandler* m_requestHandler = nullptr;
     bool m_persistentConnectionEnabled = true;
     HttpHeaders m_extraSuccessResponseHeaders;
+    // Safe by default: the caps apply unless the owner overrides them via setMaxMessageBodySize /
+    // setMaxHeadersSize (0 disables the cap) (ANAS-323).
+    std::uint64_t m_maxMessageBodySize = HttpServerConnection::kDefaultMaxMessageBodySize;
+    std::uint64_t m_maxHeadersSize = HttpServerConnection::kDefaultMaxHeadersSize;
 
     mutable nx::Mutex m_mutex;
     /** Calculates HttpStatistics aggregate statistics that live in its parent, RequestStatistics

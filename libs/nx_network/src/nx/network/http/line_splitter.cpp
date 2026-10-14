@@ -3,6 +3,7 @@
 #include "line_splitter.h"
 
 #include <algorithm>
+#include <limits>
 
 namespace nx::network::http {
 
@@ -27,9 +28,15 @@ bool LineSplitter::parseByLines(
     if (lineEnd == data.data() + data.size())
     {
         // Not found, caching input data.
-        m_currentLine.append(data.data(), (int) data.size());
         if (bytesRead)
             *bytesRead += data.size();
+        if (m_currentLine.size() + data.size() > m_maxLineLength)
+        {
+            // Refusing to keep buffering an unterminated line without bound (ANAS-323).
+            m_lineLengthExceeded = true;
+            return false;
+        }
+        m_currentLine.append(data.data(), (int) data.size());
         return false;
     }
 
@@ -40,6 +47,16 @@ bool LineSplitter::parseByLines(
         m_prevLineEnding = *lineEnd;
         if (bytesRead)
             *bytesRead += 1;
+        return false;
+    }
+
+    if (m_currentLine.size() + (lineEnd - data.data()) > m_maxLineLength)
+    {
+        // Line terminator found within this call, but combined with any previously buffered
+        // fragment the total line length still exceeds the cap (ANAS-323).
+        m_lineLengthExceeded = true;
+        if (bytesRead)
+            *bytesRead += data.size();
         return false;
     }
 
@@ -96,6 +113,22 @@ void LineSplitter::reset()
     m_currentLine.clear();
     m_clearCurrentLineBuf = false;
     m_prevLineEnding = 0;
+    m_lineLengthExceeded = false;
+}
+
+void LineSplitter::setMaxLineLength(std::size_t maxLineLength)
+{
+    m_maxLineLength = maxLineLength;
+}
+
+std::size_t LineSplitter::maxLineLength() const
+{
+    return m_maxLineLength;
+}
+
+bool LineSplitter::lineLengthExceeded() const
+{
+    return m_lineLengthExceeded;
 }
 
 ConstBufferRefType LineSplitter::partialLineBuffer() const
@@ -113,6 +146,11 @@ ConstBufferRefType LineSplitter::flush()
 StringLineIterator::StringLineIterator(std::string_view str):
     m_sourceData(str)
 {
+    // This iterator splits an already fully in-memory buffer, not an attacker-controlled
+    // incoming stream, so the streaming DoS LineSplitter::kDefaultMaxLineLength guards against
+    // (ANAS-323) does not apply here. Leaving the default cap in place would silently truncate
+    // legitimate long lines (e.g. m3u::Playlist::parse), so disable it.
+    m_lineSplitter.setMaxLineLength(std::numeric_limits<std::size_t>::max());
 }
 
 std::optional<std::string_view> StringLineIterator::next()
