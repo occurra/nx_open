@@ -170,8 +170,16 @@ QSize HwVideoDecoder::maxResolution(const AVCodecID /*codec*/)
 
 bool HwVideoDecoder::initialize(const QnConstCompressedVideoDataPtr& data)
 {
+    if (!data)
+    {
+        NX_DEBUG(this, "Cannot initialize video decoder without a data packet");
+        return false;
+    }
+
     if (!initializeHardware(data))
     {
+        // If HW init fails we fallback to software decode in the same decoder instance.
+        // Isolated-mode SHM behavior is handled inside initializeSoftware().
         NX_DEBUG(this, "Failed to initialize hardware video decoder, try to use software version");
         return initializeSoftware(data);
     }
@@ -266,8 +274,18 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
             data->compressionType,
             avcodec_get_name(data->compressionType),
             av_hwdevice_get_type_name(m_type));
+        // Codec has no HW path on this platform - not a resource failure, no back-off needed.
         return false;
     }
+    // From here a HW decoder exists for this codec. Any allocation or device failure is
+    // resource-related and must arm the process-wide back-off via m_hardwareResourceFailed.
+    // The only exception is avcodec_parameters_to_context: that is a per-stream config error,
+    // not resource exhaustion, so its failure path disarms the guard explicitly.
+    auto resourceFailedGuard = nx::utils::makeScopeGuard(
+        [this]()
+        {
+            m_hardwareResourceFailed = true;
+        });
 
     m_targetPixelFormat = pixelFormat;
 
@@ -310,6 +328,11 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
     else if (m_initFunc)
     {
         m_decoderContext->hw_device_ctx = av_hwdevice_ctx_alloc(m_type);
+        if (!m_decoderContext->hw_device_ctx)
+        {
+            NX_ERROR(this, "Failed to allocate HW device context");
+            return false;
+        }
 
         auto deviceContext = (AVHWDeviceContext*) m_decoderContext->hw_device_ctx->data;
 
@@ -348,11 +371,25 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
     m_hardwareMode = true;
     NX_DEBUG(this, "Hardware decoder initialized: %1", decoder->name);
     decoderCtxGuard.disarm();
+    resourceFailedGuard.disarm();
     return true;
 }
 
 bool HwVideoDecoder::sendPacket(const QnConstCompressedVideoDataPtr& data)
 {
+    if (m_decoderContext && !avcodec_is_open(m_decoderContext))
+    {
+        // Android ResourceManager can reclaim HW codec resources under pressure, which
+        // invalidates avctx->internal without freeing the AVCodecContext itself. Detect
+        // this via avcodec_is_open() and reinitialize so we don't crash inside FFmpeg.
+        NX_WARNING(this, "Decoder context became invalid (resource reclaim?), reinitializing");
+        if (!resetDecoder(data))
+        {
+            m_lastDecodeResult = -1;
+            return false;
+        }
+    }
+
     if (!m_decoderContext && !initialize(data))
     {
         NX_DEBUG(this, "Failed to initialize decoder");
@@ -391,6 +428,13 @@ bool HwVideoDecoder::sendPacket(const QnConstCompressedVideoDataPtr& data)
 
 bool HwVideoDecoder::receiveFrame(CLVideoDecoderOutput* const frame)
 {
+    if (!m_decoderContext || !avcodec_is_open(m_decoderContext))
+    {
+        NX_WARNING(this, "Decoder context is not open, cannot receive frame");
+        m_lastDecodeResult = AVERROR(EINVAL);
+        return false;
+    }
+
     int status = avcodec_receive_frame(m_decoderContext, frame);
     if (status == AVERROR(EAGAIN) || status == AVERROR_EOF)
     {
@@ -454,7 +498,9 @@ int HwVideoDecoder::currentFrameNumber() const
 
 void HwVideoDecoder::flushBuffers()
 {
-    if (m_decoderContext)
+    // A context reclaimed by Android ResourceManager is not open anymore; flushing it would crash
+    // inside FFmpeg. The next sendPacket() reinitializes such a context.
+    if (m_decoderContext && avcodec_is_open(m_decoderContext))
         avcodec_flush_buffers(m_decoderContext);
 }
 
@@ -466,13 +512,22 @@ bool HwVideoDecoder::resetDecoder(const QnConstCompressedVideoDataPtr& data)
     if (m_hwDeviceContext)
         av_buffer_unref(&m_hwDeviceContext);
 
+    m_bufferContext.reset();
     m_targetPixelFormat = AV_PIX_FMT_NONE;
     m_lastDecodeResult = 0;
+    m_hardwareResourceFailed = false;
 
     if (data)
         return initialize(data);
 
     return true;
+}
+
+bool HwVideoDecoder::consumeHardwareResourceFailed()
+{
+    const bool result = m_hardwareResourceFailed;
+    m_hardwareResourceFailed = false;
+    return result;
 }
 
 int HwVideoDecoder::getLastDecodeResult() const
