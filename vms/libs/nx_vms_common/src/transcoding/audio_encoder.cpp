@@ -59,7 +59,7 @@ int getDefaultFrameSize(const AVCodec* avCodec)
         case AV_CODEC_ID_ADPCM_G726:
         case AV_CODEC_ID_PCM_MULAW:
         case AV_CODEC_ID_PCM_ALAW:
-            return 128;
+            return 240;
         default:
             return 1024;
     }
@@ -167,6 +167,9 @@ bool AudioEncoder::open(
 
 bool AudioEncoder::sendFrame(uint8_t* data, int size)
 {
+    if (!m_encoderContext)
+        return false;
+
     if (!data)
     {
         sendFrame(nullptr);
@@ -185,6 +188,9 @@ bool AudioEncoder::sendFrame(uint8_t* data, int size)
 
 bool AudioEncoder::sendFrame(AVFrame* inputFrame)
 {
+    if (!m_encoderContext)
+        return false;
+
     if (!inputFrame)
     {
         m_flushMode = true;
@@ -200,15 +206,12 @@ bool AudioEncoder::sendFrame(AVFrame* inputFrame)
 
 bool AudioEncoder::receivePacket(QnWritableCompressedAudioDataPtr& result)
 {
+    if (!m_encoderContext)
+        return false;
+
     result.reset();
     while (true)
     {
-        if (!m_encoderContext)
-        {
-            // Happens when we try to open and then close parent stream fast.
-            return false;
-        }
-
         // 1. Try to get media from encoder.
         AvPacket avPacket;
         auto packet = avPacket.get();
