@@ -3,9 +3,9 @@
 #include "symmetrical.h"
 
 #include <array>
-#include <cstring> //< CBC mode, for memset
+#include <cstdint>
 
-#include <stdint.h>
+#include <openssl/rand.h>
 
 #include <nx/utils/log/assert.h>
 #include <nx/utils/thread/mutex.h>
@@ -17,7 +17,7 @@ extern "C" {
 
 namespace nx::crypt {
 
-namespace detail {
+namespace {
 
 const uint8_t iv[] = {
     0x00,
@@ -49,6 +49,8 @@ static constexpr size_t kKeySize = 16;
 static const QByteArray kMask = QByteArray::fromHex("4453D6654C634636990B2E5AA69A1312");
 const int kMaskSize = kMask.size();
 
+static_assert(sizeof(iv) == kKeySize);
+
 using KeyType = std::array<uint8_t, kKeySize>;
 
 KeyType keyFromByteArray(const QByteArray& data)
@@ -66,22 +68,27 @@ KeyType keyFromByteArray(const QByteArray& data)
     return result;
 }
 
-} // namespace detail
+} // namespace
 
 QByteArray generateAesExtraKey()
 {
-    return nx::Uuid::createUuid().toRfc4122();
+    auto result = QByteArray(kKeySize, 0);
+
+    if (RAND_bytes((unsigned char*) result.data(), kKeySize) != 1)
+        result = nx::Uuid::createUuid().toRfc4122();
+
+    return result;
 }
 
 QByteArray encodeSimple(const QByteArray& data, const QByteArray& extraKey)
 {
-    QByteArray mask = detail::kMask;
+    QByteArray mask = kMask;
     for (int i = 0; i < qMin(mask.size(), extraKey.size()); ++i)
         mask[i] = mask[i] ^ extraKey[i];
 
     QByteArray result = data;
     for (int i = 0; i < result.size(); ++i)
-        result.data()[i] ^= mask.data()[i % detail::kMaskSize];
+        result.data()[i] ^= mask.data()[i % kMaskSize];
     return result;
 }
 
@@ -90,7 +97,7 @@ QByteArray encodeAES128CBC(const QByteArray& data, const std::array<uint8_t, 16>
     if (data.isEmpty())
         return QByteArray();
 
-    NX_MUTEX_LOCKER lock(&detail::stateMutex());
+    NX_MUTEX_LOCKER lock(&stateMutex());
     const QByteArray* pdata = &data;
     QByteArray dataCopy;
     const int padSize = 16 - data.size() % 16;
@@ -107,7 +114,7 @@ QByteArray encodeAES128CBC(const QByteArray& data, const std::array<uint8_t, 16>
         (uint8_t*) pdata->data(),
         pdata->size(),
         key.data(),
-        detail::iv);
+        iv);
     return result;
 }
 
@@ -116,7 +123,7 @@ QByteArray decodeAES128CBC(const QByteArray& data, const std::array<uint8_t, 16>
     if (data.isEmpty())
         return QByteArray();
 
-    NX_MUTEX_LOCKER lock(&detail::stateMutex());
+    NX_MUTEX_LOCKER lock(&stateMutex());
     if (data.size() % 16 != 0)
         return QByteArray();
 
@@ -127,20 +134,20 @@ QByteArray decodeAES128CBC(const QByteArray& data, const std::array<uint8_t, 16>
         (uint8_t*) data.data(),
         data.size(),
         key.data(),
-        detail::iv);
+        iv);
     return result.left(result.indexOf((char) 0));
 }
 
 QByteArray encodeAES128CBC(const QByteArray& data, const QByteArray& key)
 {
-    const QByteArray actualKey = key.isEmpty() ? detail::kMask : key;
-    return encodeAES128CBC(data, detail::keyFromByteArray(actualKey));
+    const QByteArray actualKey = key.isEmpty() ? kMask : key;
+    return encodeAES128CBC(data, keyFromByteArray(actualKey));
 }
 
 QByteArray decodeAES128CBC(const QByteArray& data, const QByteArray& key)
 {
-    const QByteArray actualKey = key.isEmpty() ? detail::kMask : key;
-    return decodeAES128CBC(data, detail::keyFromByteArray(actualKey));
+    const QByteArray actualKey = key.isEmpty() ? kMask : key;
+    return decodeAES128CBC(data, keyFromByteArray(actualKey));
 }
 
 QString encodeHexStringFromStringAES128CBC(const QString& s, const QByteArray& key)

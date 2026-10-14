@@ -442,11 +442,6 @@ QnAbstractMediaDataPtr RtspStreamProvider::getNextDataTCP()
                 rtpChannelNum);
             break; // error
         }
-        NX_VERBOSE(
-            this,
-            "Got %1 bytes, trackFound=%2",
-            bytesRead,
-            trackIndexIter != m_trackIndices.end());
 
         if (m_RtpSession.isRtcp(rtpChannelNum))
         {

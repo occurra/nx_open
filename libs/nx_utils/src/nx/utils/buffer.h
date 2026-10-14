@@ -1374,13 +1374,6 @@ using Buffer = QByteArray;
 
 //-------------------------------------------------------------------------------------------------
 
-inline std::string_view toBufferView(const QByteArray& data)
-{
-    return std::string_view(data.data(), data.size());
-}
-
-//-------------------------------------------------------------------------------------------------
-
 template<typename CharType, typename Other>
 bool operator==(const nx::BasicBuffer<CharType>& left, const Other& right)
 {

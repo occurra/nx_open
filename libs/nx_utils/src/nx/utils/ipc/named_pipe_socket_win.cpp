@@ -68,7 +68,7 @@ SystemError::ErrorCode NamedPipeSocket::read(
     void* buf,
     unsigned int bytesToRead,
     unsigned int* const bytesRead,
-    int /*timeoutMs*/)
+    const int /*timeoutMs*/)
 {
     DWORD numberOfBytesRead = 0;
     BOOL res = ReadFile(m_impl->hPipe, buf, bytesToRead, &numberOfBytesRead, NULL);
