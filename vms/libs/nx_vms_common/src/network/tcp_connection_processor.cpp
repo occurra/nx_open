@@ -47,8 +47,13 @@ void copyAndReplaceHeader(
 QnTCPConnectionProcessor::QnTCPConnectionProcessor(
     std::unique_ptr<nx::network::AbstractStreamSocket> socket,
     QnTcpListener* owner,
+    nx::Uuid peerId,
+    std::function<const nx::vms::common::SystemSettings*()> globalSettings,
+    QnResourcePool* resourcePool,
     int maxTcpRequestSize):
-    nx::vms::common::SystemContextAware(owner->systemContext()),
+    m_peerId(peerId),
+    m_globalSettings(std::move(globalSettings)),
+    m_resourcePool(resourcePool),
     d_ptr(new QnTCPConnectionProcessorPrivate),
     m_maxTcpRequestSize(maxTcpRequestSize)
 {
@@ -61,8 +66,13 @@ QnTCPConnectionProcessor::QnTCPConnectionProcessor(
     QnTCPConnectionProcessorPrivate* dptr,
     std::unique_ptr<nx::network::AbstractStreamSocket> socket,
     QnTcpListener* owner,
+    nx::Uuid peerId,
+    std::function<const nx::vms::common::SystemSettings*()> globalSettings,
+    QnResourcePool* resourcePool,
     int maxTcpRequestSize):
-    nx::vms::common::SystemContextAware(owner->systemContext()),
+    m_peerId(peerId),
+    m_globalSettings(std::move(globalSettings)),
+    m_resourcePool(resourcePool),
     d_ptr(dptr),
     m_maxTcpRequestSize(maxTcpRequestSize)
 {
@@ -74,9 +84,13 @@ QnTCPConnectionProcessor::QnTCPConnectionProcessor(
 QnTCPConnectionProcessor::QnTCPConnectionProcessor(
     QnTCPConnectionProcessorPrivate* dptr,
     std::unique_ptr<nx::network::AbstractStreamSocket> socket,
-    nx::vms::common::SystemContext* systemContext,
+    nx::Uuid peerId,
+    std::function<const nx::vms::common::SystemSettings*()> globalSettings,
+    QnResourcePool* resourcePool,
     int maxTcpRequestSize):
-    nx::vms::common::SystemContextAware(systemContext),
+    m_peerId(peerId),
+    m_globalSettings(std::move(globalSettings)),
+    m_resourcePool(resourcePool),
     d_ptr(dptr),
     m_maxTcpRequestSize(maxTcpRequestSize)
 {
@@ -460,7 +474,7 @@ nx::String QnTCPConnectionProcessor::createResponse(
         &d->response.headers,
         nx::network::http::HttpHeader(
             nx::network::http::header::Server::NAME,
-            d->owner->systemSettings()->makeServerHeader()));
+            globalSettings()->makeServerHeader()));
     nx::network::http::insertOrReplaceHeader(
         &d->response.headers,
         nx::network::http::HttpHeader(
