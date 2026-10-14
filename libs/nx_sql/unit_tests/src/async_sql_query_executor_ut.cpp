@@ -147,7 +147,7 @@ protected:
         m_issuedRequestCount = connectionOptions().maxConnectionCount * 20;
         for (int i = 0; i < m_issuedRequestCount; ++i)
         {
-            if (nx::utils::random::number<bool>())
+            if (nx::utils::random::coin())
                 issueSelect();
             else
                 issueUpdate();

@@ -18,7 +18,10 @@ public:
         std::vector<ValueType> result;
 
         for (int i = 0; i < count; ++i)
-            result.emplace_back(nx::utils::random::number<ValueType>());
+        {
+            result.emplace_back(
+                nx::utils::random::number<ValueType>(0, std::numeric_limits<ValueType>::max()));
+        }
 
         return result;
     }
