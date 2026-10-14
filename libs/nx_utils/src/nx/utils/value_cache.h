@@ -7,7 +7,10 @@
 
 #include <nx/utils/elapsed_timer.h>
 #include <nx/utils/move_only_func.h>
+#include <nx/utils/scope_guard.h>
 #include <nx/utils/thread/mutex.h>
+#include <nx/utils/thread/mutex_locker.h>
+#include <nx/utils/thread/wait_condition.h>
 
 namespace nx::utils {
 
@@ -51,7 +54,7 @@ public:
         return updated(&lock);
     }
 
-protected:
+private:
     ValueType updated(nx::Locker<nx::Mutex>* lock) const
     {
         update(lock);
@@ -67,7 +70,7 @@ protected:
         m_value = std::move(value);
     }
 
-protected:
+private:
     mutable nx::Mutex m_mutex;
 
     mutable ValueType m_value;
@@ -77,30 +80,26 @@ protected:
 };
 
 /**
- *  Allows caching of the value and automatic cache invalidation. Methods get(), reset() and
- *  update() can be called safely from different threads.
+ *  Caches a value with an expiration timeout. The slow generator runs on at most one thread
+ *  at a time; other concurrent callers either return the previously cached value (if any) or
+ *  wait for the in-progress update (on first call when no value exists yet). Methods get() and
+ *  reset() can be called safely from different threads.
  */
 template<class ValueType>
-class CachedValueWithTimeout: public CachedValue<ValueType>
+class CachedValueWithTimeout
 {
-    using base_type = CachedValue<ValueType>;
-    using base_type::m_mutex;
-    using base_type::m_valueVersion;
-    using base_type::m_version;
-    using base_type::m_value;
-
 public:
     /**
      *  @param valueGenerator This functor is called from get() and update() to get value, it
      *      must be thread-safe.
-     *  @param expirationTime CachedValue will automatically update value on get() or
-     *      update() every expirationTime milliseconds. Setting to 0 ms disables expiration.
+     *  @param expirationTime CachedValue will automatically update value on get()
+     *      every expirationTime milliseconds. Setting to 0 ms disables expiration.
      *  @note valueGenerator is not called here!
      */
     CachedValueWithTimeout(
         MoveOnlyFunc<ValueType()> valueGenerator,
         std::chrono::milliseconds expirationTime):
-        base_type(std::move(valueGenerator)),
+        m_valueGenerator(std::move(valueGenerator)),
         m_expirationTime(expirationTime)
     {
     }
@@ -108,23 +107,51 @@ public:
     ValueType get() const
     {
         NX_MUTEX_LOCKER lock(&m_mutex);
-        if (m_valueVersion == m_version && !m_timer.hasExpired(m_expirationTime))
-            return m_value;
-        return updated(&lock);
+        while (true)
+        {
+            if (m_value.has_value() && !m_timer.hasExpired(m_expirationTime))
+                return *m_value;
+
+            if (m_updateInProgress)
+            {
+                if (m_value.has_value())
+                    return *m_value;
+                m_updateDone.wait(lock.mutex());
+                continue;
+            }
+
+            m_updateInProgress = true;
+            auto guard = nx::utils::makeScopeGuard(
+                [this]()
+                {
+                    m_updateInProgress = false;
+                    m_updateDone.wakeAll();
+                });
+
+            std::optional<ValueType> value;
+            {
+                nx::Unlocker<nx::Mutex> unlocker(&lock);
+                value.emplace(m_valueGenerator());
+            }
+
+            if (m_resetPending)
+            {
+                m_resetPending = false;
+                continue;
+            }
+
+            m_value = std::move(*value);
+            m_timer.restart();
+            return *m_value;
+        }
     }
 
-    // Updated(lock) function is not virtual, so this function is required as well.
-    ValueType updated() const
+    void reset() const
     {
         NX_MUTEX_LOCKER lock(&m_mutex);
-        return updated(&lock);
-    }
-
-    // Update(lock) function is not virtual, so this function is required as well.
-    void update()
-    {
-        NX_MUTEX_LOCKER lock(&m_mutex);
-        update(&lock);
+        m_value.reset();
+        if (m_updateInProgress)
+            m_resetPending = true;
     }
 
     bool isExpired() const
@@ -133,23 +160,15 @@ public:
         return m_timer.hasExpired(m_expirationTime);
     }
 
-protected:
-    // Update(lock) function is not virtual, so this function is required as well.
-    ValueType updated(nx::Locker<nx::Mutex>* lock) const
-    {
-        update(lock);
-        return m_value;
-    }
-
-    void update(nx::Locker<nx::Mutex>* lock) const
-    {
-        base_type::update(lock);
-        m_timer.restart();
-    }
-
 private:
+    mutable nx::Mutex m_mutex;
+    mutable std::optional<ValueType> m_value;
+    const MoveOnlyFunc<ValueType()> m_valueGenerator;
     mutable ElapsedTimer m_timer;
     const std::chrono::milliseconds m_expirationTime;
+    mutable bool m_updateInProgress = false;
+    mutable bool m_resetPending = false;
+    mutable nx::WaitCondition m_updateDone;
 };
 
 //-------------------------------------------------------------------------------------------------
