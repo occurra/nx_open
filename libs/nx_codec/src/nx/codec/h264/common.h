@@ -6,6 +6,8 @@
 
 #include <nx/utils/bit_stream.h>
 
+// See https://www.itu.int/rec/T-REC-H.264/en
+
 namespace nx::media::h264 {
 
 enum NALUnitType
@@ -43,6 +45,13 @@ enum NALUnitType
     nuDummy
 };
 
+constexpr int kNalUnitHeaderLength = 1;
+
+inline int nalType(const uint8_t nal)
+{
+    return int(nal & 0x1F);
+}
+
 class NX_CODEC_API NALUnit
 {
 public:
@@ -79,7 +88,6 @@ protected:
     void scaling_list(int* scalingList, int sizeOfScalingList, bool& useDefaultScalingMatrixFlag);
 };
 
-NX_CODEC_API NALUnitType decodeType(uint8_t data);
 NX_CODEC_API bool isSliceNal(uint8_t nalUnitType);
 NX_CODEC_API bool isIFrame(const uint8_t* data, int dataLen);
 NX_CODEC_API int ceil_log2(double val);

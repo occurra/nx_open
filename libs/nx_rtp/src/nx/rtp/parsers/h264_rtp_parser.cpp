@@ -48,7 +48,7 @@ void H264Parser::setSdpInfo(const Sdp::Media& sdp)
                     // Some cameras sends extra start code in SPSPSS sdp string.
                     nal = nx::media::nal::dropBorderedStartCodes(nal);
                     if (nal.size() > 0
-                        && nx::media::h264::decodeType(nal[0]) == nx::media::h264::nuSPS)
+                        && nx::media::h264::nalType(nal[0]) == nx::media::h264::nuSPS)
                         decodeSpsInfo((uint8_t*) nal.data(), nal.size());
 
                     uint32_t sizeData = htonl(nal.size());
@@ -154,7 +154,7 @@ bool H264Parser::isFirstSliceNal(const quint8 nalType, const quint8* data, int d
 
 void H264Parser::updateNalFlags(const uint8_t* data, int size)
 {
-    const auto nalUnitType = nx::media::h264::decodeType(*data);
+    const auto nalUnitType = nx::media::h264::nalType(*data);
 
     if (nalUnitType == nx::media::h264::nuSPS)
     {
@@ -226,7 +226,7 @@ bool H264Parser::isPacketStartsNewFrame(const quint8* curPtr, const quint8* buff
         curPtr--;
     }
 
-    const auto nalUnitType = nx::media::h264::decodeType(*curPtr);
+    const auto nalUnitType = nx::media::h264::nalType(*curPtr);
     if (!nx::media::h264::isSliceNal(nalUnitType))
         return true;
     if (!isFirstSliceNal(nalUnitType, curPtr, nalLen))
@@ -272,7 +272,7 @@ Result H264Parser::processData(
     m_lastRtpTime = rtpHeader.getTimestamp();
 
     m_packetPerNal++;
-    uint8_t packetType = nx::media::h264::decodeType(*curPtr);
+    uint8_t packetType = nx::media::h264::nalType(*curPtr);
     int nalRefIDC = *curPtr++ & 0xe0;
 
     switch (packetType)
@@ -323,7 +323,7 @@ Result H264Parser::processData(
             }
             const bool startUnit = *curPtr & 0x80;
             const bool endUnit = *curPtr & 0x40;
-            uint8_t nalUnitType = nx::media::h264::decodeType(*curPtr); // FU header.
+            uint8_t nalUnitType = nx::media::h264::nalType(*curPtr); // FU header.
             bool fixNalHeader = true;
             if (startUnit) // FU_A first packet
             {

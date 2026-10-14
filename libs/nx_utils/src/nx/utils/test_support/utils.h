@@ -51,3 +51,6 @@ inline std::string normalizedGTestNameString(std::string_view value)
     { \
         NX_GTEST_ASSERT_EQ(true, expected); \
     } while (0)
+
+#define ASSERT_EQ_BINARY(data1, data2, size) \
+    ASSERT_EQ(nx::utils::toHex(data1, size), nx::utils::toHex(data2, size))

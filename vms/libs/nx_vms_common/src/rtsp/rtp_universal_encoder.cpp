@@ -255,7 +255,10 @@ QnUniversalRtpEncoder::QnUniversalRtpEncoder(const Config& config, nx::metric::S
     if (m_config.useRtcpNack)
         m_rtcpNackResponder = std::make_unique<nx::rtp::RtcpNackResponder>();
     if (m_config.webRtcMode)
-        m_transcoder.muxer().setVideoStreamFilter(std::make_unique<H2645RemoveAudDelimiter>());
+    {
+        m_transcoder.muxer().addVideoStreamFilter(std::make_unique<H2645RemoveAudDelimiter>());
+        m_transcoder.muxer().addVideoStreamFilter(std::make_unique<H2645PrependParameterSets>());
+    }
 }
 
 void QnUniversalRtpEncoder::buildSdp(

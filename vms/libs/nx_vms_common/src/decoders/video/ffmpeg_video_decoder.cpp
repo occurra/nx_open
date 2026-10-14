@@ -302,7 +302,7 @@ void QnFfmpegVideoDecoder::determineOptimalThreadType(const QnConstCompressedVid
             for (curNal = nx::media::nal::findNextNAL(curNal, end); curNal < end;
                  curNal = nx::media::nal::findNextNAL(curNal, end))
             {
-                const auto nalType = nx::media::h264::decodeType(*curNal);
+                const auto nalType = nx::media::h264::nalType(*curNal);
                 if (nalType >= nx::media::h264::nuSliceNonIDR
                     && nalType <= nx::media::h264::nuSliceIDR)
                 {
