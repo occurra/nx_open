@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include <cstdint>
 #include <deque>
+#include <string_view>
 
 #include <QtGui/QImage>
 
@@ -101,4 +103,27 @@ private:
     int m_lastChannelNumber = 0;
     const DecoderConfig m_config;
     bool m_opened = false;
+
+    /** Every frame decodeVideo() has retrieved from the decoder but decode() has not yet
+     * returned to its caller, oldest first. Normally holds at most one frame; can hold more
+     * right after a burst of reordered output, which is then delivered one per decode() call
+     * instead of being dropped. */
+    std::deque<CLVideoDecoderOutputPtr> m_outputFrames;
 };
+
+NX_VMS_COMMON_API CLVideoDecoderOutputPtr transferDecodedFrameToSystemMemory(
+    const CLConstVideoDecoderOutputPtr& sourceFrame,
+    bool useSharedMemory,
+    const nx::media::ffmpeg::FfmpegSharedMemoryAllocatorPtr& sharedMemoryAllocator);
+
+NX_VMS_COMMON_API CLVideoDecoderOutputPtr ensureDecodedFrameInSharedMemory(
+    const CLConstVideoDecoderOutputPtr& sourceFrame,
+    const nx::media::ffmpeg::FfmpegSharedMemoryAllocatorPtr& sharedMemoryAllocator);
+
+/**
+ * Logs broken decoder contract where a frame still has hw_frames_ctx but is not marked
+ * as MemoryType::VideoMemory. `context` should identify the caller/checkpoint.
+ */
+NX_VMS_COMMON_API void logVideoMemoryInvariantViolation(
+    const CLConstVideoDecoderOutputPtr& frame,
+    std::string_view context);

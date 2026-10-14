@@ -12,6 +12,8 @@ struct AVHWDeviceContext;
 namespace nx::metric { struct Storage; }
 namespace nx::media::ffmpeg {
 
+struct FfmpegSharedMemoryBufferContext;
+
 class NX_MEDIA_CORE_API HwVideoDecoder: public QnAbstractVideoDecoder
 {
 public:
@@ -22,7 +24,9 @@ public:
         nx::metric::Storage* metrics,
         const std::string& device = {},
         std::unique_ptr<AvOptions> options = {},
-        InitFunc initFunc = {});
+        InitFunc initFunc = {},
+        FfmpegSharedMemoryAllocatorPtr sharedMemoryAllocator = {},
+        bool useSharedMemoryForSoftwareFallback = false);
 
     /**
      * Construct sharing a pre-created AVHWDeviceContext (e.g. from a
@@ -86,6 +90,9 @@ private:
     uint32_t m_channel = 0;
     QnAbstractMediaData::MediaFlags m_flags{};
     MultiThreadDecodePolicy m_mtDecodingPolicy = MultiThreadDecodePolicy::enabled;
+    FfmpegSharedMemoryAllocatorPtr m_sharedMemoryAllocator;
+    std::unique_ptr<FfmpegSharedMemoryBufferContext> m_bufferContext;
+    bool m_useSharedMemoryForSoftwareFallback = false;
 };
 
 } // namespace nx::media::ffmpeg

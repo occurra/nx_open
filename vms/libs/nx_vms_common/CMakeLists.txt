@@ -38,6 +38,10 @@ target_compile_definitions(nx_vms_common
         NX_VMS_COMMON_API=${API_IMPORT_MACRO}
 )
 
+if(LINUX AND NOT ANDROID)
+    target_link_libraries(nx_vms_common PRIVATE rt)
+endif()
+
 target_include_directories(nx_vms_common
     PRIVATE
         ${device_vendor_names_root}/src

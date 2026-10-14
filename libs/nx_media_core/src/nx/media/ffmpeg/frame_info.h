@@ -93,7 +93,7 @@ public:
     AbstractVideoSurface* getVideoSurface() const { return m_surface.get(); }
 
     QImage toImage() const;
-    CLVideoDecoderOutputPtr toSystemMemory();
+    CLVideoDecoderOutputPtr toSystemMemory() const;
 
     /**
      * Copies the frame to another already allocated frame, converting to the required pixel format
