@@ -3,6 +3,7 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string_view>
@@ -34,8 +35,27 @@ extern "C" {
 
 class QnRtspClient;
 
+namespace nx::rtsp {
+
+class SrtpDecryptor;
+class SrtpEncryptor;
+
+} // namespace nx::rtsp
+
+namespace nx::streaming::rtsp { struct MikeyData; }
+
 static const int MAX_RTCP_PACKET_SIZE = 1024 * 2;
 static const int MAX_RTP_PACKET_SIZE = 1024 * 16;
+
+// Describes the RTSP interleaved frame header layout for semantic field access and sizeof().
+struct FrameHeader
+{
+    std::uint8_t marker; //< '$'
+    std::uint8_t channelId; //< RTP/RTCP channel id.
+    std::uint16_t payloadSize; //< Big-endian payload size.
+};
+
+static_assert(sizeof(FrameHeader) == 4);
 
 // Return message size or 0 if no message found. Delimeters: '$' or '\r\n\r\n'.
 NX_VMS_COMMON_API int64_t nextRtspMessage(const uint8_t* data, int64_t size, int maxChannelNumber);
@@ -140,6 +160,8 @@ public:
     static constexpr std::string_view kGetParameterCommand = "GET_PARAMETER";
     static constexpr std::string_view kPauseCommand = "PAUSE";
     static constexpr std::string_view kTeardownCommand = "TEARDOWN";
+
+    static constexpr int kResponseBufferLength = 1024 * 65;
 
     enum class DateTimeFormat
     {
@@ -289,7 +311,7 @@ public:
     void setProxySocket(std::unique_ptr<nx::network::AbstractStreamSocket> proxySocket);
 
     QStringList getSdpByType(nx::rtp::Sdp::MediaType mediaType) const;
-    int getTrackCount(nx::rtp::Sdp::MediaType mediaType) const;
+    uint32_t getTrackCount(nx::rtp::Sdp::MediaType mediaType) const;
 
     // Control what media streams will be opened during setup. All types enabled by default
     void setMediaTypeEnabled(nx::rtp::Sdp::MediaType mediaType, bool enabled);
@@ -301,6 +323,8 @@ public:
      * @param maxDataSize maximum buffer size
      * @return amount of read bytes
      */
+    // REFACTORME: #skolesnik Remove duplicated framing logic between readBinaryResponse()
+    // overloads and unify the invocation model, preferably around std::span for raw buffers.
     int readBinaryResponse(quint8* data, int maxDataSize);
 
     /*
@@ -390,12 +414,6 @@ private:
         nx::network::http::HttpHeaders* outHeaders);
     QString parseContentBase(const QString& buffer);
     CameraDiagnostics::Result parseErrorResponse(const nx::network::rtsp::RtspResponse& response);
-
-private:
-    enum
-    {
-        RTSP_BUFFER_LEN = 1024 * 65
-    };
 
     Config m_config;
 

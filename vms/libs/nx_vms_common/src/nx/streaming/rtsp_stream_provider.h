@@ -153,7 +153,7 @@ protected:
     const QString& logName() const { return m_logName; }
 
     virtual nx::network::MulticastAddressRegistry* multicastAddressRegistry();
-    virtual int numberOfVideoChannels() const;
+    virtual uint32_t numberOfVideoChannels() const;
     virtual void at_numberOfVideoChannelsChanged() {}
     virtual std::string timeHelperKey() const;
     virtual void updateStreamUrlIfNeeded() {};
@@ -218,7 +218,7 @@ protected:
     QString m_logName;
 
     std::vector<nx::utils::ByteArray*> m_demuxedData;
-    int m_numberOfVideoChannels;
+    uint32_t m_numberOfVideoChannels;
     bool m_ignoreRtcpReports = false;
     bool m_pleaseStop;
     QElapsedTimer m_rtcpReportTimer;

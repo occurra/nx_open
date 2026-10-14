@@ -374,7 +374,7 @@ QnRtspClient::QnRtspClient(const Config& config):
     m_userAgent(nx::network::http::userAgentString()),
     m_defaultAuthScheme(nx::network::http::header::AuthScheme::basic)
 {
-    m_responseBuffer = new quint8[RTSP_BUFFER_LEN];
+    m_responseBuffer = new quint8[kResponseBufferLength];
     m_responseBufferLen = 0;
     m_tcpConnectionTimeout = kDefaultTcpConnectionTimeout;
 }
@@ -929,9 +929,9 @@ CameraDiagnostics::Result QnRtspClient::sendOptions()
     return result;
 }
 
-int QnRtspClient::getTrackCount(nx::rtp::Sdp::MediaType mediaType) const
+uint32_t QnRtspClient::getTrackCount(nx::rtp::Sdp::MediaType mediaType) const
 {
-    int result = 0;
+    uint32_t result = 0;
     for (const auto& track: m_sdpTracks)
     {
         if (track.sdpMedia.mediaType == mediaType)
@@ -1264,6 +1264,8 @@ bool QnRtspClient::sendPlay(qint64 startPos, qint64 endPos, double scale)
     nx::network::http::Request request = createPlayRequest(startPos, endPos);
     if (!sendRequestAndReceiveResponse(std::move(request), response))
     {
+        if (!m_SessionId.isEmpty())
+            sendTeardown();
         stop();
         return false;
     }
@@ -1412,19 +1414,25 @@ bool QnRtspClient::readAndProcessTextData()
     if (!m_tcpSock)
         return false;
 
-    if (m_responseBufferLen >= RTSP_BUFFER_LEN)
+    if (m_responseBufferLen >= kResponseBufferLength)
     {
         NX_DEBUG(
             this,
             "Failed to read text interleaved packet(buffer overflow), buffer size: %1",
             m_responseBufferLen);
+        // NOTE: #skolesnik. The buffer contains data that never became a complete RTSP text
+        // message and does not align to a valid '$' interleaved frame. nextRtspMessage() keeps
+        // reporting "need more data", so nothing is consumed and retrying would hit the same full
+        // buffer again. Drop the unrecoverable buffered bytes and keep the current socket open so
+        // the next read can process subsequent input from the stream.
+        m_responseBufferLen = 0;
         return false;
     }
 
-    int bytesRead = readSocketWithBuffering(
+    const int bytesRead = readSocketWithBuffering(
         m_responseBuffer + m_responseBufferLen,
-        qMin(1024, RTSP_BUFFER_LEN - m_responseBufferLen),
-        true);
+        /*bufSize*/ std::min<int>(1024, kResponseBufferLength - m_responseBufferLen),
+        /*readSome*/ true);
     if (bytesRead <= 0)
     {
         NX_DEBUG(this, "Failed to read text interleaved packet, length: %1", m_responseBufferLen);
@@ -1600,7 +1608,7 @@ bool QnRtspClient::readTextResponse(QByteArray& response)
         {
             int bytesRead = readSocketWithBuffering(
                 m_responseBuffer + m_responseBufferLen,
-                qMin(1024, RTSP_BUFFER_LEN - m_responseBufferLen),
+                qMin(1024, kResponseBufferLength - m_responseBufferLen),
                 true);
             if (bytesRead <= 0)
             {
@@ -1626,7 +1634,7 @@ bool QnRtspClient::readTextResponse(QByteArray& response)
         if (m_responseBuffer[0] == '$')
         {
             // binary data
-            quint8 tmpData[RTSP_BUFFER_LEN];
+            quint8 tmpData[kResponseBufferLength];
             int bytesRead = readBinaryResponse(tmpData, sizeof(tmpData)); // skip binary data
             if (bytesRead < 0)
             {
@@ -1667,13 +1675,13 @@ bool QnRtspClient::readTextResponse(QByteArray& response)
             }
             needMoreData = true;
         }
-        if (m_responseBufferLen == RTSP_BUFFER_LEN)
+        if (m_responseBufferLen == kResponseBufferLength)
         {
             NX_DEBUG(
                 this,
                 "RTSP response from %1 has exceeded max response size (%2)",
                 m_tcpSock->getForeignAddress(),
-                RTSP_BUFFER_LEN);
+                kResponseBufferLength);
             return false;
         }
     }
@@ -2051,24 +2059,40 @@ CameraDiagnostics::Result QnRtspClient::sendRequestAndReceiveResponse(
             == nx::network::http::StatusCode::proxyAuthenticationRequired;
         const auto authenticateHeaderName =
             m_isProxyAuthorizationRequired ? "Proxy-Authenticate" : "WWW-Authenticate";
-        const auto& authenticateHeaderValue =
-            nx::network::http::getHeaderValue(response.headers, authenticateHeaderName);
-        if (!authenticateHeaderValue.empty())
+        m_responseAuthenticate.reset();
+        const auto range = response.headers.equal_range(authenticateHeaderName);
+        for (auto it = range.first; it != range.second; ++it)
         {
             nx::network::http::header::WWWAuthenticate authenticate;
-            if (!authenticate.parse(authenticateHeaderValue))
+            if (!authenticate.parse(it->second))
             {
                 NX_DEBUG(
                     this,
                     "Authentication to %1 failed with wrong %2 header value \"%3\" in response.",
                     m_url,
                     authenticateHeaderName,
-                    authenticateHeaderValue);
-                return CameraDiagnostics::NotAuthorisedResult(m_url);
+                    it->second);
+                continue;
             }
             if (m_ignoreQopInDigest)
                 authenticate.params.erase("qop");
+            if (authenticate.authScheme == nx::network::http::header::AuthScheme::digest)
+            {
+                const auto algorithmIt = authenticate.params.find("algorithm");
+                const auto algorithm =
+                    algorithmIt != authenticate.params.end() ? algorithmIt->second : std::string();
+                if (!nx::network::http::isDigestAlgorithmSupported(algorithm))
+                {
+                    NX_DEBUG(
+                        this,
+                        "Skipping unsupported digest algorithm \"%1\" from %2",
+                        algorithm,
+                        m_url);
+                    continue;
+                }
+            }
             m_responseAuthenticate = std::move(authenticate);
+            break;
         }
     }
 
