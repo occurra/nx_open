@@ -2,6 +2,8 @@
 
 #include "webrtc_streamer.h"
 
+#include <cerrno>
+#include <cstdlib>
 #include <optional>
 #include <vector>
 

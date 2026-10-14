@@ -349,7 +349,7 @@ void Demuxer::encryptPacket(nx::Buffer& buffer)
 {
     if (m_encryptor)
     {
-        nx::utils::ByteArray array(/*alignment*/ 1, buffer.size(), /*padding*/ 1);
+        nx::utils::ByteArray array(buffer.size());
         array.write(buffer.data(), buffer.size());
 
         m_encryptor->encryptPacket(&array, /*offset*/ 0);

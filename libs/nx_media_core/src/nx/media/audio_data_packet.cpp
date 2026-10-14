@@ -41,7 +41,7 @@ QnWritableCompressedAudioData::QnWritableCompressedAudioData(
     size_t capacity,
     CodecParametersConstPtr ctx):
     QnCompressedAudioData(ctx),
-    m_data(CL_MEDIA_ALIGNMENT, capacity, AV_INPUT_BUFFER_PADDING_SIZE)
+    m_data(capacity, CL_MEDIA_ALIGNMENT, AV_INPUT_BUFFER_PADDING_SIZE)
 {
 }
 
@@ -60,6 +60,11 @@ const char* QnWritableCompressedAudioData::data() const
 size_t QnWritableCompressedAudioData::dataSize() const
 {
     return m_data.size();
+}
+
+size_t QnWritableCompressedAudioData::paddingSize() const
+{
+    return m_data.paddingSize();
 }
 
 void QnWritableCompressedAudioData::setData(nx::utils::ByteArray&& buffer)

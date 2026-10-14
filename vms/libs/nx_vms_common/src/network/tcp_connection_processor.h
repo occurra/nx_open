@@ -69,7 +69,6 @@ public:
     int checkForBinaryProtocol(const QByteArray& message);
     bool isBinaryProtocol() const;
 
-    bool sendChunk(const nx::utils::ByteArray& chunk);
     bool sendChunk(const QByteArray& chunk);
     bool sendChunk(const nx::Buffer& chunk);
     bool sendChunk(const char* data, int size);
@@ -78,10 +77,6 @@ public:
     virtual void pleaseStop() override;
     nx::network::SocketAddress getForeignAddress() const;
     nx::Url getDecodedUrl() const;
-
-    bool sendBuffer(
-        const nx::utils::ByteArray& sendBuffer,
-        std::optional<int64_t> timestampForLogging = std::nullopt);
 
     bool sendBuffer(
         const QByteArray& sendBuffer,
