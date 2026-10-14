@@ -14,6 +14,7 @@ namespace nx::sql::detail {
 BaseExecutor::BaseExecutor(QueryType queryType, const std::string& queryAggregationKey):
     m_statisticsCollector(nullptr),
     m_creationTime(nx::utils::monotonicTime()),
+    m_queryStatistics{.queryType = queryType},
     m_queryExecuted(false),
     m_queryType(queryType),
     m_queryAggregationKey(queryAggregationKey)
