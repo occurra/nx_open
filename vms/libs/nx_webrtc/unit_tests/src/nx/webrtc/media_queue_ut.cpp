@@ -44,7 +44,7 @@ TEST(MediaQueue, testDeviceId)
     // second device data.
     auto data = queue.popData(false);
     ASSERT_EQ(data->deviceId, deviceId2);
-    ASSERT_TRUE(data->flags & AV_PKT_FLAG_KEY);
+    ASSERT_TRUE(data->isKeyFrame());
 
     data = queue.popData(false);
     ASSERT_EQ(data->deviceId, deviceId2);
@@ -52,7 +52,7 @@ TEST(MediaQueue, testDeviceId)
 
     data = queue.popData(false);
     ASSERT_EQ(data->deviceId, deviceId2);
-    ASSERT_FALSE(data->flags & AV_PKT_FLAG_KEY);
+    ASSERT_FALSE(data->isKeyFrame());
 }
 
 TEST(MediaQueue, clearUnprocessedDataOfOneDevice)
@@ -72,10 +72,10 @@ TEST(MediaQueue, clearUnprocessedDataOfOneDevice)
 
     auto data = queue.popData(false);
     ASSERT_EQ(data->deviceId, deviceId2);
-    ASSERT_TRUE(data->flags & AV_PKT_FLAG_KEY);
+    ASSERT_TRUE(data->isKeyFrame());
     data = queue.popData(false);
     ASSERT_EQ(data->deviceId, deviceId2);
-    ASSERT_FALSE(data->flags & AV_PKT_FLAG_KEY);
+    ASSERT_FALSE(data->isKeyFrame());
 
     // The key-frame gate survives a per-device flush: a delta frame still queues.
     queue.putData(createVideoPacket(deviceId1, /*keyFrame*/ false));

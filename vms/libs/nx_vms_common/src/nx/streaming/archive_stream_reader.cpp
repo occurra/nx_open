@@ -161,7 +161,7 @@ bool QnArchiveStreamReader::hasVideo() const
     return *m_hasVideo;
 }
 
-AudioLayoutConstPtr QnArchiveStreamReader::getDPAudioLayout() const
+AudioLayoutConstPtr QnArchiveStreamReader::getAudioLayout() const
 {
     if (!m_audioLayout.has_value())
     {
@@ -324,7 +324,7 @@ bool QnArchiveStreamReader::isCompatiblePacketForMask(
         if (mediaData->dataType != QnAbstractMediaData::AUDIO)
             return false;
     }
-    return !(mediaData->flags & QnAbstractMediaData::MediaFlags_LIVE);
+    return !mediaData->isLive();
 }
 
 QnAbstractMediaDataPtr QnArchiveStreamReader::getNextData()
@@ -625,7 +625,7 @@ begin_label:
             bool isKeyFrame = false;
             if (videoData)
             {
-                isKeyFrame = m_currentData->flags & AV_PKT_FLAG_KEY;
+                isKeyFrame = m_currentData->isKeyFrame();
                 if (videoData->context)
                 {
                     if (m_frameTypeExtractor == 0
@@ -777,7 +777,7 @@ begin_label:
         } // negative speed
     } // videoData || eof
 
-    if (m_currentData->flags & QnAbstractMediaData::MediaFlags_LIVE)
+    if (m_currentData->isLive())
         m_skipFramesToTime = 0;
 
     if (videoData) // in case of video packet
@@ -918,14 +918,12 @@ begin_label:
          * Consumers, such as CamDisplay, skip data frames if data with MediaFlags_BOF flag has
          * not been received yet. On the other hand, QnArchiveStreamReader drops non-key
          * frames if it hasn't received one. So, without this condition below
-         * (&& m_currentData->flags.testFlag(QnAbstractMediaData::MediaFlags_AVKey)) we may end up
+         * (&& m_currentData->isKeyFrame()) we may end up
          * with a frame with MediaFlags_BOF flag being dropped because it is not a key frame and
          * consumer won't never get a BOF frame.
          * Above is true only for the video packets => '!videoData' condition.
          */
-        if (m_BOF
-            && (!videoData
-                || m_currentData->flags.testFlag(QnAbstractMediaData::MediaFlags_AVKey)))
+        if (m_BOF && (!videoData || m_currentData->isKeyFrame()))
         {
             m_currentData->flags |= QnAbstractMediaData::MediaFlags_BOF;
             m_BOF = false;
@@ -936,9 +934,12 @@ begin_label:
         m_currentData->flags |= QnAbstractMediaData::MediaFlags_StillImage;
 
     if (m_currentData)
-        m_latPacketTime = (m_currentData->flags & QnAbstractMediaData::MediaFlags_LIVE)
+    {
+        m_latPacketTime = m_currentData->isLive()
             ? DATETIME_NOW
             : qMin(QnSyncTime::currentUSecsSinceEpoch(), m_currentData->timestamp);
+    }
+
     return m_currentData;
 }
 

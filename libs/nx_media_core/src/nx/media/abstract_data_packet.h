@@ -15,6 +15,8 @@ struct NX_MEDIA_CORE_API QnAbstractDataPacket
     qint64 timestamp = DATETIME_INVALID; //< TODO: Rename to timestampUs.
 
     bool isSpecialTimeValue() const { return timestamp < 0 || timestamp == DATETIME_NOW; }
+
+    virtual QString idForToStringFromPtr() const;
 };
 
 typedef std::shared_ptr<QnAbstractDataPacket> QnAbstractDataPacketPtr;

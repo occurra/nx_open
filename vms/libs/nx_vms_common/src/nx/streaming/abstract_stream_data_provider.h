@@ -26,6 +26,7 @@ public:
     {
         return QnConstResourceVideoLayoutPtr();
     }
+    virtual AudioLayoutConstPtr getAudioLayout() const { return nullptr; }
     virtual bool hasVideo() const { return true; }
 
 protected:

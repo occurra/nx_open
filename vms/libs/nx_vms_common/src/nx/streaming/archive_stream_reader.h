@@ -77,7 +77,7 @@ public:
     bool isSingleShotMode() const;
 
     QnConstResourceVideoLayoutPtr getDPVideoLayout() const;
-    AudioLayoutConstPtr getDPAudioLayout() const;
+    virtual AudioLayoutConstPtr getAudioLayout() const override;
     virtual bool hasVideo() const override;
 
     //! Implementation of QnAbstractMediaStreamDataProvider::diagnoseMediaStreamConnection

@@ -31,7 +31,7 @@ void MediaQueue::clearTillLastGopUnsafe()
     {
         bool isKeyFrame = false;
         if (const auto* video = dynamic_cast<const QnCompressedVideoData*>(media->get()))
-            isKeyFrame = video->flags.testFlag(QnAbstractMediaData::MediaFlags_AVKey);
+            isKeyFrame = video->isKeyFrame();
 
         if (isKeyFrame)
         {

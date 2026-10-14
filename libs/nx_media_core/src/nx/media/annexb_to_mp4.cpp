@@ -127,7 +127,7 @@ QnCompressedVideoDataPtr AnnexbToMp4::process(const QnCompressedVideoData* frame
         return nullptr;
     }
 
-    if (frame->flags.testFlag(QnAbstractMediaData::MediaFlags_AVKey))
+    if (frame->isKeyFrame())
     {
         updateCodecParameters(frame);
     }

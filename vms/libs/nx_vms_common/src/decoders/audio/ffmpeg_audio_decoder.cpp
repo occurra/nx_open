@@ -73,8 +73,8 @@ bool QnFfmpegAudioDecoder::decode(QnCompressedAudioDataPtr& data, nx::utils::Byt
     {
         NX_WARNING(
             this,
-            "Failed to decode audio packet timestamp: %1, error: %2",
-            data->timestamp,
+            "Failed to decode audio packet: %1, error: %2",
+            data,
             nx::media::ffmpeg::avErrorToString(error));
         return false;
     }
