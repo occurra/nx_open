@@ -195,6 +195,36 @@ bool Demuxer::processRtp(const nx::utils::ByteArray& array)
     auto reorderer = m_reorderers.find(ssrc);
     NX_ASSERT(reorderer != m_reorderers.end());
 
+    // Transport-wide congestion control: record the arrival timing of every
+    // video RTP packet and echo it back as TWCC feedback. The publisher's
+    // send-side estimator (libwebrtc GCC) runs on this feedback; without it the
+    // publisher has no signal and stays at its conservative default bitrate.
+    if (ssrc == m_videoMediaSsrc)
+    {
+        const auto arrival = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now().time_since_epoch());
+        nx::rtp::RtpHeaderData hd;
+        if (hd.read((const uint8_t*) array.data(), (int) array.size()) && hd.extension)
+        {
+            if (auto seq = parseTransportCcSeq(
+                    hd.extension->header.id(),
+                    (const uint8_t*) array.data() + hd.extension->extensionOffset,
+                    hd.extension->extensionSize,
+                    m_twcc.transportCcExtId()))
+            {
+                m_twcc.onRtpPacket(*seq, arrival);
+            }
+        }
+
+        std::vector<nx::Buffer> feedbacks;
+        m_twcc.maybeBuildFeedback(arrival, feedbacks);
+        for (auto& fb: feedbacks)
+        {
+            encryptPacket(fb);
+            m_feedbacks.emplace_back(std::move(fb));
+        }
+    }
+
     auto status = reorderer->second.pushPacket(array, header->getSequence());
     switch (status)
     {

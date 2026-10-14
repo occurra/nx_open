@@ -9,6 +9,7 @@
 #include <rtsp/srtp_encryptor.h>
 
 #include "webrtc_tracks.h"
+#include "webrtc_twcc.h"
 #include "webrtc_utils.h"
 
 namespace nx::webrtc {
@@ -60,10 +61,15 @@ private:
     std::map<uint32_t, nx::rtp::ReorderingCache> m_reorderers; //< ssrc ->reorderer.
     std::map<uint32_t, ParserContext> m_parsers; //< ssrc -> parser.
     std::unique_ptr<rtsp::SrtpEncryptor> m_encryptor;
+    std::unique_ptr<rtsp::SrtpDecryptor> m_decryptor;
     std::deque<QnAbstractMediaDataPtr> m_frames;
     std::deque<nx::Buffer> m_feedbacks;
+    bool m_hasVideo = false;
+    bool m_hasAudio = false;
     nx::rtp::RtcpFirFeedback m_rtcpFir;
     CodecParametersConstPtr m_audioCodecParameters;
+    TwccController m_twcc;
+    uint32_t m_videoMediaSsrc = 0; //< Publisher's video SSRC, target for TWCC feedback.
 };
 
 } // namespace nx::webrtc
