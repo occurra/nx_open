@@ -4,9 +4,14 @@ find_package(libsrtp REQUIRED)
 
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/resources")
 
+if(APPLE)
+    set(apple_sources src/utils/apple_utils.mm)
+endif()
+
 nx_add_target(nx_vms_common LIBRARY
     ADDITIONAL_SOURCES
         ${mac_sources}
+        ${apple_sources}
     ADDITIONAL_RESOURCES
         "${CMAKE_CURRENT_BINARY_DIR}/resources"
     PUBLIC_LIBS

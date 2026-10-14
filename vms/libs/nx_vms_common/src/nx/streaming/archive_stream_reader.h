@@ -280,6 +280,7 @@ private:
     virtual bool needKeyData(int channel) const override;
     void emitJumpOccurred(qint64 jumpTime, bool usePreciseSeek, int sequence);
     std::chrono::milliseconds getDelay(int64_t timestamp);
+    void runCycleImpl();
 
 private:
     unsigned m_selectedAudioChannel = 0;
