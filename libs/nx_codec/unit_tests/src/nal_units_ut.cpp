@@ -1,12 +1,16 @@
 // Copyright 2018-present Network Optix, Inc. Licensed under MPL 2.0: www.mozilla.org/MPL/2.0/
 
+#include <vector>
+
 #include <gtest/gtest.h>
 
 #include <nx/codec/h264/sequence_parameter_set.h>
 #include <nx/codec/h264/supplemental_enhancement_information.h>
 #include <nx/codec/h265/hevc_common.h>
 #include <nx/codec/h265/sequence_parameter_set.h>
+#include <nx/codec/h265/supplemental_enhancement_information.h>
 #include <nx/codec/nal_units.h>
+#include <nx/codec/sei_common.h>
 
 using SourcePayload = QByteArray;
 using DestinationPayload = QByteArray;
@@ -44,34 +48,353 @@ TEST(NalUnits, decodeNal)
 
 TEST(NalUnits, h264SEIWrongPayloadSize)
 {
-    nx::media::h264::SequenceParameterSet sps;
     {
-        nx::media::h264::SupplementalEnhancementInformation sei;
         const uint8_t data[] = {0x26, 0x05, 0x03, 0x34, 0xac, 0x56}; //< State size == 3.
-        sei.decodeBuffer(data, data + sizeof(data));
-        ASSERT_TRUE(sei.deserialize(sps, 0));
-        ASSERT_EQ(sei.m_userDataPayload.size(), 1);
-        ASSERT_EQ(sei.m_processedMessages.size(), 1);
-        ASSERT_EQ(sei.m_userDataPayload.front().second, 3); //< Correct size.
+        const auto sei = nx::media::h264::parseSeiUserData(std::span(data));
+        ASSERT_TRUE(sei.has_value());
+        ASSERT_EQ(sei->payloads.size(), 1);
+        ASSERT_EQ(sei->payloads.front().size(), 3); //< Correct size.
     }
     {
-        nx::media::h264::SupplementalEnhancementInformation sei;
         const uint8_t data[] = {0x26, 0x05, 0x04, 0x34, 0xac, 0x56}; //< State size == 4.
-        sei.decodeBuffer(data, data + sizeof(data));
-        ASSERT_TRUE(sei.deserialize(sps, 0));
-        ASSERT_EQ(sei.m_userDataPayload.size(), 1);
-        ASSERT_EQ(sei.m_processedMessages.size(), 1);
-        ASSERT_EQ(sei.m_userDataPayload.front().second, 3); //< Truncated.
+        const auto sei = nx::media::h264::parseSeiUserData(std::span(data));
+        ASSERT_TRUE(sei.has_value());
+        ASSERT_EQ(sei->payloads.size(), 1);
+        ASSERT_EQ(sei->payloads.front().size(), 3); //< Truncated.
     }
     {
-        nx::media::h264::SupplementalEnhancementInformation sei;
-        uint8_t data[] = {0x26, 0x05, 0xFF, 0x01, 0x34, 0xac, 0x56}; //< State size == 256.
-        sei.decodeBuffer(data, data + sizeof(data));
-        ASSERT_TRUE(sei.deserialize(sps, 0));
-        ASSERT_EQ(sei.m_userDataPayload.size(), 1);
-        ASSERT_EQ(sei.m_processedMessages.size(), 1);
-        ASSERT_EQ(sei.m_userDataPayload.front().second, 3); //< Truncated.
+        const uint8_t data[] = {0x26, 0x05, 0xff, 0x01, 0x34, 0xac, 0x56}; //< State size == 256.
+        const auto sei = nx::media::h264::parseSeiUserData(std::span(data));
+        ASSERT_TRUE(sei.has_value());
+        ASSERT_EQ(sei->payloads.size(), 1);
+        ASSERT_EQ(sei->payloads.front().size(), 3); //< Truncated.
     }
+    {
+        // Each call owns its own decoded buffer, so results from separate calls stay independent.
+        const uint8_t first[] = {0x26, 0x05, 0x02, 0x11, 0x22};
+        const auto sei1 = nx::media::h264::parseSeiUserData(std::span(first));
+        ASSERT_TRUE(sei1.has_value());
+        ASSERT_EQ(sei1->payloads.size(), 1);
+
+        const uint8_t second[] = {0x26, 0x05, 0x01, 0x99};
+        const auto sei2 = nx::media::h264::parseSeiUserData(std::span(second));
+        ASSERT_TRUE(sei2.has_value());
+        ASSERT_EQ(sei2->payloads.size(), 1);
+        ASSERT_EQ(sei2->payloads.front().front(), 0x99);
+
+        // The first result is still valid and unaffected by the second call.
+        ASSERT_EQ(sei1->payloads.front().size(), 2);
+        ASSERT_EQ(sei1->payloads.front().front(), 0x11);
+    }
+}
+
+// extractUserData() decodes the EBSP past the NAL header and parses it, common for h264 and h265.
+TEST(NalUnits, seiExtractUserData)
+{
+    {
+        // Two user_data_unregistered (type 5) messages in one NALU.
+        const uint8_t data[] = {
+            0x05,
+            0x03,
+            0xaa,
+            0xbb,
+            0xcc, //< Type 5, size 3.
+            0x05,
+            0x02,
+            0x11,
+            0x22, //< Type 5, size 2.
+            0x80}; //< rbsp_trailing_bits.
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_TRUE(result.has_value());
+        const auto& payloads = result->payloads;
+        ASSERT_EQ(payloads.size(), 2);
+        ASSERT_EQ(payloads.front().size(), 3);
+        ASSERT_EQ(payloads.back().size(), 2);
+    }
+    {
+        // Mix of message types; only type 5 is collected.
+        const uint8_t data[] = {
+            0x00,
+            0x01,
+            0x77, //< Type 0 (buffering_period), size 1.
+            0x05,
+            0x02,
+            0xde,
+            0xad, //< Type 5, size 2.
+            0x01,
+            0x02,
+            0x33,
+            0x44, //< Type 1 (pic_timing), size 2.
+            0x80};
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_TRUE(result.has_value());
+        const auto& payloads = result->payloads;
+        ASSERT_EQ(payloads.size(), 1);
+        const auto& payload = payloads.front();
+        ASSERT_EQ(payload.size(), 2);
+        ASSERT_EQ(memcmp(payload.data(), "\xde\xad", 2), 0);
+    }
+    {
+        // 0xff-extended message type (255 + 6 == 261) is skipped, type 5 is collected.
+        const uint8_t data[] = {
+            0xff,
+            0x06,
+            0x02,
+            0xaa,
+            0xbb, //< Type 261, size 2.
+            0x05,
+            0x01,
+            0x99, //< Type 5, size 1.
+            0x80};
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_TRUE(result.has_value());
+        const auto& payloads = result->payloads;
+        ASSERT_EQ(payloads.size(), 1);
+        const auto& payload = payloads.front();
+        ASSERT_EQ(payload.size(), 1);
+        ASSERT_EQ(payload.front(), 0x99);
+    }
+    {
+        // Type 5 with wrong size at the end of a mix: declared 5, only 2 bytes left.
+        const uint8_t data[] = {
+            0x00,
+            0x01,
+            0x00, //< Type 0, size 1.
+            0x05,
+            0x05,
+            0x12,
+            0x34}; //< Type 5, size 5, truncated.
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_TRUE(result.has_value());
+        const auto& payloads = result->payloads;
+        ASSERT_EQ(payloads.size(), 1);
+        const auto& payload = payloads.front();
+        ASSERT_EQ(payload.size(), 2); //< Truncated.
+        ASSERT_EQ(memcmp(payload.data(), "\x12\x34", 2), 0);
+    }
+    {
+        // Empty type 5 payload.
+        const uint8_t data[] = {
+            0x05,
+            0x00, //< Type 5, size 0.
+            0x80};
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_TRUE(result.has_value());
+        const auto& payloads = result->payloads;
+        ASSERT_EQ(payloads.size(), 1);
+        ASSERT_EQ(payloads.front().size(), 0);
+    }
+    {
+        // Malformed: buffer ends before the message size byte.
+        const uint8_t data[] = {0xff, 0x05};
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_FALSE(result.has_value());
+        EXPECT_EQ(result.error(), "Bad SEI detected. SEI too short - unable to read size");
+    }
+    {
+        // Long 0xff-extended message type (4 * 255 + 0 == 1020) is skipped, type 5 is collected.
+        const uint8_t data[] = {
+            0xff,
+            0xff,
+            0xff,
+            0xff,
+            0x00,
+            0x01,
+            0xaa, //< Type 1020, size 1.
+            0x05,
+            0x01,
+            0x99, //< Type 5, size 1.
+            0x80};
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_TRUE(result.has_value());
+        const auto& payloads = result->payloads;
+        ASSERT_EQ(payloads.size(), 1);
+        const auto& payload = payloads.front();
+        ASSERT_EQ(payload.size(), 1);
+        ASSERT_EQ(payload.front(), 0x99);
+    }
+    {
+        // Long 0xff-extended message size (2 * 255 + 2 == 512) far beyond the buffer.
+        const uint8_t data[] =
+            {0x05, 0xff, 0xff, 0x02, 0x12, 0x34}; //< Type 5, size 512, truncated.
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_TRUE(result.has_value());
+        const auto& payloads = result->payloads;
+        ASSERT_EQ(payloads.size(), 1);
+        const auto& payload = payloads.front();
+        ASSERT_EQ(payload.size(), 2); //< Truncated.
+        ASSERT_EQ(memcmp(payload.data(), "\x12\x34", 2), 0);
+    }
+    {
+        // Malformed: the message type 0xff run never terminates.
+        const uint8_t data[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_FALSE(result.has_value());
+        EXPECT_EQ(result.error(), "Bad SEI detected. SEI too short - unable to read type");
+    }
+    {
+        // Malformed: the message size 0xff run never terminates.
+        const uint8_t data[] = {0x05, 0xff, 0xff, 0xff};
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_FALSE(result.has_value());
+        EXPECT_EQ(result.error(), "Bad SEI detected. SEI too short - unable to read size");
+    }
+    {
+        // Regression: a 0xff-extended size run long enough to overflow a 32-bit accumulator
+        // must not wrap to negative and walk the cursor backwards out of the buffer.
+        constexpr int kFfRunLength = 8'422'000; //< 255 * kFfRunLength > INT_MAX.
+        std::vector<uint8_t> data(1 + kFfRunLength + 1 + 2);
+        data[0] = 0x05; //< Type 5.
+        std::fill_n(data.begin() + 1, kFfRunLength, uint8_t(0xff));
+        data[1 + kFfRunLength] = 0x02; //< Terminates the size run.
+        data[2 + kFfRunLength] = 0xaa;
+        data[3 + kFfRunLength] = 0xbb;
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_TRUE(result.has_value());
+        const auto& payloads = result->payloads;
+        ASSERT_EQ(payloads.size(), 1);
+        const auto& payload = payloads.front();
+        ASSERT_EQ(
+            payload.size(),
+            2); //< Declared size vastly exceeds the buffer; truncated to what remains.
+        ASSERT_EQ(memcmp(payload.data(), "\xaa\xbb", 2), 0);
+    }
+    {
+        // A single leftover trailing byte other than the rbsp_trailing_bits 0x80 (e.g. vendor
+        // padding) does not fail the parsing of the preceding messages.
+        const uint8_t data[] = {
+            0x05,
+            0x02,
+            0x11,
+            0x22, //< Type 5, size 2.
+            0x00}; //< Leftover padding byte.
+        const auto result = nx::media::sei::extractUserData(data);
+        ASSERT_TRUE(result.has_value());
+        const auto& payloads = result->payloads;
+        ASSERT_EQ(payloads.size(), 1);
+        ASSERT_EQ(payloads.front().size(), 2);
+    }
+}
+
+TEST(NalUnits, h265SEIDeserialize)
+{
+    // Prefix SEI NALU: 2-byte NAL header, EPB in the payload (00 00 03 01 decodes to 00 00 01).
+    const uint8_t data[] = {
+        0x4e,
+        0x01, //< NAL header: prefixSeiNut (39).
+        0x05,
+        0x03,
+        0x00,
+        0x00,
+        0x03,
+        0x01, //< Type 5, size 3 (4 bytes with EPB).
+        0x80};
+    const auto sei = nx::media::h265::parseSeiUserData(std::span(data));
+    ASSERT_TRUE(sei.has_value());
+    ASSERT_EQ(sei->payloads.size(), 1);
+    const auto& payload = sei->payloads.front();
+    ASSERT_EQ(payload.size(), 3);
+    ASSERT_EQ(memcmp(payload.data(), "\x00\x00\x01", 3), 0);
+}
+
+TEST(NalUnits, h265SEIDeserializeIndependentCalls)
+{
+    // Each call owns its own decoded buffer, so results from separate calls stay independent.
+    const uint8_t first[] = {0x4e, 0x01, 0x05, 0x02, 0x11, 0x22, 0x80};
+    const auto sei1 = nx::media::h265::parseSeiUserData(std::span(first));
+    ASSERT_TRUE(sei1.has_value());
+    ASSERT_EQ(sei1->payloads.size(), 1);
+
+    const uint8_t second[] = {0x4e, 0x01, 0x05, 0x01, 0x99, 0x80};
+    const auto sei2 = nx::media::h265::parseSeiUserData(std::span(second));
+    ASSERT_TRUE(sei2.has_value());
+    ASSERT_EQ(sei2->payloads.size(), 1);
+    ASSERT_EQ(sei2->payloads.front().front(), 0x99);
+
+    // The first result is still valid and unaffected by the second call.
+    ASSERT_EQ(sei1->payloads.front().size(), 2);
+    ASSERT_EQ(sei1->payloads.front().front(), 0x11);
+}
+
+// Real vendor SEI NALUs captured from cameras. The declared payload sizes may exceed the
+// captured NALU (stream padding is stripped together with the start codes), so some payloads
+// come out truncated - which is exactly what the parser must survive.
+
+static void checkVendorSei(
+    auto parseSeiUserData,
+    const QByteArray& nalu,
+    const QByteArray& expectedUserData)
+{
+    const auto sei =
+        parseSeiUserData(std::span((const uint8_t*) nalu.constData(), (size_t) nalu.size()));
+    ASSERT_TRUE(sei.has_value());
+    ASSERT_EQ(sei->payloads.size(), 1);
+    const auto& payload = sei->payloads.front();
+    ASSERT_EQ(payload.size(), expectedUserData.size());
+    ASSERT_EQ(memcmp(payload.data(), expectedUserData.constData(), payload.size()), 0);
+}
+
+TEST(H26xVendorSei, h264AxisUserData)
+{
+    // Axis Q6086-E: 16-byte UUID, then [size][type] sub-messages (product info, timestamp).
+    const QByteArray nalu = QByteArray::fromHex(
+        "06052eaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000d0a000a4effffffe82725234bb5000d0a016a"
+        "4b18ac396a4b18ac390180");
+    const QByteArray expected = QByteArray::fromHex(
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000d0a000a4effffffe82725234bb5000d0a016a4b18ac"
+        "396a4b18ac3901");
+    checkVendorSei(&nx::media::h264::parseSeiUserData, nalu, expected);
+}
+
+TEST(H26xVendorSei, h265UniviewObjectTracking)
+{
+    // Uniview IPC2124SB: object tracking header (marker 0x20), no tracks. Heavy on EPB;
+    // declared size 17, 13 bytes present.
+    const QByteArray nalu = QByteArray::fromHex("4e01051120000003000003000003000100000300c880");
+    const QByteArray expected = QByteArray::fromHex("200000000000000001000000c8");
+    checkVendorSei(&nx::media::h265::parseSeiUserData, nalu, expected);
+}
+
+TEST(H26xVendorSei, h265UniviewPerFrameInfo)
+{
+    // Uniview IPC2124SB: per-frame info blob (marker 0x21); declared size 168, 121 bytes present.
+    const QByteArray nalu = QByteArray::fromHex(
+        "4e0105a8210000030000030000030001000101f400000300000300000300010000030000030000"
+        "030001040c12ba15cc11b100000300000300000300000300000300000300000300000300000300"
+        "000300000300000300000300000300000300000300000300000300000300000300000300000300"
+        "000300000300000300000300000300000300000300020000030007000003000700000300000300"
+        "0003000003000003000003000003000080");
+    const QByteArray expected = QByteArray::fromHex(
+        "210000000000000001000101f400000000000000010000000000000001040c12ba15cc11b10000"
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        "000000000000000000000000000000000000020000000700000007000000000000000000000000"
+        "00000000");
+    checkVendorSei(&nx::media::h265::parseSeiUserData, nalu, expected);
+}
+
+TEST(H26xVendorSei, h265UniviewCameraInfo)
+{
+    // Uniview IPC2124SB: one-shot config blob (marker 0x10) with 0xff-extended message size
+    // (0xff 0x3c == 315); 241 bytes present.
+    const QByteArray nalu = QByteArray::fromHex(
+        "4e0105ff3c100901010004808080800080800000030000e02e00001e0040066400000300c08302"
+        "4a0c00000300050505000003000003030600000300000300000300000300000300000300000300"
+        "0003000003000005036407000003003426370000030000030040030d0000600200640000030000"
+        "030000030000030000030000030000030000030000030000030000030001000003005f5f030088"
+        "13c20100000300000300002d2001004c3100000300000405040d14050004330b80802040000003"
+        "000003000003000003000003000003000003000003000003000003000003000003000003000003"
+        "000003000003000003000003000003000003000003000003000003000003000003000003000003"
+        "000003000003000003000003000003000003000003000003000003000003000003000003000003"
+        "000003000003000080");
+    const QByteArray expected = QByteArray::fromHex(
+        "1009010100048080808000808000000000e02e00001e00400664000000c083024a0c0000000505"
+        "050000000003060000000000000000000000000000000000000000050364070000003426370000"
+        "00000040030d000060020064000000000000000000000000000000000000000000000001000000"
+        "5f5f03008813c2010000000000002d2001004c31000000000405040d14050004330b8080204000"
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        "000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        "00000000000000");
+    checkVendorSei(&nx::media::h265::parseSeiUserData, nalu, expected);
 }
 
 TEST(NalUnits, h264SPSWrongResolution)
