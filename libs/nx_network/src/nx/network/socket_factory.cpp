@@ -47,6 +47,17 @@ const AdapterFunc kAcceptAnyCertificate = [](auto socket)
         kAcceptAnyCertificateCallback);
 };
 
+const AdapterFunc kRejectAnyCertificate = [](auto socket)
+{
+    return std::make_unique<ClientStreamSocket>(
+        Context::instance(),
+        std::move(socket),
+        [](auto...)
+        {
+            return false;
+        });
+};
+
 } // namespace ssl
 
 class SocketFactoryImpl

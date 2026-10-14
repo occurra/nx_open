@@ -37,8 +37,8 @@ namespace nx::network::http {
 //-------------------------------------------------------------------------------------------------
 
 static ClientOptions::Timeouts kDefaultTimeouts{
-    /*sendTimeout*/ std::chrono::milliseconds(3001),
-    /*responseReadTimeout*/ std::chrono::milliseconds(3002),
+    /*sendTimeout*/ std::chrono::milliseconds(10001),
+    /*responseReadTimeout*/ std::chrono::milliseconds(10002),
     /*messageBodyReadTimeout*/ std::chrono::milliseconds(10003),
 };
 
@@ -1140,6 +1140,7 @@ void AsyncClient::resetDataBeforeNewRequest()
 {
     ++m_requestSequence;
     m_authorizationTried = false;
+    m_proxyAuthorizationTried = false;
     m_ha1RecalcTried = false;
     m_numberOfRedirectsTried = 0;
     m_request = nx::network::http::Request();

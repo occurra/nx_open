@@ -94,7 +94,7 @@ NX_NETWORK_API bool readHeader(
  */
 NX_NETWORK_API HttpHeaders::iterator insertOrReplaceHeader(
     HttpHeaders* const headers,
-    const HttpHeader& newHeader);
+    HttpHeader newHeader);
 
 template<typename HeaderType>
 HttpHeaders::iterator insertOrReplaceHeader(HttpHeaders* const headers, const HeaderType& header)
@@ -106,17 +106,23 @@ NX_NETWORK_API HttpHeaders::iterator insertHeader(
     HttpHeaders* const headers,
     HttpHeader newHeader);
 
+NX_NETWORK_API void insertWarning(HttpHeaders* headers, std::string message);
+
 NX_NETWORK_API void removeHeader(HttpHeaders* const headers, const std::string& name);
 
 /**
  * Adds CORS to headers. supportedOrigins must be equal to '*' or a comma separated origins
  * supported.
+ * @param requestHeaders Headers of the request being responded to. Origin is checked against
+ *     supportedOrigins, and for an allowed origin Access-Control-Request-Headers of a preflight
+ *     request is reflected into Access-Control-Allow-Headers.
  */
 NX_NETWORK_API void insertOrReplaceCorsHeaders(
     HttpHeaders* headers,
     const class Method& method,
-    std::string origin,
+    const HttpHeaders& requestHeaders,
     const std::string& supportedOrigins,
+    bool supportedOriginCredentials,
     std::string_view methods);
 
 /** Parses data and saves header name and data to *headerName and *headerValue. */
@@ -532,19 +538,23 @@ NX_REFLECTION_ENUM_CLASS(AuthType,
 namespace header {
 
 /** Common header name constants. */
-static constexpr char kAccept[] = "Accept";
-static constexpr char kAcceptLanguage[] = "Accept-Language";
-static constexpr char kContentDisposition[] = "Content-Disposition";
-static constexpr char kContentType[] = "Content-Type";
-static constexpr char kContentLength[] = "Content-Length";
-static constexpr char kUserAgent[] = "User-Agent";
-static constexpr char kAuthorization[] = "Authorization";
-static constexpr char kHost[] = "Host";
-static constexpr char kConnection[] = "Connection";
-static constexpr char kRequestId[] = "X-Request-Id";
-static constexpr char kAmznTraceId[] = "X-Amzn-Trace-Id";
+inline constexpr char kAccept[] = "Accept";
+inline constexpr char kAcceptLanguage[] = "Accept-Language";
+inline constexpr char kAuthorization[] = "Authorization";
+inline constexpr char kConnection[] = "Connection";
+inline constexpr char kContentDisposition[] = "Content-Disposition";
+inline constexpr char kContentLength[] = "Content-Length";
+inline constexpr char kContentType[] = "Content-Type";
+inline constexpr char kETag[] = "ETag";
+inline constexpr char kHost[] = "Host";
+inline constexpr char kIfMatch[] = "If-Match";
+inline constexpr char kIfNoneMatch[] = "If-None-Match";
+inline constexpr char kUserAgent[] = "User-Agent";
+inline constexpr char kAmznTraceId[] = "X-Amzn-Trace-Id";
+inline constexpr char kXCache[] = "X-Cache";
+inline constexpr char kRequestId[] = "X-Request-Id";
 
-static constexpr std::array<std::string_view, 8> kNonRepeatableHeaders = {
+inline constexpr std::array<std::string_view, 8> kNonRepeatableHeaders = {
     kAuthorization,
     kHost,
     kContentLength,
@@ -979,11 +989,6 @@ public:
 private:
     SocketAddress m_endpoint;
 };
-
-static constexpr char kETag[] = "ETag";
-static constexpr char kIfNoneMatch[] = "If-None-Match";
-static constexpr char kIfMatch[] = "If-Match";
-static constexpr char kXCache[] = "X-Cache";
 
 } // namespace header
 

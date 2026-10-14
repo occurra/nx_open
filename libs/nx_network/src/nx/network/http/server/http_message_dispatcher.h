@@ -138,8 +138,11 @@ public:
              completionFunc = std::move(completionFunc),
              counter = m_runningRequestCounter,
              requestProcessStartTime,
-             statisticsKey = std::move(statisticsKey)](RequestResult result) mutable
+             statisticsKey = std::move(statisticsKey),
+             pathTemplate = std::move(handlerContext->pathTemplate)](RequestResult result) mutable
             {
+                result.pathTemplate = std::move(pathTemplate);
+
                 recordStatistics(
                     result,
                     statisticsKey,

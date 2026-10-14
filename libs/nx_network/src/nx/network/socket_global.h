@@ -119,6 +119,7 @@ private:
     void reloadIni();
 
     void initializeNetworking(const ArgumentParser& arguments);
+    void applyRedirectHosts();
 };
 
 //-------------------------------------------------------------------------------------------------

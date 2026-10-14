@@ -60,26 +60,35 @@ bool readHeader(const HttpHeaders& headers, std::string_view headerName, int* va
     return true;
 }
 
-HttpHeaders::iterator insertOrReplaceHeader(
-    HttpHeaders* const headers,
-    const HttpHeader& newHeader)
+HttpHeaders::iterator insertOrReplaceHeader(HttpHeaders* const headers, HttpHeader newHeader)
 {
     auto existingHeaderIter = headers->lower_bound(newHeader.first);
     if ((existingHeaderIter != headers->end())
         && (nx::utils::stricmp(existingHeaderIter->first, newHeader.first) == 0))
     {
-        existingHeaderIter->second = newHeader.second; // replacing header
+        existingHeaderIter->second = std::move(newHeader.second); // replacing header
         return existingHeaderIter;
     }
     else
     {
-        return headers->insert(existingHeaderIter, newHeader);
+        return headers->insert(existingHeaderIter, std::move(newHeader));
     }
 }
 
 HttpHeaders::iterator insertHeader(HttpHeaders* const headers, HttpHeader newHeader)
 {
     return headers->emplace(std::move(newHeader));
+}
+
+void insertWarning(HttpHeaders* headers, std::string message)
+{
+    if (!NX_ASSERT(headers))
+        return;
+
+    for (size_t pos = 0; (pos = message.find('"', pos)) != std::string::npos; pos += 2)
+        message.replace(pos, 1, "\\\"");
+
+    headers->emplace("Warning", "199 - \"" + message + "\"");
 }
 
 void removeHeader(HttpHeaders* const headers, const std::string& name)
@@ -97,14 +106,21 @@ static bool hasOrigin(const std::string& origins, const std::string& origin)
 void insertOrReplaceCorsHeaders(
     HttpHeaders* headers,
     const Method& method,
-    std::string origin,
+    const HttpHeaders& requestHeaders,
     const std::string& supportedOrigins,
+    bool supportedOriginCredentials,
     std::string_view methods)
 {
-    if (!origin.empty() && (supportedOrigins == "*" || hasOrigin(supportedOrigins, origin)))
+    std::string origin = getHeaderValue(requestHeaders, "Origin");
+    const bool isOriginAllowed =
+        !origin.empty() && (supportedOrigins == "*" || hasOrigin(supportedOrigins, origin));
+
+    if (isOriginAllowed)
     {
-        insertOrReplaceHeader(headers, {"Access-Control-Allow-Credentials", "true"});
         insertOrReplaceHeader(headers, {"Access-Control-Allow-Origin", std::move(origin)});
+        insertOrReplaceHeader(
+            headers,
+            {"Access-Control-Allow-Credentials", supportedOriginCredentials ? "true" : "false"});
     }
     else if (!supportedOrigins.empty() && supportedOrigins.find(',') == std::string::npos)
     {
@@ -113,12 +129,24 @@ void insertOrReplaceCorsHeaders(
     if (method == Method::get)
         return;
 
+    // Allowing the headers the preflight asks for, e.g. Authorization for the bearer token
+    // authentication, in addition to the always allowed ones.
+    std::string allowedHeaders = "X-PINGOTHER, Content-Type";
+    if (const auto requestedHeaders =
+            getHeaderValue(requestHeaders, "Access-Control-Request-Headers");
+        isOriginAllowed && !requestedHeaders.empty())
+    {
+        allowedHeaders += ", " + requestedHeaders;
+    }
+
     insertOrReplaceHeader(headers, HttpHeader("Access-Control-Allow-Methods", std::move(methods)));
     insertOrReplaceHeader(
         headers,
-        HttpHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Content-Type"));
+        HttpHeader("Access-Control-Allow-Headers", std::move(allowedHeaders)));
     insertOrReplaceHeader(headers, HttpHeader("Access-Control-Max-Age", "600"));
-    insertOrReplaceHeader(headers, HttpHeader("Vary", "Accept-Encoding, Origin"));
+    insertOrReplaceHeader(
+        headers,
+        HttpHeader("Vary", "Accept-Encoding, Origin, Access-Control-Request-Headers"));
 }
 
 //-------------------------------------------------------------------------------------------------

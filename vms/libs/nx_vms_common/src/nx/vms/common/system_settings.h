@@ -33,7 +33,17 @@ public:
         6,
         "Maximum number of consecutive RTP errors before the server reconnects the RTSP session."};
 
-    Property<QString> supportedOrigins{this, "supportedOrigins", "*", "HTTP header: Origin."};
+    Property<QString> supportedOrigins{
+        this,
+        "supportedOrigins",
+        "*",
+        "HTTP header: Access-Control-Allow-Origin."};
+
+    Property<bool> supportedOriginCredentials{
+        this,
+        "supportedOriginCredentials",
+        false,
+        "HTTP header: Access-Control-Allow-Credentials."};
 
     Property<std::chrono::seconds> webrtcSessionTimeout{
         this,

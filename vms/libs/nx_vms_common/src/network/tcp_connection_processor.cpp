@@ -481,8 +481,9 @@ nx::String QnTCPConnectionProcessor::createResponse(
         nx::network::http::insertOrReplaceCorsHeaders(
             &d->response.headers,
             d->request.requestLine.method,
-            nx::network::http::getHeaderValue(d->request.headers, "Origin"),
-            d->owner->systemSettings()->supportedOrigins().toStdString(),
+            d->request.headers,
+            globalSettings()->supportedOrigins().toStdString(),
+            globalSettings()->supportedOriginCredentials(),
             /*methods*/ "GET");
     }
 
