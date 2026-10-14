@@ -2,7 +2,29 @@
 
 #pragma once
 
+#include <cctype>
+#include <ranges>
 #include <stdexcept>
+#include <string>
+#include <string_view>
+
+#include <nx/ranges.h>
+#include <nx/utils/string.h>
+
+namespace nx::utils::test {
+
+inline std::string normalizedGTestNameString(std::string_view value)
+{
+    return value
+        | std::views::transform(
+               [](char c)
+               {
+                   return std::isalnum(static_cast<unsigned char>(c)) ? c : '_';
+               })
+        | nx::ranges::to<std::string>();
+}
+
+} // namespace nx::utils::test
 
 /**
  * Analogue of gtest's ASSERT_EQ but supports placing in non-void methods (throws on failure).
