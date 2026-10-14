@@ -7,9 +7,11 @@
 #include <QtGui/QImage>
 
 #include <nx/media/ffmpeg/abstract_video_decoder.h>
+#include <nx/media/ffmpeg/shared_memory_frame_allocator.h>
 #include <nx/media/ffmpeg_helper.h>
 #include <nx/media/video_data_packet.h>
 
+class CLVideoDecoderOutput;
 class FrameTypeExtractor;
 struct AVCodec;
 struct AVCodecContext;
@@ -61,14 +63,18 @@ private:
         const QnConstCompressedVideoDataPtr& data,
         int width,
         int height);
-    int decodeVideo(
-        AVCodecContext* avctx,
-        AVFrame* picture,
-        int* got_picture_ptr,
-        const AVPacket* avpkt);
+    bool decodeVideo(const QnConstCompressedVideoDataPtr& data);
     void setMultiThreadDecoding(bool value);
 
+    /** Applies pixel format / aspect ratio / flags / channel bookkeeping shared by every
+     * decoded frame this class hands out.
+     */
+    bool finalizeDecodedFrame(
+        const QnConstCompressedVideoDataPtr& data,
+        CLVideoDecoderOutput* outFrame);
+
 private:
+    std::unique_ptr<nx::media::ffmpeg::FfmpegSharedMemoryBufferContext> m_shmBufferContext;
     AVCodecContext* m_context;
 
     AVCodecID m_codecId = AV_CODEC_ID_NONE;
@@ -80,13 +86,11 @@ private:
 
     int m_currentWidth;
     int m_currentHeight;
-    bool m_checkH264ResolutionChange;
 
     int m_forceSliceDecoding;
     mutable double m_prevSampleAspectRatio;
-    qint64 m_prevTimestamp;
-    qint64 m_prevFrameDuration = 0;
-    bool m_spsFound;
+    int64_t m_prevTimestamp;
+    int64_t m_prevFrameDuration = 0;
     MultiThreadDecodePolicy m_mtDecodingPolicy;
     bool m_useMtDecoding;
     bool m_needRecreate;
