@@ -27,6 +27,12 @@ struct OpenMessage
 #pragma pack(pop)
 
 constexpr size_t kDataChannelFragment = 0x4000;
+constexpr int kOutputQueueLimit = 1024 * 4; //< Can grow due to fragmentation.
+
+// Messages written before the channel opens: a live start primes every camera's GOP, and each
+// pre-roll frame carries a timestamp message. The byte limit is what the output queue holds once
+// the saved messages are fragmented.
+constexpr size_t kSavedQueueByteLimit = kOutputQueueLimit * kDataChannelFragment;
 
 } // namespace
 
@@ -782,6 +788,7 @@ bool DataChannel::flushSavedMessages()
     {
         if (!writeMessage(m_savedQueue.front()))
             return false;
+        m_savedQueueBytes -= m_savedQueue.front().data.size();
         m_savedQueue.pop();
     }
     return true;
@@ -791,14 +798,15 @@ bool DataChannel::writeUserMessage(Message&& message)
 {
     if (!m_dataChannelOpened)
     {
-        constexpr int kSavedQueueLimit = 64;
-
-        if (m_savedQueue.size() >= kSavedQueueLimit)
+        if (m_savedQueue.size() >= kOutputQueueLimit
+            || m_savedQueueBytes + message.data.size() > kSavedQueueByteLimit)
         {
-            NX_DEBUG(this, "Saved queue size overflow: %1", m_savedQueue.size());
+            NX_DEBUG(this, "Saved queue overflow: %1 messages, %2 bytes",
+                m_savedQueue.size(), m_savedQueueBytes);
             return false;
         }
         NX_TRACE(this, "Saved message with type %1", (int) message.type);
+        m_savedQueueBytes += message.data.size();
         m_savedQueue.emplace(std::move(message));
         return true;
     }
@@ -813,7 +821,6 @@ bool DataChannel::writeMessage(Message message)
     if (!m_sctpSocket && !init())
         return false;
 
-    constexpr int kOutputQueueLimit = 1024 * 4; //< Can grow due to fragmentation.
     if (m_outputQueue.size() >= kOutputQueueLimit)
     {
         NX_DEBUG(this, "Output queue size overflow: %1", m_outputQueue.size());
