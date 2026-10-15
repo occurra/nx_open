@@ -183,6 +183,7 @@ private:
     std::queue<Message> m_outputQueue;
     std::atomic<int> m_outputQueueSize{0}; /**< Mirror of m_outputQueue.size(). */
     std::queue<Message> m_savedQueue;
+    size_t m_savedQueueBytes = 0;
 };
 
 class NX_WEBRTC_API AbstractDataChannelDelegate
