@@ -58,6 +58,15 @@ TEST_F(UrlQuery, simple_types_representation)
     assertRepresentedAs(QString("Hello, world!"), "Hello, world!");
 }
 
+TEST_F(UrlQuery, uuid_is_represented_without_braces)
+{
+    nx::Uuid id("6f2b1c9e-0d5a-4c1e-9b7a-3e8f2a1d4c50");
+    nx::UrlQuery query;
+    query.addQueryItem("key", id);
+
+    ASSERT_EQ("6f2b1c9e-0d5a-4c1e-9b7a-3e8f2a1d4c50", query.queryItemValue<std::string>("key"));
+}
+
 TEST_F(UrlQuery, different_bool_encodings_are_parsed_correctly)
 {
     assertBoolValueParsedAs("a=1&b=0", {{"a", true}, {"b", false}});
