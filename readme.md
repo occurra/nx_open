@@ -137,35 +137,10 @@ build directories.
 - **Windows**:
 
     There is an option of signing the built executables (including the distribution file itself)
-    with the software publisher certificate. To perform it, a valid certificate file in the PKCS#12
-    format is needed.
-
-    Signing is performed by the `signtool.py` script which is a wrapper around native Windows
-    `signtool.exe`. To enable signing, the following preparation steps must be done:
-    - Save the publisher certificate file somewhere in your file system.
-    - Create (preferably outside of the source tree) the configuration file. This file must contain
-        the following fields:
-        - `file`: the path to the publisher certificate file. It must be either an absolute path or
-            a path relative to the directory where the configuration file resides.
-        - `password`: the password protecting the publisher certificate file.
-        - `timestamp_servers` (optional): a list of the URLs of the trusted timestamping server. If
-            this field is present in the configuration file, the signed file will be time-stamped
-            using one of the listed servers. If this field is absent, the signed file will not be
-            time-stamped.
-
-        The example of a configuration file can be found in
-        `build_utils/signtool/config/config.yaml`.
-    - Add a CMake argument `-DsigntoolConfig=<configuration_file_path>` to the Generation stage. If
-    this argument is missing, no signing will be performed.
-
-    Also you can sign any file manually by calling `signtool.py` directly:
-    `python build_utils/signtool/signtool.py --config <configuration_file> --file <unsigned_file> --output <signed_file>`
-
-    To test the signing procedure, you can use a self-signed certificate. To generate such
-    certificate, you can use the file `build_utils/signtool/genkey/genkey_signtool.bat`. When
-    run, it creates the `certificate.p12` file and a couple of auxillary `*.pem` files in the same
-    directory where it is run. We recommend to move these files outside of the source directory to
-    maintain the out-of-source build concept.
+    with the software publisher certificate. The project that uses this repository provides the
+    signing tool: it sets the CMake variable `windows_sign_tool` to a Python script, and
+    optionally `additional_windows_sign_tool_parameters`. The build calls the script with these
+    parameters, followed by `--file <unsigned_file> --output <signed_file>`.
 
 - **Linux**:
 
