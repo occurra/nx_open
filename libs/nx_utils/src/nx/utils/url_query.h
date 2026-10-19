@@ -8,6 +8,7 @@
 #include <nx/utils/log/to_string.h>
 #include <nx/utils/std/charconv.h>
 #include <nx/utils/std_string_utils.h>
+#include <nx/utils/uuid.h>
 
 namespace nx {
 
@@ -39,9 +40,12 @@ public:
         typename = std::enable_if_t<!std::is_arithmetic_v<std::decay_t<T>>>>
     UrlQuery& addQueryItem(String&& key, T&& value)
     {
-        m_query.addQueryItem(
-            nx::toString(std::forward<String>(key)),
-            nx::toString(std::forward<T>(value)));
+        QString text;
+        if constexpr (std::is_same_v<std::decay_t<T>, Uuid>)
+            text = value.toSimpleString(); //< Without braces.
+        else
+            text = nx::toString(std::forward<T>(value));
+        m_query.addQueryItem(nx::toString(std::forward<String>(key)), text);
         return *this;
     }
 
