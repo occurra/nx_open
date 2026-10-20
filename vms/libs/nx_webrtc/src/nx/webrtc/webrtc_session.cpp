@@ -2,8 +2,6 @@
 
 #include "webrtc_session.h"
 
-#include <algorithm>
-
 #include <nx/network/aio/aio_thread.h>
 #include <nx/utils/crypt/linux_passwd_crypt.h>
 #include <nx/utils/random.h>
@@ -759,20 +757,22 @@ std::vector<nx::Uuid> Session::setCameras(
     // mid, ssrc and timeline, no offer, the way setCamera switches a single tile. Only the net
     // difference in camera count changes the SDP: extra arrivals get a fresh m-line, extra
     // departures are parked inactive, and that alone is offered, once.
-    // Only a camera that owns a video m-line can hand it over. A camera the session holds with no
-    // track (it had no live stream when it was added) has none: a retarget onto it gives the
-    // arriving camera no m-line and sends no offer, so the peer never gets its picture. Such a
-    // camera is removed instead, and the arriving one takes a fresh m-line in the offer. The
-    // cameras that can hand over go first, still in mid order; the rest only leave.
-    const auto trackless = std::ranges::stable_partition(
-        toRemove,
-        [this](const nx::Uuid& deviceId) { return m_tracks->videoTrack(deviceId) != nullptr; });
-    const auto removedWithTrack =
-        (size_t) std::ranges::distance(toRemove.begin(), trackless.begin());
-    const size_t pairs = std::min(removedWithTrack, toAdd.size());
+    const size_t pairs = std::min(toRemove.size(), toAdd.size());
     std::vector<nx::Uuid> retargeted;
+    bool topologyChanged = false;
     for (size_t i = 0; i < pairs; ++i)
     {
+        // A camera with no video track (it had no live stream when it was added) has no m-line to
+        // hand over: a retarget onto it would give the arriving camera none and send no offer, so
+        // the peer would never get its picture. The arriving camera takes a fresh m-line in the
+        // offer instead.
+        if (!m_tracks->videoTrack(toRemove[i]))
+        {
+            removeProviderNow(toRemove[i]);
+            if (createProviderNow(toAdd[i].deviceId, positionMs, toAdd[i].stream, std::nullopt))
+                topologyChanged = true;
+            continue;
+        }
         if (retargetProviderNow(
                 toRemove[i],
                 toAdd[i].deviceId,
@@ -785,7 +785,6 @@ std::vector<nx::Uuid> Session::setCameras(
         }
     }
 
-    bool topologyChanged = false;
     for (size_t i = pairs; i < toAdd.size(); ++i)
     {
         if (createProviderNow(toAdd[i].deviceId, positionMs, toAdd[i].stream, std::nullopt))
