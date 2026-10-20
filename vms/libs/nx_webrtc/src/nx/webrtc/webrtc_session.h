@@ -222,12 +222,12 @@ public:
      * Reconcile the session's providers to exactly cameras. A camera that leaves is paired with
      * one that arrives and its m-line is retargeted in place - same mid, ssrc and RTP timeline,
      * so a same-codec swap never reaches the peer as an offer and Chrome sees one continuous
-     * stream that merely changes content (the decoder takes the new SPS/PPS in stride). Only a
-     * genuine change in the number of cameras - extra arrivals get a fresh m-line, extra
-     * departures are parked inactive - needs an offer, sent once for the whole diff. A codec
-     * change on a retargeted m-line is caught downstream and re-offered by
-     * beginCodecRenegotiation, exactly as a mid-stream codec change is. positionMs positions the
-     * cameras this command brings in (archive), or opens them live when unset.
+     * stream that merely changes content (the decoder takes the new SPS/PPS in stride). Only
+     * fresh and parked m-lines need an offer, sent once for the whole diff: extra arrivals and
+     * the partners of a leaving camera with no video track get a fresh m-line, extra departures
+     * are parked inactive. A codec change on a retargeted m-line is caught downstream and
+     * re-offered by beginCodecRenegotiation, exactly as a mid-stream codec change is. positionMs
+     * positions the cameras this command brings in (archive), or opens them live when unset.
      * @param rebase Client-chosen RTP-timeline rebase, exactly as for setCamera and seek (see
      *     Consumer::RtpRebase). Applied to every retargeted camera so the player can discard the
      *     previous camera's frames by comparing frame RTP against the base it picked.
@@ -340,7 +340,11 @@ private:
         std::optional<std::chrono::milliseconds> positionMs,
         nx::vms::api::StreamIndex stream,
         std::optional<float> speedOpt);
-    /** Removes a provider and deactivates its track without emitting an offer. */
+    /**
+     * Removes a provider and deactivates its tracks without emitting an offer. Returns true when
+     * a track was deactivated - a change the next offer must carry. A device with no tracks
+     * changes nothing the peer sees.
+     */
     bool removeProviderNow(nx::Uuid deviceId);
     /** Hands fromDeviceId's negotiated tracks and encoders to toDeviceId in place (same mid, ssrc
      *  and RTP timeline) and starts toDeviceId's provider, without emitting an offer. The shared

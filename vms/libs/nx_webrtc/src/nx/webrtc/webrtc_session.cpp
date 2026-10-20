@@ -586,10 +586,10 @@ bool Session::removeProvider(nx::Uuid deviceId)
         return true;
     }
 
-    const bool removed = removeProviderNow(deviceId);
-    if (removed && m_tracker && m_tracker->isStarted())
+    const bool deactivated = removeProviderNow(deviceId);
+    if (deactivated && m_tracker && m_tracker->isStarted())
         m_tracker->sendOffer();
-    return removed;
+    return deactivated;
 }
 
 bool Session::removeProviderNow(nx::Uuid deviceId)
@@ -610,17 +610,20 @@ bool Session::removeProviderNow(nx::Uuid deviceId)
         std::erase(m_addedSinceOffer, deviceId);
     }
     p->stop();
+    bool deactivated = false;
     if (auto track = m_tracks->videoTrack(deviceId))
     {
         track->offerState = TrackState::inactive;
         track->useTranscoding = false;
+        deactivated = true;
     }
     if (auto track = m_tracks->audioTrack(deviceId))
     {
         track->offerState = TrackState::inactive;
         track->useTranscoding = false;
+        deactivated = true;
     }
-    return true;
+    return deactivated;
 }
 
 void Session::markOfferSent()
@@ -751,13 +754,27 @@ std::vector<nx::Uuid> Session::setCameras(
     }
 
     // Pair each departing camera with an arriving one and retarget its m-line in place - same
-    // mid, ssrc and timeline, no offer, the way setCamera switches a single tile. Only the net
-    // difference in camera count changes the SDP: extra arrivals get a fresh m-line, extra
-    // departures are parked inactive, and that alone is offered, once.
+    // mid, ssrc and timeline, no offer, the way setCamera switches a single tile. Only fresh and
+    // parked m-lines change the SDP: extra arrivals and the partners of a camera with no video
+    // track get a fresh m-line, extra departures are parked inactive, and that alone is offered,
+    // once.
     const size_t pairs = std::min(toRemove.size(), toAdd.size());
     std::vector<nx::Uuid> retargeted;
+    bool topologyChanged = false;
     for (size_t i = 0; i < pairs; ++i)
     {
+        // A camera with no video track (it had no live stream when it was added) has no m-line to
+        // hand over: a retarget onto it would give the arriving camera none and send no offer, so
+        // the peer would never get its picture. The arriving camera takes a fresh m-line in the
+        // offer instead.
+        if (!m_tracks->videoTrack(toRemove[i]))
+        {
+            if (removeProviderNow(toRemove[i]))
+                topologyChanged = true;
+            if (createProviderNow(toAdd[i].deviceId, positionMs, toAdd[i].stream, std::nullopt))
+                topologyChanged = true;
+            continue;
+        }
         if (retargetProviderNow(
                 toRemove[i],
                 toAdd[i].deviceId,
@@ -770,7 +787,6 @@ std::vector<nx::Uuid> Session::setCameras(
         }
     }
 
-    bool topologyChanged = false;
     for (size_t i = pairs; i < toAdd.size(); ++i)
     {
         if (createProviderNow(toAdd[i].deviceId, positionMs, toAdd[i].stream, std::nullopt))
