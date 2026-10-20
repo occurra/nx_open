@@ -344,7 +344,9 @@ QnUniversalRtpEncoder* Transcoder::setDataPacket(
 }
 
 void Transcoder::setPendingRtpRebase(
-    nx::Uuid deviceId, std::optional<int> seekSeq, int64_t rtpBase90k)
+    nx::Uuid deviceId,
+    std::optional<int> seekSeq,
+    int64_t rtpBase90k)
 {
     // rtpBase90k arrives as a 32-bit RTP timestamp (the player's base % 2^32).
     // Linearize it into a monotonic 64-bit value so a wrap past 2^32 mid-scrub

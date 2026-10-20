@@ -75,8 +75,7 @@ public:
      * its packets carry no marker. The rebase waits until an encoder takes a
      * packet, so an encoder rebuilt for a codec change gets the same base.
      */
-    void setPendingRtpRebase(
-        nx::Uuid deviceId, std::optional<int> seekSeq, int64_t rtpBase90k);
+    void setPendingRtpRebase(nx::Uuid deviceId, std::optional<int> seekSeq, int64_t rtpBase90k);
 
 private:
     QnUniversalRtpEncoderPtr createRtpEncoder(
