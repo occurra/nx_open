@@ -70,10 +70,10 @@ public:
      * the audio encoder restart their output timeline at rtpBase90k units
      * (90 kHz). The deliberate gap lets the player discard the pre-seek flush
      * by comparing frame RTP timestamps against the base it chose itself.
-     * Without seekSeq the next packet starts the base, whatever its marker: a
-     * live switch stops the old provider, so there is no flush to exclude, and
-     * its packets carry no marker. The rebase waits until an encoder takes a
-     * packet, so an encoder rebuilt for a codec change gets the same base.
+     *
+     * Without seekSeq the next packet starts the base, whatever its marker: a live switch stops
+     * the old provider, so there is no flush to exclude. The rebase waits until an encoder takes
+     * a packet, so an encoder rebuilt for a codec change gets the same base.
      */
     void setPendingRtpRebase(nx::Uuid deviceId, std::optional<int> seekSeq, int64_t rtpBase90k);
 

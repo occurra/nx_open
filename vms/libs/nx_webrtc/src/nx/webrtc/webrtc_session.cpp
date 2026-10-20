@@ -907,8 +907,9 @@ AbstractCameraDataProviderPtr Session::retargetProviderNow(
         if (rebase->rtpBase90k >= 0)
         {
             // Archive: the reader stamps the marker on the first post-seek packet, so the rebase
-            // fires there and the pre-seek flush frames stay on the old timeline. Live: seek()
-            // falls through to play() without stamping a marker, so the next packet fires it.
+            // fires there and the pre-seek flush frames stay on the old timeline. Live: the old
+            // provider is stopped, so no flush precedes the new camera and its next packet fires
+            // the rebase.
             m_muxer->setPendingRtpRebase(
                 toDeviceId,
                 positionMs ? std::optional(rebase->seq) : std::nullopt,
