@@ -2,6 +2,5 @@
     "version": "@releaseVersion.full@",
     "fullVersion": "@releaseVersion@.@buildNumber@-@changeSet@@developer_build_suffix@",
     "targetPlatform": "@platform@",
-    "changeSet": "@changeSet@",
-    "signed": @buildInfoSigned@
+    "changeSet": "@changeSet@"
 }
