@@ -70,17 +70,13 @@ public:
      * the audio encoder restart their output timeline at rtpBase90k units
      * (90 kHz). The deliberate gap lets the player discard the pre-seek flush
      * by comparing frame RTP timestamps against the base it chose itself.
+     * Without seekSeq the next packet starts the base, whatever its marker: a
+     * live switch stops the old provider, so there is no flush to exclude, and
+     * its packets carry no marker. The rebase waits until an encoder takes a
+     * packet, so an encoder rebuilt for a codec change gets the same base.
      */
-    void setPendingRtpRebase(nx::Uuid deviceId, int seekSeq, int64_t rtpBase90k);
-
-    /**
-     * Restarts deviceId's video and audio output timeline at rtpBase90k units (90 kHz) right now,
-     * on the reused encoder, instead of arming it for a marked packet. A live retarget stops the
-     * old provider (no pre-switch flush to exclude) and starts the new one through seek() which
-     * falls through to play() and never stamps the marker, so setPendingRtpRebase would never
-     * fire. The next packet then lands at the base, exactly the gap the player gates its drop on.
-     */
-    void rebaseRtpNow(nx::Uuid deviceId, int64_t rtpBase90k);
+    void setPendingRtpRebase(
+        nx::Uuid deviceId, std::optional<int> seekSeq, int64_t rtpBase90k);
 
 private:
     QnUniversalRtpEncoderPtr createRtpEncoder(
@@ -99,7 +95,7 @@ private:
 private:
     struct PendingRtpRebase
     {
-        int seekSeq = 0;
+        std::optional<int> seekSeq; //< Marker of the packet that starts the base; none: the next.
         int64_t rtpBase90k =
             0; //< Linearized to a monotonic 64-bit timeline (see m_rtpBaseLinearizer).
     };

@@ -906,14 +906,13 @@ AbstractCameraDataProviderPtr Session::retargetProviderNow(
         marker = rebase->seq;
         if (rebase->rtpBase90k >= 0)
         {
-            // Archive: the reader stamps the marker on the first post-seek packet, so the pending
-            // rebase fires there and the pre-seek flush frames stay on the old timeline. Live: no
-            // flush (the old provider is stopped) and seek() falls through to play() without
-            // stamping a marker, so the pending path never fires - rebase the reused encoder now.
-            if (positionMs)
-                m_muxer->setPendingRtpRebase(toDeviceId, rebase->seq, rebase->rtpBase90k);
-            else
-                m_muxer->rebaseRtpNow(toDeviceId, rebase->rtpBase90k);
+            // Archive: the reader stamps the marker on the first post-seek packet, so the rebase
+            // fires there and the pre-seek flush frames stay on the old timeline. Live: seek()
+            // falls through to play() without stamping a marker, so the next packet fires it.
+            m_muxer->setPendingRtpRebase(
+                toDeviceId,
+                positionMs ? std::optional(rebase->seq) : std::nullopt,
+                rebase->rtpBase90k);
         }
     }
     provider->seek(provider->getPosition(), keyframeOnly, marker);
