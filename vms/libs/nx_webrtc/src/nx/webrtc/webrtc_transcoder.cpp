@@ -304,8 +304,8 @@ QnUniversalRtpEncoder* Transcoder::setDataPacket(
     m_lastTimestampMs = media->timestamp / 1000;
 
     const auto rebase = m_pendingRtpRebase.find(deviceId);
-    const bool rebaseMatches =
-        rebase != m_pendingRtpRebase.end() && media->opaque == rebase->second.seekSeq;
+    const bool rebaseMatches = rebase != m_pendingRtpRebase.end()
+        && (!rebase->second.seekSeq || media->opaque == *rebase->second.seekSeq);
     if (rebaseMatches)
     {
         // Round up so the first frame lands at or past the base the player
@@ -314,7 +314,7 @@ QnUniversalRtpEncoder* Transcoder::setDataPacket(
         NX_VERBOSE(
             this,
             "SEEKPROF first post-seek packet seq=%1 mediaTs=%2ms",
-            rebase->second.seekSeq,
+            media->opaque,
             media->timestamp / 1000);
         const std::chrono::microseconds baseUs((rebase->second.rtpBase90k * 100 + 8) / 9);
         if (auto encoder = videoEncoder(deviceId))
@@ -343,7 +343,10 @@ QnUniversalRtpEncoder* Transcoder::setDataPacket(
     return rtpEncoder;
 }
 
-void Transcoder::setPendingRtpRebase(nx::Uuid deviceId, int seekSeq, int64_t rtpBase90k)
+void Transcoder::setPendingRtpRebase(
+    nx::Uuid deviceId,
+    std::optional<int> seekSeq,
+    int64_t rtpBase90k)
 {
     // rtpBase90k arrives as a 32-bit RTP timestamp (the player's base % 2^32).
     // Linearize it into a monotonic 64-bit value so a wrap past 2^32 mid-scrub
@@ -354,20 +357,6 @@ void Transcoder::setPendingRtpRebase(nx::Uuid deviceId, int seekSeq, int64_t rtp
     // setDataPacket().
     auto& linearizer = m_rtpBaseLinearizer.try_emplace(deviceId, /*startValue*/ 0).first->second;
     m_pendingRtpRebase[deviceId] = {seekSeq, linearizer.linearize((uint32_t) rtpBase90k)};
-}
-
-void Transcoder::rebaseRtpNow(nx::Uuid deviceId, int64_t rtpBase90k)
-{
-    // Same linearization and 90 kHz -> microsecond rescale as the pending path (see
-    // setPendingRtpRebase and setDataPacket), only applied immediately: rebaseOutputTimestamps
-    // clears the corrector so the very next packet lands at baseUs.
-    auto& linearizer = m_rtpBaseLinearizer.try_emplace(deviceId, /*startValue*/ 0).first->second;
-    const int64_t base64 = linearizer.linearize((uint32_t) rtpBase90k);
-    const std::chrono::microseconds baseUs((base64 * 100 + 8) / 9);
-    if (auto encoder = videoEncoder(deviceId))
-        encoder->rebaseOutputTimestamps(baseUs);
-    if (auto encoder = audioEncoder(deviceId))
-        encoder->rebaseOutputTimestamps(baseUs);
 }
 
 bool Transcoder::getNextPacket(QnUniversalRtpEncoder* rtpEncoder, nx::utils::ByteArray& buffer)
