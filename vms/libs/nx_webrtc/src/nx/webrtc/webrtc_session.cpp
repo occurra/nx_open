@@ -2,6 +2,8 @@
 
 #include "webrtc_session.h"
 
+#include <algorithm>
+
 #include <nx/network/aio/aio_thread.h>
 #include <nx/utils/crypt/linux_passwd_crypt.h>
 #include <nx/utils/random.h>
@@ -586,10 +588,10 @@ bool Session::removeProvider(nx::Uuid deviceId)
         return true;
     }
 
-    const bool removed = removeProviderNow(deviceId);
-    if (removed && m_tracker && m_tracker->isStarted())
+    const bool deactivated = removeProviderNow(deviceId);
+    if (deactivated && m_tracker && m_tracker->isStarted())
         m_tracker->sendOffer();
-    return removed;
+    return deactivated;
 }
 
 bool Session::removeProviderNow(nx::Uuid deviceId)
@@ -610,17 +612,20 @@ bool Session::removeProviderNow(nx::Uuid deviceId)
         std::erase(m_addedSinceOffer, deviceId);
     }
     p->stop();
+    bool deactivated = false;
     if (auto track = m_tracks->videoTrack(deviceId))
     {
         track->offerState = TrackState::inactive;
         track->useTranscoding = false;
+        deactivated = true;
     }
     if (auto track = m_tracks->audioTrack(deviceId))
     {
         track->offerState = TrackState::inactive;
         track->useTranscoding = false;
+        deactivated = true;
     }
-    return true;
+    return deactivated;
 }
 
 void Session::markOfferSent()
@@ -754,7 +759,17 @@ std::vector<nx::Uuid> Session::setCameras(
     // mid, ssrc and timeline, no offer, the way setCamera switches a single tile. Only the net
     // difference in camera count changes the SDP: extra arrivals get a fresh m-line, extra
     // departures are parked inactive, and that alone is offered, once.
-    const size_t pairs = std::min(toRemove.size(), toAdd.size());
+    // Only a camera that owns a video m-line can hand it over. A camera the session holds with no
+    // track (it had no live stream when it was added) has none: a retarget onto it gives the
+    // arriving camera no m-line and sends no offer, so the peer never gets its picture. Such a
+    // camera is removed instead, and the arriving one takes a fresh m-line in the offer. The
+    // cameras that can hand over go first, still in mid order; the rest only leave.
+    const auto trackless = std::ranges::stable_partition(
+        toRemove,
+        [this](const nx::Uuid& deviceId) { return m_tracks->videoTrack(deviceId) != nullptr; });
+    const auto removedWithTrack =
+        (size_t) std::ranges::distance(toRemove.begin(), trackless.begin());
+    const size_t pairs = std::min(removedWithTrack, toAdd.size());
     std::vector<nx::Uuid> retargeted;
     for (size_t i = 0; i < pairs; ++i)
     {

@@ -340,7 +340,11 @@ private:
         std::optional<std::chrono::milliseconds> positionMs,
         nx::vms::api::StreamIndex stream,
         std::optional<float> speedOpt);
-    /** Removes a provider and deactivates its track without emitting an offer. */
+    /**
+     * Removes a provider and deactivates its tracks without emitting an offer. Returns true when
+     * a track was deactivated - a change the next offer must carry. A device with no tracks
+     * changes nothing the peer sees.
+     */
     bool removeProviderNow(nx::Uuid deviceId);
     /** Hands fromDeviceId's negotiated tracks and encoders to toDeviceId in place (same mid, ssrc
      *  and RTP timeline) and starts toDeviceId's provider, without emitting an offer. The shared
