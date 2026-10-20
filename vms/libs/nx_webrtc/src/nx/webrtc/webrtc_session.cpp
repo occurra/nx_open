@@ -754,9 +754,10 @@ std::vector<nx::Uuid> Session::setCameras(
     }
 
     // Pair each departing camera with an arriving one and retarget its m-line in place - same
-    // mid, ssrc and timeline, no offer, the way setCamera switches a single tile. Only the net
-    // difference in camera count changes the SDP: extra arrivals get a fresh m-line, extra
-    // departures are parked inactive, and that alone is offered, once.
+    // mid, ssrc and timeline, no offer, the way setCamera switches a single tile. Only fresh and
+    // parked m-lines change the SDP: extra arrivals and the partners of a camera with no video
+    // track get a fresh m-line, extra departures are parked inactive, and that alone is offered,
+    // once.
     const size_t pairs = std::min(toRemove.size(), toAdd.size());
     std::vector<nx::Uuid> retargeted;
     bool topologyChanged = false;
@@ -768,7 +769,8 @@ std::vector<nx::Uuid> Session::setCameras(
         // offer instead.
         if (!m_tracks->videoTrack(toRemove[i]))
         {
-            removeProviderNow(toRemove[i]);
+            if (removeProviderNow(toRemove[i]))
+                topologyChanged = true;
             if (createProviderNow(toAdd[i].deviceId, positionMs, toAdd[i].stream, std::nullopt))
                 topologyChanged = true;
             continue;
