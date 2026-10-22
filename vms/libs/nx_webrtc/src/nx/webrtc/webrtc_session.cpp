@@ -663,7 +663,7 @@ bool Session::offerInProgress(nx::Uuid deviceId) const
 
 void Session::drainPendingCommands()
 {
-    if (m_pendingCommands.empty())
+    if (m_pendingCommands.empty() && !m_pendingCameraSet)
         return;
 
     // Apply the whole queued batch without offering per command, then send a single offer for
@@ -687,14 +687,69 @@ void Session::drainPendingCommands()
         }
     }
 
+    // The set asked for during the round replaces whatever the round and the queue left, with
+    // the same pairing, retarget and rebase as a set applied at once.
+    std::vector<nx::Uuid> retargeted;
+    int retargetSeq = 0;
+    if (const auto set = std::exchange(m_pendingCameraSet, std::nullopt))
+    {
+        retargeted = applyCameraSet(set->cameras, set->positionMs, set->rebase, &changed);
+        retargetSeq = set->rebase ? set->rebase->seq : 0;
+    }
+
     if (changed && m_tracker && m_tracker->isStarted())
         m_tracker->sendOffer();
+
+    // An in-place retarget sends no offer, so acknowledge each switched-in camera directly - the
+    // same ack setCameras() sends on its synchronous path - so the client binds the m-line to the
+    // new device.
+    if (auto* const peer = streamer())
+    {
+        for (const auto& deviceId: retargeted)
+            peer->handleStreamStatus(deviceId, Consumer::StreamStatus::success, retargetSeq);
+    }
 }
 
 std::vector<nx::Uuid> Session::setCameras(
     const std::vector<CameraRequest>& cameras,
     std::optional<std::chrono::milliseconds> positionMs,
     std::optional<Consumer::RtpRebase> rebase)
+{
+    // Start each arriving camera's live stream now, so its first keyframe is ready by the time the
+    // codec probe in createProviderNow/retargetProviderNow waits on it - a batch warms up in
+    // parallel instead of one blocking probe at a time, and a set kept for the end of a round
+    // warms up during it. Live only: an archive add plays from the file, not the live stream.
+    // No-op until the media server installs the hook.
+    if (m_warmUpProvider && (!positionMs || positionMs->count() < 0))
+    {
+        for (const auto& c: cameras)
+            if (!provider(c.deviceId))
+                m_warmUpProvider(c.deviceId, c.stream);
+    }
+
+    // A round is in flight: keep the whole set, the latest wins, for drainPendingCommands() to
+    // apply once the answer lands. Diffed now, against providers the round still changes, it
+    // would queue adds for cameras a later set no longer lists, and fresh m-lines for cameras
+    // the peer bound to the ones they replace.
+    if (m_offerInProgress)
+    {
+        m_pendingCameraSet = PendingCameraSet{cameras, positionMs, rebase};
+        return {};
+    }
+
+    bool topologyChanged = false;
+    std::vector<nx::Uuid> retargeted =
+        applyCameraSet(cameras, positionMs, rebase, &topologyChanged);
+    if (topologyChanged && m_tracker && m_tracker->isStarted())
+        m_tracker->sendOffer();
+    return retargeted;
+}
+
+std::vector<nx::Uuid> Session::applyCameraSet(
+    const std::vector<CameraRequest>& cameras,
+    std::optional<std::chrono::milliseconds> positionMs,
+    std::optional<Consumer::RtpRebase> rebase,
+    bool* outTopologyChanged)
 {
     const auto isDesired = [&cameras](const nx::Uuid& deviceId)
     {
@@ -726,43 +781,6 @@ std::vector<nx::Uuid> Session::setCameras(
     if (toAdd.empty() && toRemove.empty())
         return {}; //< Already reconciled - nothing to renegotiate.
 
-    // Start each arriving camera's live stream now, so its first keyframe is ready by the time the
-    // codec probe in createProviderNow/retargetProviderNow waits on it below - a batch warms up in
-    // parallel instead of one blocking probe at a time. Live only: an archive add plays from the
-    // file, not the live stream. No-op until the media server installs the hook.
-    if (m_warmUpProvider && (!positionMs || positionMs->count() < 0))
-    {
-        for (const auto& c: toAdd)
-            m_warmUpProvider(c.deviceId, c.stream);
-    }
-
-    // A round is in flight: queue the whole diff. drainPendingCommands() applies it as one
-    // coalesced offer once the answer lands, so this never puts a second offer on the wire.
-    if (m_offerInProgress)
-    {
-        for (const auto& c: toAdd)
-        {
-            m_pendingCommands.push_back(
-                PendingCommand{
-                    PendingCommand::Op::add,
-                    c.deviceId,
-                    positionMs,
-                    c.stream,
-                    std::nullopt});
-        }
-        for (const auto& deviceId: toRemove)
-        {
-            m_pendingCommands.push_back(
-                PendingCommand{
-                    PendingCommand::Op::remove,
-                    deviceId,
-                    std::nullopt,
-                    nx::vms::api::StreamIndex::primary,
-                    std::nullopt});
-        }
-        return {};
-    }
-
     // Pair each departing camera with an arriving one and retarget its m-line in place - same
     // mid, ssrc and timeline, no offer, the way setCamera switches a single tile. Only fresh and
     // parked m-lines change the SDP: extra arrivals and the partners of a camera with no video
@@ -770,7 +788,7 @@ std::vector<nx::Uuid> Session::setCameras(
     // once.
     const size_t pairs = std::min(toRemove.size(), toAdd.size());
     std::vector<nx::Uuid> retargeted;
-    bool topologyChanged = false;
+    bool& topologyChanged = *outTopologyChanged;
     for (size_t i = 0; i < pairs; ++i)
     {
         // A camera with no video track (it had no live stream when it was added) has no m-line to
@@ -807,9 +825,6 @@ std::vector<nx::Uuid> Session::setCameras(
         if (removeProviderNow(toRemove[i]))
             topologyChanged = true;
     }
-
-    if (topologyChanged && m_tracker && m_tracker->isStarted())
-        m_tracker->sendOffer();
 
     return retargeted;
 }
