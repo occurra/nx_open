@@ -3,6 +3,7 @@
 #include "webrtc_consumer.h"
 
 #include <nx/media/meta_data_packet.h>
+#include <nx/utils/datetime.h>
 #include <nx/utils/log/log.h>
 
 #include "webrtc_session.h"
@@ -121,9 +122,13 @@ void Consumer::seek(
                     marker = rebase->seq;
                     if (rebase->rtpBase90k >= 0)
                     {
+                        // Archive: the reader stamps the marker on the first post-seek packet, so
+                        // the rebase fires there and the pre-seek flush stays on the old timeline.
+                        // Live: its frames carry no such stamp, so the next packet fires it - the
+                        // same contract a live in-place switch uses.
                         m_session->muxer()->setPendingRtpRebase(
                             provider->deviceId(),
-                            rebase->seq,
+                            timestampUs != DATETIME_NOW ? std::optional(rebase->seq) : std::nullopt,
                             rebase->rtpBase90k);
                     }
                 }
