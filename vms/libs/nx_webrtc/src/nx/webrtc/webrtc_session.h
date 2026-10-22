@@ -232,7 +232,8 @@ public:
      *     Consumer::RtpRebase). Applied to every retargeted camera so the player can discard the
      *     previous camera's frames by comparing frame RTP against the base it picked.
      * @return The devices switched in by an in-place retarget, which send no offer and are
-     *     acknowledged directly, the way setCamera is.
+     *     acknowledged directly, the way setCamera is. Empty while an offer is in flight: the
+     *     set is kept, the latest one wins, and the answer applies it.
      */
     std::vector<nx::Uuid> setCameras(
         const std::vector<CameraRequest>& cameras,
@@ -248,7 +249,8 @@ public:
 
     /**
      * The Tracker calls this on a clean answer (the round is done): apply any add/remove commands
-     * that queued during the round and send one coalesced offer for the resulting state.
+     * that queued during the round, then the camera set asked for last, and send one coalesced
+     * offer for the resulting state.
      */
     void onOfferAnswered();
 
@@ -359,7 +361,16 @@ private:
         nx::vms::api::StreamIndex stream,
         bool keyframeOnly,
         std::optional<Consumer::RtpRebase> rebase);
-    /** Applies every add/remove queued during the finished round, then emits one offer. */
+    /** Diffs the providers against cameras and applies the result - retarget pairs, fresh
+     *  m-lines, parked departures - without emitting an offer; sets *outTopologyChanged when the
+     *  SDP needs one. Returns the devices switched in by an in-place retarget. */
+    std::vector<nx::Uuid> applyCameraSet(
+        const std::vector<CameraRequest>& cameras,
+        std::optional<std::chrono::milliseconds> positionMs,
+        std::optional<Consumer::RtpRebase> rebase,
+        bool* outTopologyChanged);
+    /** Applies every add/remove queued during the finished round and the camera set kept for
+     *  it, then emits one offer. */
     void drainPendingCommands();
     /**
      * Quiesces the session: stops every ice (the active one first - it stops the consumer chain
@@ -417,6 +428,14 @@ private:
     bool m_offerInProgress = false;
     /** Adds/removes deferred while m_offerInProgress; drained on the answer. */
     std::deque<PendingCommand> m_pendingCommands;
+    /** A whole camera set asked for while m_offerInProgress; the latest one replaces it. */
+    struct PendingCameraSet
+    {
+        std::vector<CameraRequest> cameras;
+        std::optional<std::chrono::milliseconds> positionMs;
+        std::optional<Consumer::RtpRebase> rebase;
+    };
+    std::optional<PendingCameraSet> m_pendingCameraSet;
     /** Devices created since the last offer went out; markOfferSent() moves them into
      *  m_devicesAwaitingAnswer, so only devices an offer actually carried get held. */
     std::vector<nx::Uuid> m_addedSinceOffer;
