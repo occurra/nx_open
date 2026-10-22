@@ -128,7 +128,9 @@ void Consumer::seek(
                         // same contract a live in-place switch uses.
                         m_session->muxer()->setPendingRtpRebase(
                             provider->deviceId(),
-                            timestampUs != DATETIME_NOW ? std::optional(rebase->seq) : std::nullopt,
+                            timestampUs != DATETIME_NOW
+                                ? std::optional(rebase->seq)
+                                : std::nullopt,
                             rebase->rtpBase90k);
                     }
                 }
