@@ -679,11 +679,25 @@ void Session::drainPendingCommands()
 
     // The set asked for during the round replaces whatever the round and the queue left, with
     // the same pairing, retarget and rebase as a set applied at once.
+    std::vector<nx::Uuid> retargeted;
+    int retargetSeq = 0;
     if (const auto set = std::exchange(m_pendingCameraSet, std::nullopt))
-        applyCameraSet(set->cameras, set->positionMs, set->rebase, &changed);
+    {
+        retargeted = applyCameraSet(set->cameras, set->positionMs, set->rebase, &changed);
+        retargetSeq = set->rebase ? set->rebase->seq : 0;
+    }
 
     if (changed && m_tracker && m_tracker->isStarted())
         m_tracker->sendOffer();
+
+    // An in-place retarget sends no offer, so acknowledge each switched-in camera directly - the
+    // same ack setCameras() sends on its synchronous path - so the client binds the m-line to the
+    // new device.
+    if (auto* const peer = streamer())
+    {
+        for (const auto& deviceId: retargeted)
+            peer->handleStreamStatus(deviceId, Consumer::StreamStatus::success, retargetSeq);
+    }
 }
 
 std::vector<nx::Uuid> Session::setCameras(
