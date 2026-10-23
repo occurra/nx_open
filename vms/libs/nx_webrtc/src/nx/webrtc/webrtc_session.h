@@ -10,6 +10,7 @@
 #include <nx/network/aio/timer.h>
 #include <nx/network/ssl/certificate.h>
 #include <nx/network/ssl/context.h>
+#include <nx/utils/move_only_func.h>
 #include <nx/vms/api/data/resolution_data.h>
 #include <nx/vms/common/system_context_aware.h>
 
@@ -188,9 +189,11 @@ public:
      * signalling handler on some other thread - runs a ~Session that only frees memory.
      * Destroying the session directly on the pool's thread instead races an in-flight ice
      * callback whose transient reference would become the last one and run ~Session beneath the
-     * very DataChannel it frees.
+     * very DataChannel it frees. onStopped, if given, runs on that thread once the task has
+     * released its reference; SessionPool::stop() waits for it so no session outlives the pool.
      */
-    static void stop(std::shared_ptr<Session> session);
+    static void stop(
+        std::shared_ptr<Session> session, nx::MoveOnlyFunc<void()> onStopped = nullptr);
     bool hasExpired(std::chrono::milliseconds timeout) const;
 
     /**

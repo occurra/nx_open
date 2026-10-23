@@ -2,6 +2,9 @@
 
 #include "webrtc_session_pool.h"
 
+#include <future>
+
+#include <nx/network/socket_global.h>
 #include <nx/vms/common/system_context.h>
 #include <nx/vms/common/system_settings.h>
 
@@ -18,6 +21,26 @@ bool isUsableIceHostAddress(const nx::network::SocketAddress& a)
 {
     return !a.address.isLoopback() && !a.address.isIpv4LinkLocalNetwork()
         && !a.address.isIpv6LinkLocalNetwork();
+}
+
+// An IceTcp can move to its session's thread after its thread is read here. Destroyed on the old
+// thread, it would wait for a stop call posted to the new one, which its own stopUnsafe() there
+// cancels, so the task follows it.
+void destroyOnOwnAioThread(std::unique_ptr<IceTcp> ice, std::promise<void> done)
+{
+    auto* const aioThread = ice->getAioThread();
+    aioThread->post(
+        nullptr,
+        [aioThread, ice = std::move(ice), done = std::move(done)]() mutable
+        {
+            if (ice->getAioThread() != aioThread)
+            {
+                destroyOnOwnAioThread(std::move(ice), std::move(done));
+                return;
+            }
+            ice.reset();
+            done.set_value();
+        });
 }
 
 } // namespace
@@ -54,10 +77,13 @@ SessionPool::~SessionPool()
 
 void SessionPool::stop()
 {
+    // Each session and ice dies on its own aio thread, as one dropped at runtime does. A
+    // destructor run here would wait for a call posted to that thread, which an ice's own
+    // stopUnsafe(), racing it there on a peer loss, cancels along with every call of the ice.
+    NX_ASSERT(!nx::network::SocketGlobals::aioService().isInAnyAioThread());
     m_timerManager->joinAndDeleteTimer(m_timerId);
 
-    // TODO move working ice to session and use simple crear() without swap and deletion order.
-    // Now it should be deleted before sessions, since ices have pointer to session.
+    // The ices go first: they point at their sessions.
     decltype(m_sessionById) sessionById;
     decltype(m_tcpIces) icesTcp;
     {
@@ -65,6 +91,28 @@ void SessionPool::stop()
         std::swap(icesTcp, m_tcpIces);
         std::swap(sessionById, m_sessionById);
     }
+
+    std::vector<std::future<void>> stopped;
+    for (auto& ice: icesTcp)
+    {
+        std::promise<void> done;
+        stopped.push_back(done.get_future());
+        destroyOnOwnAioThread(std::move(ice), std::move(done));
+    }
+
+    for (auto& [id, session]: sessionById)
+    {
+        if (!session)
+            continue; //< A ufrag that emitUfrag() reserved for a session not created yet.
+
+        std::promise<void> done;
+        stopped.push_back(done.get_future());
+        Session::stop(
+            std::move(session), [done = std::move(done)]() mutable { done.set_value(); });
+    }
+
+    for (auto& future: stopped)
+        future.wait();
 }
 
 std::vector<nx::network::SocketAddress> SessionPool::getStunServers()
