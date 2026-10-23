@@ -1622,15 +1622,18 @@ void Session::stopUnsafe()
     m_quiesced = true;
 }
 
-void Session::stop(std::shared_ptr<Session> session)
+void Session::stop(std::shared_ptr<Session> session, nx::MoveOnlyFunc<void()> onStopped)
 {
     auto* const aioThread = session->m_aioThread;
     aioThread->post(
         nullptr,
-        [session = std::move(session)]()
+        [session = std::move(session), onStopped = std::move(onStopped)]() mutable
         {
             session->stopUnsafe();
-        }); //< The lambda dies with its reference; if it is the last one, ~Session runs here.
+            session.reset(); //< If this was the last reference, ~Session runs here.
+            if (onStopped)
+                onStopped();
+        });
 }
 
 void Session::unlock()
