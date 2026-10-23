@@ -88,6 +88,9 @@ void SessionPool::stop()
 
     for (auto& [id, session]: sessionById)
     {
+        if (!session)
+            continue; //< A ufrag that emitUfrag() reserved for a session not created yet.
+
         std::promise<void> done;
         stopped.push_back(done.get_future());
         Session::stop(
