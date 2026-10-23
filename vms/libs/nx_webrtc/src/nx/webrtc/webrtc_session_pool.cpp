@@ -23,6 +23,26 @@ bool isUsableIceHostAddress(const nx::network::SocketAddress& a)
         && !a.address.isIpv6LinkLocalNetwork();
 }
 
+// An IceTcp can move to its session's thread after its thread is read here. Destroyed on the old
+// thread, it would wait for a stop call posted to the new one, which its own stopUnsafe() there
+// cancels, so the task follows it.
+void destroyOnOwnAioThread(std::unique_ptr<IceTcp> ice, std::promise<void> done)
+{
+    auto* const aioThread = ice->getAioThread();
+    aioThread->post(
+        nullptr,
+        [aioThread, ice = std::move(ice), done = std::move(done)]() mutable
+        {
+            if (ice->getAioThread() != aioThread)
+            {
+                destroyOnOwnAioThread(std::move(ice), std::move(done));
+                return;
+            }
+            ice.reset();
+            done.set_value();
+        });
+}
+
 } // namespace
 
 SessionPool::SessionPool(
@@ -77,13 +97,7 @@ void SessionPool::stop()
     {
         std::promise<void> done;
         stopped.push_back(done.get_future());
-        ice->getAioThread()->post(
-            nullptr,
-            [ice = std::move(ice), done = std::move(done)]() mutable
-            {
-                ice.reset();
-                done.set_value();
-            });
+        destroyOnOwnAioThread(std::move(ice), std::move(done));
     }
 
     for (auto& [id, session]: sessionById)
