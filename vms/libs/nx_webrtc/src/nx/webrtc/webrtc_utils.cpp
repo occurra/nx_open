@@ -533,15 +533,21 @@ bool sameIp(const nx::network::HostAddress& a, const nx::network::HostAddress& b
     return false;
 }
 
-const std::vector<nx::network::SocketAddress>& defaultStunServers()
+std::string pathName(IceCandidate::Filter type)
 {
-    static const std::vector<nx::network::SocketAddress> kStunServers = {
-        nx::network::SocketAddress("stun.l.google.com:19302"),
-        nx::network::SocketAddress("stun1.l.google.com:19302"),
-        nx::network::SocketAddress("stun2.l.google.com:19302"),
-        nx::network::SocketAddress("stun.stunprotocol.org:3478"),
-    };
-    return kStunServers;
+    switch (type)
+    {
+        case IceCandidate::Filter::UdpHost:
+            return "udp host";
+        case IceCandidate::Filter::TcpHost:
+            return "tcp host";
+        case IceCandidate::Filter::UdpSrflx:
+            return "srflx";
+        case IceCandidate::Filter::UdpRelay:
+            return "relay";
+        default:
+            return "unknown";
+    }
 }
 
 } // namespace nx::webrtc

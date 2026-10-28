@@ -52,7 +52,15 @@ Srflx::Srflx(
             m_socket->getLocalAddress().toString(),
             addr.toString());
 
-        m_socket->sendTo(m_sendBuffer.data(), m_sendBuffer.size(), addr);
+        if (!m_socket->sendTo(m_sendBuffer.data(), m_sendBuffer.size(), addr))
+        {
+            NX_DEBUG(
+                this,
+                "%1: STUN binding to %2 not sent: %3",
+                m_sessionId,
+                addr,
+                SystemError::getLastOSErrorText());
+        }
     }
 
     m_readBuffer.reserve(kRawReadBufferSize);
@@ -87,7 +95,10 @@ void Srflx::onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTrans
         });
 
     if (nx::network::socketCannotRecoverFromError(errorCode) || bytesTransferred == 0)
+    {
+        NX_DEBUG(this, "%1: STUN read failed: %2", m_sessionId, SystemError::toString(errorCode));
         return;
+    }
 
     stun::Message message;
     stun::MessageParser stunParser;
