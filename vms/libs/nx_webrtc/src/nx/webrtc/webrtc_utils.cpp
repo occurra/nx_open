@@ -533,15 +533,4 @@ bool sameIp(const nx::network::HostAddress& a, const nx::network::HostAddress& b
     return false;
 }
 
-const std::vector<nx::network::SocketAddress>& defaultStunServers()
-{
-    static const std::vector<nx::network::SocketAddress> kStunServers = {
-        nx::network::SocketAddress("stun.l.google.com:19302"),
-        nx::network::SocketAddress("stun1.l.google.com:19302"),
-        nx::network::SocketAddress("stun2.l.google.com:19302"),
-        nx::network::SocketAddress("stun.stunprotocol.org:3478"),
-    };
-    return kStunServers;
-}
-
 } // namespace nx::webrtc

@@ -88,7 +88,7 @@ public:
 
     /**
      * Optional predicate applied on top of the built-in ICE host-address filter
-     * (which already skips loopback and link-local). Returns true for addresses
+     * (which already skips link-local). Returns true for addresses
      * that should be offered as ICE host candidates, false for addresses that
      * should be suppressed.
      */

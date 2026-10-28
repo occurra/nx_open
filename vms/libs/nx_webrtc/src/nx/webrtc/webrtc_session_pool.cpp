@@ -116,9 +116,7 @@ void SessionPool::stop()
 
 std::vector<nx::network::SocketAddress> SessionPool::getStunServers()
 {
-    std::vector<nx::network::SocketAddress> result;
-    result.insert(result.end(), m_defaultStunServers.begin(), m_defaultStunServers.end());
-    return result;
+    return stunServers(m_turnInfoFetcher->turnServerInfo(), m_defaultStunServers);
 }
 
 TurnInfoFetcher* SessionPool::turnInfoFetcher() const
@@ -154,6 +152,7 @@ std::shared_ptr<Session> SessionPool::createInternal(
     const QList<nx::network::SocketAddress>& hostAddresses,
     nx::network::aio::AbstractAioThread* aioThread)
 {
+    const auto stunServers = getStunServers();
     std::shared_ptr<Session> session;
     {
         NX_MUTEX_LOCKER lk(&m_mutex);
@@ -172,7 +171,7 @@ std::shared_ptr<Session> SessionPool::createInternal(
             localUfrag,
             address,
             config,
-            getStunServers(),
+            stunServers,
             purpose,
             aioThread);
 
