@@ -146,6 +146,9 @@ struct NX_WEBRTC_API IceCandidate
     bool matchFilter(const Filter filter) const;
 };
 
+/** The name of the path an ice of type carries, as the log and the health counters show it. */
+NX_WEBRTC_API std::string pathName(IceCandidate::Filter type);
+
 struct TurnEndpoint
 {
     nx::network::SocketAddress address;
@@ -211,10 +214,35 @@ NX_WEBRTC_API bool isPrivateScope(const nx::network::HostAddress& host);
 NX_WEBRTC_API bool sameIp(const nx::network::HostAddress& a, const nx::network::HostAddress& b);
 
 /**
- * Public STUN servers every process hosting a SessionPool uses by default
- * (media_server, ai_agent_toolbox), so srflx behavior is identical on both
- * ends of a session.
+ * Public STUN servers both ends of a session use by default, so srflx behavior is identical on
+ * both. Inline: the toolbox includes this header without linking the library.
  */
-NX_WEBRTC_API const std::vector<nx::network::SocketAddress>& defaultStunServers();
+inline const std::vector<nx::network::SocketAddress>& defaultStunServers()
+{
+    static const std::vector<nx::network::SocketAddress> kStunServers = {
+        nx::network::SocketAddress("stun.l.google.com:19302"),
+        nx::network::SocketAddress("stun1.l.google.com:19302"),
+        nx::network::SocketAddress("stun2.l.google.com:19302"),
+    };
+    return kStunServers;
+}
+
+/**
+ * The STUN servers a session queries: the UDP endpoints of the TURN servers, then the defaults.
+ * The TURN host answers STUN bindings too, a site that can relay can reach it, and both ends of
+ * a session asking the same host get reflexive addresses the split horizon can compare.
+ */
+inline std::vector<nx::network::SocketAddress> stunServers(
+    const TurnServerInfo& turnServer, const std::vector<nx::network::SocketAddress>& defaults)
+{
+    std::vector<nx::network::SocketAddress> result;
+    for (const auto& endpoint: turnServer.endpoints)
+    {
+        if (endpoint.transport == nx::network::TransportProtocol::udp)
+            result.push_back(endpoint.address);
+    }
+    result.insert(result.end(), defaults.begin(), defaults.end());
+    return result;
+}
 
 } // namespace nx::webrtc

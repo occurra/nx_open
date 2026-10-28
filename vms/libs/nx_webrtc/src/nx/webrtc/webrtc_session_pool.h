@@ -52,7 +52,7 @@ public:
      * @param hostAddresses Raw local addresses to offer as ICE host
      *     candidates - the caller enumerates them (the media_server from its
      *     own server resource, tests from the local interfaces), so the pool
-     *     has no hidden identity dependency. The built-in loopback/link-local
+     *     has no hidden identity dependency. The built-in link-local
      *     filter and the extra host-address filter still apply on top.
      * @param aioThread Thread the session runs on - pass the AIO thread of
      *     the signalling socket that will be handed to Tracker::start(), so
@@ -89,7 +89,7 @@ public:
 
     /**
      * Optional predicate applied on top of the built-in ICE host-address filter
-     * (which already skips loopback and link-local). Returns true for addresses
+     * (which already skips link-local). Returns true for addresses
      * that should be offered as ICE host candidates, false for addresses that
      * should be suppressed.
      */
@@ -107,7 +107,7 @@ public:
      * even if it changes mid-enumeration.
      *
      * If unset (default), no extra filtering is applied and only the
-     * built-in loopback/link-local filter runs.
+     * built-in link-local filter runs.
      */
     using HostAddressFilterFactory = std::function<HostAddressFilter()>;
     void setHostAddressExtraFilterFactory(HostAddressFilterFactory factory);

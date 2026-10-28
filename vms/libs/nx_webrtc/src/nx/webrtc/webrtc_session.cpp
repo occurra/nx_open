@@ -1593,6 +1593,31 @@ bool Session::lock()
 void Session::setActiveIce(Ice* ice)
 {
     m_activeIce = ice;
+    std::optional<ConnectedPath> path;
+    if (ice)
+        path = ConnectedPath{ice->type(), ice->iceLocalAddress(), ice->iceRemoteAddress()};
+    {
+        NX_MUTEX_LOCKER lk(&m_mutex);
+        m_connectedPath = path;
+    }
+    if (!path)
+        return;
+
+    // The line support reads to tell a relayed session from a direct one. The remote address
+    // of a relay is the TURN server.
+    NX_INFO(
+        this,
+        "WebRTC session %1 connected over %2 from %3 to %4",
+        id(),
+        pathName(path->type),
+        path->local,
+        path->remote);
+}
+
+std::optional<Session::ConnectedPath> Session::connectedPath() const
+{
+    NX_MUTEX_LOCKER lk(&m_mutex);
+    return m_connectedPath;
 }
 
 void Session::stopUnsafe()
