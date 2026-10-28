@@ -15,12 +15,11 @@ namespace nx::webrtc {
 
 namespace {
 
-// Skip addresses that can never form a useful ICE host candidate for a remote peer:
-// loopback (127/8, ::1) and link-local (169.254/16, fe80::/10).
+// Skip addresses that can never form a useful ICE host candidate for a remote peer: link-local
+// (169.254/16, fe80::/10). Loopback stays: a caller offers it to a peer on the same machine.
 bool isUsableIceHostAddress(const nx::network::SocketAddress& a)
 {
-    return !a.address.isLoopback() && !a.address.isIpv4LinkLocalNetwork()
-        && !a.address.isIpv6LinkLocalNetwork();
+    return !a.address.isIpv4LinkLocalNetwork() && !a.address.isIpv6LinkLocalNetwork();
 }
 
 // An IceTcp can move to its session's thread after its thread is read here. Destroyed on the old
@@ -180,7 +179,7 @@ std::shared_ptr<Session> SessionPool::createInternal(
         m_sessionById[session->id()] = session;
     }
 
-    // Compose the built-in filter (skip loopback + link-local) with the
+    // Compose the built-in filter (skip link-local) with the
     // optional caller-supplied filter (typically a per-server admin allow/deny
     // list). The factory is snapshotted under the mutex, then invoked once
     // *outside* the mutex to build a session-scoped filter.
