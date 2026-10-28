@@ -146,6 +146,9 @@ struct NX_WEBRTC_API IceCandidate
     bool matchFilter(const Filter filter) const;
 };
 
+/** The name of the path an ice of type carries, as the log and the health counters show it. */
+NX_WEBRTC_API std::string pathName(IceCandidate::Filter type);
+
 struct TurnEndpoint
 {
     nx::network::SocketAddress address;

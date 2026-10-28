@@ -176,6 +176,16 @@ public:
      * field needs no lock.
      */
     void setActiveIce(Ice* ice);
+
+    /** The pair a locked session runs on. */
+    struct ConnectedPath
+    {
+        IceCandidate::Filter type = IceCandidate::Filter::None;
+        nx::network::SocketAddress local;
+        nx::network::SocketAddress remote;
+    };
+    /** The pair this session runs on; nothing while unlocked. Thread-safe. */
+    std::optional<ConnectedPath> connectedPath() const;
     /**
      * Arranges the session's safe destruction. The pool calls it with the reference it removed
      * from its map. A task posted - not dispatched: the callers are typically beneath ice
@@ -491,6 +501,8 @@ private:
     /// IceTcp, which outlives the session - never dereferenced beyond detachActiveIce(), and
     /// every ice clears it in stopUnsafe() before it can die. Touched only on aioThread().
     Ice* m_activeIce = nullptr;
+    /** What connectedPath() reports; guarded by m_mutex. */
+    std::optional<ConnectedPath> m_connectedPath;
     std::unique_ptr<IceUdp> m_punchedUdpIce;
     std::unique_ptr<IceRelay> m_relayIce;
     nx::network::aio::Timer m_relayFallbackTimer;

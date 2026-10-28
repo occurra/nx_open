@@ -533,4 +533,21 @@ bool sameIp(const nx::network::HostAddress& a, const nx::network::HostAddress& b
     return false;
 }
 
+std::string pathName(IceCandidate::Filter type)
+{
+    switch (type)
+    {
+        case IceCandidate::Filter::UdpHost:
+            return "udp host";
+        case IceCandidate::Filter::TcpHost:
+            return "tcp host";
+        case IceCandidate::Filter::UdpSrflx:
+            return "srflx";
+        case IceCandidate::Filter::UdpRelay:
+            return "relay";
+        default:
+            return "unknown";
+    }
+}
+
 } // namespace nx::webrtc
