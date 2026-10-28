@@ -2022,7 +2022,8 @@ bool UDPSocket::sendTo(
     std::size_t bufferLen,
     const SocketAddress& foreignEndpoint)
 {
-    setDestAddr(foreignEndpoint);
+    if (!setDestAddr(foreignEndpoint))
+        return false;
     return sendTo(buffer, bufferLen);
 }
 

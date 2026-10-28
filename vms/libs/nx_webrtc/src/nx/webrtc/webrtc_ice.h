@@ -122,6 +122,8 @@ public:
     int dataChannelQueueSize() const { return m_dataChannel.outputQueueSize(); }
 
     virtual IceCandidate::Filter type() const = 0;
+    virtual nx::network::SocketAddress iceRemoteAddress() const = 0;
+    virtual nx::network::SocketAddress iceLocalAddress() const = 0;
 
     // API for Dtls.
     virtual void writeDtlsPacket(const char* data, int size) override final;
@@ -142,8 +144,6 @@ protected:
     // API for subclasses.
     virtual nx::Buffer toSendBuffer(const char* data, int dataSize) const;
     virtual void asyncSendPacketUnsafe() = 0;
-    virtual nx::network::SocketAddress iceRemoteAddress() const = 0;
-    virtual nx::network::SocketAddress iceLocalAddress() const = 0;
 
     /// Called by handleStun() once an incoming STUN message has passed the
     /// integrity check, with its authenticated source address. Default no-op;
