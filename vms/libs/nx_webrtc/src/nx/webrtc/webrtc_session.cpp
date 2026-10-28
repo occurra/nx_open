@@ -55,6 +55,24 @@ std::string generatePwd(int size)
 static const AVCodecID kFallbackSrtpVideoCodec = AV_CODEC_ID_VP8;
 static const AVCodecID kFallbackSrtpAudioCodec = AV_CODEC_ID_PCM_MULAW;
 
+std::string pathName(nx::webrtc::IceCandidate::Filter type)
+{
+    using Filter = nx::webrtc::IceCandidate::Filter;
+    switch (type)
+    {
+        case Filter::UdpHost:
+            return "udp host";
+        case Filter::TcpHost:
+            return "tcp host";
+        case Filter::UdpSrflx:
+            return "srflx";
+        case Filter::UdpRelay:
+            return "relay";
+        default:
+            return "unknown";
+    }
+}
+
 } // namespace
 
 namespace nx::webrtc {
@@ -1583,6 +1601,18 @@ bool Session::lock()
 void Session::setActiveIce(Ice* ice)
 {
     m_activeIce = ice;
+    if (!ice)
+        return;
+
+    // The line support reads to tell a relayed session from a direct one. The remote address
+    // of a relay is the TURN server.
+    NX_INFO(
+        this,
+        "WebRTC session %1 connected over %2 from %3 to %4",
+        id(),
+        pathName(ice->type()),
+        ice->iceLocalAddress(),
+        ice->iceRemoteAddress());
 }
 
 void Session::stopUnsafe()
