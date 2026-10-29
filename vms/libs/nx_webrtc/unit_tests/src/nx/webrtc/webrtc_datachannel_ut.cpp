@@ -266,10 +266,6 @@ TEST(WebRTC, DataChannelLargeMessageRoundTrip)
     EXPECT_TRUE(test.client().lastString() == payload);
 }
 
-// Receiving data must not look like progress on the receiver: only a peer that had
-// something queued of its own gets the wake-up. Note the baseline is taken after
-// the handshake, because openDataChannel() queues and sends the DCEP open message
-// and so legitimately notifies.
 // The tail of a large message and the message behind it can reach the socket in one read event:
 // both are read, or the second waits for the next packet to raise the event again.
 TEST(WebRTC, DataChannelReadsTheMessageBehindALargeOne)
@@ -286,6 +282,10 @@ TEST(WebRTC, DataChannelReadsTheMessageBehindALargeOne)
     EXPECT_EQ(test.server().lastString(), "after");
 }
 
+// Receiving data must not look like progress on the receiver: only a peer that had
+// something queued of its own gets the wake-up. Note the baseline is taken after
+// the handshake, because openDataChannel() queues and sends the DCEP open message
+// and so legitimately notifies.
 TEST(WebRTC, DataChannelQueueProgressNotReportedForReceiveOnlyPeer)
 {
     TestDataChannel test;
