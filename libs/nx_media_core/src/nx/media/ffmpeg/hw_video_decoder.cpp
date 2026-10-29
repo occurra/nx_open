@@ -243,19 +243,8 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
             data->compressionType,
             avcodec_get_name(data->compressionType),
             av_hwdevice_get_type_name(m_type));
-        // Codec has no HW path on this platform - not a resource failure, no back-off needed.
         return false;
     }
-    // From here a HW decoder exists for this codec. Any allocation or device failure is
-    // resource-related and must arm the process-wide back-off via m_hardwareResourceFailed.
-    // The only exception is avcodec_parameters_to_context: that is a per-stream config error,
-    // not resource exhaustion, so its failure path disarms the guard explicitly.
-    auto resourceFailedGuard = nx::utils::makeScopeGuard(
-        [this]()
-        {
-            m_hardwareResourceFailed = true;
-        });
-
     m_targetPixelFormat = pixelFormat;
 
     NX_DEBUG(
@@ -277,7 +266,6 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
     if (avcodec_parameters_to_context(m_decoderContext, data->context->getAvCodecParameters()) < 0)
     {
         NX_WARNING(this, "Failed to convert codec parameters to codec context");
-        resourceFailedGuard.disarm();
         return false;
     }
 
@@ -336,7 +324,6 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
     m_hardwareMode = true;
     NX_DEBUG(this, "Hardware decoder initialized: %1", decoder->name);
     decoderCtxGuard.disarm();
-    resourceFailedGuard.disarm();
     return true;
 }
 
@@ -479,19 +466,11 @@ bool HwVideoDecoder::resetDecoder(const QnConstCompressedVideoDataPtr& data)
 
     m_targetPixelFormat = AV_PIX_FMT_NONE;
     m_lastDecodeResult = 0;
-    m_hardwareResourceFailed = false;
 
     if (data)
         return initialize(data);
 
     return true;
-}
-
-bool HwVideoDecoder::consumeHardwareResourceFailed()
-{
-    const bool result = m_hardwareResourceFailed;
-    m_hardwareResourceFailed = false;
-    return result;
 }
 
 int HwVideoDecoder::getLastDecodeResult() const
