@@ -1022,7 +1022,6 @@ public:
     std::string toStdString() const;
     bool isValid() const;
     ::rapidjson::ParseErrorCode getParseError() const;
-    QString getPrettyParseErrorString() const;
 
 private:
     Processor(const Processor& processor, ::rapidjson::Value* newCurr):
