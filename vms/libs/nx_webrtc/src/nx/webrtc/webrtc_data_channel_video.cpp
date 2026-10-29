@@ -18,7 +18,9 @@ constexpr uint32_t kWordBits = 32;
 
 int64_t toRtp90k(int64_t timestampUs)
 {
-    return timestampUs * kRtpClockHz / kUsPerSecond;
+    // Whole seconds first: a UTC time in microseconds times the clock rate is past int64.
+    return (timestampUs / kUsPerSecond) * kRtpClockHz
+        + ((timestampUs % kUsPerSecond) * kRtpClockHz) / kUsPerSecond;
 }
 
 void writeHeader(uint8_t* header, const DataChannelVideo::Frame& frame)
