@@ -2,10 +2,8 @@
 
 #pragma once
 
-#include <optional>
 #include <type_traits>
 
-#include <QtCore/QByteArrayView>
 #include <QtCore/QMetaObject>
 #include <QtCore/QMetaProperty>
 #include <QtCore/QObject>
@@ -92,9 +90,5 @@ void NX_UTILS_API watchOnPropertyChanges(
     QObject* sender,
     QObject* receiver,
     const QMetaMethod& receiverMetaMethod);
-
-void NX_UTILS_API resetProperties(QObject* object);
-
-std::optional<QMetaMethod> NX_UTILS_API findSignal(const QObject* object, QByteArrayView name);
 
 } // namespace nx::utils

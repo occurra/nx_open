@@ -23,32 +23,4 @@ void watchOnPropertyChanges(
     }
 }
 
-void NX_UTILS_API resetProperties(QObject* object)
-{
-    const auto meta = object->metaObject();
-    static const auto start =
-        QObject::staticMetaObject.propertyOffset() + QObject::staticMetaObject.propertyCount();
-
-    for (int i = start; i < meta->propertyCount(); ++i)
-    {
-        const auto property = meta->property(i);
-        if (property.isResettable())
-            property.reset(object);
-    }
-}
-
-std::optional<QMetaMethod> findSignal(const QObject* object, QByteArrayView name)
-{
-    const QMetaObject* metaObject = object->metaObject();
-
-    for (int i = metaObject->methodCount() - 1; i >= 0; --i)
-    {
-        const QMetaMethod method = metaObject->method(i);
-        if (method.methodType() == QMetaMethod::Signal && method.name() == name)
-            return method;
-    }
-
-    return std::nullopt;
-}
-
 } // namespace nx::utils
