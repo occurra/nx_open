@@ -93,6 +93,33 @@ TEST(DataChannelVideo, aSizePrefixedUnitThatLooksLikeAStartCodeIsConverted)
     EXPECT_EQ(accessUnit.substr(0, 4), std::string("\x00\x00\x00\x01", 4));
 }
 
+TEST(DataChannelVideo, theRtpTimestampFollowsUtcAndRestartsAtARebase)
+{
+    using namespace std::chrono;
+
+    const auto deviceId = nx::Uuid::createUuid();
+    DataChannelVideo dataChannelVideo;
+    const auto feed =
+        [&](int64_t timestampUs)
+        {
+            auto packet = std::make_shared<QnWritableCompressedVideoData>();
+            packet->compressionType = AV_CODEC_ID_H264;
+            packet->deviceId = deviceId;
+            packet->timestamp = timestampUs;
+            dataChannelVideo.setDataPacket(packet);
+            return dataChannelVideo.getLastTimestamps(deviceId);
+        };
+
+    // A UTC time in microseconds times 90 kHz is past int64.
+    const auto first = feed(1761740000123456);
+    EXPECT_EQ(first.ntpTimestamp, 1761740000123456);
+    EXPECT_EQ((int64_t) first.rtpTimestamp, (1761740000LL * 90000 + 11111) % (1LL << 32));
+
+    dataChannelVideo.rebaseOutputTimestamps(deviceId, 1s);
+    EXPECT_EQ(feed(1761740000163456).rtpTimestamp, 90000U);
+    EXPECT_EQ(feed(1761740000203456).rtpTimestamp, 90000U + 3600);
+}
+
 TEST(DataChannelVideo, anEmptyFrameStillMakesAMessage)
 {
     const auto message = DataChannelVideo::makeMessage(DataChannelVideo::Frame{}, nullptr, 0);
