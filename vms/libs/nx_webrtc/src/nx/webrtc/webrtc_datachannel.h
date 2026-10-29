@@ -123,13 +123,14 @@ public:
     int outputQueueSize() const;
 
     /**
-     * Removes the queued-but-unsent string messages tagged with deviceId.
+     * Removes the queued-but-unsent string and binary messages tagged with deviceId.
      * Called on the first post-seek packet (BOF), alongside the media-queue
-     * flush: the queued strings carry the device's pre-seek overlay metadata,
-     * which would only delay the post-seek stream behind stale data. The front
-     * entry always stays - it may already be partially handed to usrsctp, and
-     * dropping it would leave the peer a truncated fragment chain. Untagged
-     * messages and other devices' messages are untouched.
+     * flush: the queued messages carry the device's pre-seek overlay metadata
+     * and video, which would only delay the post-seek stream behind stale data.
+     * The message of the front entry always stays whole - it may already be
+     * partially handed to usrsctp, and dropping the rest of it would leave the
+     * peer a truncated fragment chain. Untagged messages and other devices'
+     * messages are untouched.
      * @return The number of removed messages.
      */
     int removeQueuedStrings(const nx::Uuid& deviceId);

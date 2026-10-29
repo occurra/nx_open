@@ -532,15 +532,19 @@ int DataChannel::removeQueuedStrings(const nx::Uuid& deviceId)
         return 0;
 
     std::queue<Message> kept;
-    kept.push(std::move(m_outputQueue.front()));
-    m_outputQueue.pop();
+    // The front's message stays whole: with explicit EOR, the next message sent after a message
+    // that lost its last fragment would be glued onto it.
+    bool isFrontMessage = true;
     int removed = 0;
     while (!m_outputQueue.empty())
     {
         auto& message = m_outputQueue.front();
         const bool isUserMessage = message.type == Message::Type::string
             || message.type == Message::Type::binary;
-        if (isUserMessage && message.deviceId == deviceId)
+        const bool isFrontFragment = isFrontMessage;
+        if (message.eor)
+            isFrontMessage = false;
+        if (!isFrontFragment && isUserMessage && message.deviceId == deviceId)
             ++removed;
         else
             kept.push(std::move(message));
