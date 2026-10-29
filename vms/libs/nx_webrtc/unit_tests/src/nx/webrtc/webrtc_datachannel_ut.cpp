@@ -31,6 +31,7 @@ public:
     virtual void onDataChannelString(const std::string& data, int /*streamId*/)
     {
         m_lastString = data;
+        ++m_receivedCount;
     }
     virtual void onDataChannelBinary(const std::string& data, int streamId)
     {
@@ -44,6 +45,7 @@ public:
         return m_dataChannel.handlePacket(data, size);
     }
     std::string lastString() const { return m_lastString; }
+    int receivedCount() const { return m_receivedCount; }
 
     /// Counts backlog-progress notifications so a test can assert one arrives per
     /// message leaving the queue, not only when the queue reaches empty.
@@ -61,6 +63,7 @@ public:
 
 private:
     int m_queueProgressCount = 0;
+    int m_receivedCount = 0;
     int m_openedCount = 0;
     int m_openedStreamId = -1;
     TestDataChannel* m_testDataChannel = nullptr;
@@ -267,6 +270,22 @@ TEST(WebRTC, DataChannelLargeMessageRoundTrip)
 // something queued of its own gets the wake-up. Note the baseline is taken after
 // the handshake, because openDataChannel() queues and sends the DCEP open message
 // and so legitimately notifies.
+// The tail of a large message and the message behind it can reach the socket in one read event:
+// both are read, or the second waits for the next packet to raise the event again.
+TEST(WebRTC, DataChannelReadsTheMessageBehindALargeOne)
+{
+    TestDataChannel test;
+    ASSERT_TRUE(test.client().openDataChannel());
+    ASSERT_TRUE(test.flushQueues());
+
+    ASSERT_TRUE(test.client().writeBinary(std::string(4 * 1024 * 1024, 'v')));
+    ASSERT_TRUE(test.client().writeString("after"));
+    ASSERT_TRUE(test.flushQueues());
+
+    EXPECT_EQ(test.server().receivedCount(), 2);
+    EXPECT_EQ(test.server().lastString(), "after");
+}
+
 TEST(WebRTC, DataChannelQueueProgressNotReportedForReceiveOnlyPeer)
 {
     TestDataChannel test;
