@@ -71,8 +71,6 @@ static const char* toString(const rapidjson::ParseErrorCode& val)
             return "NumberMissFraction";
         case rapidjson::kParseErrorNumberMissExponent:
             return "NumberMissExponent";
-        case rapidjson::kParseErrorDepthLimitExceeded:
-            return "DepthLimitExceeded";
         case rapidjson::kParseErrorTermination:
             return "Termination";
         case rapidjson::kParseErrorUnspecificSyntaxError:

@@ -14,8 +14,7 @@ namespace details {
 class NX_UTILS_API Composer: public nx::reflect::AbstractComposer<::rapidjson::Document>
 {
 public:
-    Composer(rapidjson::Document::AllocatorType* allocator = nullptr):
-        m_value(/*depthLimit*/ 1024, allocator)
+    Composer(rapidjson::Document::AllocatorType* allocator = nullptr): m_value(allocator)
     {
         setSerializeFlags(
             (/*jsonSerializeChronoDurationAsNumber*/ 1 << 0u)
