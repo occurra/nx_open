@@ -186,6 +186,15 @@ TEST_P(SslSocketTeardown, pending_read_does_not_outlive_the_ssl_pipeline)
                     break;
                 }
 
+                // The server reports a connection only once its side of the handshake is done,
+                // which can be after connect() returns on the client. A client destroyed before
+                // that resets the connection, and the server never reports it.
+                if (cf::future_status::ready != accepted.wait_for(30s))
+                {
+                    ADD_FAILURE() << "Timed out waiting for the peer to be accepted";
+                    break;
+                }
+
                 // Sampled before destroying: afterwards the abandoned promise reports ready
                 // regardless of whether the read ever completed.
                 const bool readIsQueued =
@@ -199,12 +208,6 @@ TEST_P(SslSocketTeardown, pending_read_does_not_outlive_the_ssl_pipeline)
                 }
 
                 readsPendingAtTeardown += readIsQueued ? 1 : 0;
-
-                if (cf::future_status::ready != accepted.wait_for(30s))
-                {
-                    ADD_FAILURE() << "Timed out waiting for the peer to be accepted";
-                    break;
-                }
             }
 
             // Fewer than every attempt means some of them missed the window and prove nothing.
