@@ -51,16 +51,6 @@ struct FunctionTraits<MemberPtr>
 template<auto FunctionPtr, size_t I>
 using FunctionArgumentType = typename FunctionTraits<FunctionPtr>::template ArgumentType<I>;
 
-template<auto>
-struct MemberPointerTraits;
-
-template<typename Field, typename Class, Field Class::* Member>
-struct MemberPointerTraits<Member>
-{
-    using ClassType = Class;
-    using FieldType = Field;
-};
-
 struct AlwaysTrue
 {
     template<typename... T>
