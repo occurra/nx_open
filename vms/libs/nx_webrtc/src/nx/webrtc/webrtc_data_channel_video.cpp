@@ -100,9 +100,14 @@ void DataChannelVideo::setDataPacket(const QnConstAbstractMediaDataPtr& media)
     m_message = makeMessage(frame, (const uint8_t*) media->data(), size);
 
     // WebCodecs takes Annex B, and the NAL units of a camera come size-prefixed as often as with
-    // start codes.
+    // start codes. The extradata tells which: a size-prefixed unit whose first NAL is 256 to 511
+    // bytes long starts with 00 00 01 too.
     uint8_t* accessUnit = (uint8_t*) m_message->data() + kHeaderSize;
-    if (size > 0 && nx::media::nal::isStartCode(accessUnit, size) == 0)
+    const auto& context = media->getContext();
+    const bool hasStartCodes = context && context->getExtradataSize() > 0
+        ? nx::media::nal::isStartCode(context->getExtradata(), context->getExtradataSize()) > 0
+        : nx::media::nal::isStartCode(accessUnit, size) > 0;
+    if (size > 0 && !hasStartCodes)
         nx::media::nal::convertToStartCodes(accessUnit, size);
 
     NX_VERBOSE(

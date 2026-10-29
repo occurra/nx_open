@@ -68,6 +68,31 @@ TEST(DataChannelVideo, theMessageCarriesTheFrameAndItsAccessUnit)
         std::string_view((const char*) data.data(), data.size()));
 }
 
+TEST(DataChannelVideo, aSizePrefixedUnitThatLooksLikeAStartCodeIsConverted)
+{
+    // avcC extradata: the unit is size-prefixed whatever its first bytes look like.
+    auto context = std::make_shared<CodecParameters>();
+    context->getAvCodecParameters()->codec_id = AV_CODEC_ID_H264;
+    const uint8_t avcC[] = {0x01, 0x64, 0x00, 0x33, 0xFF, 0xE0, 0x00};
+    context->setExtradata(avcC, sizeof(avcC));
+
+    // One 300-byte NAL: its 4-byte size prefix 00 00 01 2C reads as a start code.
+    constexpr uint32_t kNalSize = 300;
+    std::vector<uint8_t> data(4 + kNalSize, 0x41);
+    qToBigEndian<uint32_t>(kNalSize, data.data());
+
+    auto packet = std::make_shared<QnWritableCompressedVideoData>(data.size(), context);
+    packet->compressionType = AV_CODEC_ID_H264;
+    packet->m_data.write((const char*) data.data(), data.size());
+
+    DataChannelVideo dataChannelVideo;
+    dataChannelVideo.setDataPacket(packet);
+    nx::Buffer message;
+    ASSERT_TRUE(dataChannelVideo.getNextPacket(message));
+    const std::string accessUnit = message.toStdString().substr(DataChannelVideo::kHeaderSize);
+    EXPECT_EQ(accessUnit.substr(0, 4), std::string("\x00\x00\x00\x01", 4));
+}
+
 TEST(DataChannelVideo, anEmptyFrameStillMakesAMessage)
 {
     const auto message = DataChannelVideo::makeMessage(DataChannelVideo::Frame{}, nullptr, 0);
