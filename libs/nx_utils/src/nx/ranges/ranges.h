@@ -28,15 +28,6 @@ constexpr std::ranges::range_value_t<R>::second_type valueOr(
     return orValue;
 }
 
-/**
- * Views an element of a std::string_view split (std::views::split) as a std::string_view.
- */
-constexpr std::string_view asStringView(
-    std::ranges::subrange<std::string_view::const_iterator> range)
-{
-    return std::string_view(range.begin(), range.end());
-}
-
 constexpr Closure trim = [](std::string_view v) -> std::string_view
 {
     constexpr auto safeIsSpace = [](unsigned char c)

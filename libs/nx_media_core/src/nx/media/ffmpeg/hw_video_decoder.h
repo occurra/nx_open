@@ -12,8 +12,6 @@ struct AVHWDeviceContext;
 namespace nx::metric { struct Storage; }
 namespace nx::media::ffmpeg {
 
-struct FfmpegSharedMemoryBufferContext;
-
 class NX_MEDIA_CORE_API HwVideoDecoder: public QnAbstractVideoDecoder
 {
 public:
@@ -24,9 +22,7 @@ public:
         nx::metric::Storage* metrics,
         const std::string& device = {},
         std::unique_ptr<AvOptions> options = {},
-        InitFunc initFunc = {},
-        FfmpegSharedMemoryAllocatorPtr sharedMemoryAllocator = {},
-        bool useSharedMemoryForSoftwareFallback = false);
+        InitFunc initFunc = {});
 
     /**
      * Construct sharing a pre-created AVHWDeviceContext (e.g. from a
@@ -70,12 +66,6 @@ public:
     bool receiveFrame(CLVideoDecoderOutput* outFrame);
     int currentFrameNumber() const;
 
-    // Returns true and clears the flag when a hardware decoder was found for the codec but could
-    // not be allocated due to resource exhaustion (as opposed to the codec simply having no HW
-    // path on this platform). Consuming clears the flag so it fires exactly once per failure event
-    // rather than on every subsequent packet while the decoder runs in SW fallback.
-    bool consumeHardwareResourceFailed();
-
 private:
     bool initialize(const QnConstCompressedVideoDataPtr& frame);
     bool initializeHardware(const QnConstCompressedVideoDataPtr& frame);
@@ -85,7 +75,6 @@ private:
     AVHWDeviceType m_type;
     InitFunc m_initFunc;
     bool m_hardwareMode = true;
-    bool m_hardwareResourceFailed = false;
     AVCodecContext* m_decoderContext = nullptr;
     AVBufferRef* m_hwDeviceContext = nullptr;
     AVBufferRef* m_externalDeviceContext = nullptr; ///< Borrowed ref from a shared cache.
@@ -97,9 +86,6 @@ private:
     uint32_t m_channel = 0;
     QnAbstractMediaData::MediaFlags m_flags{};
     MultiThreadDecodePolicy m_mtDecodingPolicy = MultiThreadDecodePolicy::enabled;
-    FfmpegSharedMemoryAllocatorPtr m_sharedMemoryAllocator;
-    std::unique_ptr<FfmpegSharedMemoryBufferContext> m_bufferContext;
-    bool m_useSharedMemoryForSoftwareFallback = false;
 };
 
 } // namespace nx::media::ffmpeg

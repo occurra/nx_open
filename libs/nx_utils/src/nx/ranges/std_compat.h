@@ -8,7 +8,6 @@
 #include <utility>
 
 #include <nx/ranges/to.h>
-#include <nx/ranges/views/cartesian_product.h>
 
 /*
 Drop-in implementations for C++ standard library facilities that are declared in std, but not
@@ -48,23 +47,4 @@ constexpr auto fold_left(R&& r, Accum&& init, BinaryOp f)
 #endif
 
 } // namespace ranges
-
-namespace views {
-
-#if defined __cpp_lib_ranges_cartesian_product
-using std::views::cartesian_product;
-#else
-constexpr auto cartesian_product()
-{
-    return detail::cartesianProduct();
-}
-
-template<typename... Ranges>
-constexpr auto cartesian_product(Ranges&&... ranges)
-{
-    return detail::cartesianProduct(std::forward<Ranges>(ranges)...);
-}
-#endif
-
-} // namespace views
 } // namespace nx
