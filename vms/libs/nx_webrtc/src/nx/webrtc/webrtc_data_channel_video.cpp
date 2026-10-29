@@ -2,9 +2,7 @@
 
 #include "webrtc_data_channel_video.h"
 
-#include <nx/codec/h264/sequence_parameter_set.h>
 #include <nx/codec/nal_units.h>
-#include <nx/media/h264_utils.h>
 #include <nx/media/video_data_packet.h>
 #include <nx/utils/bit_stream.h>
 #include <nx/utils/log/log.h>
@@ -62,19 +60,9 @@ bool DataChannelVideo::isRefusedByWebRtc(const QnConstAbstractMediaDataPtr& medi
     {
         return false;
     }
+    // The live RTP parsers and the archive's Annex B converter fill the size in from the SPS.
     const auto& context = media->getContext();
-    if (context && exceedsLevel52(context->getWidth(), context->getHeight()))
-        return true;
-    if (context && context->getWidth() > 0)
-        return false;
-
-    // A stream whose parameters carry no size says it in the SPS of its key frames.
-    if (!media->flags.testFlag(QnAbstractMediaData::MediaFlags_AVKey))
-        return false;
-    const auto video = std::dynamic_pointer_cast<const QnCompressedVideoData>(media);
-    nx::media::h264::SequenceParameterSet sps;
-    return video && nx::media::h264::extractSps(video.get(), sps)
-        && exceedsLevel52(sps.getWidth(), sps.getHeight());
+    return context && exceedsLevel52(context->getWidth(), context->getHeight());
 }
 
 nx::Buffer DataChannelVideo::makeMessage(const Frame& frame, const uint8_t* data, size_t size)
