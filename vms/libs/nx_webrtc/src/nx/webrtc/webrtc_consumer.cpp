@@ -508,9 +508,13 @@ void Consumer::sendSyncPoint(nx::Uuid deviceId)
         audio = emitted(audioEncoder->getLastTimestamps());
 
     // Without a video mapping there is nothing for the player to pace or to place on the
-    // timeline.
-    if (video)
-        m_streamer->sendTimestamp(deviceId, *video, audio);
+    // timeline. The device stays due, so its first video mapping goes out at once.
+    if (!video)
+    {
+        m_lastReportedTimestampUs.erase(deviceId);
+        return;
+    }
+    m_streamer->sendTimestamp(deviceId, *video, audio);
 }
 
 void Consumer::processNextData()
