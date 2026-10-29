@@ -621,7 +621,7 @@ void Ice::clearDataChannelStrings(const nx::Uuid& deviceId)
         {
             const int removed = m_dataChannel.removeQueuedStrings(deviceId);
             if (removed > 0)
-                NX_DEBUG(this, "Removed %1 queued data-channel strings of %2", removed, deviceId);
+                NX_DEBUG(this, "Removed %1 queued data-channel messages of %2", removed, deviceId);
         });
 }
 

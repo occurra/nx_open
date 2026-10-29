@@ -615,7 +615,8 @@ DataChannel::WriteResult DataChannel::handleWrite()
     // m_config.unreliableTransport (the tracker's MSE media-over-datachannel
     // mode) keeps its historical "no retransmissions, but ordered" contract -
     // an MSE consumer appends segments in order. Only the per-message flag,
-    // used for self-contained overlay metadata, also drops the ordering.
+    // used for self-contained overlay metadata and video frames, also drops
+    // the ordering.
     if (message.unreliableTransport)
         sendvSpa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
 

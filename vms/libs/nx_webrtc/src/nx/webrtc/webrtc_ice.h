@@ -117,10 +117,10 @@ public:
         const nx::Uuid& deviceId = {},
         bool unreliableTransport = false);
     /**
-     * Drops the queued-but-unsent data-channel strings of deviceId. Called on
-     * the first post-seek packet so the device's pre-seek overlay metadata
-     * backlog does not go out ahead of the post-seek stream. See
-     * DataChannel::removeQueuedStrings().
+     * Drops the queued-but-unsent data-channel string and binary messages of
+     * deviceId. Called on the first post-seek packet so the device's pre-seek
+     * overlay metadata and video backlog does not go out ahead of the post-seek
+     * stream. See DataChannel::removeQueuedStrings().
      */
     void clearDataChannelStrings(const nx::Uuid& deviceId);
     int dataChannelQueueSize() const { return m_dataChannel.outputQueueSize(); }
