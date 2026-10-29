@@ -67,7 +67,6 @@ public:
     QnUniversalRtpEncoder* setDataPacket(nx::Uuid deviceId, QnConstAbstractMediaDataPtr media);
     bool getNextPacket(QnUniversalRtpEncoder* rtpEncoder, nx::utils::ByteArray& buffer);
     bool isEof(QnUniversalRtpEncoder* rtpEncoder) const;
-    FfmpegMuxer::PacketTimestamp getLastTimestamps(nx::Uuid deviceId) const;
     int64_t getLastTimestampMs() const { return m_lastTimestampMs; } //< Required for reconnection.
 
     /**

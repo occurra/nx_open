@@ -10,6 +10,7 @@
 #include <nx/media/media_data_packet.h>
 #include <nx/utils/buffer.h>
 #include <nx/utils/uuid.h>
+#include <transcoding/ffmpeg_muxer.h>
 
 namespace nx::webrtc {
 
@@ -61,8 +62,8 @@ public:
      */
     bool getNextPacket(nx::Buffer& message);
 
-    /** The RTP timestamp of the device's last frame taken. */
-    uint32_t lastRtpTimestamp(nx::Uuid deviceId) const;
+    /** The UTC and RTP timestamps of the device's last frame taken; zeros before the first. */
+    FfmpegMuxer::PacketTimestamp getLastTimestamps(nx::Uuid deviceId) const;
 
     /**
      * Restarts the device's RTP timeline at baseUs with its next frame, the way
@@ -75,7 +76,7 @@ private:
     {
         uint32_t frameIndex = 0;
         int64_t rtpOffset90k = 0;
-        uint32_t lastRtpTimestamp = 0;
+        FfmpegMuxer::PacketTimestamp lastTimestamps;
         std::optional<std::chrono::microseconds> pendingBaseUs;
     };
 

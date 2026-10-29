@@ -104,7 +104,7 @@ void DataChannelVideo::setDataPacket(const QnConstAbstractMediaDataPtr& media)
     frame.rtpTimestamp = (uint32_t) (toRtp90k(media->timestamp) + device.rtpOffset90k);
     frame.timestampUs = media->timestamp;
     frame.flags = media->flags;
-    device.lastRtpTimestamp = frame.rtpTimestamp;
+    device.lastTimestamps = {frame.timestampUs, frame.rtpTimestamp};
 
     const size_t size = media->dataSize();
     m_message = makeMessage(frame, (const uint8_t*) media->data(), size);
@@ -134,10 +134,12 @@ bool DataChannelVideo::getNextPacket(nx::Buffer& message)
     return true;
 }
 
-uint32_t DataChannelVideo::lastRtpTimestamp(nx::Uuid deviceId) const
+FfmpegMuxer::PacketTimestamp DataChannelVideo::getLastTimestamps(nx::Uuid deviceId) const
 {
     const auto device = m_devices.find(deviceId);
-    return device == m_devices.end() ? 0 : device->second.lastRtpTimestamp;
+    if (device == m_devices.end())
+        return FfmpegMuxer::PacketTimestamp();
+    return device->second.lastTimestamps;
 }
 
 void DataChannelVideo::rebaseOutputTimestamps(

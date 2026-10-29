@@ -620,6 +620,7 @@ bool Session::removeProviderNow(nx::Uuid deviceId)
         std::erase(m_addedSinceOffer, deviceId);
     }
     p->stop();
+    m_consumer->forgetVideoTransport(deviceId);
     bool deactivated = false;
     if (auto track = m_tracks->videoTrack(deviceId))
     {
@@ -875,6 +876,7 @@ AbstractCameraDataProviderPtr Session::retargetProviderNow(
         wasRefused = m_unsupportedVideoCodecs.erase(fromDeviceId) > 0;
     }
     previous->stop();
+    m_consumer->forgetVideoTransport(fromDeviceId);
 
     // Hand the negotiated tracks and their encoders to the new device. The peer
     // knows nothing of device ids - it sees the same m-lines, payload types and

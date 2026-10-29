@@ -378,16 +378,4 @@ bool Transcoder::isEof(QnUniversalRtpEncoder* rtpEncoder) const
     return rtpEncoder->isEof();
 }
 
-FfmpegMuxer::PacketTimestamp Transcoder::getLastTimestamps(nx::Uuid deviceId) const
-{
-    // Per device: every camera has its own RTP timeline, and a sync anchor built from
-    // another camera's encoder is exactly as useless as a missing one.
-    QnUniversalRtpEncoder* rtpEncoder = videoEncoder(deviceId);
-    if (!rtpEncoder)
-        rtpEncoder = audioEncoder(deviceId);
-    if (!rtpEncoder)
-        return FfmpegMuxer::PacketTimestamp(); //< Skip not supported data.
-    return rtpEncoder->getLastTimestamps();
-}
-
 } // namespace nx::webrtc

@@ -5,6 +5,7 @@
 #include <atomic>
 #include <map>
 #include <optional>
+#include <set>
 
 #include <nx/media/annexb_to_mp4.h>
 #include <nx/network/aio/basic_pollable.h>
@@ -137,6 +138,12 @@ public:
      */
     void setEnableMetadata(nx::Uuid deviceId, bool enableMetadata);
 
+    /**
+     * Forgets where deviceId's video travels, as the device leaves the session: the player
+     * forgets it too, so a device that comes back is told again by its first video packet.
+     */
+    void forgetVideoTransport(nx::Uuid deviceId);
+
     /** Effective subscription for deviceId: its override, else the default. */
     bool isMetadataEnabledFor(nx::Uuid deviceId) const;
 
@@ -157,13 +164,16 @@ private:
     /** Tells the player once per change where deviceId's video travels. */
     void noteVideoTransport(nx::Uuid deviceId, bool isDataChannel);
     /**
-     * Sends the RTP-to-UTC sync point of media, throttled per device; a seek's first packet and
-     * every pre-roll frame report at once, so the player can reveal exactly at the target.
+     * Whether media's device is due a sync point: throttled per device, while a seek's first
+     * packet, its first audio packet and every pre-roll frame are due at once, so the player can
+     * reveal exactly at the target and keeps its audio clock.
      */
-    void sendSyncPointIfDue(
-        const QnConstAbstractMediaDataPtr& media,
-        int64_t ntpTimestampUs,
-        uint32_t rtpTimestamp);
+    bool isSyncPointDue(const QnConstAbstractMediaDataPtr& media);
+    /**
+     * Sends deviceId's RTP-to-UTC mapping as it stands: its video's, from the data channel or the
+     * RTP encoder, and its audio's, each when there is one.
+     */
+    void sendSyncPoint(nx::Uuid deviceId);
     void handleRtcp(uint8_t* data, int size);
     void stopUnsafe();
     void sendMediaBuffer();
@@ -182,6 +192,8 @@ private:
     int m_stepSeq = 0;
     /** Per device, whether its last video packet went over the data channel. */
     std::map<nx::Uuid, bool> m_videoOverDataChannel;
+    /** Devices past a seek whose audio encoder has not taken a post-seek packet yet. */
+    std::set<nx::Uuid> m_staleAudioSync;
     std::chrono::milliseconds m_sendTimestampInterval{1000};
     /// Session default subscription. Atomic: written synchronously by setEnableMetadata (so a
     /// createProvider seeding a new provider right after sees it), read on both the session and
