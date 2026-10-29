@@ -512,8 +512,9 @@ bool DataChannel::handleRead()
                     processReceivedData((int) info.rcv_sid, (PayloadId) ntohl(info.rcv_ppid));
                 m_lastMessage.clear();
                 if (!openedBefore && m_dataChannelOpened)
-                    return ret && flushSavedMessages();
-                return ret;
+                    ret = ret && flushSavedMessages();
+                if (!ret)
+                    return false;
             }
         }
     }
