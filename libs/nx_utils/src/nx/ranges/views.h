@@ -5,7 +5,6 @@
 #include <ranges>
 
 #include <nx/concepts/ranges.h>
-#include <nx/ranges/views/cat_value.h>
 #include <nx/ranges/views/intersections.h>
 
 namespace nx::views {
