@@ -101,9 +101,12 @@ public:
         int streamId = -1,
         const nx::Uuid& deviceId = {},
         bool unreliableTransport = false);
+    /** Output into Data Channel transport; deviceId and unreliableTransport as for writeString. */
     bool writeBinary(
-        const std::string& data,
-        int streamId = -1); /**< Output into Data Channel transport. */
+        std::string data,
+        int streamId = -1,
+        const nx::Uuid& deviceId = {},
+        bool unreliableTransport = false);
     bool openDataChannel(
         const std::string& label,
         const std::string& protocol); /**< Open Data Channel. */

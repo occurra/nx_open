@@ -17,6 +17,7 @@
 #include "abstract_camera_data_provider.h"
 #include "camera_position.h"
 #include "media_queue.h"
+#include "webrtc_data_channel_video.h"
 
 namespace nx::webrtc {
 
@@ -151,6 +152,18 @@ private:
     /// the encoder and send a new SDP offer. Runs on the muxing thread.
     void requestCodecRenegotiation(const QnConstAbstractMediaDataPtr& media);
     void sendMetadata(const QnConstCompressedMetadataPtr& metadata);
+    /** Routes a video packet the peer's WebRTC path refuses; see DataChannelVideo. */
+    void sendVideoOverDataChannel(const QnConstAbstractMediaDataPtr& media);
+    /** Tells the player once per change where deviceId's video travels. */
+    void noteVideoTransport(nx::Uuid deviceId, bool isDataChannel);
+    /**
+     * Sends the RTP-to-UTC sync point of media, throttled per device; a seek's first packet and
+     * every pre-roll frame report at once, so the player can reveal exactly at the target.
+     */
+    void sendSyncPointIfDue(
+        const QnConstAbstractMediaDataPtr& media,
+        int64_t ntpTimestampUs,
+        uint32_t rtpTimestamp);
     void handleRtcp(uint8_t* data, int size);
     void stopUnsafe();
     void sendMediaBuffer();
@@ -167,6 +180,8 @@ private:
     std::map<nx::Uuid, int64_t> m_lastReportedTimestampUs;
     /** Sequence of the frame step in flight, echoed by its position report; 0 = none. */
     int m_stepSeq = 0;
+    /** Per device, whether its last video packet went over the data channel. */
+    std::map<nx::Uuid, bool> m_videoOverDataChannel;
     std::chrono::milliseconds m_sendTimestampInterval{1000};
     /// Session default subscription. Atomic: written synchronously by setEnableMetadata (so a
     /// createProvider seeding a new provider right after sees it), read on both the session and

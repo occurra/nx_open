@@ -111,7 +111,11 @@ public:
         const std::string& data,
         const nx::Uuid& deviceId = {},
         bool unreliableTransport = false);
-    void writeDataChannelBinary(const std::string& data);
+    /** As writeDataChannelString, for a binary message. */
+    void writeDataChannelBinary(
+        nx::Buffer data,
+        const nx::Uuid& deviceId = {},
+        bool unreliableTransport = false);
     /**
      * Drops the queued-but-unsent data-channel strings of deviceId. Called on
      * the first post-seek packet so the device's pre-seek overlay metadata
@@ -120,6 +124,11 @@ public:
      */
     void clearDataChannelStrings(const nx::Uuid& deviceId);
     int dataChannelQueueSize() const { return m_dataChannel.outputQueueSize(); }
+    /**
+     * Whether the data channel backlog is deep enough to pause the media pump; a shallow one is
+     * not congestion. onDataChannelQueueProgress() resumes the pump once it shrinks.
+     */
+    bool isDataChannelBacklogDeep() const;
 
     virtual IceCandidate::Filter type() const = 0;
     virtual nx::network::SocketAddress iceRemoteAddress() const = 0;

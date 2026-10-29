@@ -57,6 +57,11 @@ public:
      * the reply with it; server-initiated statuses (end of archive, reconnect) carry none.
      */
     void handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus result, int seq = 0);
+    /**
+     * Sends {"deviceId", "videoTransport": "dataChannel" | "rtp"}: where the camera's video
+     * travels from now on, so the player reads the right source. See DataChannelVideo.
+     */
+    void sendVideoTransport(nx::Uuid deviceId, bool isDataChannel);
 
     std::string idForToStringFromPtr() const;
 

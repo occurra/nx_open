@@ -538,7 +538,9 @@ int DataChannel::removeQueuedStrings(const nx::Uuid& deviceId)
     while (!m_outputQueue.empty())
     {
         auto& message = m_outputQueue.front();
-        if (message.type == Message::Type::string && message.deviceId == deviceId)
+        const bool isUserMessage = message.type == Message::Type::string
+            || message.type == Message::Type::binary;
+        if (isUserMessage && message.deviceId == deviceId)
             ++removed;
         else
             kept.push(std::move(message));
@@ -775,11 +777,16 @@ bool DataChannel::writeString(
         {Message::Type::string, streamId, data, true, deviceId, unreliableTransport});
 }
 
-bool DataChannel::writeBinary(const std::string& data, int streamId)
+bool DataChannel::writeBinary(
+    std::string data,
+    int streamId,
+    const nx::Uuid& deviceId,
+    bool unreliableTransport)
 {
     if (streamId < 0)
         streamId = defaultStream();
-    return writeUserMessage({Message::Type::binary, streamId, data, true});
+    return writeUserMessage(
+        {Message::Type::binary, streamId, std::move(data), true, deviceId, unreliableTransport});
 }
 
 bool DataChannel::flushSavedMessages()
@@ -851,7 +858,9 @@ bool DataChannel::writeMessage(Message message)
             message.type,
             message.streamId,
             {message.data.data() + offset, len},
-            len + offset == message.data.size() ? message.eor : false};
+            len + offset == message.data.size() ? message.eor : false,
+            message.deviceId,
+            message.unreliableTransport};
         m_outputQueue.emplace(std::move(fragmentedMessage));
         offset += len;
     }

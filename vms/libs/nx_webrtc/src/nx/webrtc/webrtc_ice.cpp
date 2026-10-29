@@ -539,8 +539,7 @@ void Ice::sendNextBufferUnsafe()
         // the missing edge, so the ack fires the moment the backlog clears.
         if (auto session = m_session.lock())
         {
-            if (session->consumer()
-                && m_dataChannel.outputQueueSize() < kMaxDataQueueForParallelSend)
+            if (session->consumer() && !isDataChannelBacklogDeep())
                 session->consumer()->onDataSent(/*success*/ true);
         }
         return;
@@ -600,12 +599,17 @@ void Ice::writeDataChannelString(
         });
 }
 
-void Ice::writeDataChannelBinary(const std::string& data)
+void Ice::writeDataChannelBinary(
+    nx::Buffer data,
+    const nx::Uuid& deviceId,
+    bool unreliableTransport)
 {
     m_pollable.dispatch(
-        [this, data]()
+        [this, data = std::move(data), deviceId, unreliableTransport]() mutable
         {
-            if (!m_dataChannel.writeBinary(data))
+            const bool isWritten = m_dataChannel.writeBinary(
+                data.takeStdString(), /*streamId*/ -1, deviceId, unreliableTransport);
+            if (!isWritten)
                 stopUnsafe();
         });
 }
@@ -637,6 +641,11 @@ void Ice::onDataChannelOpened(int streamId)
         session->transceiver()->onDataChannelOpened(streamId);
 }
 
+bool Ice::isDataChannelBacklogDeep() const
+{
+    return m_dataChannel.outputQueueSize() >= kMaxDataQueueForParallelSend;
+}
+
 void Ice::onDataChannelQueueProgress()
 {
     auto session = m_session.lock();
@@ -653,7 +662,7 @@ void Ice::onDataChannelQueueProgress()
     if (m_hasBufferToSend || !m_sendBuffers.empty())
         return;
 
-    if (m_dataChannel.outputQueueSize() >= kMaxDataQueueForParallelSend)
+    if (isDataChannelBacklogDeep())
         return; //< Still too deep to let the pump run.
 
     if (session && session->consumer())

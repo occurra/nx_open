@@ -593,6 +593,26 @@ void Streamer::handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus resu
     ice()->writeDataChannelString(data);
 }
 
+void Streamer::sendVideoTransport(nx::Uuid deviceId, bool isDataChannel)
+{
+    rapidjson::Document message(rapidjson::kObjectType);
+    const std::string deviceIdStr = deviceId.toSimpleStdString();
+    message.AddMember(
+        "deviceId",
+        rapidjson::StringRef(deviceIdStr.c_str()),
+        message.GetAllocator());
+    message.AddMember(
+        "videoTransport",
+        rapidjson::StringRef(isDataChannel ? "dataChannel" : "rtp"),
+        message.GetAllocator());
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    message.Accept(writer);
+    NX_DEBUG(this, "Write video transport: %1", buffer.GetString());
+
+    ice()->writeDataChannelString(std::string(buffer.GetString(), buffer.GetSize()));
+}
+
 NX_REFLECTION_INSTRUMENT(CameraPosition, (deviceId)(timestampUs))
 
 namespace {

@@ -11,6 +11,7 @@
 #include <rtsp/rtp_universal_encoder.h>
 #include <rtsp/rtsp_ffmpeg_encoder.h>
 
+#include "webrtc_data_channel_video.h"
 #include "webrtc_utils.h"
 
 class QnMediaServerModule;
@@ -57,6 +58,12 @@ public:
     void retargetDevice(nx::Uuid from, nx::Uuid to);
 
     // API for Consumer.
+    /**
+     * Feeds media to the device's encoder of its type, after the rebase a seek armed for the
+     * device when media starts it. Video the peer's WebRTC path refuses goes to
+     * dataChannelVideo() instead, which takes the rebase like an encoder.
+     * @return The RTP encoder that took media; null when none did.
+     */
     QnUniversalRtpEncoder* setDataPacket(nx::Uuid deviceId, QnConstAbstractMediaDataPtr media);
     bool getNextPacket(QnUniversalRtpEncoder* rtpEncoder, nx::utils::ByteArray& buffer);
     bool isEof(QnUniversalRtpEncoder* rtpEncoder) const;
@@ -76,6 +83,9 @@ public:
      * a packet, so an encoder rebuilt for a codec change gets the same base.
      */
     void setPendingRtpRebase(nx::Uuid deviceId, std::optional<int> seekSeq, int64_t rtpBase90k);
+
+    /** The encoder of the video the peer's WebRTC path refuses; see DataChannelVideo. */
+    DataChannelVideo& dataChannelVideo() { return m_dataChannelVideo; }
 
 private:
     QnUniversalRtpEncoderPtr createRtpEncoder(
@@ -103,6 +113,7 @@ private:
     Session* m_session;
     std::map<nx::Uuid, QnUniversalRtpEncoderPtr> m_videoEncoders;
     std::map<nx::Uuid, QnUniversalRtpEncoderPtr> m_audioEncoders;
+    DataChannelVideo m_dataChannelVideo;
     std::map<nx::Uuid, PendingRtpRebase> m_pendingRtpRebase;
     // Unwraps the player's 32-bit RTP rebase (base % 2^32) into a monotonic
     // 64-bit timeline per device. Over a long scrub the wire value wraps past
