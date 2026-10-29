@@ -298,17 +298,18 @@ TEST(WebRTC, DataChannelFlushKeepsTheFrontMessageWhole)
     ASSERT_TRUE(test.client().openDataChannel());
     ASSERT_TRUE(test.flushQueues());
 
+    // Large enough for usrsctp to take only a part of the first one.
     const auto deviceId = nx::Uuid::createUuid();
-    const std::string frame(1024 * 1024, 'v');
+    const std::string frame(4 * 1024 * 1024, 'v');
     ASSERT_TRUE(test.client().writeBinary(frame, deviceId));
     ASSERT_TRUE(test.client().writeBinary(frame, deviceId));
-    ASSERT_GT(test.client().outputQueueSize(), 1);
 
-    test.client().removeQueuedStrings(deviceId);
+    EXPECT_GT(test.client().removeQueuedStrings(deviceId), 0) << "the second frame stays queued";
     ASSERT_TRUE(test.client().writeString("after"));
     ASSERT_TRUE(test.flushQueues());
 
     EXPECT_EQ(test.server().lastString(), "after");
+    EXPECT_EQ(test.server().receivedCount(), 2) << "the first frame, then the string, unglued";
 }
 
 // Receiving data must not look like progress on the receiver: only a peer that had
