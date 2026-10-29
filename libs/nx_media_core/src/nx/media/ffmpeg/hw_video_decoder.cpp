@@ -9,8 +9,6 @@
 #include <nx/utils/log/log.h>
 #include <nx/utils/scope_guard.h>
 
-#include "shared_memory_frame_allocator.h"
-
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavutil/cpu.h>
@@ -36,16 +34,7 @@ static enum AVPixelFormat getHwFormat(AVCodecContext* ctx, const enum AVPixelFor
         return AV_PIX_FMT_NONE;
     }
 
-    const auto* const bufferContext =
-        static_cast<const nx::media::ffmpeg::FfmpegSharedMemoryBufferContext*>(ctx->opaque);
-    if (bufferContext->magic != nx::media::ffmpeg::FfmpegSharedMemoryBufferContext::kMagic
-        || !bufferContext->owner)
-    {
-        NX_DEBUG(NX_SCOPE_TAG, "Failed to get HW surface format, invalid buffer context");
-        return AV_PIX_FMT_NONE;
-    }
-
-    auto nxDecoder = static_cast<nx::media::ffmpeg::HwVideoDecoder*>(bufferContext->owner);
+    auto nxDecoder = static_cast<nx::media::ffmpeg::HwVideoDecoder*>(ctx->opaque);
     auto format = nxDecoder->getPixelFormat();
     const enum AVPixelFormat* p;
     for (p = pix_fmts; *p != -1; p++)
@@ -113,14 +102,10 @@ HwVideoDecoder::HwVideoDecoder(
     nx::metric::Storage* metrics,
     const std::string& device,
     std::unique_ptr<AvOptions> options,
-    InitFunc initFunc,
-    FfmpegSharedMemoryAllocatorPtr sharedMemoryAllocator,
-    bool useSharedMemoryForSoftwareFallback):
+    InitFunc initFunc):
     m_type(type),
     m_initFunc(initFunc),
-    m_metrics(metrics),
-    m_sharedMemoryAllocator(std::move(sharedMemoryAllocator)),
-    m_useSharedMemoryForSoftwareFallback(useSharedMemoryForSoftwareFallback)
+    m_metrics(metrics)
 {
     if (m_metrics)
         m_metrics->decoders()++;
@@ -179,7 +164,6 @@ bool HwVideoDecoder::initialize(const QnConstCompressedVideoDataPtr& data)
     if (!initializeHardware(data))
     {
         // If HW init fails we fallback to software decode in the same decoder instance.
-        // Isolated-mode SHM behavior is handled inside initializeSoftware().
         NX_DEBUG(this, "Failed to initialize hardware video decoder, try to use software version");
         return initializeSoftware(data);
     }
@@ -188,8 +172,6 @@ bool HwVideoDecoder::initialize(const QnConstCompressedVideoDataPtr& data)
 
 bool HwVideoDecoder::initializeSoftware(const QnConstCompressedVideoDataPtr& data)
 {
-    m_bufferContext.reset();
-
     auto codec = avcodec_find_decoder(data->compressionType);
     if (codec == nullptr)
     {
@@ -207,17 +189,6 @@ bool HwVideoDecoder::initializeSoftware(const QnConstCompressedVideoDataPtr& dat
     }
     if (data->context)
         data->context->toAvCodecContext(m_decoderContext);
-
-    if (m_useSharedMemoryForSoftwareFallback)
-    {
-        // Important for isolated plugins: when HW decoder falls back to SW decode, FFmpeg should
-        // allocate output frame planes in FfmpegSharedMemory from the beginning.
-        m_decoderContext->get_buffer2 = getFfmpegSharedMemoryBuffer;
-        m_bufferContext = std::make_unique<FfmpegSharedMemoryBufferContext>();
-        m_bufferContext->owner = this;
-        m_bufferContext->allocator = m_sharedMemoryAllocator;
-        m_decoderContext->opaque = m_bufferContext.get();
-    }
 
     if (m_mtDecodingPolicy != MultiThreadDecodePolicy::disabled)
     {
@@ -246,8 +217,6 @@ bool HwVideoDecoder::initializeSoftware(const QnConstCompressedVideoDataPtr& dat
 
 bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& data)
 {
-    m_bufferContext.reset();
-
     if (!data || !data->context)
     {
         NX_WARNING(this, "Invalid data for HW decoder initialization");
@@ -312,11 +281,7 @@ bool HwVideoDecoder::initializeHardware(const QnConstCompressedVideoDataPtr& dat
         return false;
     }
 
-    m_bufferContext = std::make_unique<FfmpegSharedMemoryBufferContext>();
-    m_bufferContext->owner = this;
-    m_bufferContext->allocator = m_sharedMemoryAllocator;
-
-    m_decoderContext->opaque = m_bufferContext.get();
+    m_decoderContext->opaque = this;
     m_decoderContext->get_format = getHwFormat;
     int status = 0;
 
@@ -512,7 +477,6 @@ bool HwVideoDecoder::resetDecoder(const QnConstCompressedVideoDataPtr& data)
     if (m_hwDeviceContext)
         av_buffer_unref(&m_hwDeviceContext);
 
-    m_bufferContext.reset();
     m_targetPixelFormat = AV_PIX_FMT_NONE;
     m_lastDecodeResult = 0;
     m_hardwareResourceFailed = false;

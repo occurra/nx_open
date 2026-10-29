@@ -5,15 +5,11 @@
 #include <QtCore/QScopedPointer>
 
 #include <nx/media/ffmpeg/frame_info.h>
-#include <nx/media/ffmpeg/shared_memory_frame_allocator.h>
 
 #include "abstract_image_filter.h"
 
 NX_VMS_COMMON_API CLVideoDecoderOutputPtr rotateImage(
-    const CLConstVideoDecoderOutputPtr& frame,
-    int angle,
-    bool useSharedMemory = false,
-    const nx::media::ffmpeg::FfmpegSharedMemoryAllocatorPtr& sharedMemoryAllocator = {});
+    const CLConstVideoDecoderOutputPtr& frame, int angle);
 
 class NX_VMS_COMMON_API QnRotateImageFilter: public QnAbstractImageFilter
 {
