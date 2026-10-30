@@ -33,19 +33,38 @@ public:
     /** The identity of one frame, as its message carries it. */
     struct Frame
     {
+        /** The device the frame belongs to. */
         nx::Uuid deviceId;
+
+        /** The number of the frame in its device's stream, from 0. */
         uint32_t index = 0;
+
+        /** The time of the frame on its device's 90 kHz timeline, which sync points map to UTC. */
         uint32_t rtpTimestamp = 0;
+
+        /** The UTC time of the frame. */
         int64_t timestampUs = 0;
-        /** The packet's own flags; the player reads the key frame, BOF and pre-roll bits. */
+
+        /** The packet's own flags; the player reads the key frame and pre-roll bits. */
         QnAbstractMediaData::MediaFlags flags;
     };
 
+    /** The largest frame of H.264 level 5.2 in macroblocks: 4096x2304. */
     static constexpr int kMaxH264MacroblocksLevel52 = 36864;
+
+    /** The longest frame side of H.264 level 5.2: sqrt(8 * 36864) macroblocks. */
     static constexpr int kMaxH264PixelSideLevel52 = 8688;
+
+    /** The first bytes of a message, which tell it from the other binary messages. */
     static constexpr char kMagic[4] = {'O', 'C', 'D', 'V'};
+
+    /** The version of the message layout. */
     static constexpr uint8_t kVersion = 1;
+
+    /** The codec byte of an H.264 frame. */
     static constexpr uint8_t kCodecH264 = 1;
+
+    /** The size of the header in bytes; the access unit follows it. */
     static constexpr size_t kHeaderSize = 44;
 
     /** Whether the peer's WebRTC receive path refuses media, so it has to go through here. */
@@ -73,15 +92,26 @@ public:
     void rebaseOutputTimestamps(nx::Uuid deviceId, std::chrono::microseconds baseUs);
 
 private:
+    /** The timeline of one device. */
     struct Device
     {
+        /** The index of the device's next frame. */
         uint32_t frameIndex = 0;
+
+        /** What the last rebase adds to the 90 kHz clock of a frame's UTC time. */
         int64_t rtpOffset90k = 0;
+
+        /** The timestamps of the device's last frame, for its sync points. */
         FfmpegMuxer::PacketTimestamp lastTimestamps;
+
+        /** The base of a rebase that waits for the device's next frame. */
         std::optional<std::chrono::microseconds> pendingBaseUs;
     };
 
+    /** The timeline of each device that sent a frame or got a rebase. */
     std::map<nx::Uuid, Device> m_devices;
+
+    /** The message of the last frame taken, until getNextPacket() moves it out. */
     std::optional<nx::Buffer> m_message;
 };
 

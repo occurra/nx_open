@@ -335,13 +335,12 @@ QnUniversalRtpEncoder* Transcoder::setDataPacket(
             return nullptr; //< Skip not supported data.
 
         rtpEncoder->setDataPacket(media);
-        // A codec this encoder cannot accept raises EOF instead of consuming the
-        // packet: the Consumer holds the packet, the session rebuilds the encoder
-        // against the new codec and re-feeds it, and it is THAT encoder - brand
-        // new, its output timeline starting at zero - that needs the base applied.
-        // Spending it here regardless left a camera switch which changes codec
-        // streaming from zero while the player waited for the base it asked for,
-        // so it stayed frozen on the previous camera until the freeze timed out.
+        // A codec this encoder cannot accept raises EOF instead of consuming the packet: the
+        // Consumer holds the packet, the session rebuilds the encoder against the new codec and
+        // re-feeds it, and it is THAT encoder - brand new, its output timeline starting at zero -
+        // that needs the base applied. Spent here regardless, the base is gone when a camera
+        // switch changes codec: the new encoder streams from zero while the player waits for the
+        // base it asked for, frozen on the previous camera until the freeze times out.
         isTaken = !rtpEncoder->isEof();
     }
 
