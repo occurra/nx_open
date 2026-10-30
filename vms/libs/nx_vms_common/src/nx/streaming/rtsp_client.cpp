@@ -82,7 +82,8 @@ QString redactedRtsp(const QByteArray& message)
     // The name starts at a word boundary, so a long alphanumeric run is not rescanned from each of
     // its positions.
     static const QRegularExpression kPasswordParameter(
-        R"((?<![A-Za-z0-9_])([A-Za-z0-9_]*(?:password|pwd)=)[^&\s#]*)",
+        R"((?<![A-Za-z0-9_])((?:[A-Za-z0-9_]*(?:password|passwd|pwd)|pass)=))"
+        R"((?:"[^"]*"|'[^']*'|[^&\s#]*))",
         QRegularExpression::CaseInsensitiveOption);
 
     QString text = QString::fromUtf8(message);
