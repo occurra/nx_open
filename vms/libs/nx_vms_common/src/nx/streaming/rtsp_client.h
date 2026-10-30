@@ -399,6 +399,12 @@ public:
         std::unique_ptr<nx::network::AbstractStreamSocket> socket,
         const nx::Url& url = nx::Url());
 
+    /** Puts the camera id into the log tag. Set once, before the first call. */
+    void setLogId(const QString& logId) { m_logId = logId; }
+
+    /** Read by the log tag, which lets one filter select every line about a camera. */
+    QString idForToStringFromPtr() const { return m_logId; }
+
 private:
     struct SetupRequest
     {
@@ -541,4 +547,7 @@ private:
     CameraDiagnostics::Result sendRequestAndReceiveResponse(
         nx::network::http::Request&& request,
         QByteArray& response);
+
+    /** The camera id the log tag carries. */
+    QString m_logId;
 };
