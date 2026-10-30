@@ -2,6 +2,7 @@
 
 #include <QtCore/QDateTime>
 #include <QtCore/QLocale>
+#include <QtCore/QRegularExpression>
 #include <QtCore/QThread>
 #include <QtCore/QtGlobal>
 
@@ -65,6 +66,31 @@ auto splitKeyValue(const QString& nameAndValue, QChar delimiter)
     }
     return std::make_tuple(key.trimmed(), value.trimmed());
 };
+
+/**
+ * The text of an RTSP message without what must not reach a log: the value of the
+ * Authorization, Proxy-Authorization and KeyMgmt (SRTP key material) headers and URL user info.
+ * This library cannot use the driver redaction, which lives above it.
+ */
+QString redactedRtsp(const QByteArray& message)
+{
+    static const QRegularExpression kSecretHeader(
+        R"(^((?:Proxy-Authorization|Authorization|KeyMgmt):[ \t]*)[^\r\n]*)",
+        QRegularExpression::CaseInsensitiveOption | QRegularExpression::MultilineOption);
+    static const QRegularExpression kUserInfo(R"((://)[^/@\s]*@)");
+
+    QString text = QString::fromUtf8(message);
+    text.replace(kSecretHeader, "\\1***");
+    text.replace(kUserInfo, "\\1***@");
+    return text;
+}
+
+/** The status line and headers of a response; its body, an SDP or media, is not logged. */
+QByteArray responseHead(const QByteArray& response)
+{
+    const auto end = response.indexOf("\r\n\r\n");
+    return end < 0 ? response : response.left(end);
+}
 
 bool equalsIgnoreCase(std::string_view left, std::string_view right)
 {
@@ -945,6 +971,10 @@ bool QnRtspClient::sendRequestInternal(nx::network::http::Request&& request)
     addAdditionAttrs(&request);
     nx::Buffer requestBuf;
     request.serialize(&requestBuf);
+    NX_TRACE(
+        this,
+        "RTSP request:\n%1",
+        redactedRtsp(QByteArray(requestBuf.data(), requestBuf.size())));
     return m_tcpSock->send(requestBuf.data(), requestBuf.size()) > 0;
 }
 
@@ -2334,6 +2364,10 @@ CameraDiagnostics::Result QnRtspClient::sendRequestAndReceiveResponse(
 
         nx::Buffer requestBuf;
         request.serialize(&requestBuf);
+        NX_TRACE(
+            this,
+            "RTSP request:\n%1",
+            redactedRtsp(QByteArray(requestBuf.data(), requestBuf.size())));
         if (m_tcpSock->send(requestBuf.data(), requestBuf.size()) <= 0)
         {
             NX_DEBUG(this, "Failed to send request: %1", SystemError::getLastOSErrorText());
@@ -2345,6 +2379,7 @@ CameraDiagnostics::Result QnRtspClient::sendRequestAndReceiveResponse(
             NX_DEBUG(this, "Failed to read response");
             return CameraDiagnostics::ConnectionClosedUnexpectedlyResult(m_url.host(), port);
         }
+        NX_TRACE(this, "RTSP answer:\n%1", redactedRtsp(responseHead(responseBuf)));
 
         // Workaround for some buggy cameras that send '\r\n' after SDP in addition to
         // content-length.
