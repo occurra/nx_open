@@ -3,6 +3,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -47,7 +48,14 @@ public:
 
     // Interface for Consumer.
     Ice* ice();
-    void sendTimestamp(nx::Uuid deviceId, int64_t timestampUs, uint32_t rtpTimestamp);
+    /**
+     * {"deviceId", "timestampUs", "rtpTimestamp", "audio": {"timestampUs", "rtpTimestamp"}} - the
+     * RTP-to-UTC mapping of deviceId's video and, when it has some, of its audio.
+     */
+    void sendTimestamp(
+        nx::Uuid deviceId,
+        const FfmpegMuxer::PacketTimestamp& video,
+        const std::optional<FfmpegMuxer::PacketTimestamp>& audio);
     /** {"seq": n, "positions": [{"deviceId", "timestampUs"}, ...]} - where paused playback
      *  settled per camera after the frame step the client tagged with seq. */
     void sendPosition(int seq, const std::vector<CameraPosition>& positions);
@@ -57,6 +65,11 @@ public:
      * the reply with it; server-initiated statuses (end of archive, reconnect) carry none.
      */
     void handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus result, int seq = 0);
+    /**
+     * Sends {"deviceId", "videoTransport": "dataChannel" | "rtp"}: where the camera's video
+     * travels from now on, so the player reads the right source. See DataChannelVideo.
+     */
+    void sendVideoTransport(nx::Uuid deviceId, bool isDataChannel);
 
     std::string idForToStringFromPtr() const;
 

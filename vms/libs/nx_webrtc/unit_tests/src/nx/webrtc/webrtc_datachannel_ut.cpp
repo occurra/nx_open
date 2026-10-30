@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include <nx/utils/log/log.h>
+#include <nx/utils/uuid.h>
 #include <nx/webrtc/webrtc_datachannel.h>
 
 using namespace nx::webrtc;
@@ -39,7 +40,14 @@ public:
     }
     bool openDataChannel() { return m_dataChannel.openDataChannel("test-channel", ""); }
     bool writeString(const std::string& string) { return m_dataChannel.writeString(string); }
-    bool writeBinary(const std::string& data) { return m_dataChannel.writeBinary(data); }
+    bool writeBinary(const std::string& data, const nx::Uuid& deviceId = {})
+    {
+        return m_dataChannel.writeBinary(data, /*streamId*/ -1, deviceId);
+    }
+    int removeQueuedStrings(const nx::Uuid& deviceId)
+    {
+        return m_dataChannel.removeQueuedStrings(deviceId);
+    }
     bool handlePacket(const uint8_t* data, int size)
     {
         return m_dataChannel.handlePacket(data, size);
@@ -280,6 +288,28 @@ TEST(WebRTC, DataChannelReadsTheMessageBehindALargeOne)
 
     EXPECT_EQ(test.server().receivedCount(), 2);
     EXPECT_EQ(test.server().lastString(), "after");
+}
+
+// A seek's flush leaves the message at the front whole: the explicit EOR socket would glue the
+// next message onto one that lost its last fragment.
+TEST(WebRTC, DataChannelFlushKeepsTheFrontMessageWhole)
+{
+    TestDataChannel test;
+    ASSERT_TRUE(test.client().openDataChannel());
+    ASSERT_TRUE(test.flushQueues());
+
+    // Larger than the 4 MiB send buffer, so usrsctp takes only a part of the first one.
+    const auto deviceId = nx::Uuid::createUuid();
+    const std::string frame(8 * 1024 * 1024, 'v');
+    ASSERT_TRUE(test.client().writeBinary(frame, deviceId));
+    ASSERT_TRUE(test.client().writeBinary(frame, deviceId));
+
+    EXPECT_GT(test.client().removeQueuedStrings(deviceId), 0) << "the second frame stays queued";
+    ASSERT_TRUE(test.client().writeString("after"));
+    ASSERT_TRUE(test.flushQueues());
+
+    EXPECT_EQ(test.server().lastString(), "after");
+    EXPECT_EQ(test.server().receivedCount(), 2) << "the first frame, then the string, unglued";
 }
 
 // Receiving data must not look like progress on the receiver: only a peer that had

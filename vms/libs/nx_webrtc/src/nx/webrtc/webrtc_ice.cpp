@@ -539,8 +539,7 @@ void Ice::sendNextBufferUnsafe()
         // the missing edge, so the ack fires the moment the backlog clears.
         if (auto session = m_session.lock())
         {
-            if (session->consumer()
-                && m_dataChannel.outputQueueSize() < kMaxDataQueueForParallelSend)
+            if (session->consumer() && !isDataChannelBacklogDeep())
                 session->consumer()->onDataSent(/*success*/ true);
         }
         return;
@@ -590,22 +589,27 @@ void Ice::onDataChannelBinary(const std::string& data, int streamId)
 void Ice::writeDataChannelString(
     const std::string& data,
     const nx::Uuid& deviceId,
-    bool unreliableTransport)
+    DataChannel::Delivery delivery)
 {
     m_pollable.dispatch(
-        [this, data, deviceId, unreliableTransport]()
+        [this, data, deviceId, delivery]()
         {
-            if (!m_dataChannel.writeString(data, /*streamId*/ -1, deviceId, unreliableTransport))
+            if (!m_dataChannel.writeString(data, /*streamId*/ -1, deviceId, delivery))
                 stopUnsafe();
         });
 }
 
-void Ice::writeDataChannelBinary(const std::string& data)
+void Ice::writeDataChannelBinary(
+    nx::Buffer data,
+    const nx::Uuid& deviceId,
+    DataChannel::Delivery delivery)
 {
     m_pollable.dispatch(
-        [this, data]()
+        [this, data = std::move(data), deviceId, delivery]() mutable
         {
-            if (!m_dataChannel.writeBinary(data))
+            const bool isWritten = m_dataChannel.writeBinary(
+                data.takeStdString(), /*streamId*/ -1, deviceId, delivery);
+            if (!isWritten)
                 stopUnsafe();
         });
 }
@@ -617,7 +621,7 @@ void Ice::clearDataChannelStrings(const nx::Uuid& deviceId)
         {
             const int removed = m_dataChannel.removeQueuedStrings(deviceId);
             if (removed > 0)
-                NX_DEBUG(this, "Removed %1 queued data-channel strings of %2", removed, deviceId);
+                NX_DEBUG(this, "Removed %1 queued data-channel messages of %2", removed, deviceId);
         });
 }
 
@@ -637,6 +641,11 @@ void Ice::onDataChannelOpened(int streamId)
         session->transceiver()->onDataChannelOpened(streamId);
 }
 
+bool Ice::isDataChannelBacklogDeep() const
+{
+    return m_dataChannel.outputQueueSize() >= kMaxDataQueueForParallelSend;
+}
+
 void Ice::onDataChannelQueueProgress()
 {
     auto session = m_session.lock();
@@ -653,7 +662,7 @@ void Ice::onDataChannelQueueProgress()
     if (m_hasBufferToSend || !m_sendBuffers.empty())
         return;
 
-    if (m_dataChannel.outputQueueSize() >= kMaxDataQueueForParallelSend)
+    if (isDataChannelBacklogDeep())
         return; //< Still too deep to let the pump run.
 
     if (session && session->consumer())

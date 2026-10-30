@@ -103,23 +103,29 @@ public:
     aio::AbstractAioThread* getAioThread();
     /**
      * deviceId tags the message for the per-device flush on a seek (see
-     * clearDataChannelStrings); null leaves it untagged. unreliableTransport sends
-     * unordered and without retransmissions - see
-     * DataChannel::Message::unreliableTransport.
+     * clearDataChannelStrings); null leaves it untagged.
      */
     void writeDataChannelString(
         const std::string& data,
         const nx::Uuid& deviceId = {},
-        bool unreliableTransport = false);
-    void writeDataChannelBinary(const std::string& data);
+        DataChannel::Delivery delivery = DataChannel::Delivery::reliable);
+    /** As writeDataChannelString, for a binary message. */
+    void writeDataChannelBinary(
+        nx::Buffer data,
+        const nx::Uuid& deviceId = {},
+        DataChannel::Delivery delivery = DataChannel::Delivery::reliable);
     /**
-     * Drops the queued-but-unsent data-channel strings of deviceId. Called on
-     * the first post-seek packet so the device's pre-seek overlay metadata
-     * backlog does not go out ahead of the post-seek stream. See
-     * DataChannel::removeQueuedStrings().
+     * Drops the queued-but-unsent data-channel string and binary messages of deviceId. Called on
+     * the first post-seek packet so the device's pre-seek overlay metadata and video backlog does
+     * not go out ahead of the post-seek stream. See DataChannel::removeQueuedStrings().
      */
     void clearDataChannelStrings(const nx::Uuid& deviceId);
     int dataChannelQueueSize() const { return m_dataChannel.outputQueueSize(); }
+    /**
+     * Whether the data channel backlog is deep enough to pause the media pump; a shallow one is
+     * not congestion. onDataChannelQueueProgress() resumes the pump once it shrinks.
+     */
+    bool isDataChannelBacklogDeep() const;
 
     virtual IceCandidate::Filter type() const = 0;
     virtual nx::network::SocketAddress iceRemoteAddress() const = 0;

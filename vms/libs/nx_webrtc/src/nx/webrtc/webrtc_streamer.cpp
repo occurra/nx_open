@@ -543,7 +543,10 @@ Ice* Streamer::ice()
     return m_ice;
 }
 
-void Streamer::sendTimestamp(nx::Uuid deviceId, int64_t timestampUs, uint32_t rtpTimestamp)
+void Streamer::sendTimestamp(
+    nx::Uuid deviceId,
+    const FfmpegMuxer::PacketTimestamp& video,
+    const std::optional<FfmpegMuxer::PacketTimestamp>& audio)
 {
     rapidjson::Document message(rapidjson::kObjectType);
     // Simple (dash-less) form - the same key the client already uses for msid demux.
@@ -553,8 +556,15 @@ void Streamer::sendTimestamp(nx::Uuid deviceId, int64_t timestampUs, uint32_t rt
         "deviceId",
         rapidjson::StringRef(deviceIdStr.c_str()),
         message.GetAllocator());
-    message.AddMember("timestampUs", timestampUs, message.GetAllocator());
-    message.AddMember("rtpTimestamp", rtpTimestamp, message.GetAllocator());
+    message.AddMember("timestampUs", video.ntpTimestamp, message.GetAllocator());
+    message.AddMember("rtpTimestamp", video.rtpTimestamp, message.GetAllocator());
+    if (audio)
+    {
+        rapidjson::Value audioPair(rapidjson::kObjectType);
+        audioPair.AddMember("timestampUs", audio->ntpTimestamp, message.GetAllocator());
+        audioPair.AddMember("rtpTimestamp", audio->rtpTimestamp, message.GetAllocator());
+        message.AddMember("audio", audioPair, message.GetAllocator());
+    }
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     message.Accept(writer);
@@ -591,6 +601,26 @@ void Streamer::handleStreamStatus(nx::Uuid deviceId, Consumer::StreamStatus resu
     std::string data{buffer.GetString(), buffer.GetSize()};
 
     ice()->writeDataChannelString(data);
+}
+
+void Streamer::sendVideoTransport(nx::Uuid deviceId, bool isDataChannel)
+{
+    rapidjson::Document message(rapidjson::kObjectType);
+    const std::string deviceIdStr = deviceId.toSimpleStdString();
+    message.AddMember(
+        "deviceId",
+        rapidjson::StringRef(deviceIdStr.c_str()),
+        message.GetAllocator());
+    message.AddMember(
+        "videoTransport",
+        rapidjson::StringRef(isDataChannel ? "dataChannel" : "rtp"),
+        message.GetAllocator());
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    message.Accept(writer);
+    NX_DEBUG(this, "Write video transport: %1", buffer.GetString());
+
+    ice()->writeDataChannelString(std::string(buffer.GetString(), buffer.GetSize()));
 }
 
 NX_REFLECTION_INSTRUMENT(CameraPosition, (deviceId)(timestampUs))

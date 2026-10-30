@@ -414,14 +414,101 @@ void Consumer::sendMetadata(const QnConstCompressedMetadataPtr& metadata)
     std::string json = "{\"metadata\":";
     json.append(metadata->data(), metadata->dataSize());
     json.append("}");
-    // Unreliable transport: overlay metadata is keyed by its own timestamp and
-    // superseded ~30 times a second, so on a lossy path a lost box may simply
-    // vanish - retransmitting it would head-of-line block the messages behind
-    // it past their display windows.
     m_streamer->ice()->writeDataChannelString(
-        json,
-        metadata->deviceId,
-        /*unreliableTransport*/ true);
+        json, metadata->deviceId, DataChannel::Delivery::unreliable);
+}
+
+void Consumer::sendVideoOverDataChannel(const QnConstAbstractMediaDataPtr& media)
+{
+    const auto deviceId = media->deviceId;
+    noteVideoTransport(deviceId, /*isDataChannel*/ true);
+    m_session->muxer()->setDataPacket(deviceId, media);
+    auto& dataChannelVideo = m_session->muxer()->dataChannelVideo();
+    nx::Buffer message;
+    while (!m_needStop && dataChannelVideo.getNextPacket(message))
+    {
+        m_streamer->ice()->writeDataChannelBinary(
+            std::move(message), deviceId, DataChannel::Delivery::partiallyReliable);
+    }
+    if (isSyncPointDue(media))
+        sendSyncPoint(deviceId);
+}
+
+void Consumer::noteVideoTransport(nx::Uuid deviceId, bool isDataChannel)
+{
+    const auto [it, inserted] = m_videoOverDataChannel.try_emplace(deviceId, isDataChannel);
+    if (!inserted && it->second == isDataChannel)
+        return;
+    it->second = isDataChannel;
+    NX_DEBUG(
+        this,
+        "Device %1: video goes over the %2",
+        deviceId,
+        isDataChannel ? "data channel, the peer's WebRTC path refuses its frame size" : "RTP");
+    m_streamer->sendVideoTransport(deviceId, isDataChannel);
+}
+
+bool Consumer::isSyncPointDue(const QnConstAbstractMediaDataPtr& media)
+{
+    const auto deviceId = media->deviceId;
+    const bool isAudio = media->dataType == QnAbstractMediaData::AUDIO;
+    // A seek's first packet (BOF, set by QnArchiveStreamReader) and every pre-roll frame from
+    // the seek's key frame to its target report at once: the player hides them until the
+    // requested UTC and reveals exactly at the target, so it needs the mapping of each.
+    if (media->flags.testFlag(QnAbstractMediaData::MediaFlags_BOF)
+        || media->flags.testFlag(QnAbstractMediaData::MediaFlags_PreRoll))
+    {
+        m_lastReportedTimestampUs.erase(deviceId);
+    }
+    // The audio encoder is rebased with the seek, but until it takes a post-seek packet its
+    // last timestamps are from the old timeline; its first one reports at once.
+    if (media->flags.testFlag(QnAbstractMediaData::MediaFlags_BOF) && !isAudio)
+        m_staleAudioSync.insert(deviceId);
+    else if (isAudio && m_staleAudioSync.erase(deviceId) > 0)
+        m_lastReportedTimestampUs.erase(deviceId);
+
+    const auto lastReported = m_lastReportedTimestampUs.find(deviceId);
+    if (lastReported != m_lastReportedTimestampUs.end()
+        && std::abs(media->timestamp - lastReported->second)
+            <= m_sendTimestampInterval.count() * 1000)
+    {
+        return false;
+    }
+    m_lastReportedTimestampUs[deviceId] = media->timestamp;
+    return true;
+}
+
+void Consumer::sendSyncPoint(nx::Uuid deviceId)
+{
+    const auto emitted = [](const FfmpegMuxer::PacketTimestamp& timestamps)
+    {
+        return timestamps.ntpTimestamp != 0
+            ? std::optional(timestamps)
+            : std::optional<FfmpegMuxer::PacketTimestamp>();
+    };
+
+    // The video of a camera on the data channel has its own timeline there; its RTP video
+    // encoder takes nothing.
+    std::optional<FfmpegMuxer::PacketTimestamp> video;
+    const auto overDataChannel = m_videoOverDataChannel.find(deviceId);
+    if (overDataChannel != m_videoOverDataChannel.end() && overDataChannel->second)
+        video = emitted(m_session->muxer()->dataChannelVideo().getLastTimestamps(deviceId));
+    else if (const auto encoder = m_session->muxer()->videoEncoder(deviceId))
+        video = emitted(encoder->getLastTimestamps());
+
+    std::optional<FfmpegMuxer::PacketTimestamp> audio;
+    const auto audioEncoder = m_session->muxer()->audioEncoder(deviceId);
+    if (audioEncoder && !m_staleAudioSync.contains(deviceId))
+        audio = emitted(audioEncoder->getLastTimestamps());
+
+    // Without a video mapping there is nothing for the player to pace or to place on the
+    // timeline. The device stays due, so its first video mapping goes out at once.
+    if (!video)
+    {
+        m_lastReportedTimestampUs.erase(deviceId);
+        return;
+    }
+    m_streamer->sendTimestamp(deviceId, *video, audio);
 }
 
 void Consumer::processNextData()
@@ -493,6 +580,21 @@ void Consumer::processNextData()
             return;
         }
 
+        if (DataChannelVideo::isRefusedByWebRtc(media))
+        {
+            sendVideoOverDataChannel(media);
+            // A deep data channel backlog pauses the pump the way a busy socket does for RTP;
+            // Ice::onDataChannelQueueProgress() resumes it. A shallow one is not congestion.
+            if (m_streamer->ice()->isDataChannelBacklogDeep())
+            {
+                m_sendInProgress = true;
+                break;
+            }
+            continue;
+        }
+        if (media->dataType == QnAbstractMediaData::VIDEO)
+            noteVideoTransport(deviceId, /*isDataChannel*/ false);
+
         auto rtpEncoder = m_session->muxer()->setDataPacket(deviceId, media);
         if (!rtpEncoder)
         {
@@ -541,35 +643,11 @@ void Consumer::processNextData()
             return;
         }
 
-        if (media->dataType == QnAbstractMediaData::VIDEO
-            || media->dataType == QnAbstractMediaData::AUDIO)
+        if ((media->dataType == QnAbstractMediaData::VIDEO
+                || media->dataType == QnAbstractMediaData::AUDIO)
+            && isSyncPointDue(media))
         {
-            // Force an immediate RTP→NTP timestamp report (bypassing the
-            // m_sendTimestampInterval throttle) in two cases:
-            //   - BOF: first packet after a seek (set by QnArchiveStreamReader).
-            //   - PreRoll: every pre-roll frame from the seek I-frame up to and
-            //     including the seek target (the last pre-roll frame - the first
-            //     frame at or after the requested time). The player needs the
-            //     RTP→UTC mapping for each so it can hide them until the
-            //     requested UTC and reveal exactly at the target.
-            const bool isPreRoll = media->flags.testFlag(QnAbstractMediaData::MediaFlags_PreRoll);
-            const bool isBof = media->flags.testFlag(QnAbstractMediaData::MediaFlags_BOF);
-
-            if (isBof || isPreRoll)
-                m_lastReportedTimestampUs.erase(deviceId);
-
-            auto timestamps = m_session->muxer()->getLastTimestamps(deviceId);
-            const auto lastReported = m_lastReportedTimestampUs.find(deviceId);
-            if (lastReported == m_lastReportedTimestampUs.end()
-                || std::abs(timestamps.ntpTimestamp - lastReported->second)
-                    > m_sendTimestampInterval.count() * 1000)
-            {
-                m_lastReportedTimestampUs[deviceId] = timestamps.ntpTimestamp;
-                m_streamer->sendTimestamp(
-                    deviceId,
-                    timestamps.ntpTimestamp,
-                    timestamps.rtpTimestamp);
-            }
+            sendSyncPoint(deviceId);
         }
 
         if (!mediaBuffers.empty())
@@ -658,6 +736,16 @@ void Consumer::resumeAfterRenegotiation()
             m_renegotiationTimer.cancelSync();
             m_renegotiating = false;
             processNextData(); //< Pops the re-queued trigger packet first, then drains.
+        });
+}
+
+void Consumer::forgetVideoTransport(nx::Uuid deviceId)
+{
+    m_pollable.dispatch(
+        [this, deviceId]()
+        {
+            m_videoOverDataChannel.erase(deviceId);
+            m_staleAudioSync.erase(deviceId);
         });
 }
 
