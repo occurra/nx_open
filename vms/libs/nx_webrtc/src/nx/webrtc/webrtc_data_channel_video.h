@@ -23,9 +23,9 @@ namespace nx::webrtc {
  *
  * A message is a big-endian header followed by the Annex B access unit: "OCDV", the version, the
  * codec, two reserved bytes, the media flags, the device id as RFC 4122 bytes, the frame number,
- * the RTP timestamp, the UTC time in microseconds. Messages ride unordered and are retransmitted
- * only while fresh: the player puts late frames back in order, and a frame lost for good makes it
- * wait for the next key frame.
+ * the RTP timestamp, the UTC time in microseconds, the frame width and height. Messages ride
+ * unordered and are retransmitted only while fresh: the player puts late frames back in order,
+ * and a frame lost for good makes it wait for the next key frame.
  */
 class NX_WEBRTC_API DataChannelVideo
 {
@@ -47,6 +47,16 @@ public:
 
         /** The packet's own flags; the player reads the key frame and pre-roll bits. */
         QnAbstractMediaData::MediaFlags flags;
+
+        /**
+         * The frame width of the codec parameters, 0 when unknown. The player configures its
+         * decoder with the size: without it, Chrome picks a hardware decoder, which fails on a
+         * frame wider than it takes.
+         */
+        uint16_t width = 0;
+
+        /** The frame height of the codec parameters, 0 when unknown. */
+        uint16_t height = 0;
     };
 
     /** The largest frame of H.264 level 5.2 in macroblocks: 4096x2304. */
@@ -59,13 +69,13 @@ public:
     static constexpr char kMagic[4] = {'O', 'C', 'D', 'V'};
 
     /** The version of the message layout. */
-    static constexpr uint8_t kVersion = 1;
+    static constexpr uint8_t kVersion = 2;
 
     /** The codec byte of an H.264 frame. */
     static constexpr uint8_t kCodecH264 = 1;
 
     /** The size of the header in bytes; the access unit follows it. */
-    static constexpr size_t kHeaderSize = 44;
+    static constexpr size_t kHeaderSize = 48;
 
     /** Whether the peer's WebRTC receive path refuses media, so it has to go through here. */
     static bool isRefusedByWebRtc(const QnConstAbstractMediaDataPtr& media);

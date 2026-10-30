@@ -14,6 +14,7 @@ namespace {
 constexpr int64_t kRtpClockHz = 90000;
 constexpr int64_t kUsPerSecond = 1000000;
 constexpr uint32_t kByteBits = 8;
+constexpr uint32_t kHalfWordBits = 16;
 constexpr uint32_t kWordBits = 32;
 
 int64_t toRtp90k(int64_t timestampUs)
@@ -37,6 +38,8 @@ void writeHeader(uint8_t* header, const DataChannelVideo::Frame& frame)
     writer.putBits(kWordBits, frame.rtpTimestamp);
     writer.putBits(kWordBits, (uint32_t) ((uint64_t) frame.timestampUs >> kWordBits));
     writer.putBits(kWordBits, (uint32_t) frame.timestampUs);
+    writer.putBits(kHalfWordBits, frame.width);
+    writer.putBits(kHalfWordBits, frame.height);
     writer.flushBits();
 }
 
@@ -94,6 +97,12 @@ void DataChannelVideo::setDataPacket(const QnConstAbstractMediaDataPtr& media)
     frame.rtpTimestamp = (uint32_t) (toRtp90k(media->timestamp) + device.rtpOffset90k);
     frame.timestampUs = media->timestamp;
     frame.flags = media->flags;
+    const auto& context = media->getContext();
+    if (context)
+    {
+        frame.width = (uint16_t) context->getWidth();
+        frame.height = (uint16_t) context->getHeight();
+    }
     device.lastTimestamps = {frame.timestampUs, frame.rtpTimestamp};
 
     const size_t size = media->dataSize();
@@ -103,7 +112,6 @@ void DataChannelVideo::setDataPacket(const QnConstAbstractMediaDataPtr& media)
     // start codes. The extradata tells which: a size-prefixed unit whose first NAL is 256 to 511
     // bytes long starts with 00 00 01 too.
     uint8_t* accessUnit = (uint8_t*) m_message->data() + kHeaderSize;
-    const auto& context = media->getContext();
     const bool hasStartCodes = context && context->getExtradataSize() > 0
         ? nx::media::nal::isStartCode(context->getExtradata(), context->getExtradataSize()) > 0
         : nx::media::nal::isStartCode(accessUnit, size) > 0;
