@@ -298,9 +298,9 @@ TEST(WebRTC, DataChannelFlushKeepsTheFrontMessageWhole)
     ASSERT_TRUE(test.client().openDataChannel());
     ASSERT_TRUE(test.flushQueues());
 
-    // Large enough for usrsctp to take only a part of the first one.
+    // Larger than the 4 MiB send buffer, so usrsctp takes only a part of the first one.
     const auto deviceId = nx::Uuid::createUuid();
-    const std::string frame(4 * 1024 * 1024, 'v');
+    const std::string frame(8 * 1024 * 1024, 'v');
     ASSERT_TRUE(test.client().writeBinary(frame, deviceId));
     ASSERT_TRUE(test.client().writeBinary(frame, deviceId));
 

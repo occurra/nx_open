@@ -414,14 +414,8 @@ void Consumer::sendMetadata(const QnConstCompressedMetadataPtr& metadata)
     std::string json = "{\"metadata\":";
     json.append(metadata->data(), metadata->dataSize());
     json.append("}");
-    // Unreliable transport: overlay metadata is keyed by its own timestamp and
-    // superseded ~30 times a second, so on a lossy path a lost box may simply
-    // vanish - retransmitting it would head-of-line block the messages behind
-    // it past their display windows.
     m_streamer->ice()->writeDataChannelString(
-        json,
-        metadata->deviceId,
-        /*unreliableTransport*/ true);
+        json, metadata->deviceId, DataChannel::Delivery::unreliable);
 }
 
 void Consumer::sendVideoOverDataChannel(const QnConstAbstractMediaDataPtr& media)
@@ -434,7 +428,7 @@ void Consumer::sendVideoOverDataChannel(const QnConstAbstractMediaDataPtr& media
     while (!m_needStop && dataChannelVideo.getNextPacket(message))
     {
         m_streamer->ice()->writeDataChannelBinary(
-            std::move(message), deviceId, /*unreliableTransport*/ true);
+            std::move(message), deviceId, DataChannel::Delivery::partiallyReliable);
     }
     if (isSyncPointDue(media))
         sendSyncPoint(deviceId);

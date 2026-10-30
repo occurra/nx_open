@@ -38,6 +38,30 @@ public:
         partialReliableTimed = 0x02,
     };
 
+    /**
+     * How SCTP delivers a message. On a lossy path an ordered reliable stream head-of-line blocks
+     * every message behind a lost packet for a retransmission round trip - up to rto_min on a
+     * timeout - so a self-contained message that is stale soon rides unordered.
+     */
+    enum class Delivery
+    {
+        /** Ordered, retransmitted until it arrives: DCEP control, RTP sync points. */
+        reliable,
+
+        /**
+         * Unordered and sent once, so a lost message is gone: overlay metadata, keyed by its own
+         * timestamp and superseded ~30 times a second.
+         */
+        unreliable,
+
+        /**
+         * Unordered, retransmitted while fresh (RFC 3758 partial reliability with a lifetime):
+         * a video frame of hundreds of packets arrives whole only with retransmissions, and a
+         * stale one is worth nothing.
+         */
+        partiallyReliable,
+    };
+
 private:
     /**
      * NOTE: The order seems to be wrong but these are the actual values.
@@ -73,17 +97,7 @@ private:
          * points) - those are never flushed.
          */
         nx::Uuid deviceId;
-        /**
-         * Send unordered and without retransmissions (SCTP unordered flag +
-         * RFC 3758 partial reliability, zero retransmissions). On a lossy path
-         * an ordered reliable stream head-of-line blocks every message behind
-         * a lost packet for a retransmission round trip - up to rto_min on a
-         * timeout - which held overlay metadata past its display window. An
-         * unreliable message can afford to just vanish instead: overlay
-         * metadata is keyed by its own timestamp and superseded ~30 times a
-         * second. DCEP control and RTP sync points stay ordered and reliable.
-         */
-        bool unreliableTransport = false;
+        Delivery delivery = Delivery::reliable;
     };
 
 public:
@@ -93,20 +107,18 @@ public:
     /**
      * Output into Data Channel transport. deviceId tags the message for the
      * per-device removeQueuedStrings() flush; null leaves it untagged.
-     * unreliableTransport sends unordered and without retransmissions - see
-     * Message::unreliableTransport.
      */
     bool writeString(
         const std::string& data,
         int streamId = -1,
         const nx::Uuid& deviceId = {},
-        bool unreliableTransport = false);
-    /** Output into Data Channel transport; deviceId and unreliableTransport as for writeString. */
+        Delivery delivery = Delivery::reliable);
+    /** Output into Data Channel transport; deviceId as for writeString. */
     bool writeBinary(
         std::string data,
         int streamId = -1,
         const nx::Uuid& deviceId = {},
-        bool unreliableTransport = false);
+        Delivery delivery = Delivery::reliable);
     bool openDataChannel(
         const std::string& label,
         const std::string& protocol); /**< Open Data Channel. */

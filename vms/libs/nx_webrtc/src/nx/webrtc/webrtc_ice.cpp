@@ -589,12 +589,12 @@ void Ice::onDataChannelBinary(const std::string& data, int streamId)
 void Ice::writeDataChannelString(
     const std::string& data,
     const nx::Uuid& deviceId,
-    bool unreliableTransport)
+    DataChannel::Delivery delivery)
 {
     m_pollable.dispatch(
-        [this, data, deviceId, unreliableTransport]()
+        [this, data, deviceId, delivery]()
         {
-            if (!m_dataChannel.writeString(data, /*streamId*/ -1, deviceId, unreliableTransport))
+            if (!m_dataChannel.writeString(data, /*streamId*/ -1, deviceId, delivery))
                 stopUnsafe();
         });
 }
@@ -602,13 +602,13 @@ void Ice::writeDataChannelString(
 void Ice::writeDataChannelBinary(
     nx::Buffer data,
     const nx::Uuid& deviceId,
-    bool unreliableTransport)
+    DataChannel::Delivery delivery)
 {
     m_pollable.dispatch(
-        [this, data = std::move(data), deviceId, unreliableTransport]() mutable
+        [this, data = std::move(data), deviceId, delivery]() mutable
         {
             const bool isWritten = m_dataChannel.writeBinary(
-                data.takeStdString(), /*streamId*/ -1, deviceId, unreliableTransport);
+                data.takeStdString(), /*streamId*/ -1, deviceId, delivery);
             if (!isWritten)
                 stopUnsafe();
         });

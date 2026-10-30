@@ -103,19 +103,17 @@ public:
     aio::AbstractAioThread* getAioThread();
     /**
      * deviceId tags the message for the per-device flush on a seek (see
-     * clearDataChannelStrings); null leaves it untagged. unreliableTransport sends
-     * unordered and without retransmissions - see
-     * DataChannel::Message::unreliableTransport.
+     * clearDataChannelStrings); null leaves it untagged.
      */
     void writeDataChannelString(
         const std::string& data,
         const nx::Uuid& deviceId = {},
-        bool unreliableTransport = false);
+        DataChannel::Delivery delivery = DataChannel::Delivery::reliable);
     /** As writeDataChannelString, for a binary message. */
     void writeDataChannelBinary(
         nx::Buffer data,
         const nx::Uuid& deviceId = {},
-        bool unreliableTransport = false);
+        DataChannel::Delivery delivery = DataChannel::Delivery::reliable);
     /**
      * Drops the queued-but-unsent data-channel string and binary messages of
      * deviceId. Called on the first post-seek packet so the device's pre-seek

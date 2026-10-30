@@ -23,8 +23,9 @@ namespace nx::webrtc {
  *
  * A message is a big-endian header followed by the Annex B access unit: "OCDV", the version, the
  * codec, two reserved bytes, the media flags, the device id as RFC 4122 bytes, the frame number,
- * the RTP timestamp, the UTC time in microseconds. Messages ride unordered and without
- * retransmissions: a lost message loses its frame, and the player waits for the next key frame.
+ * the RTP timestamp, the UTC time in microseconds. Messages ride unordered and are retransmitted
+ * only while fresh: the player puts late frames back in order, and a frame lost for good makes it
+ * wait for the next key frame.
  */
 class NX_WEBRTC_API DataChannelVideo
 {
