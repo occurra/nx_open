@@ -318,23 +318,34 @@ QnUniversalRtpEncoder* Transcoder::setDataPacket(
             encoder->rebaseOutputTimestamps(baseUs);
         if (auto encoder = audioEncoder(deviceId))
             encoder->rebaseOutputTimestamps(baseUs);
+        m_dataChannelVideo.rebaseOutputTimestamps(deviceId, baseUs);
     }
 
-    QnUniversalRtpEncoder* rtpEncoder = getRtpEncoder(deviceId, media->dataType);
-    if (!rtpEncoder)
-        return nullptr; //< Skip not supported data.
+    QnUniversalRtpEncoder* rtpEncoder = nullptr;
+    bool isTaken = false;
+    if (DataChannelVideo::isRefusedByWebRtc(media))
+    {
+        m_dataChannelVideo.setDataPacket(media);
+        isTaken = true;
+    }
+    else
+    {
+        rtpEncoder = getRtpEncoder(deviceId, media->dataType);
+        if (!rtpEncoder)
+            return nullptr; //< Skip not supported data.
 
-    rtpEncoder->setDataPacket(media);
+        rtpEncoder->setDataPacket(media);
+        // A codec this encoder cannot accept raises EOF instead of consuming the packet: the
+        // Consumer holds the packet, the session rebuilds the encoder against the new codec and
+        // re-feeds it, and it is THAT encoder - brand new, its output timeline starting at zero -
+        // that needs the base applied. Spent here regardless, the base is gone when a camera
+        // switch changes codec: the new encoder streams from zero while the player waits for the
+        // base it asked for, frozen on the previous camera until the freeze times out.
+        isTaken = !rtpEncoder->isEof();
+    }
 
-    // The rebase is spent only once a packet is really taken. A codec this
-    // encoder cannot accept raises EOF instead of consuming it: the Consumer
-    // holds the packet, the session rebuilds the encoder against the new codec
-    // and re-feeds it, and it is THAT encoder - brand new, its output timeline
-    // starting at zero - that needs the base applied. Erasing here regardless
-    // left a camera switch which changes codec streaming from zero while the
-    // player waited for the base it asked for, so it stayed frozen on the
-    // previous camera until the freeze timed out.
-    if (rebaseMatches && !rtpEncoder->isEof())
+    // The rebase is spent only once a packet is really taken.
+    if (rebaseMatches && isTaken)
         m_pendingRtpRebase.erase(rebase);
 
     return rtpEncoder;
@@ -364,18 +375,6 @@ bool Transcoder::getNextPacket(QnUniversalRtpEncoder* rtpEncoder, nx::utils::Byt
 bool Transcoder::isEof(QnUniversalRtpEncoder* rtpEncoder) const
 {
     return rtpEncoder->isEof();
-}
-
-FfmpegMuxer::PacketTimestamp Transcoder::getLastTimestamps(nx::Uuid deviceId) const
-{
-    // Per device: every camera has its own RTP timeline, and a sync anchor built from
-    // another camera's encoder is exactly as useless as a missing one.
-    QnUniversalRtpEncoder* rtpEncoder = videoEncoder(deviceId);
-    if (!rtpEncoder)
-        rtpEncoder = audioEncoder(deviceId);
-    if (!rtpEncoder)
-        return FfmpegMuxer::PacketTimestamp(); //< Skip not supported data.
-    return rtpEncoder->getLastTimestamps();
 }
 
 } // namespace nx::webrtc

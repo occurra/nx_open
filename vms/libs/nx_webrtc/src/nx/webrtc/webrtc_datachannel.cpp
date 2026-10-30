@@ -2,12 +2,16 @@
 
 #include "webrtc_datachannel.h"
 
+#include <chrono>
+
 #include <nx/utils/log/log.h>
 #include <nx/utils/scope_guard.h>
 
 #include "webrtc_utils.h"
 
 namespace nx::webrtc {
+
+using namespace std::chrono;
 
 namespace {
 
@@ -28,6 +32,12 @@ struct OpenMessage
 
 constexpr size_t kDataChannelFragment = 0x4000;
 constexpr int kOutputQueueLimit = 1024 * 4; //< Can grow due to fragmentation.
+
+/**
+ * How long SCTP retransmits a partially reliable message before it abandons it: a few round trips
+ * of a relayed path, within the player's jitter buffer.
+ */
+constexpr milliseconds kPartiallyReliableLifetime = 300ms;
 
 // Messages written before the channel opens: a live start primes every camera's GOP, and each
 // pre-roll frame carries a timestamp message. The byte limit is what the output queue holds once
@@ -101,11 +111,12 @@ bool DataChannel::init()
             usrsctp_enable_crc32c_offload(); //< Computing CRC32 only for outgoing packets.
 
             // usrsctp_sysctl...().
-            // The send and receive window size of usrsctp is 256KiB, which is too small for
-            // realistic RTTs, therefore we increase it to 1MiB by default for better performance.
+            // The send buffer bounds the data in flight, so it caps a session at the buffer per
+            // round trip: a session of ten 10 Mbit/s cameras over a 200 ms path needs 2.5 MB in
+            // flight, and key frames burst above that. Chrome's receive window is 5 MiB.
             // See https://bugzilla.mozilla.org/show_bug.cgi?id=1051685
-            usrsctp_sysctl_set_sctp_recvspace(1024 * 1024);
-            usrsctp_sysctl_set_sctp_sendspace(1024 * 1024);
+            usrsctp_sysctl_set_sctp_recvspace(4 * 1024 * 1024);
+            usrsctp_sysctl_set_sctp_sendspace(4 * 1024 * 1024);
 
             // Increase the maximum number of chunks in the queue to 10K by default.
             usrsctp_sysctl_set_sctp_max_chunks_on_queue(10 * 1024);
@@ -532,13 +543,19 @@ int DataChannel::removeQueuedStrings(const nx::Uuid& deviceId)
         return 0;
 
     std::queue<Message> kept;
-    kept.push(std::move(m_outputQueue.front()));
-    m_outputQueue.pop();
+    // The front's message stays whole: with explicit EOR, the next message sent after a message
+    // that lost its last fragment would be glued onto it.
+    bool isFrontMessage = true;
     int removed = 0;
     while (!m_outputQueue.empty())
     {
         auto& message = m_outputQueue.front();
-        if (message.type == Message::Type::string && message.deviceId == deviceId)
+        const bool isUserMessage = message.type == Message::Type::string
+            || message.type == Message::Type::binary;
+        const bool isFrontFragment = isFrontMessage;
+        if (message.eor)
+            isFrontMessage = false;
+        if (!isFrontFragment && isUserMessage && message.deviceId == deviceId)
             ++removed;
         else
             kept.push(std::move(message));
@@ -605,26 +622,35 @@ DataChannel::WriteResult DataChannel::handleWrite()
         sendvSpa.sendv_sndinfo.snd_flags |= SCTP_EOR;
     else
         sendvSpa.sendv_sndinfo.snd_flags &= ~SCTP_EOR;
-    // Deliberately narrower than the prinfo condition below: the session-wide
-    // m_config.unreliableTransport (the tracker's MSE media-over-datachannel
-    // mode) keeps its historical "no retransmissions, but ordered" contract -
-    // an MSE consumer appends segments in order. Only the per-message flag,
-    // used for self-contained overlay metadata, also drops the ordering.
-    if (message.unreliableTransport)
+    if (message.delivery != Delivery::reliable)
         sendvSpa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
 
-    // Set prinfo. The PR-SCTP policy names read inverted: SCTP_PR_SCTP_NONE
-    // means no PARTIAL-reliability policy - i.e. fully reliable delivery with
-    // unlimited retransmissions - while SCTP_PR_SCTP_RTX caps retransmissions
-    // at pr_value, and pr_value = 0 sends exactly once: a lost chunk is
-    // abandoned via FORWARD-TSN instead of being retransmitted.
+    // Set prinfo. The PR-SCTP policy names read inverted: SCTP_PR_SCTP_NONE means no
+    // PARTIAL-reliability policy - i.e. fully reliable delivery with unlimited retransmissions.
+    // SCTP_PR_SCTP_RTX caps retransmissions at pr_value, and pr_value = 0 sends exactly once.
+    // SCTP_PR_SCTP_TTL retransmits for pr_value milliseconds. An abandoned chunk is skipped via
+    // FORWARD-TSN.
     sendvSpa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
 
-    if (m_config.unreliableTransport || message.unreliableTransport)
-        sendvSpa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
-    else
-        sendvSpa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
-    sendvSpa.sendv_prinfo.pr_value = 0;
+    switch (message.delivery)
+    {
+        case Delivery::partiallyReliable:
+            sendvSpa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
+            sendvSpa.sendv_prinfo.pr_value = (uint32_t) kPartiallyReliableLifetime.count();
+            break;
+        case Delivery::unreliable:
+            sendvSpa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
+            sendvSpa.sendv_prinfo.pr_value = 0;
+            break;
+        case Delivery::reliable:
+            // The session-wide m_config.unreliableTransport (the tracker's MSE
+            // media-over-datachannel mode) sends once but keeps the order: an MSE consumer
+            // appends segments in order.
+            sendvSpa.sendv_prinfo.pr_policy =
+                m_config.unreliableTransport ? SCTP_PR_SCTP_RTX : SCTP_PR_SCTP_NONE;
+            sendvSpa.sendv_prinfo.pr_value = 0;
+            break;
+    }
 
     ssize_t ret = 0;
     if (!message.data.empty())
@@ -767,19 +793,23 @@ bool DataChannel::writeString(
     const std::string& data,
     int streamId,
     const nx::Uuid& deviceId,
-    bool unreliableTransport)
+    Delivery delivery)
+{
+    if (streamId < 0)
+        streamId = defaultStream();
+    return writeUserMessage({Message::Type::string, streamId, data, true, deviceId, delivery});
+}
+
+bool DataChannel::writeBinary(
+    std::string data,
+    int streamId,
+    const nx::Uuid& deviceId,
+    Delivery delivery)
 {
     if (streamId < 0)
         streamId = defaultStream();
     return writeUserMessage(
-        {Message::Type::string, streamId, data, true, deviceId, unreliableTransport});
-}
-
-bool DataChannel::writeBinary(const std::string& data, int streamId)
-{
-    if (streamId < 0)
-        streamId = defaultStream();
-    return writeUserMessage({Message::Type::binary, streamId, data, true});
+        {Message::Type::binary, streamId, std::move(data), true, deviceId, delivery});
 }
 
 bool DataChannel::flushSavedMessages()
@@ -851,7 +881,9 @@ bool DataChannel::writeMessage(Message message)
             message.type,
             message.streamId,
             {message.data.data() + offset, len},
-            len + offset == message.data.size() ? message.eor : false};
+            len + offset == message.data.size() ? message.eor : false,
+            message.deviceId,
+            message.delivery};
         m_outputQueue.emplace(std::move(fragmentedMessage));
         offset += len;
     }
