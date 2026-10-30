@@ -44,6 +44,8 @@ TEST(DataChannelVideo, theMessageCarriesTheFrameAndItsAccessUnit)
     frame.rtpTimestamp = 0xFFFFFFF0;
     frame.timestampUs = 1761740000123456;
     frame.flags = QnAbstractMediaData::MediaFlags_AVKey | QnAbstractMediaData::MediaFlags_PreRoll;
+    frame.width = 5968;
+    frame.height = 2688;
 
     std::vector<uint8_t> data(100 * 1024);
     for (size_t i = 0; i < data.size(); ++i)
@@ -63,9 +65,21 @@ TEST(DataChannelVideo, theMessageCarriesTheFrameAndItsAccessUnit)
     EXPECT_EQ(qFromBigEndian<uint32_t>(message.data() + 28), 7U);
     EXPECT_EQ(qFromBigEndian<uint32_t>(message.data() + 32), 0xFFFFFFF0U);
     EXPECT_EQ(qFromBigEndian<int64_t>(message.data() + 36), 1761740000123456);
+    EXPECT_EQ(qFromBigEndian<uint16_t>(message.data() + 44), 5968);
+    EXPECT_EQ(qFromBigEndian<uint16_t>(message.data() + 46), 2688);
     EXPECT_EQ(
         std::string_view(message).substr(DataChannelVideo::kHeaderSize),
         std::string_view((const char*) data.data(), data.size()));
+}
+
+TEST(DataChannelVideo, theMessageCarriesTheFrameSizeOfTheCodecParameters)
+{
+    DataChannelVideo dataChannelVideo;
+    dataChannelVideo.setDataPacket(makeH264Packet(5968, 2688, true));
+    nx::Buffer message;
+    ASSERT_TRUE(dataChannelVideo.getNextPacket(message));
+    EXPECT_EQ(qFromBigEndian<uint16_t>(message.data() + 44), 5968);
+    EXPECT_EQ(qFromBigEndian<uint16_t>(message.data() + 46), 2688);
 }
 
 TEST(DataChannelVideo, aSizePrefixedUnitThatLooksLikeAStartCodeIsConverted)
