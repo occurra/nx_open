@@ -69,8 +69,9 @@ auto splitKeyValue(const QString& nameAndValue, QChar delimiter)
 
 /**
  * The text of an RTSP message without what must not reach a log: the value of the
- * Authorization, Proxy-Authorization and KeyMgmt (SRTP key material) headers and URL user info.
- * This library cannot use the driver redaction, which lives above it.
+ * Authorization, Proxy-Authorization and KeyMgmt (SRTP key material) headers, URL user info and
+ * password parameters of the request URL. This library cannot use the driver redaction, which
+ * lives above it.
  */
 QString redactedRtsp(const QByteArray& message)
 {
@@ -78,10 +79,16 @@ QString redactedRtsp(const QByteArray& message)
         R"(^((?:Proxy-Authorization|Authorization|KeyMgmt):[ \t]*)[^\r\n]*)",
         QRegularExpression::CaseInsensitiveOption | QRegularExpression::MultilineOption);
     static const QRegularExpression kUserInfo(R"((://)[^/@\s]*@)");
+    // The name starts at a word boundary, so a long alphanumeric run is not rescanned from each of
+    // its positions.
+    static const QRegularExpression kPasswordParameter(
+        R"((?<![A-Za-z0-9_])([A-Za-z0-9_]*(?:password|pwd)=)[^&\s#]*)",
+        QRegularExpression::CaseInsensitiveOption);
 
     QString text = QString::fromUtf8(message);
     text.replace(kSecretHeader, "\\1***");
     text.replace(kUserInfo, "\\1***@");
+    text.replace(kPasswordParameter, "\\1***");
     return text;
 }
 
