@@ -181,6 +181,28 @@ void fixProfileConstraints(QString& properties)
     }
 }
 
+// libwebrtc knows the H.264 levels up to 5.2 and rejects a profile-level-id above it, which takes
+// the whole m-line down. Frames too large for 5.2 go over the data channel, so the RTP track of
+// such a camera never carries video and its level only has to parse.
+// #: Convert string like: profile-level-id=64003C to profile-level-id=640034.
+void capLevelForWebRtc(QString& properties)
+{
+    constexpr int kMaxWebRtcLevel = 52;
+    const QString profile = "profile-level-id=";
+    auto index = properties.indexOf(profile);
+    if (index == -1)
+        return;
+
+    index = index + profile.length() + 4;
+    if (properties.size() < index + 2)
+        return;
+
+    bool status = false;
+    const int level = properties.mid(index, 2).toInt(&status, 16);
+    if (status && level > kMaxWebRtcLevel)
+        properties.replace(index, 2, QString::number(kMaxWebRtcLevel, 16));
+}
+
 QList<QString> getSdpAttributesFromContext(AVFormatContext* fmt, int payloadType, bool webRtcMode)
 {
     AVCodecParameters* codecpar = nullptr;
@@ -203,6 +225,7 @@ QList<QString> getSdpAttributesFromContext(AVFormatContext* fmt, int payloadType
             if (webRtcMode && isH264 && line.startsWith("a=fmtp"))
             {
                 fixProfileConstraints(line);
+                capLevelForWebRtc(line);
                 line.append("; level-asymmetry-allowed=1");
             }
 
