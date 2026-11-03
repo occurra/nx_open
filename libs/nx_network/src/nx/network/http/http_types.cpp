@@ -568,18 +568,22 @@ std::string Request::toString() const
 
 std::string getCookieValue(std::string_view name, const HttpHeaders& headers)
 {
-    auto cookieIter = headers.find("cookie");
-    if (cookieIter == headers.end())
-        return std::string();
-
-    auto splitter =
-        nx::utils::makeSplitter(cookieIter->second, nx::utils::separator::isAnyOf(';'));
-    while (splitter.next())
+    // A client can send more than one Cookie header.
+    const auto [begin, end] = headers.equal_range("cookie");
+    for (auto cookieIter = begin; cookieIter != end; ++cookieIter)
     {
-        const auto [tokens, count] =
-            nx::utils::split_n<2>(splitter.token(), nx::utils::separator::isAnyOf('='));
-        if (count > 1 && nx::utils::trim(tokens[0]) == name && tokens[1] != kDeletedCookieValue)
-            return std::string(tokens[1]);
+        auto splitter =
+            nx::utils::makeSplitter(cookieIter->second, nx::utils::separator::isAnyOf(';'));
+        while (splitter.next())
+        {
+            const auto [tokens, count] =
+                nx::utils::split_n<2>(splitter.token(), nx::utils::separator::isAnyOf('='));
+            if (count > 1 && nx::utils::trim(tokens[0]) == name
+                && tokens[1] != kDeletedCookieValue)
+            {
+                return std::string(tokens[1]);
+            }
+        }
     }
 
     return std::string();

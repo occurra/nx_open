@@ -947,6 +947,20 @@ TEST(HttpTypesRequest, removeCookieLast)
     ASSERT_EQ("name1=value1; name2=value2", getHeaderValue(request.headers, "Cookie"));
 }
 
+TEST(HttpTypesRequest, getCookieValueFromSecondCookieHeader)
+{
+    static constexpr char kTestRequest[] =
+        "GET http://192.168.0.25:7001/ HTTP/1.1\r\n"
+        "Cookie: name1=value1\r\n"
+        "Cookie: name2=value2\r\n"
+        "\r\n";
+
+    Request request;
+    ASSERT_TRUE(request.parse(kTestRequest));
+    ASSERT_EQ("value1", request.getCookieValue("name1"));
+    ASSERT_EQ("value2", request.getCookieValue("name2"));
+}
+
 //-------------------------------------------------------------------------------------------------
 // Response.
 
