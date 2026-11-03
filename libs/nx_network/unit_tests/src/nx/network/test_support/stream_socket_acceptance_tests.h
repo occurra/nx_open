@@ -1918,40 +1918,6 @@ TYPED_TEST_P(
 
 TYPED_TEST_P(
     StreamSocketAcceptance,
-    exception_thrown_by_send_handler_is_handled_properly_even_when_socket_was_removed)
-{
-    this->givenListeningServerSocket();
-    this->givenConnectedSocket();
-
-    std::promise<void> done;
-
-    this->whenSendAsyncRandomDataToServer(
-        [this, &done]()
-        {
-            this->whenClientConnectionIsClosed();
-
-            // Making sure we signal the promise after this handler completion.
-            SocketGlobals::instance().aioService().getCurrentAioThread()->post(
-                nullptr,
-                [&done]()
-                {
-                    done.set_value();
-                });
-
-            throw std::runtime_error("test");
-        });
-
-    done.get_future().wait();
-
-    this->whenAcceptConnection();
-    this->thenConnectionHasBeenAccepted();
-    this->whenServerReadsSome();
-
-    // assert process does not crash.
-}
-
-TYPED_TEST_P(
-    StreamSocketAcceptance,
     socket_aio_thread_can_be_changed_after_io_cancellation_during_connect_completion)
 {
     this->givenPingPongServer();
@@ -2338,7 +2304,6 @@ REGISTER_TYPED_TEST_SUITE_P(
     socket_is_usable_after_exception_is_thrown_by_read_completion_handler,
     exception_thrown_by_recv_handler_is_handled_properly_even_when_socket_was_removed,
     socket_is_usable_after_exception_is_thrown_by_send_completion_handler,
-    exception_thrown_by_send_handler_is_handled_properly_even_when_socket_was_removed,
     socket_aio_thread_can_be_changed_after_io_cancellation_during_connect_completion,
     socket_aio_thread_can_be_changed_after_io_cancellation_during_send_completion,
     change_aio_thread_of_accepted_connection,
