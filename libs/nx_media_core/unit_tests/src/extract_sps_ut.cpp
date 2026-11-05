@@ -97,6 +97,35 @@ TEST(ExtractSpsH264, extradataInAvccFormat)
     EXPECT_EQ(kH264Level, sps.level_idc);
 }
 
+// The record ends after the SPS: its PPS count is missing.
+TEST(ExtractSpsH264, avccWithoutPps)
+{
+    const auto avcc = h264Avcc();
+    const std::vector<uint8_t> truncated(avcc.begin(), avcc.begin() + 26);
+
+    h264::SequenceParameterSet sps;
+    ASSERT_TRUE(h264::extractSps(truncated.data(), (int) truncated.size(), sps));
+    EXPECT_EQ(kH264Profile, sps.profile_idc);
+}
+
+TEST(ExtractSpsH264, avccWithTruncatedSpsSize)
+{
+    const auto avcc = h264Avcc();
+    const std::vector<uint8_t> truncated(avcc.begin(), avcc.begin() + 7);
+
+    h264::SequenceParameterSet sps;
+    EXPECT_FALSE(h264::extractSps(truncated.data(), (int) truncated.size(), sps));
+}
+
+TEST(ExtractSpsH264, avccWithTruncatedSps)
+{
+    const auto avcc = h264Avcc();
+    const std::vector<uint8_t> truncated(avcc.begin(), avcc.begin() + 20);
+
+    h264::SequenceParameterSet sps;
+    EXPECT_FALSE(h264::extractSps(truncated.data(), (int) truncated.size(), sps));
+}
+
 TEST(ExtractSpsH264, extradataInAnnexBFormat)
 {
     h264::SequenceParameterSet sps;
