@@ -24,4 +24,10 @@ NX_MEDIA_CORE_API bool extractSps(
     const QnCompressedVideoData* videoData,
     SequenceParameterSet& sps);
 
+/** Reads the SPS from extradata in avcC or Annex B format. */
+NX_MEDIA_CORE_API bool extractSps(
+    const uint8_t* extradata,
+    int extradataSize,
+    SequenceParameterSet& sps);
+
 } // namespace nx::media::h264

@@ -23,26 +23,10 @@ bool isExtradataInMp4Format(const QnCompressedVideoData* data)
         && data->context->getExtradata()[0] == 1; // configurationVersion
 }
 
-bool extractSpsH265(const QnCompressedVideoData* data, h265::SequenceParameterSet& sps)
+static bool parseFirstSps(
+    const std::vector<nal::NalUnitInfo>& nalUnits,
+    h265::SequenceParameterSet& sps)
 {
-    std::vector<nal::NalUnitInfo> nalUnits;
-    if (isExtradataInMp4Format(data))
-    {
-        h265::HEVCDecoderConfigurationRecord record;
-        if (!record.read(data->context->getExtradata(), data->context->getExtradataSize()))
-        {
-            NX_DEBUG(NX_SCOPE_TAG, "Failed to parse H265 extradata");
-            return false;
-        }
-        if (record.sps.empty())
-        {
-            NX_DEBUG(NX_SCOPE_TAG, "No SPS in extradata");
-            return false;
-        }
-        return parseNalUnit(record.sps[0].data(), record.sps[0].size(), sps);
-    }
-
-    nalUnits = nal::findNalUnitsAnnexB((const uint8_t*) data->data(), data->dataSize());
     for (const auto& nalu: nalUnits)
     {
         h265::NalUnitHeader packetHeader;
@@ -58,6 +42,37 @@ bool extractSpsH265(const QnCompressedVideoData* data, h265::SequenceParameterSe
         }
     }
     return false;
+}
+
+bool extractSpsH265(const QnCompressedVideoData* data, h265::SequenceParameterSet& sps)
+{
+    if (isExtradataInMp4Format(data))
+    {
+        return extractSpsH265(
+            data->context->getExtradata(), data->context->getExtradataSize(), sps);
+    }
+    return parseFirstSps(
+        nal::findNalUnitsAnnexB((const uint8_t*) data->data(), data->dataSize()), sps);
+}
+
+bool extractSpsH265(const uint8_t* extradata, int extradataSize, h265::SequenceParameterSet& sps)
+{
+    if (extradataSize >= h265::HEVCDecoderConfigurationRecord::kMinSize && extradata[0] == 1)
+    {
+        h265::HEVCDecoderConfigurationRecord record;
+        if (!record.read(extradata, extradataSize))
+        {
+            NX_DEBUG(NX_SCOPE_TAG, "Failed to parse H265 extradata");
+            return false;
+        }
+        if (record.sps.empty())
+        {
+            NX_DEBUG(NX_SCOPE_TAG, "No SPS in extradata");
+            return false;
+        }
+        return parseNalUnit(record.sps[0].data(), record.sps[0].size(), sps);
+    }
+    return parseFirstSps(nal::findNalUnitsAnnexB(extradata, extradataSize), sps);
 }
 
 QSize getFrameSize(const QnCompressedVideoData* frame)
