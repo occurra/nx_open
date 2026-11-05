@@ -87,31 +87,38 @@ std::vector<nal::NalUnitInfo> readNalUnitsFromExtraData(
      * so put a fake nal_length_size = 2 while parsing them */
     // int nal_length_size = 2;
 
-    // Decode sps from avcC
-    int cnt = *(p + 5) & 0x1f; // Number of sps
-    p += 6;
+    const uint8_t* const end = extradata + extradataSize;
 
-    for (int i = 0; i < cnt; i++)
-    {
-        const int nalsize = getNalSize(p);
-        p += 2; // skipping nalusize
-        if (nalsize > extradataSize - (p - extradata))
-            break;
-        result.emplace_back(nal::NalUnitInfo{p, nalsize});
-        p += nalsize;
-    }
+    // Each unit is a 16-bit size and the unit; stops at the first one that does not fit.
+    const auto readNalUnits =
+        [&](int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                if (end - p < 2)
+                    return false;
+                const int nalsize = getNalSize(p);
+                p += 2; // skipping nalusize
+                if (nalsize > end - p)
+                    return false;
+                if (nalsize > 0) //< The consumers read the header byte of each unit.
+                    result.emplace_back(nal::NalUnitInfo{p, nalsize});
+                p += nalsize;
+            }
+            return true;
+        };
+
+    // Decode sps from avcC
+    if (extradataSize < 6)
+        return result;
+    p += 5;
+    if (!readNalUnits(*(p++) & 0x1f)) // Number of sps
+        return result;
 
     // Decode pps from avcC
-    cnt = *(p++); // Number of pps
-    for (int i = 0; i < cnt; ++i)
-    {
-        const int nalsize = getNalSize(p);
-        p += 2;
-        if (nalsize > extradataSize - (p - extradata))
-            break;
-        result.emplace_back(nal::NalUnitInfo{p, nalsize});
-        p += nalsize;
-    }
+    if (p == end)
+        return result;
+    readNalUnits(*(p++)); // Number of pps
     return result;
 }
 
