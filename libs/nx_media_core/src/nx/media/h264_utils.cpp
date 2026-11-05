@@ -121,16 +121,10 @@ bool isExtradataInMp4Format(const QnCompressedVideoData* data)
         && data->context->getExtradata()[0] == 1;
 }
 
-bool extractSps(const QnCompressedVideoData* data, SequenceParameterSet& sps)
+static bool parseFirstSps(
+    const std::vector<nal::NalUnitInfo>& nalUnits,
+    SequenceParameterSet& sps)
 {
-    std::vector<nal::NalUnitInfo> nalUnits;
-    if (isExtradataInMp4Format(data))
-        nalUnits = readNalUnitsFromExtraData(
-            data->context->getExtradata(),
-            data->context->getExtradataSize());
-    else
-        nalUnits = nal::findNalUnitsAnnexB((const uint8_t*) data->data(), data->dataSize());
-
     for (const auto& nalu: nalUnits)
     {
         if (nx::media::h264::nalType(*nalu.data) == nuSPS)
@@ -140,6 +134,21 @@ bool extractSps(const QnCompressedVideoData* data, SequenceParameterSet& sps)
         }
     }
     return false;
+}
+
+bool extractSps(const QnCompressedVideoData* data, SequenceParameterSet& sps)
+{
+    if (isExtradataInMp4Format(data))
+        return extractSps(data->context->getExtradata(), data->context->getExtradataSize(), sps);
+    return parseFirstSps(
+        nal::findNalUnitsAnnexB((const uint8_t*) data->data(), data->dataSize()), sps);
+}
+
+bool extractSps(const uint8_t* extradata, int extradataSize, SequenceParameterSet& sps)
+{
+    if (extradataSize >= 7 && extradata[0] == 1)
+        return parseFirstSps(readNalUnitsFromExtraData(extradata, extradataSize), sps);
+    return parseFirstSps(nal::findNalUnitsAnnexB(extradata, extradataSize), sps);
 }
 
 std::vector<uint8_t> buildExtraDataAnnexB(const uint8_t* data, int32_t size)
