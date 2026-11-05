@@ -16,7 +16,7 @@ NX_MEDIA_CORE_API bool extractSpsH265(
     const QnCompressedVideoData* videoData,
     h265::SequenceParameterSet& sps);
 
-// Reads the SPS from extradata in hvcC or Annex B format.
+/** Reads the SPS from extradata in hvcC or Annex B format. */
 NX_MEDIA_CORE_API bool extractSpsH265(
     const uint8_t* extradata,
     int extradataSize,
