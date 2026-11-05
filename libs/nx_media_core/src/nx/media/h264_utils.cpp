@@ -101,7 +101,8 @@ std::vector<nal::NalUnitInfo> readNalUnitsFromExtraData(
                 p += 2; // skipping nalusize
                 if (nalsize > end - p)
                     return false;
-                result.emplace_back(nal::NalUnitInfo{p, nalsize});
+                if (nalsize > 0) //< The consumers read the header byte of each unit.
+                    result.emplace_back(nal::NalUnitInfo{p, nalsize});
                 p += nalsize;
             }
             return true;
