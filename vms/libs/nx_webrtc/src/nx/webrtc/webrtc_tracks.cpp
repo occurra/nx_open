@@ -61,6 +61,7 @@ int Tracks::retargetDevice(nx::Uuid from, nx::Uuid to)
         if (track->deviceId != from)
             continue;
         track->deviceId = to;
+        track->streamId = to.toSimpleStdString();
         ++count;
     }
     return count;

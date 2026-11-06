@@ -56,9 +56,9 @@ public:
     uint32_t rotateSsrc(nx::Uuid deviceId, TrackType type);
 
     /// Re-point every track of device `from` at device `to`, keeping its ssrc,
-    /// mid and payload type. deviceId is a server-side association only - it
-    /// never appears in the SDP - so an in-place camera switch keeps the
-    /// negotiated m-lines valid and needs no offer/answer.
+    /// mid and payload type, so an in-place camera switch needs no offer/answer.
+    /// The msid becomes the id of `to` from the next offer on, so that `from`,
+    /// back on a new m-line, does not share it.
     /// @return Number of tracks re-pointed.
     int retargetDevice(nx::Uuid from, nx::Uuid to);
 

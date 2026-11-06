@@ -12,9 +12,9 @@
 namespace nx::webrtc::test {
 
 /**
- * Covers the m-line order a camera switch pairs departing devices in: the peer binds its tiles
- * to the freed m-lines from the lowest mid up, so the server must hand them out in that order
- * whatever the device ids sort to.
+ * Covers the m-lines of a camera switch. The peer binds its tiles to the freed m-lines from the
+ * lowest mid up, so the server must hand them out in that order whatever the device ids sort to.
+ * The peer joins the tracks of one msid stream id into one stream, so each camera keeps its own.
  */
 class WebRtcTracks: public ::testing::Test
 {
@@ -98,6 +98,18 @@ TEST_F(WebRtcTracks, orderByMidKeepsADeviceWithoutAVideoTrackLast)
 
     const std::vector<nx::Uuid> expected{withTrack, withoutTrack};
     EXPECT_EQ(m_tracks->orderByMid({withoutTrack, withTrack}), expected);
+}
+
+TEST_F(WebRtcTracks, aCameraBackOnANewMlineHasAStreamIdOfItsOwn)
+{
+    const nx::Uuid left("{aaaaaaaa-0000-0000-0000-000000000000}");
+    const nx::Uuid arrived("{bbbbbbbb-0000-0000-0000-000000000000}");
+    addVideoTrack(left);
+    ASSERT_EQ(m_tracks->retargetDevice(left, arrived), 1);
+    addVideoTrack(left);
+
+    EXPECT_EQ(m_tracks->videoTrack(arrived)->streamId, arrived.toSimpleStdString());
+    EXPECT_EQ(m_tracks->videoTrack(left)->streamId, left.toSimpleStdString());
 }
 
 } // namespace nx::webrtc::test
