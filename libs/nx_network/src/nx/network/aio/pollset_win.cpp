@@ -8,6 +8,9 @@
     #include <map>
     #include <memory>
 
+    #include <nx/utils/log/log.h>
+    #include <nx/utils/system_error.h>
+
     #include "../common_socket_impl.h"
     #include "../system_socket.h"
 
@@ -95,6 +98,7 @@ public:
     my_fd_set* exceptfdsOriginal;
     std::unique_ptr<Pollable> dummyPollable;
     sockaddr_in dummySocketAddress;
+    bool isBound = false;
     bool modified;
 
     PollSetImpl():
@@ -122,6 +126,9 @@ public:
 
     ~PollSetImpl()
     {
+        if (dummyPollable->handle() != INVALID_SOCKET)
+            closesocket(dummyPollable->handle());
+
         freeFDSet(readfds);
         readfds = NULL;
         freeFDSet(writefds);
@@ -384,10 +391,15 @@ PollSet::PollSet():
     memset(&localAddress, 0, sizeof(localAddress));
     localAddress.sin_family = AF_INET;
     localAddress.sin_addr = in4addr_loopback;
-    ::bind(
+    m_impl->isBound = ::bind(
         m_impl->dummyPollable->handle(),
         (struct sockaddr*) &localAddress,
-        sizeof(localAddress));
+        sizeof(localAddress)) == 0;
+    if (!m_impl->isBound)
+    {
+        NX_WARNING(this, "Cannot bind the wake-up socket, so the AIO thread cannot be woken: %1",
+            SystemError::getLastOSErrorText());
+    }
 
     m_impl->modified = true;
 }
@@ -400,7 +412,7 @@ PollSet::~PollSet()
 
 bool PollSet::isValid() const
 {
-    return m_impl->dummyPollable->handle() > 0;
+    return m_impl->dummyPollable->handle() > 0 && m_impl->isBound;
 }
 
 void PollSet::interrupt()
