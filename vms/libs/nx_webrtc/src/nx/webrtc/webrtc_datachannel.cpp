@@ -37,7 +37,7 @@ constexpr int kOutputQueueLimit = 1024 * 4; //< Can grow due to fragmentation.
  * How long SCTP retransmits a partially reliable message before it abandons it: a few round trips
  * of a relayed path, within the player's jitter buffer.
  */
-constexpr milliseconds kPartiallyReliableLifetime = 300ms;
+constexpr milliseconds kPartiallyReliableLifetime = 500ms;
 
 // Messages written before the channel opens: a live start primes every camera's GOP, and each
 // pre-roll frame carries a timestamp message. The byte limit is what the output queue holds once
@@ -550,8 +550,8 @@ int DataChannel::removeQueuedStrings(const nx::Uuid& deviceId)
     while (!m_outputQueue.empty())
     {
         auto& message = m_outputQueue.front();
-        const bool isUserMessage = message.type == Message::Type::string
-            || message.type == Message::Type::binary;
+        const bool isUserMessage =
+            message.type == Message::Type::string || message.type == Message::Type::binary;
         const bool isFrontFragment = isFrontMessage;
         if (message.eor)
             isFrontMessage = false;
@@ -832,8 +832,11 @@ bool DataChannel::writeUserMessage(Message&& message)
         if (m_savedQueue.size() >= kOutputQueueLimit
             || m_savedQueueBytes + message.data.size() > kSavedQueueByteLimit)
         {
-            NX_DEBUG(this, "Saved queue overflow: %1 messages, %2 bytes",
-                m_savedQueue.size(), m_savedQueueBytes);
+            NX_DEBUG(
+                this,
+                "Saved queue overflow: %1 messages, %2 bytes",
+                m_savedQueue.size(),
+                m_savedQueueBytes);
             return false;
         }
         NX_TRACE(this, "Saved message with type %1", (int) message.type);
