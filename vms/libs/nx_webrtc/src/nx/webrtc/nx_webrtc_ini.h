@@ -24,7 +24,7 @@ struct Ini: public nx::kit::IniConfig
         webrtcIceCandidates,
         "Force to use some types of Ice Candidates during WebRTC connectivity.\n"
         "By default, use all possible types:\n"
-        "udp,tcp,srflx,relay");
+        "udp,tcp,srflx,relay,mapped");
 
     NX_INI_INT(
         500,
