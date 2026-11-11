@@ -453,9 +453,8 @@ std::optional<IceCandidate> Session::portMappingCandidate(
     {
         NX_DEBUG(
             this,
-            "%1: The router maps the shared UDP port to %2, but STUN sees this server as %3: "
+            "The router maps the shared UDP port to %1, but STUN sees this server as %2: "
             "another NAT in front of the router hides the mapping, so it is not advertised",
-            id(),
             *mapped,
             reflexiveAddress.address);
         return std::nullopt;
