@@ -19,6 +19,15 @@ nx_add_target(nx_network LIBRARY
     FOLDER common/libs
 )
 
+set(mocableNetworkFiles
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nx/network/deprecated/asynchttpclient.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nx/network/upnp/upnp_device_searcher.h)
+
+nx_add_qt_mocables(nx_network ${mocableNetworkFiles}
+    INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+
 target_compile_definitions(nx_network
     PRIVATE NX_NETWORK_API=${API_EXPORT_MACRO}
     INTERFACE NX_NETWORK_API=${API_IMPORT_MACRO})
