@@ -13,7 +13,7 @@
 
 namespace nx::network::upnp {
 
-class NX_NETWORK_API PortMapper: SearchHandler, nx::utils::TimerEventHandler
+class NX_NETWORK_API PortMapper: public SearchHandler, nx::utils::TimerEventHandler
 {
 public:
     PortMapper(

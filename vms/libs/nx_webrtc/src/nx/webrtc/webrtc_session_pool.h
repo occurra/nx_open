@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include <QtCore/QList>
+#include <QtCore/QString>
 
 #include <nx/network/socket.h>
 #include <nx/utils/move_only_func.h>
@@ -23,6 +24,7 @@ class QByteArray;
 namespace nx::webrtc {
 
 class IceTcp;
+class UdpMux;
 
 /**
  * - Owns Session objects.
@@ -124,6 +126,21 @@ public:
         std::unique_ptr<nx::network::AbstractStreamSocket> socket,
         const QByteArray& readBuffer);
 
+    /**
+     * Also serves the ICE of every session on one fixed UDP port and, if upnpEnabled, keeps
+     * that port mapped on the router, so that a peer which srflx cannot reach through this
+     * server's NAT still gets a direct path. Call once, before the first session.
+     * @param mappingDescription The name of the mapping in the router's table.
+     * @return False if the port cannot be bound; the sessions then work without it.
+     */
+    bool startSharedUdpPort(uint16_t port, bool upnpEnabled, const QString& mappingDescription);
+
+    /** The shared UDP port, or 0 when it does not run. */
+    uint16_t sharedUdpPort() const;
+
+    /** The public address of the shared UDP port on the router, while UPnP maps it. */
+    std::optional<nx::network::SocketAddress> mappedUdpAddress() const;
+
     void stop();
     QnFfmpegVideoTranscoder::TranscodePolicy transcodePolicy() const;
 
@@ -162,6 +179,9 @@ private:
     QnFfmpegVideoTranscoder::TranscodePolicy m_transcodePolicy;
     std::vector<nx::network::SocketAddress> m_defaultStunServers;
     HostAddressFilterFactory m_hostAddressExtraFilterFactory; //< Nullable.
+
+    /** Set once by startSharedUdpPort() before the first session, so read without the lock. */
+    std::unique_ptr<UdpMux> m_udpMux;
 };
 
 } // namespace nx::webrtc

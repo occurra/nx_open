@@ -20,7 +20,7 @@ namespace nx::network::upnp {
 
 namespace {
 
-static const QHostAddress groupAddress(QString("239.255.255.250"));
+static const std::string groupAddress("239.255.255.250");
 static const int kGroupPort = 1900;
 static const unsigned int kMaxUpnpResponsePacketSize = 512 * 1024;
 static const int kXmlDescriptionLiveTimeMs = 5 * 60 * 1000;
@@ -287,15 +287,11 @@ void DeviceSearcher::dispatchDiscoverPackets()
 
                 nx::Buffer data;
                 data.append("M-SEARCH * HTTP/1.1\r\n");
-                data.append("Host: " + socket->getLocalAddress().toString() + "\r\n");
+                data.append("Host: " + groupAddress + ":" + std::to_string(kGroupPort) + "\r\n");
                 data.append("ST:" + toUpnpUrn(deviceType, "device").toStdString() + "\r\n");
-                data.append("Man:\"sdp:discover\"\r\n");
+                data.append("Man:\"ssdp:discover\"\r\n");
                 data.append("MX:5\r\n\r\n");
-                socket->sendTo(
-                    data.data(),
-                    data.size(),
-                    groupAddress.toString().toStdString(),
-                    kGroupPort);
+                socket->sendTo(data.data(), data.size(), groupAddress, kGroupPort);
             }
         }
     }
@@ -326,7 +322,7 @@ nx::utils::AtomicUniquePtr<AbstractDatagramSocket> DeviceSearcher::updateReceive
     m_receiveSocket->bind(SocketAddress(HostAddress::anyHost, kGroupPort));
 
     for (const auto& address: allLocalAddresses(AddressFilter::onlyFirstIpV4))
-        m_receiveSocket->joinGroup(groupAddress.toString().toStdString(), address.toString());
+        m_receiveSocket->joinGroup(groupAddress, address.toString());
 
     m_needToUpdateReceiveSocket = false;
 

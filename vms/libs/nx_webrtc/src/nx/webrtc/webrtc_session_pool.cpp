@@ -10,6 +10,7 @@
 
 #include "webrtc_ice_tcp.h"
 #include "webrtc_session.h"
+#include "webrtc_udp_mux.h"
 
 namespace nx::webrtc {
 
@@ -83,6 +84,9 @@ void SessionPool::stop()
     m_timerManager->joinAndDeleteTimer(m_timerId);
 
     // The ices go first: they point at their sessions.
+    if (m_udpMux)
+        m_udpMux->stop();
+
     decltype(m_sessionById) sessionById;
     decltype(m_tcpIces) icesTcp;
     {
@@ -107,7 +111,11 @@ void SessionPool::stop()
         std::promise<void> done;
         stopped.push_back(done.get_future());
         Session::stop(
-            std::move(session), [done = std::move(done)]() mutable { done.set_value(); });
+            std::move(session),
+            [done = std::move(done)]() mutable
+            {
+                done.set_value();
+            });
     }
 
     for (auto& future: stopped)
@@ -300,6 +308,9 @@ void SessionPool::onTimer(const quint64& /*timerId*/)
 
     for (auto& session: sessionsToRemove)
         Session::stop(std::move(session)); //< Sequences the safe destruction; see Session::stop().
+
+    if (m_udpMux)
+        m_udpMux->removeStoppedIces();
 }
 
 void SessionPool::drop(const std::string& id)
@@ -331,6 +342,29 @@ void SessionPool::onTcpConnection(
     const QByteArray& readBuffer)
 {
     gotIceTcp(std::make_unique<IceTcp>(std::move(socket), this, SessionConfig(), readBuffer));
+}
+
+bool SessionPool::startSharedUdpPort(
+    uint16_t port,
+    bool upnpEnabled,
+    const QString& mappingDescription)
+{
+    NX_ASSERT(!m_udpMux, "The shared UDP port starts once");
+    auto mux = std::make_unique<UdpMux>(this, m_timerManager);
+    if (!mux->start(port, upnpEnabled, mappingDescription))
+        return false;
+    m_udpMux = std::move(mux);
+    return true;
+}
+
+uint16_t SessionPool::sharedUdpPort() const
+{
+    return m_udpMux ? m_udpMux->port() : 0;
+}
+
+std::optional<nx::network::SocketAddress> SessionPool::mappedUdpAddress() const
+{
+    return m_udpMux ? m_udpMux->mappedAddress() : std::nullopt;
 }
 
 QnFfmpegVideoTranscoder::TranscodePolicy SessionPool::transcodePolicy() const
