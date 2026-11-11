@@ -311,7 +311,7 @@ private:
                     this,
                     "Keep alive timeout reached, stopping the shared-port ice of %1 for %2",
                     m_peer,
-                    (m_sessionDescription ? m_sessionDescription->id : "(null)"));
+                    m_sessionId);
                 stopUnsafe();
             });
     }
