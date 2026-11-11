@@ -659,6 +659,7 @@ void Streamer::updateMetrics(int value)
             m_session->metrics()->webrtc().activeUdpConnections() += value;
             break;
         case IceCandidate::Filter::UdpSrflx:
+        case IceCandidate::Filter::UdpMapped: //< Also a direct path through the NAT.
             if (value > 0)
                 m_session->metrics()->webrtc().totalSrflxConnections() += value;
             m_session->metrics()->webrtc().activeSrflxConnections() += value;

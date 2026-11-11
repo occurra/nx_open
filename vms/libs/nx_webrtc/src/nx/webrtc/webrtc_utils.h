@@ -96,7 +96,8 @@ struct NX_WEBRTC_API IceCandidate
         TcpHost = 2,
         UdpSrflx = 4,
         UdpRelay = 8,
-        All = UdpHost | TcpHost | UdpSrflx | UdpRelay,
+        UdpMapped = 16, //< The shared UDP port, mapped on the router by UPnP.
+        All = UdpHost | TcpHost | UdpSrflx | UdpRelay | UdpMapped,
     };
     enum Protocol
     {
@@ -108,7 +109,8 @@ struct NX_WEBRTC_API IceCandidate
         Host,
         Srflx,
         Prflx, //< Not sure if this type can exist in SDP.
-        Relay
+        Relay,
+        PortMapping, //< A port that UPnP maps on the router; the peer sees it as srflx.
     };
     enum TcpType
     {
@@ -233,7 +235,8 @@ inline const std::vector<nx::network::SocketAddress>& defaultStunServers()
  * a session asking the same host get reflexive addresses the split horizon can compare.
  */
 inline std::vector<nx::network::SocketAddress> stunServers(
-    const TurnServerInfo& turnServer, const std::vector<nx::network::SocketAddress>& defaults)
+    const TurnServerInfo& turnServer,
+    const std::vector<nx::network::SocketAddress>& defaults)
 {
     std::vector<nx::network::SocketAddress> result;
     for (const auto& endpoint: turnServer.endpoints)

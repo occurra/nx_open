@@ -229,7 +229,7 @@ void Session::start(const QList<nx::network::SocketAddress>& addresses)
         m_srflx = std::make_unique<Srflx>(
             m_localUfrag,
             m_stunServers,
-            [this](
+            [this, candidateFilter](
                 const nx::network::SocketAddress& mappedAddress,
                 std::unique_ptr<nx::network::AbstractDatagramSocket>&& socket)
             {
@@ -263,6 +263,9 @@ void Session::start(const QList<nx::network::SocketAddress>& addresses)
                     addIceCandidate(std::move(srflxCandidate));
                 }
 
+                const auto mappingCandidate =
+                    portMappingCandidate(candidateFilter, mappedAddress); //< It logs: no lock.
+
                 // 3. Feed the split-horizon classifier: it needs our reflexive
                 // IP to recognize a same-NAT peer. A null mappedAddress means we
                 // cannot classify anyone - release the deferred candidates.
@@ -273,9 +276,20 @@ void Session::start(const QList<nx::network::SocketAddress>& addresses)
                         advertiseDeferredHostCandidatesUnsafe("srflx failed");
                     else
                         classifyPeerUnsafe();
+
+                    // 4. The router mapping, checked against our public IP that STUN saw.
+                    if (mappingCandidate)
+                        addIceCandidateUnsafe(*mappingCandidate);
                 }
             },
             aioThread());
+    }
+    else if (auto candidate = portMappingCandidate(candidateFilter, /*reflexiveAddress*/ {}))
+    {
+        // No srflx probe to wait for: the mapping goes into the offer.
+        candidate->foundation = index++;
+        candidate->priority = priority--;
+        m_iceCandidates.push_back(*candidate);
     }
 
     if (candidateFilter & IceCandidate::Filter::UdpRelay)
@@ -425,6 +439,40 @@ void Session::advertiseDeferredHostCandidatesUnsafe(const std::string& reason)
             m_udpIces.push_back(std::move(udpIce));
         }
     }
+}
+
+std::optional<IceCandidate> Session::portMappingCandidate(
+    IceCandidate::Filter candidateFilter,
+    const nx::network::SocketAddress& reflexiveAddress) const
+{
+    if (!(candidateFilter & IceCandidate::Filter::UdpMapped))
+        return std::nullopt;
+
+    const auto mapped = m_sessionPool->mappedUdpAddress();
+    if (!mapped)
+        return std::nullopt;
+
+    if (!reflexiveAddress.isNull() && !sameIp(mapped->address, reflexiveAddress.address))
+    {
+        NX_DEBUG(
+            this,
+            "The router maps the shared UDP port to %1, but STUN sees this server as %2: "
+            "another NAT in front of the router hides the mapping, so it is not advertised",
+            *mapped,
+            reflexiveAddress.address);
+        return std::nullopt;
+    }
+
+    NX_DEBUG(this, "%1: Advertising the router mapping %2 of the shared UDP port", id(), *mapped);
+    IceCandidate result = IceCandidate::constructUdpSrflx(
+        IceCandidate::kIceMinIndex,
+        IceCandidate::kIceMaxPriority,
+        *mapped,
+        nx::network::SocketAddress(
+            nx::network::HostAddress::anyHost,
+            m_sessionPool->sharedUdpPort()));
+    result.type = IceCandidate::Type::PortMapping;
+    return result;
 }
 
 /**

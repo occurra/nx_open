@@ -422,6 +422,7 @@ std::string IceCandidate::serialize() const
             break;
         case Type::Srflx:
         case Type::Prflx:
+        case Type::PortMapping:
             candidate += " typ srflx";
             break;
         case Type::Relay:
@@ -467,6 +468,10 @@ bool IceCandidate::matchFilter(const Filter filter) const
     {
         actualType = Filter::UdpSrflx;
     }
+    else if (type == Type::PortMapping)
+    {
+        actualType = Filter::UdpMapped;
+    }
     else if (type == Type::Relay)
     {
         actualType = Filter::UdpRelay;
@@ -481,6 +486,7 @@ IceCandidate::Filter IceCandidate::parseFilter(const std::string& filter)
     static const std::string_view kUdp = "udp";
     static const std::string_view kSrflx = "srflx";
     static const std::string_view kRelay = "relay";
+    static const std::string_view kMapped = "mapped";
 
     getTokens(
         filter,
@@ -495,6 +501,8 @@ IceCandidate::Filter IceCandidate::parseFilter(const std::string& filter)
                 result |= Filter::UdpSrflx;
             else if (sv == kRelay)
                 result |= Filter::UdpRelay;
+            else if (sv == kMapped)
+                result |= Filter::UdpMapped;
         });
     return (IceCandidate::Filter) result;
 }
@@ -545,6 +553,8 @@ std::string pathName(IceCandidate::Filter type)
             return "srflx";
         case IceCandidate::Filter::UdpRelay:
             return "relay";
+        case IceCandidate::Filter::UdpMapped:
+            return "udp mapped";
         default:
             return "unknown";
     }

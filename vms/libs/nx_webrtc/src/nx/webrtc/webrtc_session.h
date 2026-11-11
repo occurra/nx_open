@@ -81,6 +81,10 @@ public:
     void forgetUnsupportedVideoCodec(const nx::Uuid& deviceId);
     Purpose purpose() const { return m_purpose; }
     std::string id() const { return m_localUfrag; }
+
+    /** Fixed at construction, so read without the lock. */
+    std::string localPwd() const { return m_localPwd; }
+
     std::optional<SessionDescription> describe() const;
     const std::vector<IceCandidate> getIceCandidates() const;
 
@@ -203,7 +207,8 @@ public:
      * released its reference; SessionPool::stop() waits for it so no session outlives the pool.
      */
     static void stop(
-        std::shared_ptr<Session> session, nx::MoveOnlyFunc<void()> onStopped = nullptr);
+        std::shared_ptr<Session> session,
+        nx::MoveOnlyFunc<void()> onStopped = nullptr);
     bool hasExpired(std::chrono::milliseconds timeout) const;
 
     /**
@@ -408,6 +413,15 @@ private:
     void classifyPeerUnsafe();
     void advertiseDeferredHostCandidatesUnsafe(const std::string& reason);
 
+    /**
+     * The candidate of the shared UDP port's UPnP mapping, or null when there is no mapping,
+     * candidateFilter excludes it, or reflexiveAddress (our public address by STUN, null when
+     * STUN gave none) shows that another NAT in front of the router hides the mapping.
+     */
+    std::optional<IceCandidate> portMappingCandidate(
+        IceCandidate::Filter candidateFilter,
+        const nx::network::SocketAddress& reflexiveAddress) const;
+
 private:
     mutable nx::Mutex m_mutex;
 
@@ -520,6 +534,7 @@ private:
     QList<nx::network::SocketAddress> m_deferredHostAddresses;
     std::optional<nx::network::HostAddress> m_reflexiveIp; ///< Our public IP, from srflx.
     std::vector<nx::network::HostAddress> m_peerReflexiveIps;
+
     std::vector<nx::network::SocketAddress> m_stunServers;
     SessionPool* m_sessionPool;
     SessionConfig m_config;

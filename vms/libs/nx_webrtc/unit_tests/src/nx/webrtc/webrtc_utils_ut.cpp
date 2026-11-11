@@ -70,4 +70,43 @@ TEST(WebrtcUtils, sameIpFamilyMismatch)
     EXPECT_FALSE(sameIp(HostAddress("example.com"), HostAddress("example.com")));
 }
 
+TEST(WebrtcUtils, portMappingFilter)
+{
+    EXPECT_EQ(IceCandidate::parseFilter("mapped"), IceCandidate::Filter::UdpMapped);
+    EXPECT_EQ(
+        IceCandidate::parseFilter("srflx,mapped"),
+        IceCandidate::Filter::UdpSrflx | IceCandidate::Filter::UdpMapped);
+    EXPECT_EQ(pathName(IceCandidate::Filter::UdpMapped), "udp mapped");
+
+    IceCandidate mapped = IceCandidate::constructUdpSrflx(
+        0,
+        1,
+        nx::network::SocketAddress("203.0.113.7:7010"),
+        nx::network::SocketAddress());
+    mapped.type = IceCandidate::Type::PortMapping;
+    EXPECT_TRUE(mapped.matchFilter(IceCandidate::Filter::UdpMapped));
+    EXPECT_FALSE(mapped.matchFilter(IceCandidate::Filter::UdpSrflx));
+
+    const IceCandidate stun = IceCandidate::constructUdpSrflx(
+        0,
+        1,
+        nx::network::SocketAddress("203.0.113.7:55555"),
+        nx::network::SocketAddress());
+    EXPECT_TRUE(stun.matchFilter(IceCandidate::Filter::UdpSrflx));
+    EXPECT_FALSE(stun.matchFilter(IceCandidate::Filter::UdpMapped));
+}
+
+TEST(WebrtcUtils, portMappingSerializesAsSrflx)
+{
+    IceCandidate mapped = IceCandidate::constructUdpSrflx(
+        0,
+        1,
+        nx::network::SocketAddress("203.0.113.7:7010"),
+        nx::network::SocketAddress());
+    mapped.type = IceCandidate::Type::PortMapping;
+    const IceCandidate parsed = IceCandidate::parse(mapped.serialize());
+    EXPECT_EQ(parsed.type, IceCandidate::Type::Srflx);
+    EXPECT_EQ(parsed.address, nx::network::SocketAddress("203.0.113.7:7010"));
+}
+
 } // namespace nx::webrtc::test
