@@ -5,12 +5,14 @@
 #include <algorithm>
 #include <atomic>
 #include <future>
+#include <set>
 #include <vector>
 
 #include <nx/network/stun/message.h>
 #include <nx/network/stun/message_parser.h>
 #include <nx/network/upnp/upnp_device_searcher.h>
 #include <nx/network/upnp/upnp_port_mapper.h>
+#include <nx/utils/elapsed_timer.h>
 #include <nx/utils/log/log.h>
 
 #include "webrtc_ice.h"
@@ -45,10 +47,81 @@ constexpr seconds kPeerMoveSilence{3};
 /** The UPnP device type of a router that maps ports. */
 const QString kInternetGatewayDeviceType("InternetGatewayDevice");
 
+/** Any public address: a connected UDP socket only asks the system for the route to it. */
+const SocketAddress kInternetProbeAddress(HostAddress("8.8.8.8"), 53);
+
 int64_t steadyNowMs()
 {
     return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
+
+/** The local IPv4 address that the system sends internet traffic from; empty without a route. */
+std::string probeInternetInterfaceAddress()
+{
+    UDPSocket socket(AF_INET);
+    if (!socket.connect(kInternetProbeAddress, kNoTimeout))
+        return std::string();
+    return socket.getLocalAddress().address.toString();
+}
+
+/**
+ * Maps only on the routers found through the interface that leads to the internet. A UPnP router
+ * of another network, for example of the cameras, gives no address that a peer can reach, and its
+ * mapping would replace the one of the internet router.
+ */
+class InternetPortMapper: public upnp::PortMapper
+{
+public:
+    using upnp::PortMapper::PortMapper;
+
+protected:
+    virtual bool processPacket(
+        const QHostAddress& localAddress,
+        const SocketAddress& devAddress,
+        const upnp::DeviceInfo& devInfo,
+        const QByteArray& xmlDevInfo) override
+    {
+        const std::string internetAddress = this->internetAddress();
+        if (!internetAddress.empty() && internetAddress == localAddress.toString().toStdString())
+            return upnp::PortMapper::processPacket(localAddress, devAddress, devInfo, xmlDevInfo);
+
+        {
+            NX_MUTEX_LOCKER lock(&m_internetMutex);
+            if (!m_ignored.insert(devAddress.toString()).second)
+                return false; //< Each search finds it again.
+        }
+        NX_DEBUG(
+            this,
+            "Ignoring the UPnP router %1 found through %2: the internet goes through %3",
+            devAddress,
+            localAddress.toString(),
+            internetAddress.empty() ? std::string("no interface") : internetAddress);
+        return false;
+    }
+
+private:
+    /** Probes the route again at most once per kDefaultCheckMappingsInterval. */
+    std::string internetAddress()
+    {
+        {
+            NX_MUTEX_LOCKER lock(&m_internetMutex);
+            if (!m_internetChecked.hasExpired(kDefaultCheckMappingsInterval))
+                return m_internetAddress;
+        }
+
+        std::string address = probeInternetInterfaceAddress();
+        NX_MUTEX_LOCKER lock(&m_internetMutex);
+        m_internetAddress = address;
+        m_internetChecked.restart();
+        return address;
+    }
+
+private:
+    nx::Mutex m_internetMutex;
+    std::string m_internetAddress;
+    nx::utils::ElapsedTimer m_internetChecked;
+    std::set<std::string> m_ignored;
+};
 
 } // namespace
 
@@ -331,7 +404,7 @@ bool UdpMux::start(uint16_t port, bool upnpEnabled, const QString& mappingDescri
         m_deviceSearcher = std::make_unique<upnp::DeviceSearcher>(
             m_timerManager,
             std::make_unique<upnp::DeviceSearcherDefaultSettings>());
-        m_portMapper = std::make_unique<upnp::PortMapper>(
+        m_portMapper = std::make_unique<InternetPortMapper>(
             m_timerManager,
             /*isEnabled*/ true,
             upnp::PortMapper::kDefaultCheckMappingsInterval,
