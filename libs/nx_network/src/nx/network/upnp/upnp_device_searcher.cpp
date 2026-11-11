@@ -192,6 +192,11 @@ void DeviceSearcher::onSomeBytesRead(
 {
     if (errorCode)
     {
+        NX_VERBOSE(
+            this,
+            "Reading on %1 failed: %2",
+            socket->getLocalAddress(),
+            SystemError::toString(errorCode));
         NX_MUTEX_LOCKER lk(&m_mutex);
         if (socket == m_receiveSocket.get())
         {
@@ -228,8 +233,29 @@ void DeviceSearcher::onSomeBytesRead(
         // reading socket and parsing UPnP response packet
         remoteHost = udpSock->lastDatagramSourceAddress().address;
         if (!foundDeviceReply.parse(*buffer))
+        {
+            NX_VERBOSE(
+                this,
+                "Unparsable datagram of %1 bytes from %2",
+                buffer->size(),
+                remoteHost);
             return;
+        }
     }
+
+    const auto header = [&foundDeviceReply](const std::string& name)
+    {
+        const auto it = foundDeviceReply.headers.find(name);
+        return it == foundDeviceReply.headers.end() ? std::string() : it->second;
+    };
+    NX_VERBOSE(
+        this,
+        "Answer from %1 on %2: ST %3, USN %4, LOCATION %5",
+        remoteHost,
+        socket->getLocalAddress(),
+        header("ST"),
+        header("USN"),
+        header("LOCATION"));
 
     nx::network::http::HttpHeaders::const_iterator locationHeader =
         foundDeviceReply.headers.find("LOCATION");
@@ -244,7 +270,10 @@ void DeviceSearcher::onSomeBytesRead(
     constexpr std::string_view kUuidPrefix = "uuid:";
     auto uuidStr = uuidHeader->second;
     if (!nx::utils::startsWith(uuidStr, kUuidPrefix))
+    {
+        NX_VERBOSE(this, "Ignored the answer from %1: its USN has no uuid", remoteHost);
         return;
+    }
     uuidStr = uuidStr.substr(kUuidPrefix.size());
 
     using namespace nx::network::http;
@@ -291,7 +320,19 @@ void DeviceSearcher::dispatchDiscoverPackets()
                 data.append("ST:" + toUpnpUrn(deviceType, "device").toStdString() + "\r\n");
                 data.append("Man:\"ssdp:discover\"\r\n");
                 data.append("MX:5\r\n\r\n");
-                socket->sendTo(data.data(), data.size(), kGroupAddress, kGroupPort);
+                if (socket->sendTo(data.data(), data.size(), kGroupAddress, kGroupPort))
+                {
+                    NX_VERBOSE(this, "Searching for %1 from %2", deviceType, address);
+                }
+                else
+                {
+                    NX_VERBOSE(
+                        this,
+                        "Cannot send a search for %1 from %2: %3",
+                        deviceType,
+                        address,
+                        SystemError::getLastOSErrorText());
+                }
             }
         }
     }
@@ -372,6 +413,11 @@ std::shared_ptr<AbstractDatagramSocket> DeviceSearcher::getSocketByInterface(
         || !socket->bind(SocketAddress(localAddress)) || !socket->setMulticastIF(localAddress)
         || !socket->setRecvBufferSize(kMaxUpnpResponsePacketSize))
     {
+        NX_VERBOSE(
+            this,
+            "Cannot open a search socket on %1: %2",
+            localAddress,
+            SystemError::getLastOSErrorText());
         return nullptr;
     }
 
@@ -451,7 +497,10 @@ void DeviceSearcher::processDeviceXml(
     DeviceDescriptionHandler xmlHandler;
     QXmlStreamReader reader(toByteArray(foundDeviceDescription));
     if (!nx::utils::parseXml(reader, xmlHandler))
+    {
+        NX_VERBOSE(this, "Cannot parse the description %1", devInfo.descriptionUrl);
         return;
+    }
 
     DiscoveredDeviceInfo devInfoFull(devInfo);
     devInfoFull.xmlDevInfo = toByteArray(foundDeviceDescription);
@@ -521,6 +570,15 @@ void DeviceSearcher::processPacket(DiscoveredDeviceInfo info)
             for (const auto& handler: m_handlers[info.devInfo.deviceType])
                 sortedHandlers[handler.second] = handler.first;
 
+            NX_VERBOSE(
+                this,
+                "Device %1 of type %2, serial %3, found via %4: %5 handlers",
+                info.descriptionUrl,
+                info.devInfo.deviceType,
+                info.devInfo.serialNumber,
+                info.localInterfaceAddress.toString(),
+                sortedHandlers.size());
+
             for (const auto& handler: sortedHandlers)
             {
                 if (handler.second->isEnabled())
@@ -548,7 +606,19 @@ void DeviceSearcher::onDeviceDescriptionXmlRequestDone(
         processRequired = httpClient->response()
             && httpClient->response()->statusLine.statusCode == nx::network::http::StatusCode::ok;
         if (processRequired)
+        {
             ctx = it->second;
+        }
+        else
+        {
+            NX_VERBOSE(
+                this,
+                "Cannot get the description %1: %2",
+                it->second.descriptionUrl,
+                httpClient->response()
+                    ? std::to_string(httpClient->response()->statusLine.statusCode)
+                    : SystemError::toString(httpClient->lastSysErrorCode()));
+        }
     }
 
     if (processRequired)
