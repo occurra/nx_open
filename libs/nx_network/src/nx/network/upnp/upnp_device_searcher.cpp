@@ -605,20 +605,7 @@ void DeviceSearcher::onDeviceDescriptionXmlRequestDone(
             return;
         processRequired = httpClient->response()
             && httpClient->response()->statusLine.statusCode == nx::network::http::StatusCode::ok;
-        if (processRequired)
-        {
-            ctx = it->second;
-        }
-        else
-        {
-            NX_VERBOSE(
-                this,
-                "Cannot get the description %1: %2",
-                it->second.descriptionUrl,
-                httpClient->response()
-                    ? std::to_string(httpClient->response()->statusLine.statusCode)
-                    : SystemError::toString(httpClient->lastSysErrorCode()));
-        }
+        ctx = it->second;
     }
 
     if (processRequired)
@@ -627,6 +614,15 @@ void DeviceSearcher::onDeviceDescriptionXmlRequestDone(
         // reading message body
         const auto& msgBody = httpClient->fetchMessageBodyBuffer();
         processDeviceXml(ctx, msgBody);
+    }
+    else
+    {
+        NX_VERBOSE(
+            this,
+            "Cannot get the description %1: %2",
+            ctx.descriptionUrl,
+            httpClient->response() ? std::to_string(httpClient->response()->statusLine.statusCode)
+                                   : SystemError::toString(httpClient->lastSysErrorCode()));
     }
 
     NX_MUTEX_LOCKER lk(&m_mutex);

@@ -569,6 +569,8 @@ void UdpMux::routeFromNewSource(const SocketAddress& source, const nx::Buffer& p
     }
 
     const std::string key = source.toString();
+    bool hasLivePath = false;
+    bool isFull = false;
     {
         NX_MUTEX_LOCKER lock(&m_mutex);
         const auto path = std::find_if(
@@ -579,20 +581,8 @@ void UdpMux::routeFromNewSource(const SocketAddress& source, const nx::Buffer& p
                 const auto& ice = entry.second;
                 return ice->sessionId() == *sessionId && ice->holdsSession() && !ice->isStopped();
             });
-        if (path != m_iceBySource.end())
+        if (path != m_iceBySource.end() && path->second->isSilentFor(kPeerMoveSilence))
         {
-            if (!path->second->isSilentFor(kPeerMoveSilence))
-            {
-                // Another candidate pair of the same peer, for example through its relay, is
-                // still checking: the session keeps its live path.
-                NX_VERBOSE(
-                    this,
-                    "Session %1 has a live path, check from %2 dropped",
-                    *sessionId,
-                    source);
-                return;
-            }
-
             auto ice = std::move(path->second);
             m_iceBySource.erase(path);
             ice->movePeer(source);
@@ -600,17 +590,27 @@ void UdpMux::routeFromNewSource(const SocketAddress& source, const nx::Buffer& p
             m_iceBySource.emplace(key, std::move(ice));
             return;
         }
+        hasLivePath = path != m_iceBySource.end();
+        isFull = m_iceBySource.size() >= kMaxIceCount;
+    }
 
-        // Checked before the ice exists: one destroyed here would block this thread on its own.
-        if (m_iceBySource.size() >= kMaxIceCount)
-        {
-            NX_DEBUG(
-                this,
-                "%1 peers on the shared UDP port already, %2 dropped",
-                kMaxIceCount,
-                source);
-            return;
-        }
+    if (hasLivePath)
+    {
+        // Another candidate pair of the same peer, for example through its relay, is still
+        // checking: the session keeps its live path.
+        NX_VERBOSE(this, "Session %1 has a live path, check from %2 dropped", *sessionId, source);
+        return;
+    }
+
+    // Checked before the ice exists: one destroyed here would block this thread on its own.
+    if (isFull)
+    {
+        NX_DEBUG(
+            this,
+            "%1 peers on the shared UDP port already, %2 dropped",
+            kMaxIceCount,
+            source);
+        return;
     }
 
     auto ice = std::make_unique<IceUdpMuxed>(
@@ -622,8 +622,8 @@ void UdpMux::routeFromNewSource(const SocketAddress& source, const nx::Buffer& p
         source,
         SocketAddress(HostAddress::anyHost, m_port));
 
-    NX_MUTEX_LOCKER lock(&m_mutex);
     NX_DEBUG(this, "New peer %1 on the shared UDP port for session %2", source, *sessionId);
+    NX_MUTEX_LOCKER lock(&m_mutex);
     ice->deliver(packet);
     m_iceBySource.emplace(key, std::move(ice));
 }

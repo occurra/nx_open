@@ -263,6 +263,9 @@ void Session::start(const QList<nx::network::SocketAddress>& addresses)
                     addIceCandidate(std::move(srflxCandidate));
                 }
 
+                const auto mappingCandidate =
+                    portMappingCandidate(candidateFilter, mappedAddress); //< It logs: no lock.
+
                 // 3. Feed the split-horizon classifier: it needs our reflexive
                 // IP to recognize a same-NAT peer. A null mappedAddress means we
                 // cannot classify anyone - release the deferred candidates.
@@ -275,8 +278,8 @@ void Session::start(const QList<nx::network::SocketAddress>& addresses)
                         classifyPeerUnsafe();
 
                     // 4. The router mapping, checked against our public IP that STUN saw.
-                    if (auto candidate = portMappingCandidate(candidateFilter, mappedAddress))
-                        addIceCandidateUnsafe(*candidate);
+                    if (mappingCandidate)
+                        addIceCandidateUnsafe(*mappingCandidate);
                 }
             },
             aioThread());
