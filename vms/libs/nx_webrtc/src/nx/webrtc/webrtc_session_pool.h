@@ -11,6 +11,7 @@
 #include <QtCore/QString>
 
 #include <nx/network/socket.h>
+#include <nx/utils/atomic_unique_ptr.h>
 #include <nx/utils/move_only_func.h>
 #include <nx/utils/thread/mutex.h>
 #include <nx/utils/timer_manager.h>
@@ -180,8 +181,8 @@ private:
     std::vector<nx::network::SocketAddress> m_defaultStunServers;
     HostAddressFilterFactory m_hostAddressExtraFilterFactory; //< Nullable.
 
-    /** Set once by startSharedUdpPort() before the first session, so read without the lock. */
-    std::unique_ptr<UdpMux> m_udpMux;
+    /** Set once by startSharedUdpPort() while onTimer() may already read it. */
+    nx::utils::AtomicUniquePtr<UdpMux> m_udpMux;
 };
 
 } // namespace nx::webrtc
