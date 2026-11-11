@@ -35,14 +35,14 @@ constexpr unsigned int kSocketBufferSize = 4 * 1024 * 1024;
 constexpr size_t kMaxIceCount = 1024;
 
 /** An ice whose peer sends nothing valid for this long stops, as IceUdp does. */
-constexpr seconds kKeepAliveTimeout{15};
+constexpr auto kKeepAliveTimeout = 15s;
 
 /**
  * A session's path must be silent this long before a new source address of its peer takes it
  * over. Shorter than kKeepAliveTimeout, and longer than the gaps of a live path, which carries
  * RTCP and SCTP acknowledgements every second or more often.
  */
-constexpr seconds kPeerMoveSilence{3};
+constexpr auto kPeerMoveSilence = 3s;
 
 /** The UPnP device type of a router that maps ports. */
 const QString kInternetGatewayDeviceType("InternetGatewayDevice");
@@ -109,7 +109,7 @@ private:
                 return m_internetAddress;
         }
 
-        std::string address = probeInternetInterfaceAddress();
+        const std::string address = probeInternetInterfaceAddress();
         NX_MUTEX_LOCKER lock(&m_internetMutex);
         m_internetAddress = address;
         m_internetChecked.restart();
@@ -152,7 +152,7 @@ std::optional<std::string> authenticatedSessionId(
     if (colonPos == std::string::npos)
         return std::nullopt;
 
-    std::string sessionId = value.substr(0, colonPos);
+    const std::string sessionId = value.substr(0, colonPos);
     const auto localPwd = localPwdOf(sessionId);
     if (!localPwd || !message.verifyIntegrity(value, *localPwd))
         return std::nullopt;
@@ -526,7 +526,7 @@ void UdpMux::onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTran
     if (errorCode == SystemError::noError && bytesTransferred > 0)
     {
         const SocketAddress source = m_socket->lastDatagramSourceAddress();
-        nx::Buffer packet = std::exchange(m_readBuffer, nx::Buffer());
+        const nx::Buffer packet = std::exchange(m_readBuffer, nx::Buffer());
         m_readBuffer.reserve(kReadBufferSize);
         routePacket(source, packet);
     }
