@@ -527,6 +527,17 @@ void UdpMux::routeFromNewSource(const SocketAddress& source, const nx::Buffer& p
             m_iceBySource.emplace(key, std::move(ice));
             return;
         }
+
+        // Checked before the ice exists: one destroyed here would block this thread on its own.
+        if (m_iceBySource.size() >= kMaxIceCount)
+        {
+            NX_DEBUG(
+                this,
+                "%1 peers on the shared UDP port already, %2 dropped",
+                kMaxIceCount,
+                source);
+            return;
+        }
     }
 
     auto ice = std::make_unique<IceUdpMuxed>(
@@ -539,15 +550,6 @@ void UdpMux::routeFromNewSource(const SocketAddress& source, const nx::Buffer& p
         SocketAddress(HostAddress::anyHost, m_port));
 
     NX_MUTEX_LOCKER lock(&m_mutex);
-    if (m_iceBySource.size() >= kMaxIceCount)
-    {
-        NX_DEBUG(
-            this,
-            "%1 peers on the shared UDP port already, %2 dropped",
-            kMaxIceCount,
-            source);
-        return;
-    }
     NX_DEBUG(this, "New peer %1 on the shared UDP port for session %2", source, *sessionId);
     ice->deliver(packet);
     m_iceBySource.emplace(key, std::move(ice));
