@@ -60,6 +60,8 @@ private:
     bool handleIndication(const stun::Message& message);
     bool handleLongTermAuthorization(const stun::Message& message);
     bool handleRefresh(const stun::Message& message);
+    bool handleTurnError(
+        const stun::Message& message, const char* stage, const std::function<void()>& resend);
     void connectCurrentEndpoint();
 
 private:
@@ -89,6 +91,7 @@ private:
     std::string m_realm;
     std::string m_password;
     AuthorizationType m_turnAuth = AuthorizationType::None;
+    int m_authRetries = 0; //< Stale-nonce retries since the last authenticated success.
     const std::string m_sessionId;
     RelayStage m_relayStage = RelayStage::Binding;
     std::optional<IceCandidate> m_remoteSrflx; //< Preferred send target until the peer speaks.

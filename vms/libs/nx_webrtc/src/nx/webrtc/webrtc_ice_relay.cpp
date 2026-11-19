@@ -25,6 +25,11 @@ constexpr auto kPermissionsLifetime = 295s;
 
 constexpr auto kTurnConnectTimeout = 10s;
 
+// coturn expires the TURN nonce (600 s by default). The first authenticated refresh past that
+// gets a 438 Stale Nonce; retry with the fresh nonce the server returns, bounded so a server
+// that keeps rejecting ends the session instead of looping.
+constexpr int kMaxStaleNonceRetries = 2;
+
 std::unique_ptr<nx::network::AbstractCommunicatingSocket> makeSocket(
     nx::network::TransportProtocol transport)
 {
@@ -274,9 +279,41 @@ void IceRelay::createPermission()
         stun::Header(stun::MessageClass::request, stun::MethodType::createPermissionMethod));
     // One XOR-PEER-ADDRESS per permitted IP (RFC 5766 #9 allows several per
     // request): the peer's srflx plus its relayed address(es), so its checks
-    // pass whichever public identity they arrive from.
+    // pass whichever public identity they arrive from. A permission must match the
+    // allocation's address family (RFC 6156): an IPv6 peer on an IPv4 relay makes coturn
+    // reject the whole request with 443, so permit only peers of the relay's family.
+    const bool relayIsIpV6 = m_localRelay && m_localRelay->address.address.isPureIpV6();
+    int permitted = 0;
     for (const auto& peer: m_permittedPeers)
+    {
+        if (m_localRelay && peer.address.isPureIpV6() != relayIsIpV6)
+        {
+            NX_DEBUG(
+                this,
+                "TURN CreatePermission skips peer %1: address family differs from relay %2 for %3",
+                peer,
+                m_localRelay->address,
+                m_sessionId);
+            continue;
+        }
         request.newAttribute<stun::attrs::XorPeerAddress>(peer);
+        ++permitted;
+    }
+    if (permitted == 0)
+    {
+        NX_DEBUG(
+            this,
+            "TURN: no permitted peer matches the relay address family; CreatePermission skipped "
+            "for %1",
+            m_sessionId);
+        return;
+    }
+    NX_DEBUG(
+        this,
+        "TURN CreatePermission for %1 peer(s) on relay %2, session %3",
+        permitted,
+        m_localRelay ? m_localRelay->address.toString() : std::string("none"),
+        m_sessionId);
     fillAuthorizationAndIntegrity(request);
 
     nx::Buffer sendBuffer = stunSerializer.serialized(request);
@@ -310,11 +347,42 @@ void IceRelay::scheduleRefresh()
         });
 }
 
+bool IceRelay::handleTurnError(
+    const stun::Message& message, const char* stage, const std::function<void()>& resend)
+{
+    const auto error = message.getAttribute<stun::attrs::ErrorCode>();
+    const int code = error ? error->getCode() : 0;
+    const std::string reason = error ? error->getReason() : std::string();
+
+    // coturn expires the nonce (600 s by default), so a long session eventually gets a 438 Stale
+    // Nonce - expected. The response carries a fresh NONCE (and REALM): take it and resend, as the
+    // Allocate stage does for the initial 401 challenge. Bounded so a server that keeps rejecting
+    // ends the session instead of looping.
+    if (code == stun::error::staleNonce && m_authRetries < kMaxStaleNonceRetries)
+    {
+        ++m_authRetries;
+        handleLongTermAuthorization(message);
+        NX_DEBUG(
+            this,
+            "TURN %1 nonce expired (438); refreshing it and resending, attempt %2 for %3",
+            stage,
+            m_authRetries,
+            m_sessionId);
+        resend();
+        return true;
+    }
+
+    NX_WARNING(this, "TURN %1 failed: error %2 (%3) for %4", stage, code, reason, m_sessionId);
+    return false;
+}
+
 bool IceRelay::handleRefresh(const stun::Message& message)
 {
     if (message.header.method != stun::MethodType::refreshMethod
         || message.header.messageClass != stun::MessageClass::successResponse)
     {
+        if (message.header.messageClass == stun::MessageClass::errorResponse)
+            return handleTurnError(message, "Refresh", [this]() { sendRefresh(); });
         NX_WARNING(
             this,
             "TURN unexpected message for Refresh stage: %1/%2 for %3",
@@ -323,6 +391,7 @@ bool IceRelay::handleRefresh(const stun::Message& message)
             m_sessionId);
         return false;
     }
+    m_authRetries = 0; //< Authenticated success: fresh budget for the next nonce expiry.
     stun::MessageSerializer stunSerializer;
     stunSerializer.setAlwaysAddFingerprint(false);
 
@@ -518,6 +587,8 @@ bool IceRelay::handleCreatePermission(const stun::Message& message)
     if (message.header.method != stun::MethodType::createPermissionMethod
         || message.header.messageClass != stun::MessageClass::successResponse)
     {
+        if (message.header.messageClass == stun::MessageClass::errorResponse)
+            return handleTurnError(message, "CreatePermission", [this]() { createPermission(); });
         NX_WARNING(
             this,
             "TURN unexpected message for CreatePermission stage: %1/%2 for %3",
@@ -526,6 +597,7 @@ bool IceRelay::handleCreatePermission(const stun::Message& message)
             m_sessionId);
         return false;
     }
+    m_authRetries = 0; //< Authenticated success: fresh budget for the next nonce expiry.
     if (m_relayStage != RelayStage::Indication)
     {
         NX_DEBUG(
