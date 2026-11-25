@@ -515,14 +515,20 @@ void QnUniversalRtpEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
     if (m_eof)
         return;
 
-    // Stamp the playout-delay extension only on seek-delivered frames: precise
-    // seeks tag every frame from the key frame through the target with
-    // MediaFlags_PreRoll, keyframe-only (rough) seeks tag the landing key frame
-    // with MediaFlags_BOF. Steady-state playback frames carry neither and thus
-    // keep Chrome's normal jitter buffer.
-    m_useZeroPlayoutDelay = m_config.addPlayoutDelay && media
+    // Seek-delivered frames get the min=max=0 playout-delay (render immediately): precise seeks
+    // tag every frame from the key frame through the target with MediaFlags_PreRoll, keyframe-only
+    // (rough) seeks tag the landing key frame with MediaFlags_BOF. Steady-state frames carry
+    // neither flag.
+    const bool useZero = m_config.addPlayoutDelay && media
         && (media->flags.testFlag(QnAbstractMediaData::MediaFlags_PreRoll)
             || media->flags.testFlag(QnAbstractMediaData::MediaFlags_BOF));
+    // The seek's min=max=0 is sticky in Chrome, so the first steady-state frame after it must
+    // stamp min=0,max once to release the buffer back to adaptive playout. A bare absence of the
+    // extension would leave the no-buffer path in force and pin the live stream.
+    // m_useZeroPlayoutDelay still holds the previous frame's value here, which marks the transition
+    // (and, being set only when addPlayoutDelay is on, already implies the feature is enabled).
+    m_useReleasePlayoutDelay = media && !useZero && m_useZeroPlayoutDelay;
+    m_useZeroPlayoutDelay = useZero;
 
     m_outputBuffer.clear();
     m_outputPos = 0;
@@ -542,6 +548,9 @@ void QnUniversalRtpEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
 static constexpr uint8_t kMidExtId = 1;
 static constexpr uint8_t kAbsCaptureTimeExtId = 2;
 static constexpr uint8_t kPlayoutDelayExtId = 3;
+// Max playout delay Chrome may use for live playback, handed back once steady-state resumes and
+// releases the sticky min=max=0 of a seek.
+static constexpr uint16_t kLivePlayoutMaxDelayMs = 400;
 static constexpr uint64_t kNtpEpochOffsetSeconds = 2208988800ULL; // 1900 → 1970
 
 static uint64_t unixUsToNtp64(int64_t unixUs)
@@ -681,7 +690,8 @@ bool QnUniversalRtpEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
     // RTP allows only one extension header per packet. ONVIF uses its own profile (0xabac);
     // everything else (MID, abs-capture-time) uses the RFC 8285 one-byte format (0xBEDE).
     // These are mutually exclusive — never enable both.
-    const bool hasRfc8285 = !m_mid.empty() || m_config.addAbsCaptureTime || m_useZeroPlayoutDelay;
+    const bool hasRfc8285 = !m_mid.empty() || m_config.addAbsCaptureTime
+        || m_useZeroPlayoutDelay || m_useReleasePlayoutDelay;
     NX_ASSERT(
         !(m_config.addOnvifHeaderExtension && hasRfc8285),
         "ONVIF and RFC 8285 extensions cannot coexist in one RTP packet");
@@ -711,6 +721,8 @@ bool QnUniversalRtpEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
                 ext.addAbsCaptureTime(timestamps.ntpTimestamp);
             if (m_useZeroPlayoutDelay)
                 ext.addPlayoutDelay(0, 0);
+            else if (m_useReleasePlayoutDelay)
+                ext.addPlayoutDelay(0, kLivePlayoutMaxDelayMs / 10); //< 10 ms units.
             const int extSize = ext.finalize();
             sendBuffer.write((char*) ext.buf, extSize);
         }

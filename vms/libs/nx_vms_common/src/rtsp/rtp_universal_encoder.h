@@ -123,6 +123,10 @@ private:
     // frame that should carry the min=max=0 playout-delay extension. Only true when
     // m_config.addPlayoutDelay is set and the packet is tagged pre-roll or BOF.
     bool m_useZeroPlayoutDelay = false;
+    // The first steady-state frame after a seek stamps min=0,max=kLivePlayoutMaxDelayMs once,
+    // handing the buffer back to Chrome's adaptive estimator; without it the sticky min=max=0
+    // keeps the live stream pinned to the no-buffer path.
+    bool m_useReleasePlayoutDelay = false;
     bool m_useSecondaryPayloadType = false;
     bool m_eof = false;
     bool m_transcodingEnabled = false;
