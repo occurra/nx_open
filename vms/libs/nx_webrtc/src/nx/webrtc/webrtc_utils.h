@@ -200,6 +200,10 @@ struct SessionConfig
     /// where the paused single-shot stream otherwise stalled the compositor for
     /// hundreds of ms. Video only (see Transcoder::createRtpEncoder).
     bool addPlayoutDelay = true;
+
+    /// Max playout-delay (ms) stamped once steady state resumes after a seek - the ceiling for
+    /// Chrome's adaptive jitter buffer. The media server sets it from its per-server settings.
+    int jitterBufferMaxMs = 400;
 };
 
 /**

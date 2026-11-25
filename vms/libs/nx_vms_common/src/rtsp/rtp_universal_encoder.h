@@ -29,6 +29,10 @@ public:
         // decodes instead of being held by playout smoothing. It is deliberately
         // NOT stamped on steady-state frames, which keep Chrome's jitter buffer.
         bool addPlayoutDelay = false;
+        // Max playout-delay in ms stamped once steady state resumes after a seek - the ceiling
+        // Chrome's adaptive jitter buffer may grow to. The media server overrides the default from
+        // its per-server settings.
+        int jitterBufferMaxMs = 400;
         bool useMultipleSdpPayloadTypes = false;
         bool useRtcpNack = false;
         bool webRtcMode = false;
@@ -123,7 +127,7 @@ private:
     // frame that should carry the min=max=0 playout-delay extension. Only true when
     // m_config.addPlayoutDelay is set and the packet is tagged pre-roll or BOF.
     bool m_useZeroPlayoutDelay = false;
-    // The first steady-state frame after a seek stamps min=0,max=kLivePlayoutMaxDelayMs once,
+    // The first steady-state frame after a seek stamps min=0,max=m_config.jitterBufferMaxMs once,
     // handing the buffer back to Chrome's adaptive estimator; without it the sticky min=max=0
     // keeps the live stream pinned to the no-buffer path.
     bool m_useReleasePlayoutDelay = false;
