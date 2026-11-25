@@ -191,6 +191,7 @@ QnUniversalRtpEncoderPtr Transcoder::createRtpEncoder(
     // playout-delay is a video-only extension - stamp it only on the video track.
     config.addPlayoutDelay =
         m_session->config().addPlayoutDelay && codecParameters->codec_type == AVMEDIA_TYPE_VIDEO;
+    config.jitterBufferMaxMs = m_session->config().jitterBufferMaxMs;
     config.useMultipleSdpPayloadTypes = false;
     config.useRtcpNack = true;
     config.webRtcMode = ::ini().webrtcFixH264ProfileConstraints;

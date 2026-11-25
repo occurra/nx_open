@@ -549,9 +549,6 @@ void QnUniversalRtpEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
 static constexpr uint8_t kMidExtId = 1;
 static constexpr uint8_t kAbsCaptureTimeExtId = 2;
 static constexpr uint8_t kPlayoutDelayExtId = 3;
-// Max playout delay Chrome may use for live playback, handed back once steady-state resumes and
-// releases the sticky min=max=0 of a seek.
-static constexpr uint16_t kLivePlayoutMaxDelayMs = 400;
 static constexpr uint64_t kNtpEpochOffsetSeconds = 2208988800ULL; // 1900 → 1970
 
 static uint64_t unixUsToNtp64(int64_t unixUs)
@@ -723,7 +720,7 @@ bool QnUniversalRtpEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
             if (m_useZeroPlayoutDelay)
                 ext.addPlayoutDelay(0, 0);
             else if (m_useReleasePlayoutDelay)
-                ext.addPlayoutDelay(0, kLivePlayoutMaxDelayMs / 10); //< 10 ms units.
+                ext.addPlayoutDelay(0, m_config.jitterBufferMaxMs / 10); //< 10 ms units.
             const int extSize = ext.finalize();
             sendBuffer.write((char*) ext.buf, extSize);
         }
