@@ -525,8 +525,9 @@ void QnUniversalRtpEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
     // The seek's min=max=0 is sticky in Chrome, so the first steady-state frame after it must
     // stamp min=0,max once to release the buffer back to adaptive playout. A bare absence of the
     // extension would leave the no-buffer path in force and pin the live stream.
-    // m_useZeroPlayoutDelay still holds the previous frame's value here, which marks the transition
-    // (and, being set only when addPlayoutDelay is on, already implies the feature is enabled).
+    // m_useZeroPlayoutDelay still holds the previous frame's value here, which marks the
+    // transition (and, being set only when addPlayoutDelay is on, already implies the feature is
+    // enabled).
     m_useReleasePlayoutDelay = media && !useZero && m_useZeroPlayoutDelay;
     m_useZeroPlayoutDelay = useZero;
 
@@ -690,8 +691,8 @@ bool QnUniversalRtpEncoder::getNextPacket(nx::utils::ByteArray& sendBuffer)
     // RTP allows only one extension header per packet. ONVIF uses its own profile (0xabac);
     // everything else (MID, abs-capture-time) uses the RFC 8285 one-byte format (0xBEDE).
     // These are mutually exclusive — never enable both.
-    const bool hasRfc8285 = !m_mid.empty() || m_config.addAbsCaptureTime
-        || m_useZeroPlayoutDelay || m_useReleasePlayoutDelay;
+    const bool hasRfc8285 = !m_mid.empty() || m_config.addAbsCaptureTime || m_useZeroPlayoutDelay
+        || m_useReleasePlayoutDelay;
     NX_ASSERT(
         !(m_config.addOnvifHeaderExtension && hasRfc8285),
         "ONVIF and RFC 8285 extensions cannot coexist in one RTP packet");
