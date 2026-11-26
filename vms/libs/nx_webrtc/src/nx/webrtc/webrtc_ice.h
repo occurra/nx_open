@@ -2,7 +2,10 @@
 
 #pragma once
 
+#include <chrono>
 #include <deque>
+#include <memory>
+#include <optional>
 
 #include <nx/network/aio/basic_pollable.h>
 #include <nx/network/aio/timer.h>
@@ -160,6 +163,12 @@ protected:
     void onBytesWritten(SystemError::ErrorCode errorCode, std::size_t bytesTransferred);
     void sendNextBufferUnsafe();
 
+    /**
+     * Counts a datagram that the socket did not take. For a transport that sends without a
+     * completion handler.
+     */
+    void onSendRefused(SystemError::ErrorCode errorCode);
+
     /** Queues buffer ahead of media, behind the other foreground buffers. Does not start the send.
      */
     void insertForegroundBuffer(nx::Buffer buffer);
@@ -222,6 +231,45 @@ protected:
     Stage m_stage = binding;
 
 private:
+    using Clock = std::chrono::steady_clock;
+
+    /** What the send queue did since the last report to the log. */
+    struct SendStats
+    {
+        /** Media packets put into the queue. */
+        int queued = 0;
+
+        /** Packets that the socket took. */
+        int sent = 0;
+
+        /** Packets that the socket did not take, so they are lost. */
+        int refused = 0;
+
+        /** The error of the last refused packet. */
+        SystemError::ErrorCode lastRefusal = SystemError::noError;
+
+        /** The longest queue. */
+        size_t maxQueued = 0;
+
+        /** Sends that completed later than kSlowSend, so the socket was not writable. */
+        int slowSends = 0;
+
+        /** The longest time from the start of a send to its completion. */
+        std::chrono::microseconds maxSend{0};
+
+        /** The longest time that the queue took to become empty. */
+        std::chrono::milliseconds maxDrain{0};
+    };
+
+    void onQueued(int packetCount);
+    void reportSendStatsIfDue(Clock::time_point now);
+
+private:
+    SendStats m_sendStats;
+    Clock::time_point m_sendStatsReportedAt = Clock::now();
+    Clock::time_point m_sendStartedAt;
+    /** Set while the queue is not empty. */
+    std::optional<Clock::time_point> m_drainStartedAt;
     std::weak_ptr<Session> m_session;
 };
 

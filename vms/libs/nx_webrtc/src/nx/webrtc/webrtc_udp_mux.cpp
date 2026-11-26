@@ -265,10 +265,14 @@ protected:
     virtual void asyncSendPacketUnsafe() override
     {
         // A datagram the socket cannot take is lost, as on a lossy link; SRTP and SCTP recover.
-        m_mux->send(m_peer, m_sendingBuffer);
+        const auto errorCode = m_mux->send(m_peer, m_sendingBuffer)
+            ? SystemError::noError
+            : SystemError::getLastOSErrorCode();
         m_pollable.post(
-            [this]()
+            [this, errorCode]()
             {
+                if (errorCode != SystemError::noError)
+                    onSendRefused(errorCode);
                 onBytesWritten(SystemError::noError, m_sendingBuffer.size());
             });
     }
@@ -388,6 +392,10 @@ bool UdpMux::start(uint16_t port, bool upnpEnabled, const QString& mappingDescri
             port,
             SystemError::getLastOSErrorText());
     }
+
+    unsigned int sendBufferSize = 0;
+    socket->getSendBufferSize(&sendBufferSize);
+    NX_DEBUG(this, "The send buffer of the shared WebRTC UDP socket is %1 bytes", sendBufferSize);
 
     m_port = socket->getLocalAddress().port;
     m_socket = std::move(socket);
