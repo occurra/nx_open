@@ -264,6 +264,7 @@ private:
         std::chrono::milliseconds maxDrain{0};
     };
 
+private:
     void onQueued(int packetCount);
     void reportSendStatsIfDue(Clock::time_point now);
 
