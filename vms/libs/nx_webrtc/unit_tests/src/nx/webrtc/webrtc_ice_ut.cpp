@@ -62,6 +62,22 @@ TEST(WebRtcIceBindingRequest, IntegrityIsKeyedWithRemotePwd)
     EXPECT_FALSE(message.verifyIntegrity(username, localPwd));
 }
 
+// The response of the peer repeats the transaction id, and the ice finds the request by it.
+TEST(WebRtcIceBindingRequest, GivesTheTransactionIdOfTheRequest)
+{
+    nx::Buffer transactionId;
+    const auto serialized = buildControlledBindingRequest(
+        "browserUfrag",
+        "serverUfrag",
+        "browserPasswordSecret01",
+        /*priority*/ 12345,
+        /*tieBreaker*/ 0xABCDull,
+        &transactionId);
+
+    EXPECT_FALSE(transactionId.empty());
+    EXPECT_EQ(parseStunMessage(serialized).header.transactionId, transactionId);
+}
+
 // A full-ICE agent in the controlled role must tag its checks with
 // ICE-CONTROLLED carrying its 8-byte tie-breaker (network/big-endian byte
 // order), and must not also send ICE-CONTROLLING.

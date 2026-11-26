@@ -40,10 +40,13 @@ nx::Buffer buildControlledBindingRequest(
     const std::string& localUfrag,
     const std::string& remotePwd,
     int priority,
-    std::uint64_t tieBreaker)
+    std::uint64_t tieBreaker,
+    nx::Buffer* outTransactionId)
 {
     stun::Message request(
         stun::Header(stun::MessageClass::request, stun::MethodType::bindingMethod));
+    if (outTransactionId)
+        *outTransactionId = request.header.transactionId;
 
     request.newAttribute<stun::attrs::Priority>(priority);
 
@@ -142,6 +145,7 @@ Ice::PacketResult Ice::handleStun(const uint8_t* data, int size)
                 s->onDirectPathProbeSucceeded();
         }
         NX_VERBOSE(this, "STUN: binding success response");
+        onBindingResponse(message.header.transactionId);
         return PacketResult::drop;
     }
 
@@ -501,6 +505,24 @@ void Ice::writeBatch(std::deque<nx::Buffer> mediaBuffers)
         m_sendBuffers.push_back(toSendBuffer(packet.data(), packet.size()));
     onQueued((int) mediaBuffers.size());
     sendNextBufferUnsafe();
+}
+
+void Ice::reportRoundTripTime(milliseconds value)
+{
+    if (m_stage != Stage::streaming)
+        return;
+
+    const auto session = m_session.lock();
+    if (!session || !session->muxer())
+        return;
+
+    NX_VERBOSE(
+        this,
+        "Session %1: the round trip time to %2 is %3",
+        session->id(),
+        iceRemoteAddress(),
+        value);
+    session->muxer()->setRoundTripTime(value);
 }
 
 void Ice::onQueued(int packetCount)
