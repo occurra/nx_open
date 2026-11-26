@@ -490,6 +490,12 @@ bool QnUniversalRtpEncoder::getNextNackPacket(nx::utils::ByteArray& sendBuffer)
     return m_rtcpNackResponder && m_rtcpNackResponder->getNextPacket(sendBuffer);
 }
 
+void QnUniversalRtpEncoder::setRoundTripTime(std::chrono::milliseconds value)
+{
+    if (m_rtcpNackResponder)
+        m_rtcpNackResponder->setRoundTripTime(value);
+}
+
 void QnUniversalRtpEncoder::setDataPacket(QnConstAbstractMediaDataPtr media)
 {
     // Do not continue rtsp stream if codec changed.

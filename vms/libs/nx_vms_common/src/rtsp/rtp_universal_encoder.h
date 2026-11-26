@@ -63,6 +63,9 @@ public:
 
     void setRtcpPacket(uint8_t* data, int size);
     bool getNextNackPacket(nx::utils::ByteArray& sendBuffer);
+
+    /** Sets the round trip time of the path to the peer, for the answers to its NACKs. */
+    void setRoundTripTime(std::chrono::milliseconds value);
     void setSrtpEncryptionData(const nx::rtsp::EncryptionData& data);
     nx::rtsp::SrtpEncryptor* encryptor() const;
     FfmpegMuxer::PacketTimestamp getLastTimestamps() const;

@@ -111,6 +111,8 @@ bool Transcoder::createRtpEncoders(
                 success = true;
                 if (m_encryptionData.has_value())
                     encoder->setSrtpEncryptionData(*m_encryptionData);
+                if (m_roundTripTime)
+                    encoder->setRoundTripTime(*m_roundTripTime);
                 seedSequenceForward(m_videoEncoders, deviceId, *encoder);
                 seedTimestampForward(m_videoEncoders, deviceId, *encoder, /*rtpClockHz*/ 90000);
                 track->offerState = TrackState::active;
@@ -139,6 +141,8 @@ bool Transcoder::createRtpEncoders(
                 success = true;
                 if (m_encryptionData.has_value())
                     encoder->setSrtpEncryptionData(*m_encryptionData);
+                if (m_roundTripTime)
+                    encoder->setRoundTripTime(*m_roundTripTime);
                 seedSequenceForward(m_audioEncoders, deviceId, *encoder);
                 seedTimestampForward(
                     m_audioEncoders,
@@ -366,6 +370,15 @@ void Transcoder::setPendingRtpRebase(
     // setDataPacket().
     auto& linearizer = m_rtpBaseLinearizer.try_emplace(deviceId, /*startValue*/ 0).first->second;
     m_pendingRtpRebase[deviceId] = {seekSeq, linearizer.linearize((uint32_t) rtpBase90k)};
+}
+
+void Transcoder::setRoundTripTime(std::chrono::milliseconds value)
+{
+    m_roundTripTime = value;
+    for (const auto& [deviceId, encoder]: m_videoEncoders)
+        encoder->setRoundTripTime(value);
+    for (const auto& [deviceId, encoder]: m_audioEncoders)
+        encoder->setRoundTripTime(value);
 }
 
 bool Transcoder::getNextPacket(QnUniversalRtpEncoder* rtpEncoder, nx::utils::ByteArray& buffer)

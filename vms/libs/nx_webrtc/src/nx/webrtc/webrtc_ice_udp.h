@@ -3,6 +3,9 @@
 #pragma once
 
 #include <atomic>
+#include <deque>
+
+#include <nx/utils/elapsed_timer.h>
 
 #include "webrtc_ice.h"
 
@@ -50,6 +53,7 @@ protected:
     virtual void stopUnsafe() override final;
     virtual void asyncSendPacketUnsafe() override final;
     virtual void onPeerValidated(const nx::network::SocketAddress& peer) override final;
+    virtual void onBindingResponse(const nx::Buffer& transactionId) override final;
 
 private:
     void onBytesRead(SystemError::ErrorCode errorCode, std::size_t bytesTransferred);
@@ -64,6 +68,21 @@ private:
     bool canPunchTo(const nx::network::HostAddress& target) const;
 
 private:
+    /** A binding request that waits for its response. */
+    struct SentBinding
+    {
+        nx::Buffer transactionId;
+
+        /** Runs from the moment the request was sent. */
+        nx::utils::ElapsedTimer sinceSent;
+    };
+
+private:
+    /**
+     * The last binding requests, the oldest first. The requests of the punch go faster than a
+     * response can come back, so one slot would never match.
+     */
+    std::deque<SentBinding> m_sentBindings;
     nx::Buffer m_readBuffer;
     std::unique_ptr<nx::network::AbstractDatagramSocket> m_socket;
     /// How this ice was created: UdpHost for a bind()-created host socket,

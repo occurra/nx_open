@@ -2,6 +2,7 @@
 
 #include "webrtc_ice_udp.h"
 
+#include <algorithm>
 #include <cstring>
 
 #include <nx/network/socket_factory.h>
@@ -15,6 +16,9 @@ constexpr std::chrono::seconds kKeepAliveTimeout{15};
 constexpr std::chrono::milliseconds kBindingTimeout{50};
 constexpr int kBindingCountLimit = 100; // Rapid-punch for first 5 seconds.
 constexpr std::chrono::seconds kKeepAliveInterval{2}; // NAT keepalive after connectivity.
+
+/** The punch sends a request every kBindingTimeout, so this covers a round trip of 800 ms. */
+constexpr size_t kSentBindingLimit = 16;
 
 using namespace nx::network;
 
@@ -194,12 +198,18 @@ void IceUdp::sendBinding(
             // Controlled-role full-ICE connectivity check: MESSAGE-INTEGRITY is keyed
             // with the peer's ice-pwd (so the peer accepts it) and the request carries
             // ICE-CONTROLLED with our tie-breaker. See buildControlledBindingRequest().
+            SentBinding binding;
             nx::Buffer sendBuffer = buildControlledBindingRequest(
                 sessionDescription.remoteUfrag,
                 sessionDescription.id,
                 sessionDescription.remotePwd,
                 iceCandidate.priority,
-                sessionDescription.tieBreaker);
+                sessionDescription.tieBreaker,
+                &binding.transactionId);
+            binding.sinceSent.restart();
+            m_sentBindings.push_back(std::move(binding));
+            if (m_sentBindings.size() > kSentBindingLimit)
+                m_sentBindings.pop_front();
             writePacket(sendBuffer.data(), sendBuffer.size(), /*foreground*/ true);
 
             NX_VERBOSE(this, "STUN: binding sent for session %1", sessionDescription.id);
@@ -308,6 +318,22 @@ nx::network::SocketAddress IceUdp::iceRemoteAddress() const
 nx::network::SocketAddress IceUdp::iceLocalAddress() const
 {
     return m_socket->getLocalAddress();
+}
+
+void IceUdp::onBindingResponse(const nx::Buffer& transactionId)
+{
+    const auto binding = std::find_if(
+        m_sentBindings.begin(),
+        m_sentBindings.end(),
+        [&transactionId](const SentBinding& sent)
+        {
+            return sent.transactionId == transactionId;
+        });
+    if (binding == m_sentBindings.end())
+        return;
+
+    reportRoundTripTime(binding->sinceSent.elapsed());
+    m_sentBindings.erase(binding);
 }
 
 void IceUdp::onPeerValidated(const nx::network::SocketAddress& peer)

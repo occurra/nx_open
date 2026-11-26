@@ -29,13 +29,16 @@ constexpr size_t kIceTcpSendBufferSize = 1024 * 64;
  * rejected by the peer. USERNAME is "<remoteUfrag>:<localUfrag>". The request
  * also carries PRIORITY and ICE-CONTROLLED with the agent's 8-byte tie-breaker
  * (network byte order) for role-conflict resolution, plus a FINGERPRINT.
+ *
+ * @param outTransactionId Gets the transaction id of the request, which its response repeats.
  */
 NX_WEBRTC_API nx::Buffer buildControlledBindingRequest(
     const std::string& remoteUfrag,
     const std::string& localUfrag,
     const std::string& remotePwd,
     int priority,
-    std::uint64_t tieBreaker);
+    std::uint64_t tieBreaker,
+    nx::Buffer* outTransactionId = nullptr);
 
 class Ice;
 
@@ -159,6 +162,14 @@ protected:
     /// IceUdp overrides it to learn a peer-reflexive address and retarget its
     /// responses and connectivity checks toward the peer's real source.
     virtual void onPeerValidated(const nx::network::SocketAddress& /*peer*/) {}
+
+    /** Called for a binding success response, with the transaction id that it answers. */
+    virtual void onBindingResponse(const nx::Buffer& /*transactionId*/) {}
+
+    /**
+     * Gives the round trip time of the path to the session, when this ice carries its media.
+     */
+    void reportRoundTripTime(std::chrono::milliseconds value);
 
     void onBytesWritten(SystemError::ErrorCode errorCode, std::size_t bytesTransferred);
     void sendNextBufferUnsafe();

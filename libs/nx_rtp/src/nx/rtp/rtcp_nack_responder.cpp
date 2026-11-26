@@ -11,6 +11,11 @@ RtcpNackResponder::RtcpNackResponder(size_t queueLimit):
 {
 }
 
+void RtcpNackResponder::setRoundTripTime(std::chrono::milliseconds value)
+{
+    m_roundTripTime = value;
+}
+
 void RtcpNackResponder::pushPacket(const nx::utils::ByteArray& packet, uint16_t seq)
 {
     if (m_queueLimit == 0)
@@ -33,7 +38,7 @@ void RtcpNackResponder::pushPacket(const nx::utils::ByteArray& packet, uint16_t 
         m_packets.clear();
         m_startSeq = seq;
     }
-    m_packets.emplace_back(packet);
+    m_packets.push_back({.data = packet});
 }
 
 void RtcpNackResponder::pushRtcpNack(const uint8_t* data, int size)
@@ -64,8 +69,15 @@ bool RtcpNackResponder::getNextPacket(nx::utils::ByteArray& outputPacket)
             : report - m_startSeq;
         if (offset < m_packets.size())
         {
+            Packet& packet = m_packets[offset];
+            if (m_roundTripTime && !packet.sinceResend.hasExpired(*m_roundTripTime))
+            {
+                NX_VERBOSE(this, "Packet with seq %1 is on its way, not re-sent", (int) report);
+                continue;
+            }
             NX_VERBOSE(this, "Re-send packet with seq: %1", (int) report);
-            outputPacket = m_packets[offset];
+            packet.sinceResend.restart();
+            outputPacket = packet.data;
             return true;
         }
         NX_VERBOSE(
