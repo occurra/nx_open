@@ -125,13 +125,7 @@ std::optional<nx::network::SocketAddress> IceUdp::bind(const nx::network::HostAd
     if (!m_socket->bind(nx::network::SocketAddress(host, 0)))
         return std::nullopt;
 
-    unsigned int sendBufferSize = 0;
-    m_socket->getSendBufferSize(&sendBufferSize);
-    NX_DEBUG(
-        this,
-        "Bound to %1, the send buffer of the socket is %2 bytes",
-        iceLocalAddress(),
-        sendBufferSize);
+    NX_VERBOSE(this, "Running ice: binded to %1", iceLocalAddress().toString());
 
     m_socket->readSomeAsync(
         &m_readBuffer,
