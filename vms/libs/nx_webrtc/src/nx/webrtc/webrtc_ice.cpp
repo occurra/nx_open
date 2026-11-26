@@ -527,13 +527,14 @@ void Ice::reportSendStatsIfDue(Clock::time_point now)
     const std::string sessionId = m_sessionDescription ? m_sessionDescription->id : "(null)";
     NX_DEBUG(
         this,
-        "Session %1 to %2 in %3: queued %4 packets, sent %5, refused by the socket %6 (last "
-        "error: %7), longest queue %8",
+        "Session %1 to %2 in %3: queued %4 packets, sent %5 (%6 bytes), refused by the socket %7 "
+        "(last error: %8), longest queue %9",
         sessionId,
         iceRemoteAddress(),
         duration_cast<milliseconds>(elapsed),
         m_sendStats.queued,
         m_sendStats.sent,
+        m_sendStats.sentBytes,
         m_sendStats.refused,
         SystemError::toString(m_sendStats.lastRefusal),
         m_sendStats.maxQueued);
@@ -576,9 +577,14 @@ void Ice::onBytesWritten(SystemError::ErrorCode errorCode, std::size_t /*bytesTr
     if (sendDuration > kSlowSend)
         ++m_sendStats.slowSends;
     if (errorCode == SystemError::noError)
+    {
         ++m_sendStats.sent;
+        m_sendStats.sentBytes += (int64_t) m_sendingBuffer.size();
+    }
     else
+    {
         onSendRefused(errorCode);
+    }
     reportSendStatsIfDue(now);
 
     m_hasBufferToSend = false;

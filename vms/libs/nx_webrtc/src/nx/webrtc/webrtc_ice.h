@@ -242,6 +242,9 @@ private:
         /** Packets that the socket took. */
         int sent = 0;
 
+        /** Bytes of the packets that the socket took. */
+        int64_t sentBytes = 0;
+
         /** Packets that the socket did not take, so they are lost. */
         int refused = 0;
 
