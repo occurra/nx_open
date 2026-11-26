@@ -6,7 +6,10 @@
 
 namespace nx::rtp {
 
-RtcpNackResponder::RtcpNackResponder(size_t queueLimit):
+RtcpNackResponder::RtcpNackResponder(
+    size_t queueLimit,
+    std::chrono::milliseconds minResendInterval):
+    m_minResendInterval(minResendInterval),
     m_queueLimit(std::min(queueLimit, (size_t) std::numeric_limits<uint16_t>::max()))
 {
 }
@@ -18,6 +21,7 @@ void RtcpNackResponder::pushPacket(const nx::utils::ByteArray& packet, uint16_t 
     if (m_packets.size() == m_queueLimit)
     {
         m_packets.pop_front();
+        m_resentAt.pop_front();
         ++m_startSeq;
     }
     if (m_packets.size() == 0)
@@ -31,9 +35,11 @@ void RtcpNackResponder::pushPacket(const nx::utils::ByteArray& packet, uint16_t 
             (int) seq,
             (uint16_t) (m_startSeq + (uint16_t) m_packets.size()));
         m_packets.clear();
+        m_resentAt.clear();
         m_startSeq = seq;
     }
     m_packets.emplace_back(packet);
+    m_resentAt.emplace_back();
 }
 
 void RtcpNackResponder::pushRtcpNack(const uint8_t* data, int size)
@@ -53,7 +59,7 @@ void RtcpNackResponder::pushRtcpNack(const uint8_t* data, int size)
     m_reports.insert(m_reports.end(), reports.begin(), reports.end());
 }
 
-bool RtcpNackResponder::getNextPacket(nx::utils::ByteArray& outputPacket)
+bool RtcpNackResponder::getNextPacket(nx::utils::ByteArray& outputPacket, Clock::time_point now)
 {
     while (m_reports.size())
     {
@@ -64,7 +70,14 @@ bool RtcpNackResponder::getNextPacket(nx::utils::ByteArray& outputPacket)
             : report - m_startSeq;
         if (offset < m_packets.size())
         {
+            const bool wasResent = m_resentAt[offset] != Clock::time_point();
+            if (wasResent && now - m_resentAt[offset] < m_minResendInterval)
+            {
+                NX_VERBOSE(this, "Packet with seq %1 is on its way, not re-sent", (int) report);
+                continue;
+            }
             NX_VERBOSE(this, "Re-send packet with seq: %1", (int) report);
+            m_resentAt[offset] = now;
             outputPacket = m_packets[offset];
             return true;
         }
