@@ -2,6 +2,8 @@
 
 #include "webrtc_ice.h"
 
+#include <algorithm>
+
 #include <QtCore/QtEndian>
 
 #include <nx/network/stun/message_integrity.h>
@@ -14,6 +16,12 @@ namespace nx::webrtc {
 using namespace nx::vms::api;
 using namespace nx::network;
 using namespace nx;
+using namespace std::chrono;
+
+/** A send that completes later than this waited for the socket to become writable. */
+constexpr auto kSlowSend = 2ms;
+
+constexpr auto kSendStatsReportInterval = 5s;
 
 // Depth below which the media pump may run in parallel with the data channel
 // instead of waiting for it to go idle. Zero would serialise the two streams
@@ -462,9 +470,14 @@ void Ice::writePacket(const char* data, int size, bool foreground)
 {
     NX_ASSERT(m_pollable.isInSelfAioThread());
     if (foreground)
+    {
         insertForegroundBuffer(toSendBuffer(data, size));
+    }
     else
+    {
         m_sendBuffers.push_back(toSendBuffer(data, size));
+        onQueued(/*packetCount*/ 1);
+    }
 
     sendNextBufferUnsafe();
 }
@@ -486,7 +499,53 @@ void Ice::writeBatch(std::deque<nx::Buffer> mediaBuffers)
     // socket. For UDP (and the base) toSendBuffer is a passthrough, so this is a no-op there.
     for (auto& packet: mediaBuffers)
         m_sendBuffers.push_back(toSendBuffer(packet.data(), packet.size()));
+    onQueued((int) mediaBuffers.size());
     sendNextBufferUnsafe();
+}
+
+void Ice::onQueued(int packetCount)
+{
+    m_sendStats.queued += packetCount;
+    m_sendStats.maxQueued = std::max(m_sendStats.maxQueued, m_sendBuffers.size());
+    if (!m_drainStartedAt)
+        m_drainStartedAt = Clock::now();
+}
+
+void Ice::onSendRefused(SystemError::ErrorCode errorCode)
+{
+    ++m_sendStats.refused;
+    m_sendStats.lastRefusal = errorCode;
+}
+
+void Ice::reportSendStatsIfDue(Clock::time_point now)
+{
+    const auto elapsed = now - m_sendStatsReportedAt;
+    if (elapsed < kSendStatsReportInterval)
+        return;
+
+    const std::string sessionId = m_sessionDescription ? m_sessionDescription->id : "(null)";
+    NX_DEBUG(
+        this,
+        "Session %1 to %2 in %3: queued %4 packets, sent %5 (%6 bytes), refused by the socket %7 "
+        "(last error: %8), longest queue %9",
+        sessionId,
+        iceRemoteAddress(),
+        duration_cast<milliseconds>(elapsed),
+        m_sendStats.queued,
+        m_sendStats.sent,
+        m_sendStats.sentBytes,
+        m_sendStats.refused,
+        SystemError::toString(m_sendStats.lastRefusal),
+        m_sendStats.maxQueued);
+    NX_DEBUG(
+        this,
+        "Session %1 send timing: slow sends %2 (longest %3), longest drain of the queue %4",
+        sessionId,
+        m_sendStats.slowSends,
+        m_sendStats.maxSend,
+        m_sendStats.maxDrain);
+    m_sendStats = {};
+    m_sendStatsReportedAt = now;
 }
 
 aio::AbstractAioThread* Ice::getAioThread()
@@ -494,7 +553,7 @@ aio::AbstractAioThread* Ice::getAioThread()
     return m_pollable.getAioThread();
 }
 
-void Ice::onBytesWritten(SystemError::ErrorCode errorCode, std::size_t /*bytesTransferred*/)
+void Ice::onBytesWritten(SystemError::ErrorCode errorCode, std::size_t bytesTransferred)
 {
     if (m_needStop)
         return;
@@ -511,6 +570,22 @@ void Ice::onBytesWritten(SystemError::ErrorCode errorCode, std::size_t /*bytesTr
     }
 
     NX_ASSERT(m_pollable.isInSelfAioThread());
+    const auto now = Clock::now();
+    const auto sendDuration = duration_cast<microseconds>(now - m_sendStartedAt);
+    m_sendStats.maxSend = std::max(m_sendStats.maxSend, sendDuration);
+    if (sendDuration > kSlowSend)
+        ++m_sendStats.slowSends;
+    if (errorCode != SystemError::noError)
+    {
+        onSendRefused(errorCode);
+    }
+    else if (bytesTransferred != 0) //< The shared UDP port already counted its refused datagram.
+    {
+        ++m_sendStats.sent;
+        m_sendStats.sentBytes += (int64_t) m_sendingBuffer.size();
+    }
+    reportSendStatsIfDue(now);
+
     m_hasBufferToSend = false;
     sendNextBufferUnsafe();
 }
@@ -525,6 +600,14 @@ void Ice::sendNextBufferUnsafe()
 
     if (m_sendBuffers.empty())
     {
+        if (m_drainStartedAt)
+        {
+            m_sendStats.maxDrain = std::max(
+                m_sendStats.maxDrain,
+                duration_cast<milliseconds>(Clock::now() - *m_drainStartedAt));
+            m_drainStartedAt.reset();
+        }
+
         // Ack only once BOTH streams are idle. Waiting for the data channel too
         // is deliberate: video and its metadata are interleaved in timestamp
         // order by the reorder buffer and travel through one media queue, so
@@ -552,6 +635,7 @@ void Ice::sendNextBufferUnsafe()
     if (m_foregroundOffset != 0)
         --m_foregroundOffset;
     m_hasBufferToSend = true;
+    m_sendStartedAt = Clock::now();
     asyncSendPacketUnsafe();
 }
 
@@ -608,7 +692,10 @@ void Ice::writeDataChannelBinary(
         [this, data = std::move(data), deviceId, delivery]() mutable
         {
             const bool isWritten = m_dataChannel.writeBinary(
-                data.takeStdString(), /*streamId*/ -1, deviceId, delivery);
+                data.takeStdString(),
+                /*streamId*/ -1,
+                deviceId,
+                delivery);
             if (!isWritten)
                 stopUnsafe();
         });
