@@ -78,10 +78,7 @@ private:
     };
 
 private:
-    /**
-     * The last binding requests, the oldest first. The requests of the punch go faster than a
-     * response can come back, so one slot would never match.
-     */
+    /** The last binding requests, the oldest first. */
     std::deque<SentBinding> m_sentBindings;
     nx::Buffer m_readBuffer;
     std::unique_ptr<nx::network::AbstractDatagramSocket> m_socket;
