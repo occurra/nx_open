@@ -70,6 +70,7 @@ public:
 
     /** Sets the round trip time of the path to the peer on each encoder, also on a later one. */
     void setRoundTripTime(std::chrono::milliseconds value);
+
     bool isEof(QnUniversalRtpEncoder* rtpEncoder) const;
     int64_t getLastTimestampMs() const { return m_lastTimestampMs; } //< Required for reconnection.
 

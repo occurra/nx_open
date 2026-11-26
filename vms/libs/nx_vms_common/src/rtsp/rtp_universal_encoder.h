@@ -66,6 +66,7 @@ public:
 
     /** Sets the round trip time of the path to the peer, for the answers to its NACKs. */
     void setRoundTripTime(std::chrono::milliseconds value);
+
     void setSrtpEncryptionData(const nx::rtsp::EncryptionData& data);
     nx::rtsp::SrtpEncryptor* encryptor() const;
     FfmpegMuxer::PacketTimestamp getLastTimestamps() const;
