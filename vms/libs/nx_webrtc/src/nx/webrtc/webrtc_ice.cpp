@@ -554,7 +554,7 @@ aio::AbstractAioThread* Ice::getAioThread()
     return m_pollable.getAioThread();
 }
 
-void Ice::onBytesWritten(SystemError::ErrorCode errorCode, std::size_t /*bytesTransferred*/)
+void Ice::onBytesWritten(SystemError::ErrorCode errorCode, std::size_t bytesTransferred)
 {
     if (m_needStop)
         return;
@@ -576,14 +576,14 @@ void Ice::onBytesWritten(SystemError::ErrorCode errorCode, std::size_t /*bytesTr
     m_sendStats.maxSend = std::max(m_sendStats.maxSend, sendDuration);
     if (sendDuration > kSlowSend)
         ++m_sendStats.slowSends;
-    if (errorCode == SystemError::noError)
+    if (errorCode != SystemError::noError)
+    {
+        onSendRefused(errorCode);
+    }
+    else if (bytesTransferred != 0) //< The shared UDP port already counted its refused datagram.
     {
         ++m_sendStats.sent;
         m_sendStats.sentBytes += (int64_t) m_sendingBuffer.size();
-    }
-    else
-    {
-        onSendRefused(errorCode);
     }
     reportSendStatsIfDue(now);
 

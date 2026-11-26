@@ -272,7 +272,11 @@ protected:
             [this, errorCode]()
             {
                 if (errorCode != SystemError::noError)
+                {
                     onSendRefused(errorCode);
+                    onBytesWritten(SystemError::noError, /*bytesTransferred*/ 0);
+                    return;
+                }
                 onBytesWritten(SystemError::noError, m_sendingBuffer.size());
             });
     }
