@@ -265,13 +265,22 @@ private:
     };
 
 private:
+    /** Counts the media packets put into the queue, and starts to time the drain of the queue. */
     void onQueued(int packetCount);
+
+    /** Writes m_sendStats to the log and resets it, if kSendStatsReportInterval has elapsed. */
     void reportSendStatsIfDue(Clock::time_point now);
 
 private:
+    /** Reset by each report to the log. */
     SendStats m_sendStats;
+
+    /** When m_sendStats was last written to the log. */
     Clock::time_point m_sendStatsReportedAt = Clock::now();
+
+    /** When the send of m_sendingBuffer started. */
     Clock::time_point m_sendStartedAt;
+
     /** Set while the queue is not empty. */
     std::optional<Clock::time_point> m_drainStartedAt;
     std::weak_ptr<Session> m_session;
