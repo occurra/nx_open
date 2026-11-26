@@ -7,6 +7,7 @@
 
 #include <nx/rtp/rtcp.h>
 #include <nx/rtp/rtcp_nack_responder.h>
+#include <nx/utils/byte_array.h>
 #include <nx/utils/time.h>
 
 namespace nx::rtp::test {
