@@ -8,7 +8,6 @@
 
 #include <nx/network/stun/message_integrity.h>
 
-#include "nx_webrtc_ini.h"
 #include "webrtc_session.h"
 #include "webrtc_session_pool.h"
 
